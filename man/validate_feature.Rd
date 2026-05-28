@@ -2,16 +2,23 @@
 % Please edit documentation in R/validate_feature.R
 \name{validate_feature}
 \alias{validate_feature}
-\title{Validate a standardized Feature annotation object}
+\title{Validate a Feature annotation object}
 \usage{
-validate_feature(object)
+validate_feature(object, check_gene_model = TRUE)
 }
 \arguments{
 \item{object}{A Feature-compatible annotation object.}
+
+\item{check_gene_model}{Logical. Whether to check derived gene-model tables
+when transcripts and exons are available.}
 }
 \value{
-A validation list with invalid records, summaries, and warnings.
+A validation list with \code{invalid_records}, \code{invalid_summary}, and
+\code{warnings}.
 }
 \description{
-Validate a standardized Feature annotation object
+\code{validate_feature()} is the unified validation entry for annotation data. It
+validates BED/GFF/GTF/GenePred-derived \code{Feature} objects. If gene-model tables
+are present, transcript/exon consistency is checked in addition to the flat
+standardized feature table.
 }

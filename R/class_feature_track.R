@@ -395,7 +395,17 @@ print.GenePred <- function(x, ...) {
 
 #' @export
 summary.GenePred <- function(object, ...) {
-  summary_genepred(object, ...)
+  summary_feature(object, ...)
+}
+
+#' @export
+summary.Feature <- function(object, ...) {
+  summary_feature(object, ...)
+}
+
+#' @export
+summary.FeatureTrack <- function(object, ...) {
+  summary_feature(object, ...)
 }
 
 #' Extract transcript table from a GenePred object

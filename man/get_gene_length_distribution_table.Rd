@@ -40,7 +40,7 @@ of exon lengths. \code{genomic} uses transcript span length.}
 
 \item{end}{Optional region end in 1-based closed coordinates.}
 
-\item{mode}{Region selection mode passed to \code{\link[=slice_genepred]{slice_genepred()}}.}
+\item{mode}{Region selection mode passed to \code{\link[=retrieve_feature]{retrieve_feature()}}.}
 
 \item{keep_zero}{Logical. Whether to keep zero-length transcript-level CDS/UTR
 records. Default is \code{FALSE}.}

@@ -44,7 +44,7 @@ plot_genepred_length_distribution(...)
 
 \item{end}{Optional region end in 1-based closed coordinates.}
 
-\item{mode}{Region selection mode passed to \code{\link[=slice_genepred]{slice_genepred()}}.}
+\item{mode}{Region selection mode passed to \code{\link[=retrieve_feature]{retrieve_feature()}}.}
 
 \item{group_by}{Grouping variable. Common choices are \code{gene_type}, \code{feature},
 \code{strand}, and \code{chrom}.}

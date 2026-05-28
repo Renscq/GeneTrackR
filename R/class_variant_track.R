@@ -68,3 +68,8 @@ infer_variant_type <- function(ref, alt) {
   out[!is.na(ref_n) & !is.na(alt_n) & ref_n == alt_n & ref_n > 1L] <- "MNV"
   out
 }
+
+#' @export
+summary.VariantTrack <- function(object, ...) {
+  summary_vcf(object, ...)
+}

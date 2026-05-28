@@ -30,6 +30,5 @@ also inherits from GenePred for compatibility with gene model plotting.
 }
 \description{
 \code{merge_feature()} is the unified merge API for GenePred/GTF/GFF/BED-derived
-annotation objects. Older \code{merge_genepred()} and \code{merge_feature_track()} are
-kept as wrappers.
+annotation objects.
 }

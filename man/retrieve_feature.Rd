@@ -11,12 +11,13 @@ retrieve_feature(
   chrom = NULL,
   start = NULL,
   end = NULL,
-  mode = c("overlap", "within"),
+  mode = c("overlap", "within", "trim"),
   gene_id = NULL,
   transcript_id = NULL,
   type = NULL,
   ignore_case = TRUE,
-  fixed = FALSE
+  fixed = FALSE,
+  as = c("data.table", "Feature")
 )
 }
 \arguments{
@@ -50,8 +51,7 @@ A data.table containing retrieved records.
 }
 \description{
 \code{retrieve_feature()} is the unified retrieval API for annotation objects.
-It replaces the older \code{search_feature()}, \code{search_gene()}, and
-GenePred-specific search helpers. It can retrieve standardized feature rows,
+It is the single retrieval API for annotation features. It can retrieve standardized feature rows,
 gene rows, transcript rows, or exon rows from GenePred/GTF/GFF/BED-derived
 Feature objects.
 }

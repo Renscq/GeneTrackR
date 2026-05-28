@@ -44,8 +44,7 @@ match_pattern_internal <- function(dt, pattern = NULL, fields = NULL,
 #'
 #' @description
 #' `retrieve_feature()` is the unified retrieval API for annotation objects.
-#' It replaces the older `search_feature()`, `search_gene()`, and
-#' GenePred-specific search helpers. It can retrieve standardized feature rows,
+#' It is the single retrieval API for annotation features. It can retrieve standardized feature rows,
 #' gene rows, transcript rows, or exon rows from GenePred/GTF/GFF/BED-derived
 #' Feature objects.
 #'
@@ -79,20 +78,74 @@ retrieve_feature <- function(object,
                              chrom = NULL,
                              start = NULL,
                              end = NULL,
-                             mode = c("overlap", "within"),
+                             mode = c("overlap", "within", "trim"),
                              gene_id = NULL,
                              transcript_id = NULL,
                              type = NULL,
                              ignore_case = TRUE,
-                             fixed = FALSE) {
+                             fixed = FALSE,
+                             as = c("data.table", "Feature")) {
   stop_if_not(inherits(object, "Feature") || inherits(object, "FeatureTrack") || inherits(object, "GenePred"),
               "`object` must be a Feature-compatible annotation object.")
   level <- match.arg(level)
   mode <- match.arg(mode)
+  as <- match.arg(as)
+
+  if (as == "Feature") {
+    stop_if_not(!is.null(chrom) && !is.null(start) && !is.null(end),
+                "`chrom`, `start`, and `end` are required when `as = 'Feature'`.")
+    stop_if_not(is_gene_model_feature(object) || level == "feature",
+                "`as = 'Feature'` requires a Feature-compatible annotation object.")
+    if (is_gene_model_feature(object) && level %in% c("feature", "gene", "transcript", "exon")) {
+      gp <- as_genepred(object)
+      tx <- data.table::copy(gp$transcripts)
+      ex <- data.table::copy(gp$exons)
+      chrom_value <- as.character(chrom)[1L]
+      start_value <- as.integer(start)[1L]
+      end_value <- as.integer(end)[1L]
+      if (mode == "within") {
+        keep_idx <- tx[["chrom"]] == chrom_value & tx[["tx_start"]] >= start_value & tx[["tx_end"]] <= end_value
+      } else {
+        keep_idx <- tx[["chrom"]] == chrom_value & tx[["tx_start"]] <= end_value & tx[["tx_end"]] >= start_value
+      }
+      keep_tx <- tx[["transcript_id"]][keep_idx]
+      tx <- tx[tx[["transcript_id"]] %in% keep_tx]
+      ex <- ex[ex[["transcript_id"]] %in% keep_tx]
+      if (mode == "trim" && nrow(tx) > 0L) {
+        tx[, "tx_start" := as.integer(pmax(tx[["tx_start"]], start_value))]
+        tx[, "tx_end" := as.integer(pmin(tx[["tx_end"]], end_value))]
+        tx[, "cds_start" := as.integer(pmax(tx[["cds_start"]], start_value))]
+        tx[, "cds_end" := as.integer(pmin(tx[["cds_end"]], end_value))]
+        ex[, "exon_start" := as.integer(pmax(ex[["exon_start"]], start_value))]
+        ex[, "exon_end" := as.integer(pmin(ex[["exon_end"]], end_value))]
+        ex <- ex[ex[["exon_start"]] <= ex[["exon_end"]]]
+        tx <- tx[tx[["transcript_id"]] %in% ex[["transcript_id"]]]
+        exon_counts <- ex[, .(exon_count_new = as.integer(.N)), by = "transcript_id"]
+        tx <- merge(tx[, setdiff(names(tx), "exon_count"), with = FALSE], exon_counts, by = "transcript_id", all.x = TRUE)
+        data.table::setnames(tx, "exon_count_new", "exon_count")
+      }
+      out <- Feature(
+        data = genepred_to_feature_table(tx, ex, build_gene_table(tx)),
+        genes = build_gene_table(tx),
+        transcripts = tx,
+        exons = ex,
+        meta = modifyList(gp$meta, list(format = "retrieved", coordinate_internal = "1-based closed")),
+        validation = make_empty_validation()
+      )
+      class(out) <- unique(c(class(out), "GenePred"))
+      return(out)
+    }
+    dt_feature <- retrieve_feature(object, pattern = pattern, level = "feature", chrom = chrom, start = start, end = end,
+                                   mode = if (mode == "trim") "overlap" else mode, gene_id = gene_id,
+                                   transcript_id = transcript_id, type = type, ignore_case = ignore_case,
+                                   fixed = fixed, as = "data.table")
+    return(Feature(dt_feature, meta = modifyList(object$meta %||% list(), list(format = "retrieved", coordinate_internal = "1-based closed"))))
+  }
 
   if (level == "feature") {
     dt <- as_feature_table(object)
-    dt <- filter_by_region_internal(dt, chrom = chrom, start = start, end = end, mode = mode)
+    region_mode <- if (mode == "trim") "overlap" else mode
+    dt <- filter_by_region_internal(dt, chrom = chrom, start = start, end = end, mode = region_mode)
     if (!is.null(gene_id) && "gene_id" %in% names(dt)) {
       dt <- dt[dt[["gene_id"]] %in% as.character(gene_id)]
     }
@@ -116,8 +169,9 @@ retrieve_feature <- function(object,
   gp <- as_genepred(object)
   if (level == "gene") {
     dt <- data.table::copy(gp$genes)
+    region_mode <- if (mode == "trim") "overlap" else mode
     dt <- filter_by_region_internal(dt, chrom = chrom, start = start, end = end,
-                                    start_col = "gene_start", end_col = "gene_end", mode = mode)
+                                    start_col = "gene_start", end_col = "gene_end", mode = region_mode)
     if (!is.null(gene_id)) dt <- dt[dt[["gene_id"]] %in% as.character(gene_id)]
     dt <- match_pattern_internal(dt, pattern = pattern, fields = c("gene_id", "gene_type"),
                                  ignore_case = ignore_case, fixed = fixed)
@@ -127,8 +181,9 @@ retrieve_feature <- function(object,
 
   if (level == "transcript") {
     dt <- data.table::copy(gp$transcripts)
+    region_mode <- if (mode == "trim") "overlap" else mode
     dt <- filter_by_region_internal(dt, chrom = chrom, start = start, end = end,
-                                    start_col = "tx_start", end_col = "tx_end", mode = mode)
+                                    start_col = "tx_start", end_col = "tx_end", mode = region_mode)
     if (!is.null(gene_id)) dt <- dt[dt[["gene_id"]] %in% as.character(gene_id)]
     if (!is.null(transcript_id)) dt <- dt[dt[["transcript_id"]] %in% as.character(transcript_id)]
     dt <- match_pattern_internal(dt, pattern = pattern, fields = c("transcript_id", "gene_id", "gene_type"),
@@ -138,8 +193,9 @@ retrieve_feature <- function(object,
   }
 
   dt <- data.table::copy(gp$exons)
+  region_mode <- if (mode == "trim") "overlap" else mode
   dt <- filter_by_region_internal(dt, chrom = chrom, start = start, end = end,
-                                  start_col = "exon_start", end_col = "exon_end", mode = mode)
+                                  start_col = "exon_start", end_col = "exon_end", mode = region_mode)
   if (!is.null(gene_id)) dt <- dt[dt[["gene_id"]] %in% as.character(gene_id)]
   if (!is.null(transcript_id)) dt <- dt[dt[["transcript_id"]] %in% as.character(transcript_id)]
   dt <- match_pattern_internal(dt, pattern = pattern, fields = c("transcript_id", "gene_id"),
@@ -260,8 +316,7 @@ prefix_ids_for_merge <- function(dt, prefix, id_cols = c("feature_id", "name", "
 #'
 #' @description
 #' `merge_feature()` is the unified merge API for GenePred/GTF/GFF/BED-derived
-#' annotation objects. Older `merge_genepred()` and `merge_feature_track()` are
-#' kept as wrappers.
+#' annotation objects.
 #'
 #' @param ... Feature-compatible annotation objects.
 #' @param source_names Optional source labels stored in `track_source`.
@@ -433,43 +488,4 @@ merge_vcf <- function(...,
   VariantTrack(dt, meta = list(format = "merged", coordinate_internal = "1-based position"))
 }
 
-####################################################################
-# Compatibility wrappers
-####################################################################
-
-#' @export
-search_feature <- function(object, pattern, chrom = NULL, type = NULL, level = NULL, ignore_case = TRUE, fixed = FALSE) {
-  retrieve_feature(object, pattern = pattern, level = "feature", chrom = chrom, type = type, ignore_case = ignore_case, fixed = fixed)
-}
-
-#' @export
-search_gene <- function(object, pattern, chrom = NULL, ignore_case = TRUE, fixed = FALSE) {
-  retrieve_feature(object, pattern = pattern, level = "gene", chrom = chrom, ignore_case = ignore_case, fixed = fixed)
-}
-
-#' @export
-search_transcript <- function(object, pattern, chrom = NULL, gene_id = NULL, ignore_case = TRUE, fixed = FALSE) {
-  retrieve_feature(object, pattern = pattern, level = "transcript", chrom = chrom, gene_id = gene_id, ignore_case = ignore_case, fixed = fixed)
-}
-
-#' @export
-search_genepred <- function(object, pattern, chrom = NULL, level = c("feature", "gene", "transcript", "exon"), ignore_case = TRUE, fixed = FALSE) {
-  level <- match.arg(level)
-  retrieve_feature(object, pattern = pattern, level = level, chrom = chrom, ignore_case = ignore_case, fixed = fixed)
-}
-
-#' @export
-merge_genepred <- function(..., conflict = c("error", "keep_first", "keep_all", "rename"), rename_prefix = NULL, sort = TRUE) {
-  conflict <- match.arg(conflict)
-  merge_feature(..., conflict = conflict, rename_prefix = rename_prefix, sort = sort)
-}
-
-#' @export
-merge_feature_track <- function(..., source_names = NULL) {
-  merge_feature(..., source_names = source_names, conflict = "keep_all")
-}
-
-#' @export
-merge_variant_track <- function(..., source_names = NULL) {
-  merge_vcf(..., source_names = source_names, conflict = "keep_all")
-}
+# Redundant search/slice/merge wrapper APIs were removed in 0.2.14.

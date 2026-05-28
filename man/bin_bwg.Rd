@@ -7,7 +7,7 @@
 bin_bwg(data, bin_size = 50L)
 }
 \arguments{
-\item{data}{Signal table returned by query_bwg or slice_bwg. The table must contain \code{sample_id}, \code{chrom}, \code{start}, \code{end}, and \code{value} columns.}
+\item{data}{Signal table returned by query_bwg or retrieve_bwg. The table must contain \code{sample_id}, \code{chrom}, \code{start}, \code{end}, and \code{value} columns.}
 
 \item{bin_size}{Bin size in bases.}
 }

@@ -800,7 +800,7 @@ merge_bwg <- function(..., sample_conflict = c("error", "rename", "sum", "mean",
 
 #' Bin signal tracks into fixed-width windows
 #'
-#' @param data Signal table returned by query_bwg or slice_bwg. The table must contain `sample_id`, `chrom`, `start`, `end`, and `value` columns.
+#' @param data Signal table returned by query_bwg or retrieve_bwg. The table must contain `sample_id`, `chrom`, `start`, `end`, and `value` columns.
 #' @param bin_size Bin size in bases.
 #' @return A binned signal table.
 #' @examples

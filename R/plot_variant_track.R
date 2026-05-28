@@ -38,7 +38,7 @@ plot_variant_track <- function(track,
   stop_if_not(inherits(track, "VariantTrack"), "`track` must be a VariantTrack object.")
   color_by <- match.arg(color_by)
   label_by <- match.arg(label_by)
-  vt <- slice_variant_track(track, chrom = chrom, start = start, end = end)$data
+  vt <- retrieve_vcf(track, chrom = chrom, start = start, end = end)
   x_label <- paste0("Chromosome ", as.character(chrom)[1L], " position (bp)")
 
   if (nrow(vt) == 0L) {

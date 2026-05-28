@@ -43,7 +43,7 @@ print.BwgTrack <- function(x, ...) {
 
   if (is.null(x$data)) {
     cat("  records: not loaded in memory\n")
-    cat("  note   : use query_bwg() or slice_bwg() to read a genomic region\n")
+    cat("  note   : use retrieve_bwg() or query_bwg() to read a genomic region\n")
   } else {
     cat("  records: ", nrow(x$data), "\n", sep = "")
   }

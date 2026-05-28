@@ -45,7 +45,7 @@ plot_feature_track <- function(track,
   label_by <- match.arg(label_by)
   border_color <- normalize_border_color(border_color)
 
-  ft <- slice_feature_track(track, chrom = chrom, start = start, end = end, mode = mode)$data
+  ft <- retrieve_feature(track, chrom = chrom, start = start, end = end, mode = mode, level = "feature")
   x_label <- paste0("Chromosome ", as.character(chrom)[1L], " position (bp)")
 
   if (nrow(ft) == 0L) {

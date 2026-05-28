@@ -26,7 +26,7 @@
 #' @param chrom Optional chromosome filter.
 #' @param start Optional region start in 1-based closed coordinates.
 #' @param end Optional region end in 1-based closed coordinates.
-#' @param mode Region selection mode passed to [slice_genepred()].
+#' @param mode Region selection mode passed to [retrieve_feature()].
 #' @param keep_zero Logical. Whether to keep zero-length transcript-level CDS/UTR
 #' records. Default is `FALSE`.
 #' @details
@@ -69,12 +69,13 @@ get_gene_length_distribution_table <- function(object,
   check_region(chrom, start, end)
 
   obj <- if (!is.null(chrom)) {
-    slice_genepred(
+    retrieve_feature(
       object = object,
       chrom = chrom,
       start = start %||% 1L,
       end = end %||% .Machine$integer.max,
-      mode = mode
+      mode = mode,
+      as = "Feature"
     )
   } else {
     object
@@ -124,7 +125,7 @@ get_gene_length_distribution_table <- function(object,
 #' @param chrom Optional chromosome filter.
 #' @param start Optional region start in 1-based closed coordinates.
 #' @param end Optional region end in 1-based closed coordinates.
-#' @param mode Region selection mode passed to [slice_genepred()].
+#' @param mode Region selection mode passed to [retrieve_feature()].
 #' @param group_by Grouping variable. Common choices are `gene_type`, `feature`,
 #' `strand`, and `chrom`.
 #' @param plot_type Plot type. One of `density`, `histogram`, `boxplot`, or

@@ -236,12 +236,13 @@ plot_region <- function(object, chrom, start, end, mode = c("within", "overlap",
   start_value <- as.integer(start)
   end_value <- as.integer(end)
 
-  gp <- slice_genepred(
+  gp <- retrieve_feature(
     object = object,
     chrom = chrom_value,
     start = start_value,
     end = end_value,
-    mode = mode
+    mode = mode,
+    as = "Feature"
   )
   tx <- gp$transcripts
   ex <- gp$exons
