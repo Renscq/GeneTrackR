@@ -1,0 +1,5 @@
+TxA1	chr1	+	100	900	200	700	3	100,300,650,	250,450,900,	0	GeneA	cmpl	cmpl	0,1,2,
+TxA2	chr1	+	120	880	220	680	2	120,500,	260,880,	0	GeneA	cmpl	cmpl	0,1,
+TxB1	chr1	-	1200	1900	1300	1750	2	1200,1600,	1400,1900,	0	GeneB	cmpl	cmpl	0,2,
+TxC1	chr1	+	2500	3000	3000	3000	1	2500,	3000,	0	GeneC	none	none	-1,
+TxD1	chr2	+	100	600	200	500	2	100,400,	300,600,	0	GeneD	cmpl	cmpl	0,1,
