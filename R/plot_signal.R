@@ -90,7 +90,7 @@ plot_signal_transcript <- function(signal, annotation, transcript_id, samples = 
   selected_strand <- if (strand == "auto") tx$strand[1] else strand
   expected_samples <- get_expected_signal_samples(signal, samples = samples, strand = selected_strand)
 
-  dt <- query_bwg(signal, tx$chrom[1], tx$tx_start[1], tx$tx_end[1], samples = samples, strand = selected_strand)
+  dt <- retrieve_bwg(signal, tx$chrom[1], tx$tx_start[1], tx$tx_end[1], samples = samples, strand = selected_strand)
   if (coordinate == "transcript") {
     dt <- map_signal_to_exons(dt, ex)
     query_start <- 1L
@@ -232,7 +232,7 @@ plot_signal_gene <- function(signal, annotation, gene_id, samples = NULL, sample
   selected_strand <- if (strand == "auto") gene$strand[1] else strand
   expected_samples <- get_expected_signal_samples(signal, samples = samples, strand = selected_strand)
 
-  dt <- query_bwg(signal, gene$chrom[1], gene$gene_start[1], gene$gene_end[1], samples = samples, strand = selected_strand)
+  dt <- retrieve_bwg(signal, gene$chrom[1], gene$gene_start[1], gene$gene_end[1], samples = samples, strand = selected_strand)
   if (!is.null(bin_size)) dt <- bin_bwg(dt, bin_size = bin_size)
   dt <- complete_empty_signal_tracks(
     dt,
@@ -355,7 +355,7 @@ plot_signal_region <- function(signal, chrom, start, end, samples = NULL, sample
   label_side <- match.arg(label_side)
 
   expected_samples <- get_expected_signal_samples(signal, samples = samples, strand = strand)
-  dt <- query_bwg(signal, chrom, start, end, samples = samples, strand = strand)
+  dt <- retrieve_bwg(signal, chrom, start, end, samples = samples, strand = strand)
   if (!is.null(bin_size)) dt <- bin_bwg(dt, bin_size = bin_size)
   dt <- complete_empty_signal_tracks(
     dt,

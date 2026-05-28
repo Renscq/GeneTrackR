@@ -1,7 +1,7 @@
 # Author: Rensc
 # Date: 2026-05-28
 # Version: 0.2.9
-# Function: Write unified Feature annotation objects to GenePred, GFF, GTF, or BED files
+# Function: Write unified Feature annotation objects to GenePred, GFF, GTF, BED6, or BED12 files
 # Input: Feature/GenePred-compatible annotation object
 # Output: Annotation files
 
@@ -14,7 +14,9 @@
 #'
 #' @param object A `Feature`, `FeatureTrack`, or GenePred-compatible object.
 #' @param file Output file path.
-#' @param format Output format. Use `auto`, `genepred`, `genepredext`, `gff`, `gtf`, or `bed`.
+#' @param format Output format. Use `auto`, `genepred`, `genepredext`, `gff`, `gtf`, `bed6`, or `bed12`.
+#' `bed6` writes six-column BED intervals. For gene-model objects, BED6 is transcript-level. For generic interval objects, BED6 is feature-level.
+#' `bed12` writes transcript-level BED12 gene models with exon blocks.
 #' @param coordinate Output coordinate system for GenePred/BED-like formats.
 #' `ucsc` means 0-based half-open where applicable; `granges` means 1-based closed.
 #' @param overwrite Whether to overwrite an existing file.
@@ -27,12 +29,13 @@
 #' write_feature(gp, "annotation.genePredExt", format = "genepredext")
 #' write_feature(gtf, "annotation.gtf", format = "gtf")
 #' write_feature(gff, "annotation.gff3", format = "gff")
-#' write_feature(bed, "regions.bed", format = "bed")
+#' write_feature(gp, "annotation.bed6", format = "bed6")
+#' write_feature(gp, "annotation.bed12", format = "bed12")
 #' }
 #' @export
 write_feature <- function(object,
                           file,
-                          format = c("auto", "genepred", "genepredext", "gff", "gtf", "bed"),
+                          format = c("auto", "genepred", "genepredext", "gff", "gtf", "bed6", "bed12"),
                           coordinate = c("ucsc", "granges"),
                           overwrite = FALSE,
                           keep_attributes = TRUE,
@@ -47,8 +50,22 @@ write_feature <- function(object,
   if (format %in% c("genepred", "genepredext")) {
     gp <- as_genepred(object)
     write_feature_as_genepred(gp, file, format = format, coordinate = coordinate, sort_output = sort_output, chrom_order = chrom_order)
-  } else if (format == "bed") {
-    write_feature_as_bed(object, file, coordinate = coordinate, sort_output = sort_output, chrom_order = chrom_order)
+  } else if (format == "bed6") {
+    write_feature_as_bed6(
+      object,
+      file,
+      coordinate = coordinate,
+      sort_output = sort_output,
+      chrom_order = chrom_order
+    )
+  } else if (format == "bed12") {
+    write_feature_as_bed12(
+      object,
+      file,
+      coordinate = coordinate,
+      sort_output = sort_output,
+      chrom_order = chrom_order
+    )
   } else if (format == "gff") {
     write_feature_as_gff(object, file, keep_attributes = keep_attributes, sort_output = sort_output, chrom_order = chrom_order)
   } else if (format == "gtf") {
@@ -64,7 +81,9 @@ infer_write_feature_format <- function(file) {
   if (grepl("\\.genepred$", x)) return("genepred")
   if (grepl("\\.(gff|gff3)$", x)) return("gff")
   if (grepl("\\.gtf$", x)) return("gtf")
-  if (grepl("\\.bed$", x)) return("bed")
+  if (grepl("\\.bed6$", x)) return("bed6")
+  if (grepl("\\.bed12$", x)) return("bed12")
+  if (grepl("\\.bed$", x)) return("bed12")
   stop("Cannot infer output format from file extension. Please set `format` explicitly.", call. = FALSE)
 }
 
@@ -107,28 +126,203 @@ write_feature_as_genepred <- function(object, file, format = c("genepred", "gene
 
   standard_cols <- c("name", "chrom", "strand", "txStart", "txEnd", "cdsStart", "cdsEnd", "exonCount", "exonStarts", "exonEnds")
   if (format == "genepred") {
-    data.table::fwrite(out[, ..standard_cols], file, sep = "\t", col.names = FALSE)
+    data.table::fwrite(out[, ..standard_cols], file, sep = "\t", col.names = FALSE, quote = FALSE)
   } else {
     ext_cols <- c(standard_cols, "score", "name2", "cdsStartStat", "cdsEndStat", "exonFrames")
-    data.table::fwrite(out[, ..ext_cols], file, sep = "\t", col.names = FALSE)
+    data.table::fwrite(out[, ..ext_cols], file, sep = "\t", col.names = FALSE, quote = FALSE)
   }
 }
 
-write_feature_as_bed <- function(object, file, coordinate = c("ucsc", "granges"), sort_output = TRUE, chrom_order = NULL) {
+write_feature_as_bed6 <- function(object,
+                                  file,
+                                  coordinate = c("ucsc", "granges"),
+                                  sort_output = TRUE,
+                                  chrom_order = NULL) {
+  out <- make_bed6_table(
+    object,
+    coordinate = coordinate,
+    sort_output = sort_output,
+    chrom_order = chrom_order
+  )
+  data.table::fwrite(out, file, sep = "\t", col.names = FALSE, quote = FALSE)
+}
+
+write_feature_as_bed12 <- function(object,
+                                   file,
+                                   coordinate = c("ucsc", "granges"),
+                                   sort_output = TRUE,
+                                   chrom_order = NULL) {
+  out <- make_bed12_table(
+    object,
+    coordinate = coordinate,
+    sort_output = sort_output,
+    chrom_order = chrom_order
+  )
+  data.table::fwrite(out, file, sep = "\t", col.names = FALSE, quote = FALSE)
+}
+
+make_bed6_table <- function(object,
+                            coordinate = c("ucsc", "granges"),
+                            sort_output = TRUE,
+                            chrom_order = NULL) {
   coordinate <- match.arg(coordinate)
-  dt <- as_feature_table(object)
-  if (isTRUE(sort_output)) {
-    dt <- sort_feature_output_table(dt, format = "bed", chrom_order = chrom_order)
+
+  has_gene_model <- inherits(object, "GenePred") || (
+    (inherits(object, "Feature") || inherits(object, "FeatureTrack")) &&
+      !is.null(object$transcripts) && nrow(object$transcripts) > 0L
+  )
+
+  if (has_gene_model) {
+    gp <- as_genepred(object)
+    tx <- data.table::copy(data.table::as.data.table(gp$transcripts))
+    if (!"score" %in% names(tx)) tx[, "score" := 0]
+    out <- tx[, .(
+      chrom = as.character(.SD[["chrom"]]),
+      chromStart = if (coordinate == "ucsc") as.integer(.SD[["tx_start"]]) - 1L else as.integer(.SD[["tx_start"]]),
+      chromEnd = as.integer(.SD[["tx_end"]]),
+      name = as.character(.SD[["transcript_id"]]),
+      score = normalize_bed_score(.SD[["score"]]),
+      strand = normalize_bed_strand(.SD[["strand"]])
+    ), .SDcols = intersect(names(tx), c("chrom", "tx_start", "tx_end", "transcript_id", "score", "strand"))]
+  } else {
+    dt <- as_feature_table(object)
+    if (isTRUE(sort_output)) {
+      dt <- sort_feature_output_table(dt, format = "bed", chrom_order = chrom_order)
+    }
+    name_vec <- pick_bed_feature_name(dt)
+    out <- dt[, .(
+      chrom = as.character(.SD[["chrom"]]),
+      chromStart = if (coordinate == "ucsc") as.integer(.SD[["start"]]) - 1L else as.integer(.SD[["start"]]),
+      chromEnd = as.integer(.SD[["end"]]),
+      name = name_vec,
+      score = normalize_bed_score(.SD[["score"]]),
+      strand = normalize_bed_strand(.SD[["strand"]])
+    ), .SDcols = intersect(names(dt), c("chrom", "start", "end", "score", "strand"))]
   }
-  out <- dt[, .(
-    chrom = as.character(chrom),
-    chromStart = if (coordinate == "ucsc") as.integer(start) - 1L else as.integer(start),
-    chromEnd = as.integer(end),
-    name = as.character(name),
-    score = ifelse(is.na(score), 0, score),
-    strand = as.character(strand)
-  )]
-  data.table::fwrite(out, file, sep = "\t", col.names = FALSE)
+
+  out <- out[!is.na(chrom) & !is.na(chromStart) & !is.na(chromEnd) & chromStart <= chromEnd]
+  if (isTRUE(sort_output) && has_gene_model) {
+    out <- sort_bed_output_table(out, chrom_order = chrom_order)
+  }
+  out[]
+}
+
+make_bed12_table <- function(object,
+                             coordinate = c("ucsc", "granges"),
+                             sort_output = TRUE,
+                             chrom_order = NULL) {
+  coordinate <- match.arg(coordinate)
+  gp <- as_genepred(object)
+  tx <- data.table::copy(data.table::as.data.table(gp$transcripts))
+  ex <- data.table::copy(data.table::as.data.table(gp$exons))
+  stop_if_not(nrow(tx) > 0L && nrow(ex) > 0L, "BED12 output requires non-empty transcript and exon tables.")
+
+  if (!"score" %in% names(tx)) tx[, "score" := 0]
+  if (!"cds_start" %in% names(tx)) tx[, "cds_start" := as.integer(tx_start)]
+  if (!"cds_end" %in% names(tx)) tx[, "cds_end" := as.integer(tx_start - 1L)]
+  if (!"gene_type" %in% names(tx)) {
+    tx[, "gene_type" := data.table::fifelse(
+      !is.na(as.integer(cds_start)) & !is.na(as.integer(cds_end)) & as.integer(cds_start) <= as.integer(cds_end),
+      "coding",
+      "non-coding"
+    )]
+  }
+
+  ex[, `:=`(
+    exon_start = as.integer(.SD[["exon_start"]]),
+    exon_end = as.integer(.SD[["exon_end"]])
+  ), .SDcols = c("exon_start", "exon_end")]
+  data.table::setorder(ex, transcript_id, exon_start, exon_end)
+
+  block_dt <- ex[!is.na(transcript_id) & !is.na(exon_start) & !is.na(exon_end) & exon_start <= exon_end,
+    .(
+      blockCount = .N,
+      blockSizes = paste0(as.integer(exon_end - exon_start + 1L), collapse = ","),
+      exonStartsInternal = paste0(as.integer(exon_start), collapse = ",")
+    ),
+    by = transcript_id
+  ]
+
+  out <- merge(tx, block_dt, by = "transcript_id", all.x = FALSE, sort = FALSE)
+  tx_start0 <- if (coordinate == "ucsc") as.integer(out[["tx_start"]]) - 1L else as.integer(out[["tx_start"]])
+  tx_start_internal <- as.integer(out[["tx_start"]])
+  block_starts <- character(nrow(out))
+  for (i in seq_len(nrow(out))) {
+    starts_i <- as.integer(strsplit(as.character(out[["exonStartsInternal"]][i]), ",", fixed = TRUE)[[1L]])
+    starts_i <- starts_i[!is.na(starts_i)]
+    block_starts[i] <- paste0(starts_i - tx_start_internal[i], collapse = ",")
+  }
+
+  is_coding <- !is.na(out[["gene_type"]]) & as.character(out[["gene_type"]]) == "coding" &
+    !is.na(as.integer(out[["cds_start"]])) & !is.na(as.integer(out[["cds_end"]])) &
+    as.integer(out[["cds_start"]]) <= as.integer(out[["cds_end"]])
+
+  thick_start <- tx_start0
+  thick_end <- tx_start0
+  thick_start[is_coding] <- if (coordinate == "ucsc") as.integer(out[["cds_start"]][is_coding]) - 1L else as.integer(out[["cds_start"]][is_coding])
+  thick_end[is_coding] <- as.integer(out[["cds_end"]][is_coding])
+
+  ans <- data.table::data.table(
+    chrom = as.character(out[["chrom"]]),
+    chromStart = tx_start0,
+    chromEnd = as.integer(out[["tx_end"]]),
+    name = as.character(out[["transcript_id"]]),
+    score = normalize_bed_score(out[["score"]]),
+    strand = normalize_bed_strand(out[["strand"]]),
+    thickStart = as.integer(thick_start),
+    thickEnd = as.integer(thick_end),
+    itemRgb = "0",
+    blockCount = as.integer(out[["blockCount"]]),
+    blockSizes = as.character(out[["blockSizes"]]),
+    blockStarts = as.character(block_starts)
+  )
+
+  ans <- ans[!is.na(chrom) & !is.na(chromStart) & !is.na(chromEnd) & chromStart <= chromEnd]
+  if (isTRUE(sort_output)) {
+    ans <- sort_bed_output_table(ans, chrom_order = chrom_order)
+  }
+  ans[]
+}
+
+normalize_bed_score <- function(x) {
+  score <- suppressWarnings(as.numeric(x))
+  score[is.na(score)] <- 0
+  score <- pmin(pmax(round(score), 0), 1000)
+  as.integer(score)
+}
+
+normalize_bed_strand <- function(x) {
+  strand <- as.character(x)
+  strand[is.na(strand) | !strand %in% c("+", "-")] <- "."
+  strand
+}
+
+pick_bed_feature_name <- function(dt) {
+  get_col <- function(nm) {
+    if (nm %in% names(dt)) as.character(dt[[nm]]) else rep(NA_character_, nrow(dt))
+  }
+  name <- get_col("name")
+  feature_id <- get_col("feature_id")
+  transcript_id <- get_col("transcript_id")
+  gene_id <- get_col("gene_id")
+  type <- get_col("type")
+  idx <- is.na(name) | name == "" | name %in% c("CDS", "UTR", "5UTR", "3UTR", "start_codon", "stop_codon", "exon", "gene", "transcript")
+  name[idx & !is.na(feature_id) & feature_id != ""] <- feature_id[idx & !is.na(feature_id) & feature_id != ""]
+  idx <- is.na(name) | name == ""
+  name[idx & !is.na(transcript_id) & transcript_id != ""] <- transcript_id[idx & !is.na(transcript_id) & transcript_id != ""]
+  idx <- is.na(name) | name == ""
+  name[idx & !is.na(gene_id) & gene_id != ""] <- gene_id[idx & !is.na(gene_id) & gene_id != ""]
+  idx <- is.na(name) | name == ""
+  name[idx] <- paste0(type[idx], "_", seq_len(sum(idx)))
+  name
+}
+
+sort_bed_output_table <- function(dt, chrom_order = NULL) {
+  dt <- data.table::copy(data.table::as.data.table(dt))
+  dt[, "chrom_rank" := chrom_sort_rank(.SD[["chrom"]], chrom_order = chrom_order)]
+  data.table::setorder(dt, chrom_rank, chrom, chromStart, chromEnd, name)
+  dt[, "chrom_rank" := NULL]
+  dt
 }
 
 write_feature_as_gff <- function(object, file, keep_attributes = TRUE, sort_output = TRUE, chrom_order = NULL) {
@@ -148,7 +342,7 @@ write_feature_as_gff <- function(object, file, keep_attributes = TRUE, sort_outp
     phase = ifelse(is.na(phase) | phase == "", ".", as.character(phase)),
     attributes = attr
   )]
-  data.table::fwrite(out, file, sep = "\t", col.names = FALSE)
+  data.table::fwrite(out, file, sep = "\t", col.names = FALSE, quote = FALSE)
 }
 
 write_feature_as_gtf <- function(object, file, keep_attributes = TRUE, sort_output = TRUE, chrom_order = NULL) {
@@ -168,7 +362,7 @@ write_feature_as_gtf <- function(object, file, keep_attributes = TRUE, sort_outp
     frame = ifelse(is.na(phase) | phase == "", ".", as.character(phase)),
     attribute = attr
   )]
-  data.table::fwrite(out, file, sep = "\t", col.names = FALSE)
+  data.table::fwrite(out, file, sep = "\t", col.names = FALSE, quote = FALSE)
 }
 
 
@@ -218,6 +412,11 @@ sort_feature_output_table <- function(dt, format = c("gff", "gtf", "bed"), chrom
   dt[, "feature_rank" := feature_sort_rank(.SD[["type"]], .SD[["level"]])]
   dt[, "strand_rank" := data.table::fifelse(.SD[["strand"]] == "+", 1L, data.table::fifelse(.SD[["strand"]] == "-", 2L, 3L))]
   dt[, "exon_rank" := suppressWarnings(as.integer(.SD[["exon_number"]]))]
+  dt[, "sort_start" := data.table::fifelse(
+    tolower(as.character(.SD[["type"]])) %in% c("start_codon", "stop_codon"),
+    as.integer(.SD[["group_end"]]) + as.integer(.SD[["feature_rank"]]),
+    as.integer(.SD[["start"]])
+  )]
   dt[is.na(exon_rank), "exon_rank" := 2147483647L]
 
   if (format == "bed") {
@@ -229,7 +428,7 @@ sort_feature_output_table <- function(dt, format = c("gff", "gtf", "bed"), chrom
       dt,
       chrom_rank,
       chrom,
-      start,
+      sort_start,
       feature_rank,
       transcript_id,
       exon_rank,
@@ -237,7 +436,7 @@ sort_feature_output_table <- function(dt, format = c("gff", "gtf", "bed"), chrom
       type
     )
   }
-  drop_cols <- intersect(c("chrom_rank", "sort_group", "group_start", "group_end", "feature_rank", "strand_rank", "exon_rank"), names(dt))
+  drop_cols <- intersect(c("chrom_rank", "sort_group", "group_start", "group_end", "feature_rank", "strand_rank", "exon_rank", "sort_start"), names(dt))
   dt[, (drop_cols) := NULL]
   dt
 }
@@ -249,8 +448,10 @@ feature_sort_rank <- function(type, level = NULL) {
   rank[x %in% c("gene") | lvl %in% c("gene")] <- 1L
   rank[x %in% c("mrna", "transcript") | lvl %in% c("transcript")] <- 2L
   rank[x %in% c("exon")] <- 3L
-  rank[x %in% c("cds")] <- 4L
-  rank[x %in% c("utr", "five_prime_utr", "three_prime_utr", "5utr", "3utr", "5'utr", "3'utr")] <- 5L
+  rank[x %in% c("utr", "five_prime_utr", "three_prime_utr", "5utr", "3utr", "5'utr", "3'utr")] <- 4L
+  rank[x %in% c("cds")] <- 5L
+  rank[x %in% c("start_codon")] <- 98L
+  rank[x %in% c("stop_codon")] <- 99L
   rank
 }
 
@@ -328,25 +529,41 @@ build_gff_attributes <- function(dt, keep_attributes = TRUE) {
 build_gtf_attributes <- function(dt, keep_attributes = TRUE) {
   if (isTRUE(keep_attributes) && "attribute" %in% names(dt)) {
     attr <- as.character(dt$attribute)
-    has_attr <- !is.na(attr) & nzchar(attr)
+    has_attr <- !is.na(attr) & nzchar(attr) & attr != "."
   } else {
     attr <- rep(NA_character_, nrow(dt))
     has_attr <- rep(FALSE, nrow(dt))
   }
+
   out <- attr
   idx <- which(!has_attr)
   if (length(idx) > 0L) {
+    get_col <- function(nm) {
+      if (nm %in% names(dt)) as.character(dt[[nm]]) else rep(NA_character_, nrow(dt))
+    }
+    gene_id <- get_col("gene_id")
+    transcript_id <- get_col("transcript_id")
+    gene_name <- get_col("gene_name")
+    exon_id <- get_col("exon_id")
+    type <- tolower(as.character(dt$type))
+    exon_number <- if ("exon_number" %in% names(dt)) suppressWarnings(as.integer(dt$exon_number)) else rep(NA_integer_, nrow(dt))
+
+    gene_name[is.na(gene_name) | gene_name == ""] <- gene_id[is.na(gene_name) | gene_name == ""]
+    exon_id[is.na(exon_id) | exon_id == ""] <- paste0(transcript_id[is.na(exon_id) | exon_id == ""], ".", exon_number[is.na(exon_id) | exon_id == ""])
+
     out[idx] <- vapply(idx, function(i) {
-      vals <- c(
-        gene_id = dt$gene_id[i],
-        transcript_id = dt$transcript_id[i],
-        gene_name = dt$name[i],
-        gene_type = dt$gene_type[i],
-        exon_number = if (!is.na(dt$exon_number[i])) as.character(dt$exon_number[i]) else NA_character_
-      )
-      vals <- vals[!is.na(vals) & nzchar(vals)]
+      vals <- list(gene_id = gene_id[i])
+      if (!type[i] %in% c("gene")) {
+        vals$transcript_id <- transcript_id[i]
+      }
+      if (type[i] %in% c("exon", "cds", "utr", "5utr", "3utr", "five_prime_utr", "three_prime_utr", "start_codon", "stop_codon")) {
+        vals$exon_number <- if (!is.na(exon_number[i])) as.character(exon_number[i]) else NA_character_
+        vals$exon_id <- exon_id[i]
+      }
+      vals$gene_name <- gene_name[i]
+      vals <- vals[!is.na(unlist(vals, use.names = FALSE)) & nzchar(unlist(vals, use.names = FALSE))]
       if (length(vals) == 0L) return(".")
-      paste0(paste(paste0(names(vals), " \"", vals, "\""), collapse = "; "), ";")
+      paste0(paste(sprintf('%s "%s"', names(vals), unlist(vals, use.names = FALSE)), collapse = "; "), ";")
     }, character(1L))
   }
   out
@@ -354,9 +571,13 @@ build_gtf_attributes <- function(dt, keep_attributes = TRUE) {
 
 normalize_gtf_feature_type <- function(x) {
   x <- as.character(x)
-  x[tolower(x) == "mrna"] <- "transcript"
+  lx <- tolower(x)
+  x[lx == "mrna"] <- "transcript"
+  x[lx %in% c("five_prime_utr", "five_utr", "5utr", "5'utr")] <- "5UTR"
+  x[lx %in% c("three_prime_utr", "three_utr", "3utr", "3'utr")] <- "3UTR"
   x
 }
+
 
 #' Write a GenePred-compatible annotation object
 #'
@@ -374,7 +595,17 @@ write_genepred <- function(object, file, format = c("genePred", "genePredExt"), 
 #' @description Backward-compatible wrapper around `write_feature()`.
 #' @inheritParams write_feature
 #' @export
-write_feature_track <- function(object, file, format = c("bed", "gff", "gtf", "genepred", "genepredext"), sort_output = TRUE, chrom_order = NULL) {
+write_feature_track <- function(object,
+                                file,
+                                format = c("bed12", "bed6", "gff", "gtf", "genepred", "genepredext"),
+                                sort_output = TRUE,
+                                chrom_order = NULL) {
   format <- match.arg(format)
-  write_feature(object = object, file = file, format = format, sort_output = sort_output, chrom_order = chrom_order)
+  write_feature(
+    object = object,
+    file = file,
+    format = format,
+    sort_output = sort_output,
+    chrom_order = chrom_order
+  )
 }

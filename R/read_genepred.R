@@ -57,6 +57,9 @@ read_genepred <- function(file,
   gene_col <- match.arg(gene_col)
   verbose <- isTRUE(verbose)
   progress <- isTRUE(progress)
+  old_dt_verbose <- getOption("datatable.verbose")
+  options(datatable.verbose = FALSE)
+  on.exit(options(datatable.verbose = old_dt_verbose), add = TRUE)
 
   stop_if_not(file.exists(file), paste0("File does not exist: ", file))
 
@@ -72,7 +75,7 @@ read_genepred <- function(file,
     header = FALSE,
     sep = "\t",
     data.table = TRUE,
-    showProgress = verbose
+    showProgress = FALSE
   )
   stage$tick()
   n_col <- ncol(dt)
@@ -278,13 +281,22 @@ parse_genepred_exons_fast <- function(dt, coordinate = c("ucsc", "granges"), has
     }
   }
 
+  strand_rep <- rep.int(as.character(dt[["strand"]]), n_start)
+  exon_number_genomic <- sequence(n_start)
+  exon_count_rep <- rep.int(n_start, n_start)
+  exon_number_tx <- data.table::fifelse(
+    strand_rep == "-",
+    as.integer(exon_count_rep - exon_number_genomic + 1L),
+    as.integer(exon_number_genomic)
+  )
+
   data.table::data.table(
     row_id = rep.int(dt[["row_id"]], n_start),
     transcript_id = rep.int(dt[["transcript_id"]], n_start),
     gene_id = rep.int(dt[["gene_id"]], n_start),
     chrom = rep.int(as.character(dt[["chrom"]]), n_start),
-    strand = rep.int(as.character(dt[["strand"]]), n_start),
-    exon_number = sequence(n_start),
+    strand = strand_rep,
+    exon_number = as.integer(exon_number_tx),
     exon_start = as.integer(exon_start),
     exon_end = as.integer(exon_end),
     exon_frame = as.integer(exon_frame)
@@ -310,7 +322,7 @@ parse_genepred_exons_fallback <- function(dt, coordinate = c("ucsc", "granges"),
       gene_id = dt$gene_id[i],
       chrom = as.character(dt$chrom[i]),
       strand = as.character(dt$strand[i]),
-      exon_number = seq_len(n),
+      exon_number = if (as.character(dt$strand[i]) == "-") rev(seq_len(n)) else seq_len(n),
       exon_start = if (length(starts) == n) starts else rep(NA_integer_, n),
       exon_end = if (length(ends) == n) ends else rep(NA_integer_, n),
       exon_frame = if (length(frames) == n) frames else rep(NA_integer_, n)

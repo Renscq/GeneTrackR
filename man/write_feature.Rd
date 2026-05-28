@@ -7,7 +7,7 @@
 write_feature(
   object,
   file,
-  format = c("auto", "genepred", "genepredext", "gff", "gtf", "bed"),
+  format = c("auto", "genepred", "genepredext", "gff", "gtf", "bed6", "bed12"),
   coordinate = c("ucsc", "granges"),
   overwrite = FALSE,
   keep_attributes = TRUE,
@@ -20,7 +20,9 @@ write_feature(
 
 \item{file}{Output file path.}
 
-\item{format}{Output format. Use \code{auto}, \code{genepred}, \code{genepredext}, \code{gff}, \code{gtf}, or \code{bed}.}
+\item{format}{Output format. Use \code{auto}, \code{genepred}, \code{genepredext}, \code{gff}, \code{gtf}, \code{bed6}, or \code{bed12}.
+\code{bed6} writes six-column BED intervals. For gene-model objects, BED6 is transcript-level. For generic interval objects, BED6 is feature-level.
+\code{bed12} writes transcript-level BED12 gene models with exon blocks.}
 
 \item{coordinate}{Output coordinate system for GenePred/BED-like formats.
 \code{ucsc} means 0-based half-open where applicable; \code{granges} means 1-based closed.}
@@ -46,6 +48,7 @@ produced by \code{read_genepred()}, \code{read_gff()}, \code{read_gtf()}, or \co
 write_feature(gp, "annotation.genePredExt", format = "genepredext")
 write_feature(gtf, "annotation.gtf", format = "gtf")
 write_feature(gff, "annotation.gff3", format = "gff")
-write_feature(bed, "regions.bed", format = "bed")
+write_feature(gp, "annotation.bed6", format = "bed6")
+write_feature(gp, "annotation.bed12", format = "bed12")
 }
 }

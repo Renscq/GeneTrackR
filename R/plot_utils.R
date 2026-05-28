@@ -17,64 +17,74 @@ make_feature_segments <- function(tx, exons) {
     data.table::copy(data.table::as.data.table(exons)),
     tx_small,
     by = "transcript_id",
-    all.x = TRUE
+    all.x = TRUE,
+    sort = FALSE
   )
 
-  out <- vector("list", nrow(ex) * 3L)
-  k <- 0L
+  ex[, `:=`(
+    exon_start = as.integer(exon_start),
+    exon_end = as.integer(exon_end),
+    cds_start = as.integer(cds_start),
+    cds_end = as.integer(cds_end),
+    gene_type = as.character(gene_type)
+  )]
 
-  for (i in seq_len(nrow(ex))) {
-    row <- ex[i]
-    gene_type_value <- as.character(row[["gene_type"]])
-    cds_start_value <- as.integer(row[["cds_start"]])
-    cds_end_value <- as.integer(row[["cds_end"]])
-    exon_start_value <- as.integer(row[["exon_start"]])
-    exon_end_value <- as.integer(row[["exon_end"]])
-
-    add_segment <- function(feature_value, start_value, end_value) {
-      k <<- k + 1L
-      out[[k]] <<- data.table::data.table(
-        transcript_id = as.character(row[["transcript_id"]]),
-        gene_id = as.character(row[["gene_id"]]),
-        chrom = as.character(row[["chrom"]]),
-        strand = as.character(row[["strand"]]),
-        exon_number = as.integer(row[["exon_number"]]),
-        feature = feature_value,
-        start = as.integer(start_value),
-        end = as.integer(end_value)
-      )
+  base_cols <- c("transcript_id", "gene_id", "chrom", "strand", "exon_number")
+  make_segment <- function(dt, feature, start, end) {
+    if (nrow(dt) == 0L) {
+      return(data.table::data.table())
     }
-
-    if (is.na(gene_type_value) || gene_type_value != "coding" ||
-        is.na(cds_start_value) || is.na(cds_end_value) ||
-        cds_start_value > cds_end_value) {
-      add_segment("exon", exon_start_value, exon_end_value)
-      next
-    }
-
-    left_utr_start <- exon_start_value
-    left_utr_end <- min(exon_end_value, cds_start_value - 1L)
-    cds_seg_start <- max(exon_start_value, cds_start_value)
-    cds_seg_end <- min(exon_end_value, cds_end_value)
-    right_utr_start <- max(exon_start_value, cds_end_value + 1L)
-    right_utr_end <- exon_end_value
-
-    if (left_utr_start <= left_utr_end) {
-      add_segment("UTR", left_utr_start, left_utr_end)
-    }
-    if (cds_seg_start <= cds_seg_end) {
-      add_segment("CDS", cds_seg_start, cds_seg_end)
-    }
-    if (right_utr_start <= right_utr_end) {
-      add_segment("UTR", right_utr_start, right_utr_end)
-    }
+    out <- dt[, base_cols, with = FALSE]
+    out[, `:=`(
+      feature = as.character(feature),
+      start = as.integer(start),
+      end = as.integer(end)
+    )]
+    out[!is.na(start) & !is.na(end) & start <= end]
   }
 
-  if (k == 0L) {
+  noncoding <- ex[
+    is.na(gene_type) | gene_type != "coding" |
+      is.na(cds_start) | is.na(cds_end) | cds_start > cds_end
+  ]
+  coding <- ex[
+    !(is.na(gene_type) | gene_type != "coding" |
+        is.na(cds_start) | is.na(cds_end) | cds_start > cds_end)
+  ]
+
+  out <- list(
+    make_segment(noncoding, "exon", noncoding$exon_start, noncoding$exon_end)
+  )
+
+  if (nrow(coding) > 0L) {
+    out[[length(out) + 1L]] <- make_segment(
+      coding,
+      "UTR",
+      coding$exon_start,
+      pmin(coding$exon_end, coding$cds_start - 1L)
+    )
+    out[[length(out) + 1L]] <- make_segment(
+      coding,
+      "CDS",
+      pmax(coding$exon_start, coding$cds_start),
+      pmin(coding$exon_end, coding$cds_end)
+    )
+    out[[length(out) + 1L]] <- make_segment(
+      coding,
+      "UTR",
+      pmax(coding$exon_start, coding$cds_end + 1L),
+      coding$exon_end
+    )
+  }
+
+  out <- data.table::rbindlist(out, fill = TRUE)
+  if (nrow(out) == 0L) {
     return(data.table::data.table())
   }
-  data.table::rbindlist(out[seq_len(k)], fill = TRUE)
+  data.table::setorderv(out, c("transcript_id", "exon_number", "start", "end", "feature"))
+  out[]
 }
+
 
 map_to_transcript_coordinate <- function(exons, segments = NULL) {
   ex <- data.table::copy(data.table::as.data.table(exons))

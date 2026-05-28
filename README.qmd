@@ -33,6 +33,10 @@ ncu12_gtf <- read_gtf(
   verbose = TRUE
 )
 
+ncu12_gff <- read_gff(
+  'E:/rensc/PHD/1404/database/norm/NC12_features.gff',
+  verbose = TRUE
+)
 
 ncu12_summary <- summary_genepred(ncu12)
 
@@ -42,6 +46,7 @@ write_feature(
   ncu12,
   file = 'E:/rensc/PHD/1404/database/norm/NC12_features.gtf',
   format = 'gtf',
+  overwrite = TRUE,
   sort_output = TRUE
 )
 
@@ -55,11 +60,19 @@ write_feature(
 
 write_feature(
   ncu12_gtf,
-  file = 'E:/rensc/PHD/1404/database/norm/NC12_features.genepred',
-  format = 'genepredext',
+  file = 'E:/rensc/PHD/1404/database/norm/NC12_features.gff',
+  format = 'gff',
+  overwrite = TRUE,
   sort_output = TRUE
 )
 
+write_feature(
+  ncu12,
+  file = 'E:/rensc/PHD/1404/database/norm/NC12_features.bed',
+  format = 'bed',
+  overwrite = TRUE,
+  sort_output = TRUE
+)
 ################################################
 plot_gene_length_distribution(
   ncu12,
@@ -128,7 +141,7 @@ bg1404 <- read_bwg(
 
 ################################################
 system.time({
-  t1 <- query_bwg(
+  t1 <- retrieve_bwg(
     bg1404,
     chrom = 'I',
     start = 1,
@@ -138,15 +151,6 @@ system.time({
     progress = TRUE
   )
 })
-
-t1 <- query_bwg(
-  bg1404,
-  chrom = 'I',
-  start = 1,
-  end = 10000,
-  strand = '+',
-  verbose = TRUE
-)
 
 ################################################
 plot_signal_gene(

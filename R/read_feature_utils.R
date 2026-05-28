@@ -15,32 +15,50 @@ make_progress_message <- function(verbose) {
   }
 }
 
-make_stage_progress <- function(total, progress = TRUE) {
-  if (!isTRUE(progress) || total <= 0L) {
+make_stage_progress <- function(total, progress = TRUE, prefix = "[GeneTrackR]") {
+  total <- as.integer(total)[1L]
+  if (!isTRUE(progress) || is.na(total) || total <= 0L) {
     return(list(
       tick = function(value = 1L) invisible(NULL),
       close = function() invisible(NULL)
     ))
   }
-  pb <- utils::txtProgressBar(min = 0L, max = total, initial = 0L, style = 3)
+
   current <- 0L
+  width <- 30L
+
+  render <- function(value) {
+    pct <- if (total > 0L) value / total else 1
+    filled <- max(0L, min(width, round(width * pct)))
+    bar <- paste0(strrep("=", filled), strrep(".", width - filled))
+    sprintf(
+      "%s Progress [%s] %s/%s (%3.0f%%)",
+      prefix,
+      bar,
+      format(value, big.mark = ","),
+      format(total, big.mark = ","),
+      pct * 100
+    )
+  }
+
   list(
     tick = function(value = NULL) {
       if (is.null(value)) {
         current <<- min(total, current + 1L)
       } else {
-        current <<- min(total, as.integer(value))
+        current <<- min(total, max(0L, as.integer(value)[1L]))
       }
-      utils::setTxtProgressBar(pb, current)
+      message(render(current))
       invisible(current)
     },
-    close = function() {
-      if (!is.null(pb)) {
-        close(pb)
-      }
-      invisible(NULL)
-    }
+    close = function() invisible(NULL)
   )
+}
+
+with_quiet_datatable <- function(expr) {
+  old <- options(datatable.verbose = FALSE)
+  on.exit(options(old), add = TRUE)
+  force(expr)
 }
 
 get_file_size_mb <- function(file) {
@@ -65,10 +83,12 @@ read_gff_gtf <- function(file,
   format <- match.arg(format)
   verbose <- isTRUE(verbose)
   progress <- isTRUE(progress)
+  old_dt_options <- options(datatable.verbose = FALSE)
+  on.exit(options(old_dt_options), add = TRUE)
   stop_if_not(file.exists(file), paste0("File does not exist: ", file))
 
   progress_msg <- make_progress_message(verbose)
-  stage <- make_stage_progress(total = 6L, progress = progress)
+  stage <- make_stage_progress(total = 5L, progress = progress)
   on.exit(stage$close(), add = TRUE)
 
   input_file <- normalizePath(file, winslash = "/", mustWork = FALSE)
@@ -80,7 +100,7 @@ read_gff_gtf <- function(file,
     sep = "\t",
     data.table = TRUE,
     comment.char = "#",
-    showProgress = verbose
+    showProgress = FALSE
   )
   stage$tick()
   stop_if_not(ncol(dt) >= 9L, paste0("A ", format, " file must contain at least 9 columns."))
@@ -160,7 +180,6 @@ read_gff_gtf <- function(file,
     format(if (!is.null(obj$transcripts)) nrow(obj$transcripts) else 0L, big.mark = ","),
     format(if (!is.null(obj$exons)) nrow(obj$exons) else 0L, big.mark = ",")
   )
-  stage$tick(6L)
   obj
 }
 

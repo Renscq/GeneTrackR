@@ -18,7 +18,9 @@ write_genepred(
 
 \item{file}{Output file path.}
 
-\item{format}{Output format. Use \code{auto}, \code{genepred}, \code{genepredext}, \code{gff}, \code{gtf}, or \code{bed}.}
+\item{format}{Output format. Use \code{auto}, \code{genepred}, \code{genepredext}, \code{gff}, \code{gtf}, \code{bed6}, or \code{bed12}.
+\code{bed6} writes six-column BED intervals. For gene-model objects, BED6 is transcript-level. For generic interval objects, BED6 is feature-level.
+\code{bed12} writes transcript-level BED12 gene models with exon blocks.}
 
 \item{coordinate}{Output coordinate system for GenePred/BED-like formats.
 \code{ucsc} means 0-based half-open where applicable; \code{granges} means 1-based closed.}

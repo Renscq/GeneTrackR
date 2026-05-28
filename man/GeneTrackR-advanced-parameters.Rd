@@ -82,5 +82,5 @@ records with explicit strand information, such as plus/minus bedGraph tracks.
 \seealso{
 \code{\link[=plot_gene]{plot_gene()}}, \code{\link[=plot_transcript]{plot_transcript()}}, \code{\link[=plot_region]{plot_region()}},
 \code{\link[=plot_signal_gene]{plot_signal_gene()}}, \code{\link[=plot_signal_transcript]{plot_signal_transcript()}}, \code{\link[=plot_signal_region]{plot_signal_region()}},
-\code{\link[=plot_tracks]{plot_tracks()}}, \code{\link[=query_bwg]{query_bwg()}}, \code{\link[=read_bwg]{read_bwg()}}
+\code{\link[=plot_tracks]{plot_tracks()}}, \code{\link[=retrieve_bwg]{retrieve_bwg()}}, \code{\link[=read_bwg]{read_bwg()}}
 }

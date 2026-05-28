@@ -43,7 +43,7 @@ print.BwgTrack <- function(x, ...) {
 
   if (is.null(x$data)) {
     cat("  records: not loaded in memory\n")
-    cat("  note   : use retrieve_bwg() or query_bwg() to read a genomic region\n")
+    cat("  note   : use retrieve_bwg() to read a genomic region\n")
   } else {
     cat("  records: ", nrow(x$data), "\n", sep = "")
   }
@@ -73,7 +73,7 @@ head.BwgTrack <- function(x, n = 6L, ...) {
 
   if (is.null(x$data)) {
     cat("\nSignal data: NULL because this object is in lazy mode.\n")
-    cat("Use query_bwg(object, chrom, start, end) to read signal from a specific region.\n")
+    cat("Use retrieve_bwg(object, chrom, start, end) to read signal from a specific region.\n")
   } else {
     cat("\nSignal data:\n")
     print(utils::head(x$data, n = n))

@@ -31,7 +31,7 @@ summary_feature <- function(object,
   level <- match.arg(level)
 
   if (level == "feature") {
-    dt <- retrieve_feature(object, chrom = chrom, start = start, end = end, level = "feature")
+    dt <- retrieve_feature(object, chrom = chrom, start = start, end = end, level = "feature", as = "data.table")
     if (nrow(dt) == 0L) return(data.table::data.table())
     by <- intersect(as.character(by), names(dt))
     if (length(by) == 0L) by <- "chrom"
@@ -46,7 +46,7 @@ summary_feature <- function(object,
   gp <- as_genepred(object)
 
   if (level == "gene") {
-    dt <- retrieve_feature(gp, chrom = chrom, start = start, end = end, level = "gene")
+    dt <- retrieve_feature(gp, chrom = chrom, start = start, end = end, level = "gene", as = "data.table")
     if (nrow(dt) == 0L) {
       return(data.table::data.table(
         chrom = character(),
@@ -66,7 +66,7 @@ summary_feature <- function(object,
   }
 
   if (level == "transcript") {
-    dt <- retrieve_feature(gp, chrom = chrom, start = start, end = end, level = "transcript")
+    dt <- retrieve_feature(gp, chrom = chrom, start = start, end = end, level = "transcript", as = "data.table")
     if (nrow(dt) == 0L) {
       return(data.table::data.table(
         chrom = character(),
@@ -87,7 +87,7 @@ summary_feature <- function(object,
     ), by = .(chrom, strand)][order(chrom, strand)])
   }
 
-  dt <- retrieve_feature(gp, chrom = chrom, start = start, end = end, level = "exon")
+  dt <- retrieve_feature(gp, chrom = chrom, start = start, end = end, level = "exon", as = "data.table")
   if (nrow(dt) == 0L) {
     return(data.table::data.table(
       chrom = character(),

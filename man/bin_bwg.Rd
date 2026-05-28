@@ -7,7 +7,7 @@
 bin_bwg(data, bin_size = 50L)
 }
 \arguments{
-\item{data}{Signal table returned by query_bwg or retrieve_bwg. The table must contain \code{sample_id}, \code{chrom}, \code{start}, \code{end}, and \code{value} columns.}
+\item{data}{Signal table returned by retrieve_bwg. The table must contain \code{sample_id}, \code{chrom}, \code{start}, \code{end}, and \code{value} columns.}
 
 \item{bin_size}{Bin size in bases.}
 }
@@ -19,7 +19,7 @@ Bin signal tracks into fixed-width windows
 }
 \examples{
 \dontrun{
-dt <- query_bwg(bg, chrom = "chr1", start = 1, end = 10000)
+dt <- retrieve_bwg(bg, chrom = "chr1", start = 1, end = 10000)
 bin_bwg(dt, bin_size = 50)
 }
 }

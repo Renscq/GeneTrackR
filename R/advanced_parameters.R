@@ -80,6 +80,6 @@
 #'
 #' @seealso [plot_gene()], [plot_transcript()], [plot_region()],
 #' [plot_signal_gene()], [plot_signal_transcript()], [plot_signal_region()],
-#' [plot_tracks()], [query_bwg()], [read_bwg()]
+#' [plot_tracks()], [retrieve_bwg()], [read_bwg()]
 #' @name GeneTrackR-advanced-parameters
 NULL

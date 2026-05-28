@@ -5,47 +5,8 @@
 # Input: BwgTrack objects and genomic regions
 # Output: Signal tables, subset objects, and exported signal files
 
-#' Query signal values by genomic region
-#'
-#' @param object A BwgTrack object.
-#' @param chrom Chromosome name.
-#' @param start Region start in 1-based closed coordinates.
-#' @param end Region end in 1-based closed coordinates.
-#' @param samples Optional sample IDs.
-#' @param strand Strand selector: ignore, +, -, both, or auto.
-#' @param strand_policy How to handle strand filtering for unstranded signal files. Use `ignore_unstranded` to ignore strand filters for bigWig/wig-like unstranded signals, or `strict` to return only records with matching explicit strand information.
-#' @param verbose Logical. Whether to print query progress messages.
-#' @param progress Logical. Whether to show a text progress bar for multi-sample queries.
-#' @param keep_empty_samples Logical. If TRUE, samples without any signal interval in the queried region are returned as zero-valued placeholder intervals. This is mainly useful for keeping empty tracks visible in downstream plots.
-#' @param tabix_empty_fallback Optional logical. If TRUE, an empty tabix result is verified by a full-file fread query. The default NULL uses the setting stored in the BwgTrack object. For speed, keep this FALSE unless debugging tabix coordinate issues.
-#' @details
-#' `samples` can be used to query only a subset of samples. For unstranded
-#' bigWig/wig signals, `strand = "+"` or `"-"` has no biological filtering
-#' meaning unless `strand_policy = "strict"` is used. With the default
-#' `strand_policy = "ignore_unstranded"`, unstranded tracks are returned for
-#' either strand request. For strand-specific bedGraph files created with
-#' `read_bwg(strand = c("+", "-"))`, `strand_policy = "strict"` keeps only
-#' matching strand records. For strand-specific bedGraph files, samples with the
-#' opposite strand are skipped before file querying, which avoids unnecessary
-#' reading of plus/minus paired tracks.
-#' @return A data.table with signal records.
-#' @examples
-#' \dontrun{
-#' query_bwg(bg, chrom = "chr1", start = 1, end = 1000)
-#' query_bwg(bg, chrom = "chr1", start = 1, end = 1000, samples = "sampleA")
-#' query_bwg(
-#'   bg,
-#'   chrom = "chr1",
-#'   start = 1,
-#'   end = 1000,
-#'   strand = "+",
-#'   strand_policy = "strict",
-#'   verbose = TRUE,
-#'   progress = TRUE
-#' )
-#' }
-#' @export
-query_bwg <- function(object,
+# Internal signal query function.
+.query_bwg_internal <- function(object,
                       chrom,
                       start,
                       end,
@@ -668,7 +629,7 @@ summary_bwg <- function(object, chrom = NULL, start = NULL, end = NULL, samples 
     }
     dt <- object$data
   } else {
-    dt <- query_bwg(object, chrom, start, end, samples = samples)
+    dt <- .query_bwg_internal(object, chrom, start, end, samples = samples)
   }
 
   if (!is.null(samples)) {
@@ -704,7 +665,7 @@ summary_bwg <- function(object, chrom = NULL, start = NULL, end = NULL, samples 
 #' @export
 slice_bwg <- function(object, chrom, start, end, samples = NULL, strand = "ignore", as = c("BwgTrack", "data.frame", "GRanges")) {
   as <- match.arg(as)
-  dt <- query_bwg(object, chrom, start, end, samples = samples, strand = strand)
+  dt <- .query_bwg_internal(object, chrom, start, end, samples = samples, strand = strand)
 
   if (as == "data.frame") {
     return(dt)
@@ -800,12 +761,12 @@ merge_bwg <- function(..., sample_conflict = c("error", "rename", "sum", "mean",
 
 #' Bin signal tracks into fixed-width windows
 #'
-#' @param data Signal table returned by query_bwg or retrieve_bwg. The table must contain `sample_id`, `chrom`, `start`, `end`, and `value` columns.
+#' @param data Signal table returned by retrieve_bwg. The table must contain `sample_id`, `chrom`, `start`, `end`, and `value` columns.
 #' @param bin_size Bin size in bases.
 #' @return A binned signal table.
 #' @examples
 #' \dontrun{
-#' dt <- query_bwg(bg, chrom = "chr1", start = 1, end = 10000)
+#' dt <- retrieve_bwg(bg, chrom = "chr1", start = 1, end = 10000)
 #' bin_bwg(dt, bin_size = 50)
 #' }
 #' @export

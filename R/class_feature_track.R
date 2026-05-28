@@ -509,11 +509,18 @@ genepred_to_feature_table <- function(transcripts, exons, genes = NULL) {
   if (is.null(genes)) genes <- build_gene_table(tx)
   gn <- data.table::copy(data.table::as.data.table(genes))
 
+  # GenePred itself does not store the original GTF/GFF source column.
+  # GeneTrackR uses "ribo" for generated GTF/GFF-compatible records so that
+  # round-tripped files are closer to common ribosome-profiling annotations.
+  default_source <- "ribo"
+
   out <- list()
   if (nrow(gn) > 0L) {
     out[[length(out) + 1L]] <- data.table::data.table(
       feature_id = as.character(gn[["gene_id"]]),
       name = as.character(gn[["gene_id"]]),
+      gene_name = as.character(gn[["gene_id"]]),
+      exon_id = NA_character_,
       chrom = as.character(gn[["chrom"]]),
       start = as.integer(gn[["gene_start"]]),
       end = as.integer(gn[["gene_end"]]),
@@ -521,7 +528,7 @@ genepred_to_feature_table <- function(transcripts, exons, genes = NULL) {
       level = "gene",
       score = NA_real_,
       strand = as.character(gn[["strand"]]),
-      source = "GenePred",
+      source = default_source,
       gene_id = as.character(gn[["gene_id"]]),
       transcript_id = NA_character_,
       parent_id = NA_character_,
@@ -536,14 +543,16 @@ genepred_to_feature_table <- function(transcripts, exons, genes = NULL) {
     out[[length(out) + 1L]] <- data.table::data.table(
       feature_id = as.character(tx[["transcript_id"]]),
       name = as.character(tx[["transcript_id"]]),
+      gene_name = as.character(tx[["gene_id"]]),
+      exon_id = NA_character_,
       chrom = as.character(tx[["chrom"]]),
       start = as.integer(tx[["tx_start"]]),
       end = as.integer(tx[["tx_end"]]),
       type = "transcript",
       level = "transcript",
-      score = suppressWarnings(as.numeric(tx[["score"]])),
+      score = NA_real_,
       strand = as.character(tx[["strand"]]),
-      source = "GenePred",
+      source = default_source,
       gene_id = as.character(tx[["gene_id"]]),
       transcript_id = as.character(tx[["transcript_id"]]),
       parent_id = as.character(tx[["gene_id"]]),
@@ -556,10 +565,14 @@ genepred_to_feature_table <- function(transcripts, exons, genes = NULL) {
 
   if (nrow(ex) > 0L) {
     tx_small <- tx[, c("transcript_id", "cds_start", "cds_end", "gene_type"), with = FALSE]
-    ex2 <- merge(ex, tx_small, by = "transcript_id", all.x = TRUE)
+    ex2 <- merge(ex, tx_small, by = "transcript_id", all.x = TRUE, sort = FALSE)
+    ex2[, "exon_id" := paste0(as.character(transcript_id), ".", as.integer(exon_number))]
+
     out[[length(out) + 1L]] <- data.table::data.table(
-      feature_id = paste(as.character(ex2[["transcript_id"]]), "exon", as.integer(ex2[["exon_number"]]), sep = ":"),
-      name = paste0("exon_", as.integer(ex2[["exon_number"]])),
+      feature_id = as.character(ex2[["exon_id"]]),
+      name = as.character(ex2[["exon_id"]]),
+      gene_name = as.character(ex2[["gene_id"]]),
+      exon_id = as.character(ex2[["exon_id"]]),
       chrom = as.character(ex2[["chrom"]]),
       start = as.integer(ex2[["exon_start"]]),
       end = as.integer(ex2[["exon_end"]]),
@@ -567,7 +580,7 @@ genepred_to_feature_table <- function(transcripts, exons, genes = NULL) {
       level = "exon",
       score = NA_real_,
       strand = as.character(ex2[["strand"]]),
-      source = "GenePred",
+      source = default_source,
       gene_id = as.character(ex2[["gene_id"]]),
       transcript_id = as.character(ex2[["transcript_id"]]),
       parent_id = as.character(ex2[["transcript_id"]]),
@@ -577,11 +590,14 @@ genepred_to_feature_table <- function(transcripts, exons, genes = NULL) {
       attribute = NA_character_
     )
 
-    seg <- make_feature_segments(tx, ex)
+    seg <- make_genepred_gtf_segments(tx, ex)
     if (nrow(seg) > 0L) {
+      seg[, "exon_id" := paste0(as.character(transcript_id), ".", as.integer(exon_number))]
       out[[length(out) + 1L]] <- data.table::data.table(
-        feature_id = paste(as.character(seg[["transcript_id"]]), as.character(seg[["feature"]]), seq_len(nrow(seg)), sep = ":"),
+        feature_id = paste(as.character(seg[["transcript_id"]]), as.character(seg[["feature"]]), as.integer(seg[["start"]]), as.integer(seg[["end"]]), sep = ":"),
         name = as.character(seg[["feature"]]),
+        gene_name = as.character(seg[["gene_id"]]),
+        exon_id = as.character(seg[["exon_id"]]),
         chrom = as.character(seg[["chrom"]]),
         start = as.integer(seg[["start"]]),
         end = as.integer(seg[["end"]]),
@@ -589,13 +605,13 @@ genepred_to_feature_table <- function(transcripts, exons, genes = NULL) {
         level = "subfeature",
         score = NA_real_,
         strand = as.character(seg[["strand"]]),
-        source = "GenePred",
+        source = default_source,
         gene_id = as.character(seg[["gene_id"]]),
         transcript_id = as.character(seg[["transcript_id"]]),
         parent_id = as.character(seg[["transcript_id"]]),
         gene_type = NA_character_,
         exon_number = as.integer(seg[["exon_number"]]),
-        phase = NA_character_,
+        phase = as.character(seg[["phase"]]),
         attribute = NA_character_
       )
     }
@@ -603,13 +619,161 @@ genepred_to_feature_table <- function(transcripts, exons, genes = NULL) {
 
   if (length(out) == 0L) {
     return(data.table::data.table(
-      feature_id = character(), name = character(), chrom = character(), start = integer(), end = integer(),
-      type = character(), level = character(), score = numeric(), strand = character(), source = character(),
-      gene_id = character(), transcript_id = character(), parent_id = character(), gene_type = character(),
+      feature_id = character(), name = character(), gene_name = character(), exon_id = character(),
+      chrom = character(), start = integer(), end = integer(), type = character(), level = character(),
+      score = numeric(), strand = character(), source = character(), gene_id = character(),
+      transcript_id = character(), parent_id = character(), gene_type = character(),
       exon_number = integer(), phase = character(), attribute = character()
     ))
   }
   standardize_feature_table(data.table::rbindlist(out, fill = TRUE))
+}
+
+make_genepred_gtf_segments <- function(tx, exons) {
+  tx <- data.table::copy(data.table::as.data.table(tx))
+  ex <- data.table::copy(data.table::as.data.table(exons))
+  if (nrow(tx) == 0L || nrow(ex) == 0L) return(data.table::data.table())
+
+  # Older objects may not have gene_type. Infer it from CDS coordinates when needed.
+  if (!"gene_type" %in% names(tx)) {
+    tx[, "gene_type" := data.table::fifelse(
+      !is.na(as.integer(cds_start)) & !is.na(as.integer(cds_end)) &
+        as.integer(cds_start) <= as.integer(cds_end),
+      "coding",
+      "non-coding"
+    )]
+  }
+
+  tx_small <- tx[, .(
+    transcript_id = as.character(.SD[["transcript_id"]]),
+    cds_start = as.integer(.SD[["cds_start"]]),
+    cds_end = as.integer(.SD[["cds_end"]]),
+    gene_type = as.character(.SD[["gene_type"]])
+  ), .SDcols = c("transcript_id", "cds_start", "cds_end", "gene_type")]
+
+  # Avoid gene_type.x/gene_type.y after merge when exons already carry gene_type.
+  if ("gene_type" %in% names(ex)) {
+    ex[, "gene_type" := NULL]
+  }
+  ex <- merge(ex, tx_small, by = "transcript_id", all.x = TRUE, sort = FALSE)
+
+  ex[, `:=`(
+    exon_start = as.integer(.SD[["exon_start"]]),
+    exon_end = as.integer(.SD[["exon_end"]]),
+    cds_start = as.integer(.SD[["cds_start"]]),
+    cds_end = as.integer(.SD[["cds_end"]]),
+    strand = as.character(.SD[["strand"]]),
+    gene_type = as.character(.SD[["gene_type"]])
+  ), .SDcols = c("exon_start", "exon_end", "cds_start", "cds_end", "strand", "gene_type")]
+
+  coding_key <- !is.na(ex[["gene_type"]]) & ex[["gene_type"]] == "coding" &
+    !is.na(ex[["cds_start"]]) & !is.na(ex[["cds_end"]]) &
+    as.integer(ex[["cds_start"]]) <= as.integer(ex[["cds_end"]])
+
+  coding <- ex[coding_key]
+  noncoding <- ex[!coding_key]
+  base_cols <- c("transcript_id", "gene_id", "chrom", "strand", "exon_number")
+
+  make_piece <- function(dt, feature, start, end, phase = NA_character_) {
+    if (nrow(dt) == 0L) return(data.table::data.table())
+    out <- dt[, base_cols, with = FALSE]
+    out[, `:=`(
+      feature = as.character(feature),
+      start = as.integer(start),
+      end = as.integer(end),
+      phase = as.character(phase)
+    )]
+    out[!is.na(start) & !is.na(end) & start <= end]
+  }
+
+  out <- list()
+  if (nrow(noncoding) > 0L) {
+    out[[length(out) + 1L]] <- make_piece(noncoding, "exon", noncoding[["exon_start"]], noncoding[["exon_end"]])
+  }
+
+  if (nrow(coding) == 0L) {
+    ans <- data.table::rbindlist(out, fill = TRUE)
+    if (is.null(ans)) return(data.table::data.table())
+    return(ans[])
+  }
+
+  # UTR intervals. The left genomic side is 5UTR on the plus strand but 3UTR on
+  # the minus strand; the right genomic side is reversed.
+  left_utr_type <- data.table::fifelse(coding[["strand"]] == "-", "3UTR", "5UTR")
+  right_utr_type <- data.table::fifelse(coding[["strand"]] == "-", "5UTR", "3UTR")
+  out[[length(out) + 1L]] <- make_piece(
+    coding,
+    left_utr_type,
+    coding[["exon_start"]],
+    pmin(coding[["exon_end"]], coding[["cds_start"]] - 1L)
+  )
+  out[[length(out) + 1L]] <- make_piece(
+    coding,
+    right_utr_type,
+    pmax(coding[["exon_start"]], coding[["cds_end"]] + 1L),
+    coding[["exon_end"]]
+  )
+
+  # GTF convention: stop codons are separate records, so CDS intervals exclude
+  # the terminal stop codon. GenePred cds_start/cds_end cover the ORF span.
+  tx_coding_key <- !is.na(tx[["gene_type"]]) & tx[["gene_type"]] == "coding" &
+    !is.na(tx[["cds_start"]]) & !is.na(tx[["cds_end"]]) &
+    as.integer(tx[["cds_start"]]) <= as.integer(tx[["cds_end"]])
+
+  cds_tx <- unique(tx[tx_coding_key, .(
+    transcript_id = as.character(.SD[["transcript_id"]]),
+    cds_start = as.integer(.SD[["cds_start"]]),
+    cds_end = as.integer(.SD[["cds_end"]]),
+    strand = as.character(.SD[["strand"]])
+  ), .SDcols = c("transcript_id", "cds_start", "cds_end", "strand")])
+
+  if (nrow(cds_tx) > 0L) {
+    cds_tx[, `:=`(
+      cds_body_start = data.table::fifelse(strand == "-", cds_start + 3L, cds_start),
+      cds_body_end = data.table::fifelse(strand == "-", cds_end, cds_end - 3L),
+      start_codon_start = data.table::fifelse(strand == "-", cds_end - 2L, cds_start),
+      start_codon_end = data.table::fifelse(strand == "-", cds_end, cds_start + 2L),
+      stop_codon_start = data.table::fifelse(strand == "-", cds_start, cds_end - 2L),
+      stop_codon_end = data.table::fifelse(strand == "-", cds_start + 2L, cds_end)
+    )]
+  }
+
+  ex_base <- coding[, c(base_cols, "exon_start", "exon_end"), with = FALSE]
+  add_tx_interval <- function(interval_dt, start_col, end_col, feature) {
+    if (nrow(interval_dt) == 0L) return(data.table::data.table())
+    iv <- interval_dt[, .(
+      transcript_id = as.character(.SD[["transcript_id"]]),
+      tx_feature_start = as.integer(.SD[[start_col]]),
+      tx_feature_end = as.integer(.SD[[end_col]])
+    ), .SDcols = c("transcript_id", start_col, end_col)]
+    x <- merge(ex_base, iv, by = "transcript_id", all.x = FALSE, allow.cartesian = TRUE, sort = FALSE)
+    x[, `:=`(
+      start = pmax(as.integer(exon_start), as.integer(tx_feature_start)),
+      end = pmin(as.integer(exon_end), as.integer(tx_feature_end)),
+      feature = feature,
+      phase = NA_character_
+    )]
+    x <- x[!is.na(start) & !is.na(end) & start <= end]
+    x[, c(base_cols, "feature", "start", "end", "phase"), with = FALSE]
+  }
+
+  cds_seg <- add_tx_interval(cds_tx, "cds_body_start", "cds_body_end", "CDS")
+  if (nrow(cds_seg) > 0L) {
+    cds_seg[, "cds_len" := as.integer(end - start + 1L)]
+    cds_seg[, "order_key" := data.table::fifelse(as.character(strand) == "-", -as.integer(end), as.integer(start))]
+    data.table::setorderv(cds_seg, c("transcript_id", "order_key", "start", "end"))
+    cds_seg[, "cum_before" := cumsum(data.table::shift(cds_len, fill = 0L)), by = transcript_id]
+    cds_seg[, "phase" := as.character((3L - (as.integer(cum_before) %% 3L)) %% 3L)]
+    cds_seg[, c("cds_len", "order_key", "cum_before") := NULL]
+    out[[length(out) + 1L]] <- cds_seg
+  }
+
+  out[[length(out) + 1L]] <- add_tx_interval(cds_tx, "start_codon_start", "start_codon_end", "start_codon")
+  out[[length(out) + 1L]] <- add_tx_interval(cds_tx, "stop_codon_start", "stop_codon_end", "stop_codon")
+
+  ans <- data.table::rbindlist(out, fill = TRUE)
+  if (nrow(ans) == 0L) return(ans)
+  ans[]
 }
 
 build_gene_table <- function(transcripts) {

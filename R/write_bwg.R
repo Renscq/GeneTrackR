@@ -35,20 +35,15 @@
 #' write_bwg(bg, outdir = "tracks", format = "bigwig", chrom_sizes = "chrom.sizes")
 #' }
 #' @export
-write_bwg <- function(
-  object,
-  outdir,
-  format = c("bedgraph", "wig", "bigwig"),
-  samples = NULL,
-  chrom_sizes = NULL,
-  overwrite = FALSE,
-  compress = FALSE,
-  bedGraphToBigWig = Sys.which("bedGraphToBigWig")
-) {
-  stop_if_not(
-    inherits(object, "BwgTrack"),
-    "`object` must be a BwgTrack object."
-  )
+write_bwg <- function(object,
+                      outdir,
+                      format = c("bedgraph", "wig", "bigwig"),
+                      samples = NULL,
+                      chrom_sizes = NULL,
+                      overwrite = FALSE,
+                      compress = FALSE,
+                      bedGraphToBigWig = Sys.which("bedGraphToBigWig")) {
+  stop_if_not(inherits(object, "BwgTrack"), "`object` must be a BwgTrack object.")
   format <- match.arg(format)
   dir.create(outdir, recursive = TRUE, showWarnings = FALSE)
 
@@ -65,21 +60,12 @@ write_bwg <- function(
 
   dt <- data.table::copy(object$data)
   dt <- dt[sample_id %in% sample_tbl$sample_id]
-  stop_if_not(
-    nrow(dt) > 0L,
-    "No in-memory signal records are available for selected samples."
-  )
+  stop_if_not(nrow(dt) > 0L, "No in-memory signal records are available for selected samples.")
   data.table::setorderv(dt, c("sample_id", "chrom", "start", "end"))
 
   if (format == "bigwig") {
-    stop_if_not(
-      !is.null(chrom_sizes),
-      "`chrom_sizes` is required when `format = 'bigwig'`."
-    )
-    stop_if_not(
-      nzchar(bedGraphToBigWig),
-      "`bedGraphToBigWig` was not found. Provide its path or add it to PATH."
-    )
+    stop_if_not(!is.null(chrom_sizes), "`chrom_sizes` is required when `format = 'bigwig'`.")
+    stop_if_not(nzchar(bedGraphToBigWig), "`bedGraphToBigWig` was not found. Provide its path or add it to PATH.")
     chrom_sizes_file <- prepare_chrom_sizes_file(chrom_sizes)
   }
 
@@ -87,21 +73,13 @@ write_bwg <- function(
   for (i in seq_len(nrow(sample_tbl))) {
     sid <- sample_tbl$sample_id[i]
     x <- dt[sample_id == sid]
-    if (nrow(x) == 0L) {
-      next
-    }
+    if (nrow(x) == 0L) next
     if (format == "bedgraph") {
-      file <- file.path(
-        outdir,
-        paste0(sid, ".bedgraph", if (compress) ".gz" else "")
-      )
+      file <- file.path(outdir, paste0(sid, ".bedgraph", if (compress) ".gz" else ""))
       check_output_file(file, overwrite)
       write_bedgraph_table(x, file, compress = compress)
     } else if (format == "wig") {
-      file <- file.path(
-        outdir,
-        paste0(sid, ".wig", if (compress) ".gz" else "")
-      )
+      file <- file.path(outdir, paste0(sid, ".wig", if (compress) ".gz" else ""))
       check_output_file(file, overwrite)
       write_wig_table(x, file, compress = compress)
     } else {
@@ -110,24 +88,10 @@ write_bwg <- function(
       tmp_bg <- tempfile(pattern = paste0(sid, "_"), fileext = ".bedgraph")
       on.exit(unlink(tmp_bg), add = TRUE)
       write_bedgraph_table(x, tmp_bg, compress = FALSE)
-      cmd_status <- system2(
-        bedGraphToBigWig,
-        args = c(
-          normalizePath(tmp_bg, winslash = "/"),
-          normalizePath(chrom_sizes_file, winslash = "/"),
-          normalizePath(file, winslash = "/", mustWork = FALSE)
-        )
-      )
-      stop_if_not(
-        identical(cmd_status, 0L),
-        paste0("bedGraphToBigWig failed for sample: ", sid)
-      )
+      cmd_status <- system2(bedGraphToBigWig, args = c(normalizePath(tmp_bg, winslash = "/"), normalizePath(chrom_sizes_file, winslash = "/"), normalizePath(file, winslash = "/", mustWork = FALSE)))
+      stop_if_not(identical(cmd_status, 0L), paste0("bedGraphToBigWig failed for sample: ", sid))
     }
-    out[[i]] <- data.table::data.table(
-      sample_id = sid,
-      file = normalizePath(file, winslash = "/", mustWork = FALSE),
-      format = format
-    )
+    out[[i]] <- data.table::data.table(sample_id = sid, file = normalizePath(file, winslash = "/", mustWork = FALSE), format = format)
   }
   invisible(data.table::rbindlist(out, fill = TRUE))
 }
@@ -140,51 +104,22 @@ write_bwg_lazy_copy <- function(object, sample_tbl, outdir, format, overwrite) {
     src <- sample_tbl$file[i]
     src_format <- tolower(sample_tbl$format[i])
     requested_format <- fmt_map[[format]]
-    stop_if_not(
-      identical(src_format, requested_format),
-      paste0(
-        "Lazy BwgTrack objects can only be copied when output format matches the original format. ",
-        "Sample '",
-        sid,
-        "' is ",
-        src_format,
-        " but requested ",
-        requested_format,
-        ". Use retrieve_bwg(as = 'BwgTrack') or query_bwg() to create an in-memory object first."
-      )
-    )
-    ext <- switch(
-      format,
-      bedgraph = ".bedgraph",
-      wig = ".wig",
-      bigwig = ".bigwig"
-    )
+    stop_if_not(identical(src_format, requested_format), paste0(
+      "Lazy BwgTrack objects can only be copied when output format matches the original format. ",
+      "Sample '", sid, "' is ", src_format, " but requested ", requested_format, ". Use retrieve_bwg(as = \"BwgTrack\") to create an in-memory object first."
+    ))
+    ext <- switch(format, bedgraph = ".bedgraph", wig = ".wig", bigwig = ".bigwig")
     dst <- file.path(outdir, paste0(sid, ext))
     check_output_file(dst, overwrite)
     file.copy(src, dst, overwrite = overwrite)
-    out[[i]] <- data.table::data.table(
-      sample_id = sid,
-      file = normalizePath(dst, winslash = "/", mustWork = FALSE),
-      format = format
-    )
+    out[[i]] <- data.table::data.table(sample_id = sid, file = normalizePath(dst, winslash = "/", mustWork = FALSE), format = format)
   }
   invisible(data.table::rbindlist(out, fill = TRUE))
 }
 
 write_bedgraph_table <- function(dt, file, compress = FALSE) {
-  x <- dt[, .(
-    chrom = as.character(chrom),
-    start = as.integer(start) - 1L,
-    end = as.integer(end),
-    value = as.numeric(value)
-  )]
-  data.table::fwrite(
-    x,
-    file,
-    sep = "\t",
-    col.names = FALSE,
-    compress = if (compress) "gzip" else "auto"
-  )
+  x <- dt[, .(chrom = as.character(chrom), start = as.integer(start) - 1L, end = as.integer(end), value = as.numeric(value))]
+  data.table::fwrite(x, file, sep = "\t", col.names = FALSE, compress = if (compress) "gzip" else "auto")
 }
 
 write_wig_table <- function(dt, file, compress = FALSE) {
@@ -202,24 +137,13 @@ write_wig_table <- function(dt, file, compress = FALSE) {
 
 prepare_chrom_sizes_file <- function(chrom_sizes) {
   if (is.character(chrom_sizes) && length(chrom_sizes) == 1L) {
-    stop_if_not(
-      file.exists(chrom_sizes),
-      paste0("Chromosome size file does not exist: ", chrom_sizes)
-    )
+    stop_if_not(file.exists(chrom_sizes), paste0("Chromosome size file does not exist: ", chrom_sizes))
     return(chrom_sizes)
   }
   cs <- data.table::as.data.table(chrom_sizes)
-  stop_if_not(
-    ncol(cs) >= 2L,
-    "`chrom_sizes` must have at least two columns: chrom and size."
-  )
+  stop_if_not(ncol(cs) >= 2L, "`chrom_sizes` must have at least two columns: chrom and size.")
   out <- tempfile(fileext = ".chrom.sizes")
-  data.table::fwrite(
-    cs[, .(chrom = as.character(cs[[1L]]), size = as.integer(cs[[2L]]))],
-    out,
-    sep = "\t",
-    col.names = FALSE
-  )
+  data.table::fwrite(cs[, .(chrom = as.character(cs[[1L]]), size = as.integer(cs[[2L]]))], out, sep = "\t", col.names = FALSE)
   out
 }
 

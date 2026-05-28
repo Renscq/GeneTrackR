@@ -136,7 +136,7 @@ read_bwg <- function(files,
       } else {
         warning(
           "Full-memory bigWig loading may use a large amount of memory. ",
-          "For routine analysis, use `mode = 'lazy'` and query_bwg().",
+          "For routine analysis, use `mode = 'lazy'` and retrieve_bwg().",
           call. = FALSE
         )
         read_bigwig_whole_cpp(files[i], sample_names[i], strand[i])

@@ -7,7 +7,7 @@
 write_feature_track(
   object,
   file,
-  format = c("bed", "gff", "gtf", "genepred", "genepredext"),
+  format = c("bed12", "bed6", "gff", "gtf", "genepred", "genepredext"),
   sort_output = TRUE,
   chrom_order = NULL
 )
@@ -17,7 +17,9 @@ write_feature_track(
 
 \item{file}{Output file path.}
 
-\item{format}{Output format. Use \code{auto}, \code{genepred}, \code{genepredext}, \code{gff}, \code{gtf}, or \code{bed}.}
+\item{format}{Output format. Use \code{auto}, \code{genepred}, \code{genepredext}, \code{gff}, \code{gtf}, \code{bed6}, or \code{bed12}.
+\code{bed6} writes six-column BED intervals. For gene-model objects, BED6 is transcript-level. For generic interval objects, BED6 is feature-level.
+\code{bed12} writes transcript-level BED12 gene models with exon blocks.}
 
 \item{sort_output}{Whether to sort records before writing. Default TRUE. GenePred output is sorted by chromosome and transcript start. GFF/GTF output is sorted by chromosome, start, and feature hierarchy.}
 
