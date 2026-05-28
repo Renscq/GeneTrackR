@@ -42,5 +42,5 @@ utils::globalVariables(c(
   "variant_type", "ref", "alt", "qual", "filter", "info", "fill_group",
   "track_source", "label", "ymin", "ymax", "gene_name", "Parent", "Name", "ID",
   "level", "parent_id", "source", "gene_biotype", "transcript_biotype",
-  "transcript_type", "fill_group", "rank_pos", "exon_row_key", "strand_key", "phase_int", "cds_start", "cds_end"
+  "transcript_type", "fill_group", "rank_pos", "exon_row_key", "strand_key", "phase_int", "cds_start", "cds_end", "tabix_empty_fallback", "tabix_backend", "use_tabix", "has_tabix"
 ))

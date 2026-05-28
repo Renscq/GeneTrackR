@@ -13,6 +13,7 @@ read_bwg(
   genome = NULL,
   check_chrom = TRUE,
   use_tabix = c("auto", "yes", "no"),
+  tabix_empty_fallback = FALSE,
   verbose = TRUE
 )
 }
@@ -32,6 +33,8 @@ read_bwg(
 \item{check_chrom}{Whether to check chromosome names for in-memory files.}
 
 \item{use_tabix}{Whether to use tabix/Rsamtools for indexed bedGraph-like files in lazy mode. Accepts \code{"auto"}, \code{"yes"}, \code{"no"}, TRUE, or FALSE. \code{TRUE} is equivalent to \code{"yes"}, and \code{FALSE} is equivalent to \code{"no"}.}
+
+\item{tabix_empty_fallback}{Logical. Whether an empty tabix result should be verified by a full-file fread query. Default FALSE for performance. Set TRUE only when you suspect the tabix index coordinate convention is incompatible with the queried region.}
 
 \item{verbose}{Logical. Whether to print read/setup progress messages.}
 }

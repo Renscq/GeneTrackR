@@ -93,7 +93,7 @@ plot_transcript(
 )
 
 plot_region(
-  ncu12,
+  ncu12_gtf,
   chrom = "I",
   start = 9100000,
   end = 9160000,
@@ -218,7 +218,7 @@ plot_signal_transcript(
   signal_y_scale = "free",
   signal_y_ticks = "range",
   signal_palette = "Set3",
-  coordinate = "genomic",
+  coordinate = "transcript",
   plot_type = "bar"
 )
 

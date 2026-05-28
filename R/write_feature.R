@@ -30,63 +30,29 @@
 #' write_feature(bed, "regions.bed", format = "bed")
 #' }
 #' @export
-write_feature <- function(
-  object,
-  file,
-  format = c("auto", "genepred", "genepredext", "gff", "gtf", "bed"),
-  coordinate = c("ucsc", "granges"),
-  overwrite = FALSE,
-  keep_attributes = TRUE,
-  sort_output = TRUE,
-  chrom_order = NULL
-) {
-  stop_if_not(
-    inherits(object, "Feature") ||
-      inherits(object, "FeatureTrack") ||
-      inherits(object, "GenePred"),
-    "`object` must be a Feature/FeatureTrack or GenePred-compatible object."
-  )
+write_feature <- function(object,
+                          file,
+                          format = c("auto", "genepred", "genepredext", "gff", "gtf", "bed"),
+                          coordinate = c("ucsc", "granges"),
+                          overwrite = FALSE,
+                          keep_attributes = TRUE,
+                          sort_output = TRUE,
+                          chrom_order = NULL) {
+  stop_if_not(inherits(object, "Feature") || inherits(object, "FeatureTrack") || inherits(object, "GenePred"), "`object` must be a Feature/FeatureTrack or GenePred-compatible object.")
   format <- match.arg(format)
   coordinate <- match.arg(coordinate)
-  if (format == "auto") {
-    format <- infer_write_feature_format(file)
-  }
+  if (format == "auto") format <- infer_write_feature_format(file)
   check_output_file(file, overwrite)
 
   if (format %in% c("genepred", "genepredext")) {
     gp <- as_genepred(object)
-    write_feature_as_genepred(
-      gp,
-      file,
-      format = format,
-      coordinate = coordinate,
-      sort_output = sort_output,
-      chrom_order = chrom_order
-    )
+    write_feature_as_genepred(gp, file, format = format, coordinate = coordinate, sort_output = sort_output, chrom_order = chrom_order)
   } else if (format == "bed") {
-    write_feature_as_bed(
-      object,
-      file,
-      coordinate = coordinate,
-      sort_output = sort_output,
-      chrom_order = chrom_order
-    )
+    write_feature_as_bed(object, file, coordinate = coordinate, sort_output = sort_output, chrom_order = chrom_order)
   } else if (format == "gff") {
-    write_feature_as_gff(
-      object,
-      file,
-      keep_attributes = keep_attributes,
-      sort_output = sort_output,
-      chrom_order = chrom_order
-    )
+    write_feature_as_gff(object, file, keep_attributes = keep_attributes, sort_output = sort_output, chrom_order = chrom_order)
   } else if (format == "gtf") {
-    write_feature_as_gtf(
-      object,
-      file,
-      keep_attributes = keep_attributes,
-      sort_output = sort_output,
-      chrom_order = chrom_order
-    )
+    write_feature_as_gtf(object, file, keep_attributes = keep_attributes, sort_output = sort_output, chrom_order = chrom_order)
   }
   invisible(file)
 }
@@ -94,162 +60,69 @@ write_feature <- function(
 infer_write_feature_format <- function(file) {
   x <- tolower(basename(file))
   x <- sub("\\.(gz|bgz|bz2|xz)$", "", x)
-  if (grepl("\\.genepredext$", x)) {
-    return("genepredext")
-  }
-  if (grepl("\\.genepred$", x)) {
-    return("genepred")
-  }
-  if (grepl("\\.(gff|gff3)$", x)) {
-    return("gff")
-  }
-  if (grepl("\\.gtf$", x)) {
-    return("gtf")
-  }
-  if (grepl("\\.bed$", x)) {
-    return("bed")
-  }
-  stop(
-    "Cannot infer output format from file extension. Please set `format` explicitly.",
-    call. = FALSE
-  )
+  if (grepl("\\.genepredext$", x)) return("genepredext")
+  if (grepl("\\.genepred$", x)) return("genepred")
+  if (grepl("\\.(gff|gff3)$", x)) return("gff")
+  if (grepl("\\.gtf$", x)) return("gtf")
+  if (grepl("\\.bed$", x)) return("bed")
+  stop("Cannot infer output format from file extension. Please set `format` explicitly.", call. = FALSE)
 }
 
-write_feature_as_genepred <- function(
-  object,
-  file,
-  format = c("genepred", "genepredext"),
-  coordinate = c("ucsc", "granges"),
-  sort_output = TRUE,
-  chrom_order = NULL
-) {
+write_feature_as_genepred <- function(object, file, format = c("genepred", "genepredext"), coordinate = c("ucsc", "granges"), sort_output = TRUE, chrom_order = NULL) {
   format <- match.arg(format)
   coordinate <- match.arg(coordinate)
   tx <- data.table::copy(object$transcripts)
   ex <- data.table::copy(object$exons)
-  stop_if_not(
-    nrow(tx) > 0L && nrow(ex) > 0L,
-    "GenePred output requires transcript and exon tables."
-  )
+  stop_if_not(nrow(tx) > 0L && nrow(ex) > 0L, "GenePred output requires transcript and exon tables.")
   data.table::setorder(ex, transcript_id, exon_start, exon_end)
 
-  if (!"exon_frame" %in% names(ex)) {
-    ex[, "exon_frame" := -1L]
-  }
-  exon_agg <- ex[,
-    .(
-      exonStarts = paste_comma_integer(
-        if (coordinate == "ucsc") {
-          as.integer(exon_start) - 1L
-        } else {
-          as.integer(exon_start)
-        }
-      ),
-      exonEnds = paste_comma_integer(as.integer(exon_end)),
-      exonFrames = paste_comma_integer(as.integer(exon_frame))
-    ),
-    by = transcript_id
-  ]
+  if (!"exon_frame" %in% names(ex)) ex[, "exon_frame" := -1L]
+  exon_agg <- ex[, .(
+    exonStarts = paste_comma_integer(if (coordinate == "ucsc") as.integer(exon_start) - 1L else as.integer(exon_start)),
+    exonEnds = paste_comma_integer(as.integer(exon_end)),
+    exonFrames = paste_comma_integer(as.integer(exon_frame))
+  ), by = transcript_id]
 
   out <- merge(tx, exon_agg, by = "transcript_id", all.x = TRUE)
-  if (!"score" %in% names(out)) {
-    out[, "score" := 0]
-  }
-  if (!"cds_start_stat" %in% names(out)) {
-    out[, "cds_start_stat" := "unk"]
-  }
-  if (!"cds_end_stat" %in% names(out)) {
-    out[, "cds_end_stat" := "unk"]
-  }
+  if (!"score" %in% names(out)) out[, "score" := 0]
+  if (!"cds_start_stat" %in% names(out)) out[, "cds_start_stat" := "unk"]
+  if (!"cds_end_stat" %in% names(out)) out[, "cds_end_stat" := "unk"]
 
   out[, `:=`(
     name = as.character(transcript_id),
-    txStart = if (coordinate == "ucsc") {
-      as.integer(tx_start) - 1L
-    } else {
-      as.integer(tx_start)
-    },
+    txStart = if (coordinate == "ucsc") as.integer(tx_start) - 1L else as.integer(tx_start),
     txEnd = as.integer(tx_end),
-    cdsStart = if (coordinate == "ucsc") {
-      as.integer(cds_start) - 1L
-    } else {
-      as.integer(cds_start)
-    },
+    cdsStart = if (coordinate == "ucsc") as.integer(cds_start) - 1L else as.integer(cds_start),
     cdsEnd = as.integer(cds_end),
     exonCount = as.integer(exon_count),
     name2 = as.character(gene_id),
     score = ifelse(is.na(score), 0, score),
-    cdsStartStat = ifelse(
-      is.na(cds_start_stat) | cds_start_stat == "",
-      "unk",
-      cds_start_stat
-    ),
-    cdsEndStat = ifelse(
-      is.na(cds_end_stat) | cds_end_stat == "",
-      "unk",
-      cds_end_stat
-    )
+    cdsStartStat = ifelse(is.na(cds_start_stat) | cds_start_stat == "", "unk", cds_start_stat),
+    cdsEndStat = ifelse(is.na(cds_end_stat) | cds_end_stat == "", "unk", cds_end_stat)
   )]
 
   if (isTRUE(sort_output)) {
     out <- sort_genepred_output_table(out, chrom_order = chrom_order)
   }
 
-  standard_cols <- c(
-    "name",
-    "chrom",
-    "strand",
-    "txStart",
-    "txEnd",
-    "cdsStart",
-    "cdsEnd",
-    "exonCount",
-    "exonStarts",
-    "exonEnds"
-  )
+  standard_cols <- c("name", "chrom", "strand", "txStart", "txEnd", "cdsStart", "cdsEnd", "exonCount", "exonStarts", "exonEnds")
   if (format == "genepred") {
-    data.table::fwrite(
-      out[, ..standard_cols],
-      file,
-      sep = "\t",
-      col.names = FALSE
-    )
+    data.table::fwrite(out[, ..standard_cols], file, sep = "\t", col.names = FALSE)
   } else {
-    ext_cols <- c(
-      standard_cols,
-      "score",
-      "name2",
-      "cdsStartStat",
-      "cdsEndStat",
-      "exonFrames"
-    )
+    ext_cols <- c(standard_cols, "score", "name2", "cdsStartStat", "cdsEndStat", "exonFrames")
     data.table::fwrite(out[, ..ext_cols], file, sep = "\t", col.names = FALSE)
   }
 }
 
-write_feature_as_bed <- function(
-  object,
-  file,
-  coordinate = c("ucsc", "granges"),
-  sort_output = TRUE,
-  chrom_order = NULL
-) {
+write_feature_as_bed <- function(object, file, coordinate = c("ucsc", "granges"), sort_output = TRUE, chrom_order = NULL) {
   coordinate <- match.arg(coordinate)
   dt <- as_feature_table(object)
   if (isTRUE(sort_output)) {
-    dt <- sort_feature_output_table(
-      dt,
-      format = "bed",
-      chrom_order = chrom_order
-    )
+    dt <- sort_feature_output_table(dt, format = "bed", chrom_order = chrom_order)
   }
   out <- dt[, .(
     chrom = as.character(chrom),
-    chromStart = if (coordinate == "ucsc") {
-      as.integer(start) - 1L
-    } else {
-      as.integer(start)
-    },
+    chromStart = if (coordinate == "ucsc") as.integer(start) - 1L else as.integer(start),
     chromEnd = as.integer(end),
     name = as.character(name),
     score = ifelse(is.na(score), 0, score),
@@ -258,20 +131,10 @@ write_feature_as_bed <- function(
   data.table::fwrite(out, file, sep = "\t", col.names = FALSE)
 }
 
-write_feature_as_gff <- function(
-  object,
-  file,
-  keep_attributes = TRUE,
-  sort_output = TRUE,
-  chrom_order = NULL
-) {
+write_feature_as_gff <- function(object, file, keep_attributes = TRUE, sort_output = TRUE, chrom_order = NULL) {
   dt <- as_feature_table(object)
   if (isTRUE(sort_output)) {
-    dt <- sort_feature_output_table(
-      dt,
-      format = "gff",
-      chrom_order = chrom_order
-    )
+    dt <- sort_feature_output_table(dt, format = "gff", chrom_order = chrom_order)
   }
   attr <- build_gff_attributes(dt, keep_attributes = keep_attributes)
   out <- dt[, .(
@@ -288,20 +151,10 @@ write_feature_as_gff <- function(
   data.table::fwrite(out, file, sep = "\t", col.names = FALSE)
 }
 
-write_feature_as_gtf <- function(
-  object,
-  file,
-  keep_attributes = TRUE,
-  sort_output = TRUE,
-  chrom_order = NULL
-) {
+write_feature_as_gtf <- function(object, file, keep_attributes = TRUE, sort_output = TRUE, chrom_order = NULL) {
   dt <- as_feature_table(object)
   if (isTRUE(sort_output)) {
-    dt <- sort_feature_output_table(
-      dt,
-      format = "gtf",
-      chrom_order = chrom_order
-    )
+    dt <- sort_feature_output_table(dt, format = "gtf", chrom_order = chrom_order)
   }
   attr <- build_gtf_attributes(dt, keep_attributes = keep_attributes)
   out <- dt[, .(
@@ -321,32 +174,18 @@ write_feature_as_gtf <- function(
 
 sort_genepred_output_table <- function(dt, chrom_order = NULL) {
   dt <- data.table::copy(data.table::as.data.table(dt))
-  dt[,
-    "chrom_rank" := chrom_sort_rank(.SD[["chrom"]], chrom_order = chrom_order)
-  ]
-  dt[,
-    "strand_rank" := data.table::fifelse(
-      .SD[["strand"]] == "+",
-      1L,
-      data.table::fifelse(.SD[["strand"]] == "-", 2L, 3L)
-    )
-  ]
+  dt[, "chrom_rank" := chrom_sort_rank(.SD[["chrom"]], chrom_order = chrom_order)]
+  dt[, "strand_rank" := data.table::fifelse(.SD[["strand"]] == "+", 1L, data.table::fifelse(.SD[["strand"]] == "-", 2L, 3L))]
   data.table::setorder(dt, chrom_rank, chrom, txStart, txEnd, strand_rank, name)
   dt[, c("chrom_rank", "strand_rank") := NULL]
   dt
 }
 
-sort_feature_output_table <- function(
-  dt,
-  format = c("gff", "gtf", "bed"),
-  chrom_order = NULL
-) {
+sort_feature_output_table <- function(dt, format = c("gff", "gtf", "bed"), chrom_order = NULL) {
   format <- match.arg(format)
   dt <- data.table::copy(data.table::as.data.table(dt))
   ensure_col <- function(x, nm, value) {
-    if (!nm %in% names(x)) {
-      x[, (nm) := value]
-    }
+    if (!nm %in% names(x)) x[, (nm) := value]
     x
   }
   dt <- ensure_col(dt, "gene_id", NA_character_)
@@ -358,46 +197,26 @@ sort_feature_output_table <- function(
   dt <- ensure_col(dt, "exon_number", NA_integer_)
   dt <- ensure_col(dt, "strand", "*")
 
-  dt[,
-    "chrom_rank" := chrom_sort_rank(.SD[["chrom"]], chrom_order = chrom_order)
-  ]
-  dt[,
-    "sort_group" := data.table::fifelse(
-      !is.na(.SD[["gene_id"]]) & nzchar(.SD[["gene_id"]]),
-      .SD[["gene_id"]],
-      data.table::fifelse(
-        !is.na(.SD[["transcript_id"]]) & nzchar(.SD[["transcript_id"]]),
-        .SD[["transcript_id"]],
-        data.table::fifelse(
-          !is.na(.SD[["feature_id"]]) & nzchar(.SD[["feature_id"]]),
-          .SD[["feature_id"]],
-          .SD[["name"]]
-        )
-      )
+  dt[, "chrom_rank" := chrom_sort_rank(.SD[["chrom"]], chrom_order = chrom_order)]
+  dt[, "sort_group" := data.table::fifelse(
+    !is.na(.SD[["gene_id"]]) & nzchar(.SD[["gene_id"]]),
+    .SD[["gene_id"]],
+    data.table::fifelse(
+      !is.na(.SD[["transcript_id"]]) & nzchar(.SD[["transcript_id"]]),
+      .SD[["transcript_id"]],
+      data.table::fifelse(!is.na(.SD[["feature_id"]]) & nzchar(.SD[["feature_id"]]), .SD[["feature_id"]], .SD[["name"]])
     )
-  ]
+  )]
 
-  group_ranges <- dt[,
-    .(
-      group_start = suppressWarnings(min(
-        as.integer(.SD[["start"]]),
-        na.rm = TRUE
-      )),
-      group_end = suppressWarnings(max(as.integer(.SD[["end"]]), na.rm = TRUE))
-    ),
-    by = sort_group
-  ]
+  group_ranges <- dt[, .(
+    group_start = suppressWarnings(min(as.integer(.SD[["start"]]), na.rm = TRUE)),
+    group_end = suppressWarnings(max(as.integer(.SD[["end"]]), na.rm = TRUE))
+  ), by = sort_group]
   group_ranges[!is.finite(group_start), "group_start" := NA_integer_]
   group_ranges[!is.finite(group_end), "group_end" := NA_integer_]
   dt <- merge(dt, group_ranges, by = "sort_group", all.x = TRUE, sort = FALSE)
   dt[, "feature_rank" := feature_sort_rank(.SD[["type"]], .SD[["level"]])]
-  dt[,
-    "strand_rank" := data.table::fifelse(
-      .SD[["strand"]] == "+",
-      1L,
-      data.table::fifelse(.SD[["strand"]] == "-", 2L, 3L)
-    )
-  ]
+  dt[, "strand_rank" := data.table::fifelse(.SD[["strand"]] == "+", 1L, data.table::fifelse(.SD[["strand"]] == "-", 2L, 3L))]
   dt[, "exon_rank" := suppressWarnings(as.integer(.SD[["exon_number"]]))]
   dt[is.na(exon_rank), "exon_rank" := 2147483647L]
 
@@ -418,46 +237,20 @@ sort_feature_output_table <- function(
       type
     )
   }
-  drop_cols <- intersect(
-    c(
-      "chrom_rank",
-      "sort_group",
-      "group_start",
-      "group_end",
-      "feature_rank",
-      "strand_rank",
-      "exon_rank"
-    ),
-    names(dt)
-  )
+  drop_cols <- intersect(c("chrom_rank", "sort_group", "group_start", "group_end", "feature_rank", "strand_rank", "exon_rank"), names(dt))
   dt[, (drop_cols) := NULL]
   dt
 }
 
 feature_sort_rank <- function(type, level = NULL) {
   x <- tolower(as.character(type))
-  lvl <- if (is.null(level)) {
-    rep(NA_character_, length(x))
-  } else {
-    tolower(as.character(level))
-  }
+  lvl <- if (is.null(level)) rep(NA_character_, length(x)) else tolower(as.character(level))
   rank <- rep(50L, length(x))
   rank[x %in% c("gene") | lvl %in% c("gene")] <- 1L
   rank[x %in% c("mrna", "transcript") | lvl %in% c("transcript")] <- 2L
   rank[x %in% c("exon")] <- 3L
   rank[x %in% c("cds")] <- 4L
-  rank[
-    x %in%
-      c(
-        "utr",
-        "five_prime_utr",
-        "three_prime_utr",
-        "5utr",
-        "3utr",
-        "5'utr",
-        "3'utr"
-      )
-  ] <- 5L
+  rank[x %in% c("utr", "five_prime_utr", "three_prime_utr", "5utr", "3utr", "5'utr", "3'utr")] <- 5L
   rank
 }
 
@@ -477,56 +270,22 @@ chrom_sort_rank <- function(chrom, chrom_order = NULL) {
   clean <- toupper(x)
   clean <- sub("^CHR", "", clean)
   clean <- sub("^CHROMOSOME", "", clean)
-  roman_map <- c(
-    I = 1L,
-    II = 2L,
-    III = 3L,
-    IV = 4L,
-    V = 5L,
-    VI = 6L,
-    VII = 7L,
-    VIII = 8L,
-    IX = 9L,
-    X = 10L,
-    XI = 11L,
-    XII = 12L,
-    XIII = 13L,
-    XIV = 14L,
-    XV = 15L,
-    XVI = 16L,
-    XVII = 17L,
-    XVIII = 18L,
-    XIX = 19L,
-    XX = 20L
-  )
+  roman_map <- c(I = 1L, II = 2L, III = 3L, IV = 4L, V = 5L, VI = 6L, VII = 7L, VIII = 8L, IX = 9L, X = 10L,
+                 XI = 11L, XII = 12L, XIII = 13L, XIV = 14L, XV = 15L, XVI = 16L, XVII = 17L, XVIII = 18L, XIX = 19L, XX = 20L)
   numeric_part <- suppressWarnings(as.integer(clean))
   roman_part <- unname(roman_map[clean])
   rank <- rep(100000L, length(clean))
   rank[!is.na(numeric_part)] <- numeric_part[!is.na(numeric_part)]
-  rank[is.na(numeric_part) & !is.na(roman_part)] <- roman_part[
-    is.na(numeric_part) & !is.na(roman_part)
-  ]
+  rank[is.na(numeric_part) & !is.na(roman_part)] <- roman_part[is.na(numeric_part) & !is.na(roman_part)]
   rank[clean %in% c("M", "MT", "MITO", "MITOCHONDRIA")] <- 90000L
   rank[clean %in% c("C", "CP", "PT", "CHLOROPLAST", "PLASTID")] <- 90001L
   as.integer(rank)
 }
 
 normalize_chrom_order <- function(chrom_order = NULL) {
-  if (is.null(chrom_order)) {
-    return(NULL)
-  }
-  if (
-    is.character(chrom_order) &&
-      length(chrom_order) == 1L &&
-      file.exists(chrom_order)
-  ) {
-    fai <- data.table::fread(
-      chrom_order,
-      header = FALSE,
-      sep = "\t",
-      data.table = FALSE,
-      showProgress = FALSE
-    )
+  if (is.null(chrom_order)) return(NULL)
+  if (is.character(chrom_order) && length(chrom_order) == 1L && file.exists(chrom_order)) {
+    fai <- data.table::fread(chrom_order, header = FALSE, sep = "\t", data.table = FALSE, showProgress = FALSE)
     return(as.character(fai[[1L]]))
   }
   if (is.data.frame(chrom_order)) {
@@ -535,10 +294,7 @@ normalize_chrom_order <- function(chrom_order = NULL) {
   if (is.character(chrom_order)) {
     return(as.character(chrom_order))
   }
-  stop(
-    "`chrom_order` must be NULL, a character vector, a data frame, or a .fai file path.",
-    call. = FALSE
-  )
+  stop("`chrom_order` must be NULL, a character vector, a data frame, or a .fai file path.", call. = FALSE)
 }
 
 build_gff_attributes <- function(dt, keep_attributes = TRUE) {
@@ -552,25 +308,19 @@ build_gff_attributes <- function(dt, keep_attributes = TRUE) {
   out <- attr
   idx <- which(!has_attr)
   if (length(idx) > 0L) {
-    out[idx] <- vapply(
-      idx,
-      function(i) {
-        vals <- c(
-          ID = dt$feature_id[i],
-          Name = dt$name[i],
-          Parent = dt$parent_id[i],
-          gene_id = dt$gene_id[i],
-          transcript_id = dt$transcript_id[i],
-          gene_type = dt$gene_type[i]
-        )
-        vals <- vals[!is.na(vals) & nzchar(vals)]
-        if (length(vals) == 0L) {
-          return(".")
-        }
-        paste(paste0(names(vals), "=", vals), collapse = ";")
-      },
-      character(1L)
-    )
+    out[idx] <- vapply(idx, function(i) {
+      vals <- c(
+        ID = dt$feature_id[i],
+        Name = dt$name[i],
+        Parent = dt$parent_id[i],
+        gene_id = dt$gene_id[i],
+        transcript_id = dt$transcript_id[i],
+        gene_type = dt$gene_type[i]
+      )
+      vals <- vals[!is.na(vals) & nzchar(vals)]
+      if (length(vals) == 0L) return(".")
+      paste(paste0(names(vals), "=", vals), collapse = ";")
+    }, character(1L))
   }
   out
 }
@@ -586,31 +336,18 @@ build_gtf_attributes <- function(dt, keep_attributes = TRUE) {
   out <- attr
   idx <- which(!has_attr)
   if (length(idx) > 0L) {
-    out[idx] <- vapply(
-      idx,
-      function(i) {
-        vals <- c(
-          gene_id = dt$gene_id[i],
-          transcript_id = dt$transcript_id[i],
-          gene_name = dt$name[i],
-          gene_type = dt$gene_type[i],
-          exon_number = if (!is.na(dt$exon_number[i])) {
-            as.character(dt$exon_number[i])
-          } else {
-            NA_character_
-          }
-        )
-        vals <- vals[!is.na(vals) & nzchar(vals)]
-        if (length(vals) == 0L) {
-          return(".")
-        }
-        paste0(
-          paste(paste0(names(vals), " \"", vals, "\""), collapse = "; "),
-          ";"
-        )
-      },
-      character(1L)
-    )
+    out[idx] <- vapply(idx, function(i) {
+      vals <- c(
+        gene_id = dt$gene_id[i],
+        transcript_id = dt$transcript_id[i],
+        gene_name = dt$name[i],
+        gene_type = dt$gene_type[i],
+        exon_number = if (!is.na(dt$exon_number[i])) as.character(dt$exon_number[i]) else NA_character_
+      )
+      vals <- vals[!is.na(vals) & nzchar(vals)]
+      if (length(vals) == 0L) return(".")
+      paste0(paste(paste0(names(vals), " \"", vals, "\""), collapse = "; "), ";")
+    }, character(1L))
   }
   out
 }
@@ -626,24 +363,10 @@ normalize_gtf_feature_type <- function(x) {
 #' @description Backward-compatible wrapper around `write_feature()`.
 #' @inheritParams write_feature
 #' @export
-write_genepred <- function(
-  object,
-  file,
-  format = c("genePred", "genePredExt"),
-  coordinate = c("ucsc", "granges"),
-  sort_output = TRUE,
-  chrom_order = NULL
-) {
+write_genepred <- function(object, file, format = c("genePred", "genePredExt"), coordinate = c("ucsc", "granges"), sort_output = TRUE, chrom_order = NULL) {
   format <- match.arg(format)
   fmt <- if (format == "genePred") "genepred" else "genepredext"
-  write_feature(
-    object = object,
-    file = file,
-    format = fmt,
-    coordinate = coordinate,
-    sort_output = sort_output,
-    chrom_order = chrom_order
-  )
+  write_feature(object = object, file = file, format = fmt, coordinate = coordinate, sort_output = sort_output, chrom_order = chrom_order)
 }
 
 #' Write a FeatureTrack object
@@ -651,19 +374,7 @@ write_genepred <- function(
 #' @description Backward-compatible wrapper around `write_feature()`.
 #' @inheritParams write_feature
 #' @export
-write_feature_track <- function(
-  object,
-  file,
-  format = c("bed", "gff", "gtf", "genepred", "genepredext"),
-  sort_output = TRUE,
-  chrom_order = NULL
-) {
+write_feature_track <- function(object, file, format = c("bed", "gff", "gtf", "genepred", "genepredext"), sort_output = TRUE, chrom_order = NULL) {
   format <- match.arg(format)
-  write_feature(
-    object = object,
-    file = file,
-    format = format,
-    sort_output = sort_output,
-    chrom_order = chrom_order
-  )
+  write_feature(object = object, file = file, format = format, sort_output = sort_output, chrom_order = chrom_order)
 }

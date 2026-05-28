@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-26
-# Version: 0.1.33
+# Version: 0.2.10
 # Function: Read bedGraph, wig, and bigWig signal track files
 # Input: Signal track file paths
 # Output: BwgTrack object
@@ -16,6 +16,7 @@
 #' @param check_chrom Whether to check chromosome names for in-memory files.
 #' @param use_tabix Whether to use tabix/Rsamtools for indexed bedGraph-like files in lazy mode. Accepts `"auto"`, `"yes"`, `"no"`, TRUE, or FALSE. `TRUE` is equivalent to `"yes"`, and `FALSE` is equivalent to `"no"`.
 #' @param verbose Logical. Whether to print read/setup progress messages.
+#' @param tabix_empty_fallback Logical. Whether an empty tabix result should be verified by a full-file fread query. Default FALSE for performance. Set TRUE only when you suspect the tabix index coordinate convention is incompatible with the queried region.
 #' @details
 #' `format = "auto"` infers the input type from file extensions after removing
 #' compression suffixes such as `.gz` or `.bgz`. `sample_names = NULL` infers
@@ -54,10 +55,12 @@ read_bwg <- function(files,
                      genome = NULL,
                      check_chrom = TRUE,
                      use_tabix = c("auto", "yes", "no"),
+                     tabix_empty_fallback = FALSE,
                      verbose = TRUE) {
   format <- match.arg(format)
   mode <- match.arg(mode)
   use_tabix <- normalize_use_tabix_arg(use_tabix)
+  tabix_empty_fallback <- isTRUE(tabix_empty_fallback)
   verbose <- isTRUE(verbose)
   files <- normalizePath(files, winslash = "/", mustWork = FALSE)
   stop_if_not(all(file.exists(files)), "One or more signal files do not exist.")
@@ -111,6 +114,7 @@ read_bwg <- function(files,
     has_tabix = has_tabix,
     use_tabix = tabix_enabled,
     tabix_backend = tabix_backend,
+    tabix_empty_fallback = tabix_empty_fallback,
     library_size = NA_real_,
     norm_method = "none",
     scale_factor = 1

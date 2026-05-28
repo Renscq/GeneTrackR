@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-26
-# Version: 0.1.34
+# Version: 0.2.10
 # Function: Query, normalize, summarize, slice, merge, and write signal tracks
 # Input: BwgTrack objects and genomic regions
 # Output: Signal tables, subset objects, and exported signal files
@@ -17,6 +17,7 @@
 #' @param verbose Logical. Whether to print query progress messages.
 #' @param progress Logical. Whether to show a text progress bar for multi-sample queries.
 #' @param keep_empty_samples Logical. If TRUE, samples without any signal interval in the queried region are returned as zero-valued placeholder intervals. This is mainly useful for keeping empty tracks visible in downstream plots.
+#' @param tabix_empty_fallback Optional logical. If TRUE, an empty tabix result is verified by a full-file fread query. The default NULL uses the setting stored in the BwgTrack object. For speed, keep this FALSE unless debugging tabix coordinate issues.
 #' @details
 #' `samples` can be used to query only a subset of samples. For unstranded
 #' bigWig/wig signals, `strand = "+"` or `"-"` has no biological filtering
@@ -53,13 +54,19 @@ query_bwg <- function(object,
                       strand_policy = c("ignore_unstranded", "strict"),
                       verbose = FALSE,
                       progress = interactive() && isTRUE(verbose),
-                      keep_empty_samples = FALSE) {
+                      keep_empty_samples = FALSE,
+                      tabix_empty_fallback = NULL) {
   stop_if_not(inherits(object, "BwgTrack"), "`object` must be a BwgTrack object.")
   strand <- match.arg(strand)
   strand_policy <- match.arg(strand_policy)
   verbose <- isTRUE(verbose)
   progress <- isTRUE(progress)
   keep_empty_samples <- isTRUE(keep_empty_samples)
+  if (is.null(tabix_empty_fallback)) {
+    tabix_empty_fallback <- NULL
+  } else {
+    tabix_empty_fallback <- isTRUE(tabix_empty_fallback)
+  }
   check_region(chrom, start, end)
   chrom_value <- as.character(chrom)
   query_start <- as.integer(start)
@@ -74,6 +81,12 @@ query_bwg <- function(object,
   }
   if (!"has_strand" %in% names(sample_tbl)) {
     sample_tbl[, "has_strand" := FALSE]
+  }
+  if (!"tabix_empty_fallback" %in% names(sample_tbl)) {
+    sample_tbl[, "tabix_empty_fallback" := FALSE]
+  }
+  if (!is.null(tabix_empty_fallback)) {
+    sample_tbl[, "tabix_empty_fallback" := tabix_empty_fallback]
   }
   if (!is.null(samples)) {
     samples_value <- as.character(samples)
@@ -151,7 +164,8 @@ query_bwg <- function(object,
         start = query_start,
         end = query_end,
         strand = sample_tbl$strand[i],
-        backend = sample_tbl$tabix_backend[i]
+        backend = sample_tbl$tabix_backend[i],
+        empty_fallback = isTRUE(sample_tbl$tabix_empty_fallback[i])
       )
     } else {
       tmp <- read_bwg(
@@ -363,27 +377,28 @@ read_tabix_lines <- function(file, region, backend = NA_character_) {
   if (identical(backend, "system")) {
     lines <- tryCatch(
       system2("tabix", args = c(file, region), stdout = TRUE, stderr = TRUE),
-      error = function(e) character()
+      error = function(e) structure(character(), status = 1L)
     )
     status <- attr(lines, "status")
-    if (!is.null(status) && status != 0L) {
-      return(character())
-    }
-    return(lines)
+    ok <- is.null(status) || identical(as.integer(status), 0L)
+    return(list(lines = as.character(lines), ok = ok, backend = "system", region = region))
   }
 
   if (identical(backend, "Rsamtools")) {
-    lines <- tryCatch(
-      unlist(Rsamtools::scanTabix(file = file, param = region), use.names = FALSE),
-      error = function(e) character()
+    ans <- tryCatch(
+      Rsamtools::scanTabix(file = file, param = region),
+      error = function(e) e
     )
-    return(lines)
+    if (inherits(ans, "error")) {
+      return(list(lines = character(), ok = FALSE, backend = "Rsamtools", region = region))
+    }
+    return(list(lines = unlist(ans, use.names = FALSE), ok = TRUE, backend = "Rsamtools", region = region))
   }
 
-  character()
+  list(lines = character(), ok = FALSE, backend = NA_character_, region = region)
 }
 
-query_bedgraph_tabix <- function(file, sample_id, chrom, start, end, strand = "*", backend = NA_character_) {
+query_bedgraph_tabix <- function(file, sample_id, chrom, start, end, strand = "*", backend = NA_character_, empty_fallback = FALSE) {
   chrom_value <- as.character(chrom)
   query_start <- as.integer(start)
   query_end <- as.integer(end)
@@ -395,8 +410,7 @@ query_bedgraph_tabix <- function(file, sample_id, chrom, start, end, strand = "*
       return(empty)
     }
     dt <- tryCatch(
-      data.table::fread(text = paste(lines, collapse = "
-"), header = FALSE, data.table = TRUE),
+      data.table::fread(text = paste(lines, collapse = "\n"), header = FALSE, data.table = TRUE, showProgress = FALSE),
       error = function(e) NULL
     )
     if (is.null(dt) || ncol(dt) < 4L) {
@@ -423,22 +437,27 @@ query_bedgraph_tabix <- function(file, sample_id, chrom, start, end, strand = "*
     )]
   }
 
-  # Try standard tabix region first. Some tabix indexes for bedGraph-like files
-  # are built with BED-style 0-based coordinates, so we also try a shifted start
-  # before falling back to full-file fread. This prevents indexed-query backend
-  # differences from silently producing false empty results.
-  lines <- read_tabix_lines(file = file, region = region, backend = backend)
-  out <- parse_bedgraph_lines(lines)
-  if (nrow(out) > 0L) {
-    return(out)
+  # Tabix returns no lines when a region has no coverage. This is a valid and
+  # very common result, especially for sparse bedGraph tracks. Therefore an
+  # empty indexed result must NOT trigger a full-file fread by default. The
+  # expensive full-file check is only used when the backend fails or when
+  # `empty_fallback = TRUE` is explicitly requested for debugging.
+  res <- read_tabix_lines(file = file, region = region, backend = backend)
+  if (isTRUE(res$ok)) {
+    out <- parse_bedgraph_lines(res$lines)
+    if (nrow(out) > 0L || !isTRUE(empty_fallback)) {
+      return(out)
+    }
   }
 
-  if (query_start > 1L) {
+  if (query_start > 1L && (!isTRUE(res$ok) || isTRUE(empty_fallback))) {
     region0 <- sprintf("%s:%s-%s", chrom_value, query_start - 1L, query_end)
-    lines0 <- read_tabix_lines(file = file, region = region0, backend = backend)
-    out0 <- parse_bedgraph_lines(lines0)
-    if (nrow(out0) > 0L) {
-      return(out0)
+    res0 <- read_tabix_lines(file = file, region = region0, backend = backend)
+    if (isTRUE(res0$ok)) {
+      out0 <- parse_bedgraph_lines(res0$lines)
+      if (nrow(out0) > 0L || !isTRUE(empty_fallback)) {
+        return(out0)
+      }
     }
   }
 
@@ -509,10 +528,65 @@ diagnose_tabix <- function(object) {
     has_tabix,
     use_tabix,
     tabix_backend,
+    tabix_empty_fallback = if ("tabix_empty_fallback" %in% names(sample_tbl)) tabix_empty_fallback else FALSE,
     system_tabix,
     rsamtools_tabix,
     available_backend
   )]
+}
+
+#' Test whether a bedGraph tabix query returns records without full-file fallback
+#'
+#' @param object A BwgTrack object.
+#' @param chrom Chromosome name.
+#' @param start Region start.
+#' @param end Region end.
+#' @param samples Optional sample IDs.
+#' @return A data.table with per-sample query timing and number of records.
+#' @export
+benchmark_tabix_query <- function(object, chrom, start, end, samples = NULL) {
+  stop_if_not(inherits(object, "BwgTrack"), "`object` must be a BwgTrack object.")
+  sample_tbl <- data.table::copy(object$samples)
+  if (!is.null(samples)) {
+    sample_tbl <- sample_tbl[sample_id %in% as.character(samples)]
+  }
+  sample_tbl <- sample_tbl[format == "bedgraph"]
+  if (nrow(sample_tbl) == 0L) {
+    return(data.table::data.table())
+  }
+  out <- lapply(seq_len(nrow(sample_tbl)), function(i) {
+    t <- system.time({
+      dt <- if (isTRUE(sample_tbl$use_tabix[i])) {
+        query_bedgraph_tabix(
+          file = sample_tbl$file[i],
+          sample_id = sample_tbl$sample_id[i],
+          chrom = chrom,
+          start = start,
+          end = end,
+          strand = sample_tbl$strand[i],
+          backend = sample_tbl$tabix_backend[i],
+          empty_fallback = FALSE
+        )
+      } else {
+        query_bedgraph_full_file(
+          file = sample_tbl$file[i],
+          sample_id = sample_tbl$sample_id[i],
+          chrom = chrom,
+          start = start,
+          end = end,
+          strand = sample_tbl$strand[i]
+        )
+      }
+    })
+    data.table::data.table(
+      sample_id = sample_tbl$sample_id[i],
+      use_tabix = isTRUE(sample_tbl$use_tabix[i]),
+      tabix_backend = as.character(sample_tbl$tabix_backend[i]),
+      n_records = nrow(dt),
+      elapsed_sec = unname(t[["elapsed"]])
+    )
+  })
+  data.table::rbindlist(out, fill = TRUE)
 }
 
 #' Normalize signal tracks

@@ -14,7 +14,8 @@ query_bwg(
   strand_policy = c("ignore_unstranded", "strict"),
   verbose = FALSE,
   progress = interactive() && isTRUE(verbose),
-  keep_empty_samples = FALSE
+  keep_empty_samples = FALSE,
+  tabix_empty_fallback = NULL
 )
 }
 \arguments{
@@ -37,6 +38,8 @@ query_bwg(
 \item{progress}{Logical. Whether to show a text progress bar for multi-sample queries.}
 
 \item{keep_empty_samples}{Logical. If TRUE, samples without any signal interval in the queried region are returned as zero-valued placeholder intervals. This is mainly useful for keeping empty tracks visible in downstream plots.}
+
+\item{tabix_empty_fallback}{Optional logical. If TRUE, an empty tabix result is verified by a full-file fread query. The default NULL uses the setting stored in the BwgTrack object. For speed, keep this FALSE unless debugging tabix coordinate issues.}
 }
 \value{
 A data.table with signal records.
