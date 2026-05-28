@@ -1,7 +1,37 @@
+#' Validate a standardized Feature annotation object
+#'
+#' @param object A Feature-compatible annotation object.
+#' @return A validation list with invalid records, summaries, and warnings.
+#' @export
+validate_feature <- function(object) {
+  stop_if_not(inherits(object, "Feature") || inherits(object, "FeatureTrack") || inherits(object, "GenePred"), "`object` must be a Feature-compatible annotation object.")
+  if (is_gene_model_feature(object)) {
+    return(validate_genepred(object))
+  }
+  dt <- data.table::copy(as_feature_table(object))
+  if (!"row_id" %in% names(dt)) dt[, row_id := .I]
+  invalid <- list()
+  add_invalid <- function(rows, reason) {
+    rows <- unique(rows[!is.na(rows)])
+    if (length(rows) == 0L) return(NULL)
+    data.table::data.table(row_id = rows, reason = reason)
+  }
+  invalid[[length(invalid) + 1L]] <- add_invalid(dt[is.na(chrom) | chrom == "", row_id], "empty chromosome")
+  invalid[[length(invalid) + 1L]] <- add_invalid(dt[is.na(start) | is.na(end) | start > end, row_id], "invalid coordinates")
+  invalid[[length(invalid) + 1L]] <- add_invalid(dt[!strand %in% c("+", "-", "*"), row_id], "invalid strand")
+  invalid_records <- data.table::rbindlist(invalid, fill = TRUE)
+  if (nrow(invalid_records) == 0L) invalid_records <- data.table::data.table(row_id = integer(), reason = character())
+  list(
+    invalid_records = invalid_records,
+    invalid_summary = invalid_records[, .N, by = reason][order(-N)],
+    warnings = character()
+  )
+}
+
 # Author: Rensc
 # Date: 2026-05-26
 # Version: 0.1.0
-# Function: Validate GenePred annotation objects and tables
+# Function: Validate standardized Feature annotation objects and gene-model tables
 # Input: GenePred object or transcript/exon tables
 # Output: Validation reports
 
@@ -11,7 +41,7 @@
 #' @return A validation list with invalid records, summaries, and warnings.
 #' @export
 validate_genepred <- function(object) {
-  stop_if_not(inherits(object, "GenePred"), "`object` must be a GenePred object.")
+  stop_if_not(is_gene_model_feature(object), "`object` must contain gene-model tables.")
   tx <- data.table::copy(object$transcripts)
   ex <- data.table::copy(object$exons)
   if (!"row_id" %in% names(tx)) {

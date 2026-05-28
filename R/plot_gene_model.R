@@ -50,7 +50,8 @@
 #' }
 #' @export
 plot_transcript <- function(object, transcript_id, coordinate = c("transcript", "genomic"), show_cds = TRUE, cds_width = 0.50, utr_width = 0.25, show_direction = TRUE, direction_mode = c("transcript", "gene", "end"), highlight = NULL, color_palette = "Paired", fill_colors = NULL, border_color = NA, label_position = c("axis", "feature", "none"), label_by = c("gene", "transcript"), label_side = c("above", "below", "center"), label_offset = 0.45, text_color = "black", text_size = 14, label_size = 12) {
-  stop_if_not(inherits(object, "GenePred"), "`object` must be a GenePred object.")
+  stop_if_not(is_gene_model_feature(object), "`object` must be a GenePred object or a Feature object with transcript/exon records.")
+  object <- as_genepred(object)
   coordinate <- match.arg(coordinate)
   direction_mode <- match.arg(direction_mode)
   label_position <- match.arg(label_position)
@@ -136,7 +137,8 @@ plot_transcript <- function(object, transcript_id, coordinate = c("transcript", 
 #' }
 #' @export
 plot_gene <- function(object, gene_id, collapse = c("none", "union_exon", "longest"), coordinate = c("genomic", "transcript"), show_cds = TRUE, cds_width = 0.50, utr_width = 0.25, show_direction = TRUE, direction_mode = c("transcript", "gene", "end"), highlight = NULL, color_palette = "Paired", fill_colors = NULL, border_color = NA, label_position = c("axis", "feature", "none"), label_by = c("gene", "transcript"), label_side = c("above", "below", "center"), label_offset = 0.45, text_color = "black", text_size = 14, label_size = 12) {
-  stop_if_not(inherits(object, "GenePred"), "`object` must be a GenePred object.")
+  stop_if_not(is_gene_model_feature(object), "`object` must be a GenePred object or a Feature object with transcript/exon records.")
+  object <- as_genepred(object)
   collapse <- match.arg(collapse)
   coordinate <- match.arg(coordinate)
   label_position <- match.arg(label_position)
@@ -222,7 +224,8 @@ plot_gene <- function(object, gene_id, collapse = c("none", "union_exon", "longe
 #' }
 #' @export
 plot_region <- function(object, chrom, start, end, mode = c("within", "overlap", "trim"), collapse = c("none", "union_exon", "longest"), show_cds = TRUE, cds_width = 0.50, utr_width = 0.25, show_direction = TRUE, direction_mode = c("transcript", "gene", "end"), highlight = NULL, color_palette = "Paired", fill_colors = NULL, border_color = NA, label_position = c("axis", "feature", "none"), label_by = c("gene", "transcript"), label_side = c("above", "below", "center"), label_offset = 0.45, text_color = "black", text_size = 14, label_size = 12) {
-  stop_if_not(inherits(object, "GenePred"), "`object` must be a GenePred object.")
+  stop_if_not(is_gene_model_feature(object), "`object` must be a GenePred object or a Feature object with transcript/exon records.")
+  object <- as_genepred(object)
   mode <- match.arg(mode)
   collapse <- match.arg(collapse)
   label_position <- match.arg(label_position)

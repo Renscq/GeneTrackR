@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-27
-# Version: 0.1.26
+# Version: 0.2.1
 # Function: Combined genome-browser-like track plotting
 # Input: GenePred and BwgTrack objects
 # Output: Combined patchwork track figure
@@ -13,8 +13,10 @@
 #' specified in three ways: by `gene_id`, by `transcript_id`, or by explicit
 #' `chrom`, `start`, and `end` coordinates.
 #'
-#' @param annotation A GenePred object.
-#' @param signal Optional BwgTrack object. If NULL, only the gene model track is drawn.
+#' @param annotation A GenePred object or a standardized Feature object with transcript/exon records.
+#' @param signal Optional BwgTrack object. If NULL, only annotation/feature/variant tracks are drawn.
+#' @param features Optional FeatureTrack object or named list of FeatureTrack objects from `read_bed()`, `read_gff()`, or `read_gtf()`.
+#' @param variants Optional VariantTrack object or named list of VariantTrack objects from `read_vcf_track()`.
 #' @param chrom Chromosome name. Required when `gene_id` and `transcript_id` are not supplied.
 #' @param start Region start in 1-based closed coordinates. Required with `chrom`/`end`.
 #' @param end Region end in 1-based closed coordinates. Required with `chrom`/`start`.
@@ -36,7 +38,7 @@
 #' @param bin_size Optional signal bin size.
 #' @param highlight Optional data frame used to shade intervals on signal and gene model tracks. It must contain `start` and `end` columns in genomic coordinates. Optional columns are allowed but ignored by the default renderer.
 #' @param layout Track layout. Use `signal_top` to place signal above gene model, or `gene_top` to place gene model above signal.
-#' @param heights Relative panel heights. Must contain `signal` and `gene` names.
+#' @param heights Relative panel heights. Must contain at least `signal`, `gene`, `feature`, and `variant` names when those tracks are used.
 #' @param cds_width Vertical thickness of CDS rectangles in the gene model track.
 #' @param utr_width Vertical thickness of UTR/non-coding exon rectangles in the gene model track.
 #' @param show_direction Whether to draw direction arrows in the gene model track.
@@ -66,10 +68,15 @@
 #' plot_tracks(annotation = gp, signal = bg, gene_id = "GeneA")
 #' plot_tracks(annotation = gp, signal = bg, transcript_id = "TxA1")
 #' plot_tracks(annotation = gp, signal = bg, chrom = "chr1", start = 1, end = 1200)
+#' peaks <- read_bed(system.file("extdata", "example_features.bed", package = "GeneTrackR"))
+#' vars <- read_vcf_track(system.file("extdata", "example_variants.vcf", package = "GeneTrackR"))
+#' plot_tracks(annotation = gp, signal = bg, features = peaks, variants = vars, chrom = "chr1", start = 1, end = 1200)
 #' }
 #' @export
 plot_tracks <- function(annotation,
                         signal = NULL,
+                        features = NULL,
+                        variants = NULL,
                         chrom = NULL,
                         start = NULL,
                         end = NULL,
@@ -91,7 +98,7 @@ plot_tracks <- function(annotation,
                         bin_size = NULL,
                         highlight = NULL,
                         layout = c("signal_top", "gene_top"),
-                        heights = c(signal = 3, gene = 1),
+                        heights = c(signal = 3, gene = 1, feature = 0.8, variant = 0.7),
                         cds_width = 0.50,
                         utr_width = 0.25,
                         show_direction = TRUE,
@@ -103,7 +110,8 @@ plot_tracks <- function(annotation,
                         text_color = "black",
                         text_size = 14,
                         label_size = 12) {
-  stop_if_not(inherits(annotation, "GenePred"), "`annotation` must be a GenePred object.")
+  stop_if_not(is_gene_model_feature(annotation), "`annotation` must be a GenePred object or a Feature object with transcript/exon records.")
+  annotation <- as_genepred(annotation)
   signal_type <- match.arg(signal_type)
   signal_color_by <- match.arg(signal_color_by)
   signal_summary <- match.arg(signal_summary)
@@ -204,38 +212,136 @@ plot_tracks <- function(annotation,
     )
   }
 
-  if (is.null(signal)) {
-    return(p_gene)
+  plot_list <- list()
+  height_list <- numeric()
+
+  if (!is.null(signal)) {
+    stop_if_not(inherits(signal, "BwgTrack"), "`signal` must be a BwgTrack object.")
+    p_signal <- plot_signal_region(
+      signal = signal,
+      chrom = chrom_value,
+      start = start_value,
+      end = end_value,
+      samples = samples,
+      sample_groups = sample_groups,
+      signal_color_by = signal_color_by,
+      signal_summary = signal_summary,
+      plot_type = signal_type,
+      strand = strand,
+      bin_size = bin_size,
+      highlight = highlight,
+      annotation = NULL,
+      show_gene_model = FALSE,
+      signal_palette = signal_palette,
+      signal_colors = signal_colors,
+      signal_transform = signal_transform,
+      signal_y_scale = signal_y_scale,
+      signal_y_ticks = signal_y_ticks,
+      grid_linewidth = grid_linewidth,
+      text_color = text_color,
+      text_size = text_size
+    )
+    plot_list$signal <- p_signal
+    height_list <- c(height_list, signal = get_track_height(heights, "signal", 3))
   }
-  stop_if_not(inherits(signal, "BwgTrack"), "`signal` must be a BwgTrack object.")
-  p_signal <- plot_signal_region(
-    signal = signal,
+
+  feature_plots <- make_feature_track_plots(
+    features = features,
     chrom = chrom_value,
     start = start_value,
     end = end_value,
-    samples = samples,
-    sample_groups = sample_groups,
-    signal_color_by = signal_color_by,
-    signal_summary = signal_summary,
-    plot_type = signal_type,
-    strand = strand,
-    bin_size = bin_size,
-    highlight = highlight,
-    annotation = NULL,
-    show_gene_model = FALSE,
-    signal_palette = signal_palette,
-    signal_colors = signal_colors,
-    signal_transform = signal_transform,
-    signal_y_scale = signal_y_scale,
-    signal_y_ticks = signal_y_ticks,
-    grid_linewidth = grid_linewidth,
     text_color = text_color,
     text_size = text_size
   )
+  if (length(feature_plots) > 0L) {
+    for (nm in names(feature_plots)) {
+      plot_list[[paste0("feature_", nm)]] <- feature_plots[[nm]]
+      height_list <- c(height_list, feature = get_track_height(heights, "feature", 0.8))
+    }
+  }
+
+  variant_plots <- make_variant_track_plots(
+    variants = variants,
+    chrom = chrom_value,
+    start = start_value,
+    end = end_value,
+    text_color = text_color,
+    text_size = text_size
+  )
+  if (length(variant_plots) > 0L) {
+    for (nm in names(variant_plots)) {
+      plot_list[[paste0("variant_", nm)]] <- variant_plots[[nm]]
+      height_list <- c(height_list, variant = get_track_height(heights, "variant", 0.7))
+    }
+  }
 
   if (layout == "signal_top") {
-    p_signal / p_gene + patchwork::plot_layout(heights = c(heights["signal"], heights["gene"]))
+    plot_list$gene <- p_gene
+    height_list <- c(height_list, gene = get_track_height(heights, "gene", 1))
   } else {
-    p_gene / p_signal + patchwork::plot_layout(heights = c(heights["gene"], heights["signal"]))
+    plot_list <- c(list(gene = p_gene), plot_list)
+    height_list <- c(gene = get_track_height(heights, "gene", 1), height_list)
   }
+
+  if (length(plot_list) == 1L) {
+    return(plot_list[[1L]])
+  }
+  patchwork::wrap_plots(plot_list, ncol = 1) + patchwork::plot_layout(heights = unname(height_list))
+}
+
+make_feature_track_plots <- function(features, chrom, start, end, text_color = "black", text_size = 14) {
+  if (is.null(features)) return(list())
+  if (inherits(features, "FeatureTrack")) features <- list(Feature = features)
+  stop_if_not(is.list(features), "`features` must be a FeatureTrack object or a list of FeatureTrack objects.")
+  if (is.null(names(features)) || any(!nzchar(names(features)))) names(features) <- paste0("Feature", seq_along(features))
+  out <- list()
+  for (nm in names(features)) {
+    stop_if_not(inherits(features[[nm]], "FeatureTrack"), "All `features` entries must be FeatureTrack objects.")
+    out[[nm]] <- plot_feature_track(
+      features[[nm]],
+      chrom = chrom,
+      start = start,
+      end = end,
+      mode = "trim",
+      label_by = "none",
+      text_color = text_color,
+      text_size = text_size,
+      track_name = nm
+    )
+  }
+  out
+}
+
+make_variant_track_plots <- function(variants, chrom, start, end, text_color = "black", text_size = 14) {
+  if (is.null(variants)) return(list())
+  if (inherits(variants, "VariantTrack")) variants <- list(Variant = variants)
+  stop_if_not(is.list(variants), "`variants` must be a VariantTrack object or a list of VariantTrack objects.")
+  if (is.null(names(variants)) || any(!nzchar(names(variants)))) names(variants) <- paste0("Variant", seq_along(variants))
+  out <- list()
+  for (nm in names(variants)) {
+    stop_if_not(inherits(variants[[nm]], "VariantTrack"), "All `variants` entries must be VariantTrack objects.")
+    out[[nm]] <- plot_variant_track(
+      variants[[nm]],
+      chrom = chrom,
+      start = start,
+      end = end,
+      label_by = "none",
+      text_color = text_color,
+      text_size = text_size,
+      track_name = nm
+    )
+  }
+  out
+}
+
+
+get_track_height <- function(heights, name, default) {
+  if (is.null(heights) || is.null(names(heights)) || !name %in% names(heights)) {
+    return(as.numeric(default))
+  }
+  val <- suppressWarnings(as.numeric(heights[[name]]))
+  if (!is.finite(val) || val <= 0) {
+    return(as.numeric(default))
+  }
+  val
 }

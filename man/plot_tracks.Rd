@@ -7,6 +7,8 @@
 plot_tracks(
   annotation,
   signal = NULL,
+  features = NULL,
+  variants = NULL,
   chrom = NULL,
   start = NULL,
   end = NULL,
@@ -28,7 +30,7 @@ plot_tracks(
   bin_size = NULL,
   highlight = NULL,
   layout = c("signal_top", "gene_top"),
-  heights = c(signal = 3, gene = 1),
+  heights = c(signal = 3, gene = 1, feature = 0.8, variant = 0.7),
   cds_width = 0.5,
   utr_width = 0.25,
   show_direction = TRUE,
@@ -43,9 +45,13 @@ plot_tracks(
 )
 }
 \arguments{
-\item{annotation}{A GenePred object.}
+\item{annotation}{A GenePred object or a standardized Feature object with transcript/exon records.}
 
-\item{signal}{Optional BwgTrack object. If NULL, only the gene model track is drawn.}
+\item{signal}{Optional BwgTrack object. If NULL, only annotation/feature/variant tracks are drawn.}
+
+\item{features}{Optional FeatureTrack object or named list of FeatureTrack objects from \code{read_bed()}, \code{read_gff()}, or \code{read_gtf()}.}
+
+\item{variants}{Optional VariantTrack object or named list of VariantTrack objects from \code{read_vcf_track()}.}
 
 \item{chrom}{Chromosome name. Required when \code{gene_id} and \code{transcript_id} are not supplied.}
 
@@ -89,7 +95,7 @@ plot_tracks(
 
 \item{layout}{Track layout. Use \code{signal_top} to place signal above gene model, or \code{gene_top} to place gene model above signal.}
 
-\item{heights}{Relative panel heights. Must contain \code{signal} and \code{gene} names.}
+\item{heights}{Relative panel heights. Must contain at least \code{signal}, \code{gene}, \code{feature}, and \code{variant} names when those tracks are used.}
 
 \item{cds_width}{Vertical thickness of CDS rectangles in the gene model track.}
 
@@ -137,5 +143,8 @@ plot_tracks(annotation = gp, gene_id = "GeneA")
 plot_tracks(annotation = gp, signal = bg, gene_id = "GeneA")
 plot_tracks(annotation = gp, signal = bg, transcript_id = "TxA1")
 plot_tracks(annotation = gp, signal = bg, chrom = "chr1", start = 1, end = 1200)
+peaks <- read_bed(system.file("extdata", "example_features.bed", package = "GeneTrackR"))
+vars <- read_vcf_track(system.file("extdata", "example_variants.vcf", package = "GeneTrackR"))
+plot_tracks(annotation = gp, signal = bg, features = peaks, variants = vars, chrom = "chr1", start = 1, end = 1200)
 }
 }

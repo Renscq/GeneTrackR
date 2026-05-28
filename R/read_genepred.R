@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-26
-# Version: 0.1.29
+# Version: 0.2.5
 # Function: Read GenePred or GenePredExt annotation files
 # Input: GenePred-format text file
 # Output: GenePred object with transcript, exon, and gene tables
@@ -15,7 +15,7 @@
 #' @param gene_col Gene identifier source. name2 is recommended for GenePredExt.
 #' @param transcript_col Transcript identifier source.
 #' @param verbose Logical. Whether to print step-level progress messages. Default TRUE.
-#' @param progress Logical. Whether to show a progress bar for exon parsing. By default, a progress bar is shown only in interactive sessions when `verbose = TRUE`.
+#' @param progress Logical. Whether to show a stage-level progress bar. By default, a progress bar is shown only in interactive sessions when `verbose = TRUE`.
 #' @details
 #' Standard GenePred uses `name` as transcript ID. GenePredExt commonly uses
 #' `name` as transcript ID and `name2` as gene ID, so the default `gene_col`
@@ -24,7 +24,7 @@
 #' the package's internal 1-based closed coordinate system.
 #'
 #' For large files, `verbose = TRUE` prints major processing stages, while
-#' `progress = TRUE` additionally shows a text progress bar for exon parsing.
+#' `progress = TRUE` additionally shows a stage-level text progress bar.
 #' @return A GenePred object.
 #' @examples
 #' \dontrun{
@@ -60,19 +60,12 @@ read_genepred <- function(file,
 
   stop_if_not(file.exists(file), paste0("File does not exist: ", file))
 
-  progress_msg <- function(..., appendLF = TRUE) {
-    if (verbose) {
-      message(sprintf(...), appendLF = appendLF)
-    }
-  }
+  progress_msg <- make_progress_message(verbose)
+  stage <- make_stage_progress(total = 6L, progress = progress)
+  on.exit(stage$close(), add = TRUE)
 
   input_file <- normalizePath(file, winslash = "/", mustWork = FALSE)
-  file_size_mb <- suppressWarnings(file.info(file)$size / 1024^2)
-  if (is.finite(file_size_mb)) {
-    progress_msg("[GeneTrackR] Reading GenePred file: %s (%.2f MB)", input_file, file_size_mb)
-  } else {
-    progress_msg("[GeneTrackR] Reading GenePred file: %s", input_file)
-  }
+  progress_msg("%s", format_file_size_message("GenePred", file))
 
   dt <- data.table::fread(
     file,
@@ -81,6 +74,7 @@ read_genepred <- function(file,
     data.table = TRUE,
     showProgress = verbose
   )
+  stage$tick()
   n_col <- ncol(dt)
   progress_msg("[GeneTrackR] Loaded %s records with %s columns.", format(nrow(dt), big.mark = ","), n_col)
 
@@ -102,6 +96,8 @@ read_genepred <- function(file,
     stop_if_not(n_col >= 15L, "A genePredExt file must contain at least 15 columns.")
     data.table::setnames(dt, seq_len(15L), c(standard_cols, ext_cols))
   }
+
+  stage$tick()
 
   if (!transcript_col %in% names(dt)) {
     stop("`transcript_col` is not available in the input file.", call. = FALSE)
@@ -152,56 +148,16 @@ read_genepred <- function(file,
     cds_end_stat = if ("cdsEndStat" %in% names(dt)) as.character(cdsEndStat) else NA_character_,
     exon_frames = if ("exonFrames" %in% names(dt)) as.character(exonFrames) else NA_character_
   )]
+  stage$tick()
 
   progress_msg("[GeneTrackR] Parsing exon structures for %s transcripts.", format(nrow(dt), big.mark = ","))
-
-  n_record <- nrow(dt)
-  exon_list <- vector("list", n_record)
-  pb <- NULL
-  if (progress && n_record > 0L) {
-    pb <- utils::txtProgressBar(min = 0L, max = n_record, initial = 0L, style = 3)
-    on.exit({
-      if (!is.null(pb)) {
-        close(pb)
-      }
-    }, add = TRUE)
-  }
-  progress_step <- max(1L, floor(n_record / 100L))
-
-  for (i in seq_len(n_record)) {
-    starts <- parse_comma_integer(dt$exonStarts[i])
-    ends <- parse_comma_integer(dt$exonEnds[i])
-    if (coordinate == "ucsc") {
-      starts <- starts + 1L
-    }
-    frames <- if ("exonFrames" %in% names(dt)) parse_comma_integer(dt$exonFrames[i]) else rep(NA_integer_, length(starts))
-    n <- max(length(starts), length(ends))
-    exon_list[[i]] <- data.table::data.table(
-      row_id = dt$row_id[i],
-      transcript_id = dt$transcript_id[i],
-      gene_id = dt$gene_id[i],
-      chrom = as.character(dt$chrom[i]),
-      strand = as.character(dt$strand[i]),
-      exon_number = seq_len(n),
-      exon_start = starts,
-      exon_end = ends,
-      exon_frame = if (length(frames) == n) frames else rep(NA_integer_, n)
-    )
-    if (!is.null(pb) && (i %% progress_step == 0L || i == n_record)) {
-      utils::setTxtProgressBar(pb, i)
-    }
-  }
-  if (!is.null(pb)) {
-    close(pb)
-    pb <- NULL
-  }
-
-  progress_msg("[GeneTrackR] Combining exon records.")
-  exons <- data.table::rbindlist(exon_list, fill = TRUE)
+  exons <- parse_genepred_exons_fast(dt = dt, coordinate = coordinate, has_frames = "exonFrames" %in% names(dt))
+  stage$tick()
   progress_msg("[GeneTrackR] Parsed %s exons.", format(nrow(exons), big.mark = ","))
 
   progress_msg("[GeneTrackR] Validating transcript and exon tables.")
   validation <- validate_genepred_tables(tx, exons)
+  stage$tick()
 
   n_invalid <- nrow(validation$invalid_records)
   if (n_invalid > 0L) {
@@ -222,6 +178,7 @@ read_genepred <- function(file,
 
   progress_msg("[GeneTrackR] Building gene-level table.")
   genes <- build_gene_table(tx)
+  stage$tick()
   meta <- list(
     source_file = input_file,
     format = format,
@@ -243,4 +200,122 @@ read_genepred <- function(file,
   )
 
   GenePred(transcripts = tx, exons = exons, genes = genes, meta = meta, validation = validation)
+}
+
+
+
+parse_genepred_exons_fast <- function(dt, coordinate = c("ucsc", "granges"), has_frames = FALSE) {
+  coordinate <- match.arg(coordinate)
+  n_record <- nrow(dt)
+  if (n_record == 0L) {
+    return(data.table::data.table(
+      row_id = integer(),
+      transcript_id = character(),
+      gene_id = character(),
+      chrom = character(),
+      strand = character(),
+      exon_number = integer(),
+      exon_start = integer(),
+      exon_end = integer(),
+      exon_frame = integer()
+    ))
+  }
+
+  split_integer_fields <- function(x) {
+    fields <- strsplit(as.character(x), ",", fixed = TRUE)
+    lapply(fields, function(v) {
+      v <- v[nzchar(v)]
+      if (length(v) == 0L) integer() else as.integer(v)
+    })
+  }
+
+  starts_list <- split_integer_fields(dt[["exonStarts"]])
+  ends_list <- split_integer_fields(dt[["exonEnds"]])
+  n_start <- lengths(starts_list)
+  n_end <- lengths(ends_list)
+
+  # Fast path for valid GenePred rows. Invalid rows with mismatched exonStarts
+  # and exonEnds are rare; they are handled by the slow fallback so validation
+  # can still report them cleanly.
+  if (!identical(n_start, n_end)) {
+    return(parse_genepred_exons_fallback(dt = dt, coordinate = coordinate, has_frames = has_frames))
+  }
+
+  total_exons <- sum(n_start)
+  if (total_exons == 0L) {
+    return(data.table::data.table(
+      row_id = integer(),
+      transcript_id = character(),
+      gene_id = character(),
+      chrom = character(),
+      strand = character(),
+      exon_number = integer(),
+      exon_start = integer(),
+      exon_end = integer(),
+      exon_frame = integer()
+    ))
+  }
+
+  exon_start <- unlist(starts_list, use.names = FALSE)
+  exon_end <- unlist(ends_list, use.names = FALSE)
+  if (coordinate == "ucsc") {
+    exon_start <- exon_start + 1L
+  }
+
+  exon_frame <- rep.int(NA_integer_, total_exons)
+  if (isTRUE(has_frames)) {
+    frames_list <- split_integer_fields(dt[["exonFrames"]])
+    n_frame <- lengths(frames_list)
+    if (identical(n_frame, n_start)) {
+      exon_frame <- unlist(frames_list, use.names = FALSE)
+    } else {
+      # Preserve valid frame rows and leave malformed rows as NA.
+      offset <- cumsum(c(0L, n_start))
+      valid <- which(n_frame == n_start & n_start > 0L)
+      for (i in valid) {
+        exon_frame[(offset[i] + 1L):offset[i + 1L]] <- frames_list[[i]]
+      }
+    }
+  }
+
+  data.table::data.table(
+    row_id = rep.int(dt[["row_id"]], n_start),
+    transcript_id = rep.int(dt[["transcript_id"]], n_start),
+    gene_id = rep.int(dt[["gene_id"]], n_start),
+    chrom = rep.int(as.character(dt[["chrom"]]), n_start),
+    strand = rep.int(as.character(dt[["strand"]]), n_start),
+    exon_number = sequence(n_start),
+    exon_start = as.integer(exon_start),
+    exon_end = as.integer(exon_end),
+    exon_frame = as.integer(exon_frame)
+  )
+}
+
+parse_genepred_exons_fallback <- function(dt, coordinate = c("ucsc", "granges"), has_frames = FALSE) {
+  coordinate <- match.arg(coordinate)
+  n_record <- nrow(dt)
+  exon_list <- vector("list", n_record)
+
+  for (i in seq_len(n_record)) {
+    starts <- parse_comma_integer(dt$exonStarts[i])
+    ends <- parse_comma_integer(dt$exonEnds[i])
+    if (coordinate == "ucsc") {
+      starts <- starts + 1L
+    }
+    frames <- if (isTRUE(has_frames)) parse_comma_integer(dt$exonFrames[i]) else rep(NA_integer_, length(starts))
+    n <- max(length(starts), length(ends))
+    exon_list[[i]] <- data.table::data.table(
+      row_id = dt$row_id[i],
+      transcript_id = dt$transcript_id[i],
+      gene_id = dt$gene_id[i],
+      chrom = as.character(dt$chrom[i]),
+      strand = as.character(dt$strand[i]),
+      exon_number = seq_len(n),
+      exon_start = if (length(starts) == n) starts else rep(NA_integer_, n),
+      exon_end = if (length(ends) == n) ends else rep(NA_integer_, n),
+      exon_frame = if (length(frames) == n) frames else rep(NA_integer_, n)
+    )
+  }
+
+  data.table::rbindlist(exon_list, fill = TRUE)
 }

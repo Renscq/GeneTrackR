@@ -724,35 +724,6 @@ merge_bwg <- function(..., sample_conflict = c("error", "rename", "sum", "mean",
   BwgTrack(samples = samples, data = data, meta = list(mode = if (is.null(data)) "lazy" else "memory", coordinate = "1-based closed"), validation = make_empty_validation())
 }
 
-#' Write signal tracks to bedGraph files
-#'
-#' @param object A BwgTrack object.
-#' @param outdir Output directory.
-#' @param format Output format. Currently bedgraph is fully supported.
-#' @param samples Optional sample IDs.
-#' @param overwrite Overwrite existing files.
-#' @return Invisibly returns output file paths.
-#' @export
-write_bwg <- function(object, outdir, format = c("bedgraph", "wig", "bigwig"), samples = NULL, overwrite = FALSE) {
-  stop_if_not(inherits(object, "BwgTrack"), "`object` must be a BwgTrack object.")
-  format <- match.arg(format)
-  if (format != "bedgraph") {
-    stop("Only bedGraph writing is implemented in version 0.1.0.", call. = FALSE)
-  }
-  dir.create(outdir, recursive = TRUE, showWarnings = FALSE)
-  dt <- if (is.null(object$data)) stop("Writing requires an in-memory BwgTrack object.", call. = FALSE) else data.table::copy(object$data)
-  if (!is.null(samples)) dt <- dt[sample_id %in% samples]
-
-  files <- dt[, {
-    out <- file.path(outdir, paste0(sample_id[1], ".bedGraph"))
-    if (file.exists(out) && !overwrite) stop(paste0("File exists: ", out), call. = FALSE)
-    x <- .SD[, .(chrom, start = start - 1L, end, value)]
-    data.table::fwrite(x, out, sep = "\t", col.names = FALSE)
-    .(file = out)
-  }, by = sample_id]
-  invisible(files$file)
-}
-
 #' Bin signal tracks into fixed-width windows
 #'
 #' @param data Signal table returned by query_bwg or slice_bwg. The table must contain `sample_id`, `chrom`, `start`, `end`, and `value` columns.

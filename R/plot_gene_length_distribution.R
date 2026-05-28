@@ -1,19 +1,19 @@
 # Author: Rensc
 # Date: 2026-05-27
-# Version: 0.1.29
-# Function: Extract and plot GenePred feature length distributions
+# Version: 0.2.6
+# Function: Extract and plot unified gene feature length distributions
 # Input: GenePred object and feature selection
 # Output: Length table or ggplot object
 
-#' Extract length records from a GenePred object
+#' Extract length records from a gene annotation object
 #'
 #' @description
-#' Build a tidy feature-length table from a GenePred object. The function supports
+#' Build a tidy feature-length table from a Feature/GenePred-compatible annotation object. The function supports
 #' gene spans, transcript lengths, exon lengths, CDS lengths, total UTR lengths,
 #' 5' UTR lengths, and 3' UTR lengths. CDS and UTR lengths can be summarized per
 #' transcript or returned as individual genomic segments.
 #'
-#' @param object A GenePred object.
+#' @param object A Feature or GenePred-compatible annotation object.
 #' @param feature Feature type to extract. Use `all` to return gene, transcript,
 #' exon, CDS, UTR, 5' UTR, and 3' UTR records.
 #' @param unit Output unit. `auto` uses gene-level records for genes,
@@ -38,9 +38,9 @@
 #' @examples
 #' \dontrun{
 #' gp <- read_genepred("annotation.genePredExt", format = "genePredExt")
-#' get_genepred_length_table(gp, feature = "cds", unit = "transcript")
-#' get_genepred_length_table(gp, feature = "five_utr", unit = "segment")
-#' get_genepred_length_table(
+#' get_gene_length_distribution_table(gp, feature = "cds", unit = "transcript")
+#' get_gene_length_distribution_table(gp, feature = "five_utr", unit = "segment")
+#' get_gene_length_distribution_table(
 #'   gp,
 #'   feature = "transcript",
 #'   transcript_length = "spliced",
@@ -50,7 +50,7 @@
 #' )
 #' }
 #' @export
-get_genepred_length_table <- function(object,
+get_gene_length_distribution_table <- function(object,
                                       feature = c("all", "gene", "transcript", "exon", "cds", "utr", "five_utr", "three_utr"),
                                       unit = c("auto", "transcript", "segment"),
                                       transcript_length = c("spliced", "genomic"),
@@ -59,7 +59,8 @@ get_genepred_length_table <- function(object,
                                       end = NULL,
                                       mode = c("overlap", "within", "trim"),
                                       keep_zero = FALSE) {
-  stop_if_not(inherits(object, "GenePred"), "`object` must be a GenePred object.")
+  stop_if_not(is_gene_model_feature(object), "`object` must be a Feature or GenePred-compatible annotation object with transcript/exon records.")
+  object <- as_genepred(object)
 
   feature <- match.arg(feature)
   unit <- match.arg(unit)
@@ -86,7 +87,7 @@ get_genepred_length_table <- function(object,
   }
 
   out <- lapply(selected_features, function(x) {
-    get_single_genepred_length_table(
+    get_single_gene_length_distribution_table(
       object = obj,
       feature = x,
       unit = unit,
@@ -97,7 +98,7 @@ get_genepred_length_table <- function(object,
 
   out <- data.table::rbindlist(out, fill = TRUE)
   if (nrow(out) == 0L) {
-    return(empty_genepred_length_table())
+    return(empty_gene_length_distribution_table())
   }
 
   out[, feature := factor(
@@ -108,17 +109,17 @@ get_genepred_length_table <- function(object,
   out[]
 }
 
-#' Plot GenePred feature length distributions
+#' Plot gene annotation feature length distributions
 #'
 #' @description
 #' Plot the length distribution of genes, transcripts, exons, CDS, UTRs, 5' UTRs,
-#' and 3' UTRs from a GenePred object. The function is designed for annotation
+#' and 3' UTRs from any Feature/GenePred-compatible annotation object. The function is designed for annotation
 #' quality control and comparison of coding versus non-coding feature lengths.
 #'
-#' @param object A GenePred object.
+#' @param object A Feature or GenePred-compatible annotation object.
 #' @param feature Feature type to plot. Use `all` to facet multiple feature types.
 #' @param unit Output unit used for length extraction. See
-#' [get_genepred_length_table()].
+#' [get_gene_length_distribution_table()].
 #' @param transcript_length Transcript length definition for transcript records.
 #' @param chrom Optional chromosome filter.
 #' @param start Optional region start in 1-based closed coordinates.
@@ -153,33 +154,33 @@ get_genepred_length_table <- function(object,
 #' @examples
 #' \dontrun{
 #' gp <- read_genepred("annotation.genePredExt", format = "genePredExt")
-#' plot_genepred_length_distribution(gp, feature = "gene", group_by = "gene_type")
-#' plot_genepred_length_distribution(
+#' plot_gene_length_distribution(gp, feature = "gene", group_by = "gene_type")
+#' plot_gene_length_distribution(
 #'   gp,
 #'   feature = "gene",
 #'   group_by = "gene_type",
 #'   fill_colors = c(coding = "#1f78b4", `non-coding` = "#a6cee3"),
 #'   border_color = NA
 #' )
-#' plot_genepred_length_distribution(
+#' plot_gene_length_distribution(
 #'   gp,
 #'   feature = "all",
 #'   group_by = "feature",
 #'   plot_type = "density",
 #'   facet = TRUE
 #' )
-#' res <- plot_genepred_length_distribution(
+#' res <- plot_gene_length_distribution(
 #'   gp,
 #'   feature = "all",
 #'   group_by = "feature",
 #'   return_data = TRUE
 #' )
 #' unique(res$data$feature)
-#' length_table <- get_genepred_length_table(gp, feature = "cds")
+#' length_table <- get_gene_length_distribution_table(gp, feature = "cds")
 #' head(length_table)
 #' }
 #' @export
-plot_genepred_length_distribution <- function(object,
+plot_gene_length_distribution <- function(object,
                                               feature = c("all", "gene", "transcript", "exon", "cds", "utr", "five_utr", "three_utr"),
                                               unit = c("auto", "transcript", "segment"),
                                               transcript_length = c("spliced", "genomic"),
@@ -205,7 +206,7 @@ plot_genepred_length_distribution <- function(object,
   plot_type <- match.arg(plot_type)
   scale <- match.arg(scale)
 
-  dt <- get_genepred_length_table(
+  dt <- get_gene_length_distribution_table(
     object = object,
     feature = feature,
     unit = unit,
@@ -236,7 +237,7 @@ plot_genepred_length_distribution <- function(object,
     group_col <- group_by
   }
 
-  p <- build_genepred_length_plot(
+  p <- build_gene_length_distribution_plot(
     dt = dt,
     group_col = group_col,
     plot_type = plot_type,
@@ -265,7 +266,22 @@ plot_genepred_length_distribution <- function(object,
   p
 }
 
-get_single_genepred_length_table <- function(object, feature, unit, transcript_length, keep_zero) {
+
+#' @rdname get_gene_length_distribution_table
+#' @export
+get_genepred_length_table <- function(...) {
+  .Deprecated("get_gene_length_distribution_table")
+  get_gene_length_distribution_table(...)
+}
+
+#' @rdname plot_gene_length_distribution
+#' @export
+plot_genepred_length_distribution <- function(...) {
+  .Deprecated("plot_gene_length_distribution")
+  plot_gene_length_distribution(...)
+}
+
+get_single_gene_length_distribution_table <- function(object, feature, unit, transcript_length, keep_zero) {
   if (feature == "gene") {
     return(get_gene_length_table(object))
   }
@@ -289,13 +305,13 @@ get_single_genepred_length_table <- function(object, feature, unit, transcript_l
     return(summarise_segments_by_transcript(segment_dt, feature = feature, keep_zero = keep_zero))
   }
 
-  empty_genepred_length_table()
+  empty_gene_length_distribution_table()
 }
 
 get_gene_length_table <- function(object) {
   dt <- as_gene_table(object)
   if (nrow(dt) == 0L) {
-    return(empty_genepred_length_table())
+    return(empty_gene_length_distribution_table())
   }
 
   dt[, .(
@@ -318,7 +334,7 @@ get_transcript_length_table <- function(object, transcript_length = c("spliced",
   tx <- as_transcript_table(object)
   ex <- as_exon_table(object)
   if (nrow(tx) == 0L) {
-    return(empty_genepred_length_table())
+    return(empty_gene_length_distribution_table())
   }
 
   if (transcript_length == "spliced") {
@@ -350,7 +366,7 @@ get_exon_segment_length_table <- function(object) {
   ex <- as_exon_table(object)
   tx <- as_transcript_table(object)[, .(transcript_id, gene_type)]
   if (nrow(ex) == 0L) {
-    return(empty_genepred_length_table())
+    return(empty_gene_length_distribution_table())
   }
 
   ex <- merge(ex, tx, by = "transcript_id", all.x = TRUE)
@@ -372,7 +388,7 @@ get_exon_segment_length_table <- function(object) {
 get_exon_total_length_table <- function(object) {
   ex <- get_exon_segment_length_table(object)
   if (nrow(ex) == 0L) {
-    return(empty_genepred_length_table())
+    return(empty_gene_length_distribution_table())
   }
   summarise_segments_by_transcript(ex, feature = "exon", keep_zero = FALSE)
 }
@@ -383,7 +399,7 @@ get_exonic_subfeature_segments <- function(object, feature = c("cds", "utr", "fi
   ex <- as_exon_table(object)
 
   if (nrow(tx) == 0L || nrow(ex) == 0L) {
-    return(empty_genepred_length_table())
+    return(empty_gene_length_distribution_table())
   }
 
   tx <- tx[, .(transcript_id, cds_start, cds_end, gene_type)]
@@ -391,7 +407,7 @@ get_exonic_subfeature_segments <- function(object, feature = c("cds", "utr", "fi
   ex <- ex[gene_type == "coding" & !is.na(cds_start) & !is.na(cds_end) & cds_start <= cds_end]
 
   if (nrow(ex) == 0L) {
-    return(empty_genepred_length_table())
+    return(empty_gene_length_distribution_table())
   }
 
   if (feature == "cds") {
@@ -451,7 +467,7 @@ get_exonic_subfeature_segments <- function(object, feature = c("cds", "utr", "fi
 
 make_interval_overlap_segments <- function(ex, feature, interval_start, interval_end) {
   if (nrow(ex) == 0L) {
-    return(empty_genepred_length_table())
+    return(empty_gene_length_distribution_table())
   }
 
   seg <- data.table::copy(ex)
@@ -460,7 +476,7 @@ make_interval_overlap_segments <- function(ex, feature, interval_start, interval
   seg <- seg[start <= end]
 
   if (nrow(seg) == 0L) {
-    return(empty_genepred_length_table())
+    return(empty_gene_length_distribution_table())
   }
 
   seg[, .(
@@ -480,7 +496,7 @@ make_interval_overlap_segments <- function(ex, feature, interval_start, interval
 
 summarise_segments_by_transcript <- function(segment_dt, feature, keep_zero = FALSE) {
   if (nrow(segment_dt) == 0L) {
-    return(empty_genepred_length_table())
+    return(empty_gene_length_distribution_table())
   }
 
   out <- segment_dt[, .(
@@ -525,7 +541,7 @@ filter_zero_length <- function(dt, keep_zero = FALSE) {
   dt[length_bp > 0]
 }
 
-empty_genepred_length_table <- function() {
+empty_gene_length_distribution_table <- function() {
   data.table::data.table(
     feature = character(),
     unit = character(),
@@ -541,7 +557,7 @@ empty_genepred_length_table <- function() {
   )
 }
 
-build_genepred_length_plot <- function(dt, group_col, plot_type, bins, x_label, color_palette = "Paired", fill_colors = NULL, border_color = NA) {
+build_gene_length_distribution_plot <- function(dt, group_col, plot_type, bins, x_label, color_palette = "Paired", fill_colors = NULL, border_color = NA) {
   border_color <- normalize_border_color(border_color)
 
   if (plot_type == "density") {

@@ -27,10 +27,31 @@ ncu12 <- read_genepred(
   'E:/rensc/PHD/1404/database/norm/NC12.genepred',
   format = "genePredExt"
 )
+
+ncu12_gtf <- read_gtf(
+  'E:/rensc/PHD/1404/database/norm/NC12.ribo.gtf',
+  verbose = TRUE
+)
+
+
 ncu12_summary <- summary_genepred(ncu12)
 
+
 ################################################
-plot_genepred_length_distribution(
+write_feature(
+  ncu12,
+  file = 'E:/rensc/PHD/1404/database/norm/NC12_features.gtf',
+  format = 'gtf'
+)
+
+write_feature(
+  ncu12_gtf,
+  file = 'E:/rensc/PHD/1404/database/norm/NC12_features.genepred',
+  format = 'genepredext'
+)
+
+################################################
+plot_gene_length_distribution(
   ncu12,
   feature = "all",
   group_by = "feature",
@@ -47,7 +68,7 @@ plot_genepred_length_distribution(
 
 ################################################
 plot_gene(
-  ncu12,
+  ncu12_gtf,
   gene_id = "NCU06011",
   collapse = 'none',
   coordinate = 'genomic',

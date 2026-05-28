@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-27
-# Version: 0.1.26
+# Version: 0.2.1
 # Function: Package-level documentation for GeneTrackR
 # Input: GenePred annotations and genomic signal tracks
 # Output: Gene model plots, signal plots, and combined genome tracks
@@ -37,5 +37,10 @@ utils::globalVariables(c(
     "has_strand", "transcript_id", "txEnd", "txStart", "tx_end", "tx_start",
   "length", "length_bp", "value", "width", "x", "xend", "y",
   "line_start", "line_end", "plot_label", "label_x", "label_y",
-  "feature_id", "length_plot", "plot_group", "plot_value", "scale_factor", "sample_group"
+  "feature_id", "length_plot", "plot_group", "plot_value", "scale_factor", "sample_group",
+  "bed_start", "bed_end", "attribute", "phase", "pos", "variant_id",
+  "variant_type", "ref", "alt", "qual", "filter", "info", "fill_group",
+  "track_source", "label", "ymin", "ymax", "gene_name", "Parent", "Name", "ID",
+  "level", "parent_id", "source", "gene_biotype", "transcript_biotype",
+  "transcript_type", "fill_group", "rank_pos", "exon_row_key", "strand_key", "phase_int", "cds_start", "cds_end"
 ))

@@ -1,4 +1,11 @@
 # Author: Rensc
+# Date: 2026-05-28
+# Version: 0.2.2
+# Function: Operations for unified Feature annotation objects
+# Input: Feature-compatible annotation objects
+# Output: Summaries, sliced objects, merged objects, and annotation files
+
+# Author: Rensc
 # Date: 2026-05-26
 # Version: 0.1.0
 # Function: Summarize, slice, merge, and write GenePred objects
@@ -234,51 +241,88 @@ merge_genepred <- function(..., conflict = c("error", "keep_first", "keep_all", 
   )
 }
 
-#' Write a GenePred object
+####################################################################
+# Generic FeatureTrack operations
+####################################################################
+
+# Author: Rensc
+# Date: 2026-05-28
+# Version: 0.2.0
+# Function: Operations for feature and variant tracks
+# Input: FeatureTrack or VariantTrack objects
+# Output: Summaries, sliced objects, merged objects, and files
+
+#' Summarize a FeatureTrack object
 #'
-#' @param object A GenePred object.
-#' @param file Output file path.
-#' @param format Output format.
-#' @param coordinate Output coordinate system.
-#' @return Invisibly returns the output file path.
+#' @param object A FeatureTrack object.
+#' @param chrom Optional chromosome.
+#' @param start Optional start coordinate.
+#' @param end Optional end coordinate.
+#' @param by Grouping columns. Default `c("chrom", "type")`.
+#' @return A data.table summary.
 #' @export
-write_genepred <- function(object, file, format = c("genePred", "genePredExt"), coordinate = c("ucsc", "granges")) {
-  stop_if_not(inherits(object, "GenePred"), "`object` must be a GenePred object.")
-  format <- match.arg(format)
-  coordinate <- match.arg(coordinate)
-
-  tx <- data.table::copy(object$transcripts)
-  ex <- data.table::copy(object$exons)
-  data.table::setorder(ex, transcript_id, exon_start, exon_end)
-
-  exon_agg <- ex[, .(
-    exonStarts = paste_comma_integer(if (coordinate == "ucsc") exon_start - 1L else exon_start),
-    exonEnds = paste_comma_integer(exon_end),
-    exonFrames = paste_comma_integer(exon_frame)
-  ), by = transcript_id]
-
-  out <- merge(tx, exon_agg, by = "transcript_id", all.x = TRUE)
-  out[, `:=`(
-    name = transcript_id,
-    txStart = if (coordinate == "ucsc") tx_start - 1L else tx_start,
-    txEnd = tx_end,
-    cdsStart = if (coordinate == "ucsc") cds_start - 1L else cds_start,
-    cdsEnd = cds_end,
-    exonCount = exon_count,
-    name2 = gene_id
-  )]
-
-  standard_cols <- c("name", "chrom", "strand", "txStart", "txEnd", "cdsStart", "cdsEnd", "exonCount", "exonStarts", "exonEnds")
-  if (format == "genePred") {
-    data.table::fwrite(out[, ..standard_cols], file, sep = "\t", col.names = FALSE)
-  } else {
-    out[, `:=`(
-      score = ifelse(is.na(score), 0, score),
-      cdsStartStat = cds_start_stat %||% "unk",
-      cdsEndStat = cds_end_stat %||% "unk"
-    )]
-    ext_cols <- c(standard_cols, "score", "name2", "cdsStartStat", "cdsEndStat", "exonFrames")
-    data.table::fwrite(out[, ..ext_cols], file, sep = "\t", col.names = FALSE)
+summary_feature_track <- function(object, chrom = NULL, start = NULL, end = NULL, by = c("chrom", "type")) {
+  stop_if_not(inherits(object, "FeatureTrack"), "`object` must be a FeatureTrack object.")
+  dt <- slice_feature_track(object, chrom = chrom, start = start, end = end)$data
+  if (nrow(dt) == 0L) {
+    return(data.table::data.table())
   }
-  invisible(file)
+  by <- intersect(as.character(by), names(dt))
+  if (length(by) == 0L) by <- "type"
+  dt[, .(
+    n_features = as.integer(.N),
+    median_width = as.numeric(stats::median(as.numeric(end - start + 1L), na.rm = TRUE)),
+    min_start = as.integer(min(start, na.rm = TRUE)),
+    max_end = as.integer(max(end, na.rm = TRUE))
+  ), by = by]
 }
+
+#' Slice a FeatureTrack object
+#'
+#' @param object A FeatureTrack object.
+#' @param chrom Optional chromosome.
+#' @param start Optional start coordinate.
+#' @param end Optional end coordinate.
+#' @param mode `within`, `overlap`, or `trim`.
+#' @return A FeatureTrack object.
+#' @export
+slice_feature_track <- function(object, chrom = NULL, start = NULL, end = NULL, mode = c("overlap", "within", "trim")) {
+  stop_if_not(inherits(object, "FeatureTrack"), "`object` must be a FeatureTrack object.")
+  mode <- match.arg(mode)
+  dt <- data.table::copy(object$data)
+  if (!is.null(chrom)) dt <- dt[dt[["chrom"]] == as.character(chrom)[1L]]
+  if (!is.null(start) && !is.null(end)) {
+    s <- as.integer(start)[1L]
+    e <- as.integer(end)[1L]
+    if (mode == "within") {
+      dt <- dt[dt[["start"]] >= s & dt[["end"]] <= e]
+    } else {
+      dt <- dt[dt[["start"]] <= e & dt[["end"]] >= s]
+      if (mode == "trim" && nrow(dt) > 0L) {
+        dt[, "start" := pmax(as.integer(dt[["start"]]), s)]
+        dt[, "end" := pmin(as.integer(dt[["end"]]), e)]
+      }
+    }
+  }
+  FeatureTrack(dt, meta = object$meta)
+}
+
+#' Merge FeatureTrack objects
+#'
+#' @param ... FeatureTrack objects.
+#' @param source_names Optional source names to store in the `track_source` column.
+#' @return A FeatureTrack object.
+#' @export
+merge_feature_track <- function(..., source_names = NULL) {
+  tracks <- list(...)
+  stop_if_not(length(tracks) > 0L, "At least one FeatureTrack object is required.")
+  stop_if_not(all(vapply(tracks, inherits, logical(1L), "FeatureTrack")), "All inputs must be FeatureTrack objects.")
+  if (is.null(source_names)) source_names <- paste0("track", seq_along(tracks))
+  out <- lapply(seq_along(tracks), function(i) {
+    dt <- data.table::copy(tracks[[i]]$data)
+    dt[, "track_source" := as.character(source_names[i])]
+    dt
+  })
+  FeatureTrack(data.table::rbindlist(out, fill = TRUE), meta = list(format = "merged", coordinate_internal = "1-based closed"))
+}
+

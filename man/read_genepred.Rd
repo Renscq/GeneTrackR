@@ -33,7 +33,7 @@ read_genepred(
 
 \item{verbose}{Logical. Whether to print step-level progress messages. Default TRUE.}
 
-\item{progress}{Logical. Whether to show a progress bar for exon parsing. By default, a progress bar is shown only in interactive sessions when \code{verbose = TRUE}.}
+\item{progress}{Logical. Whether to show a stage-level progress bar. By default, a progress bar is shown only in interactive sessions when \code{verbose = TRUE}.}
 }
 \value{
 A GenePred object.
@@ -49,7 +49,7 @@ tries \code{name2} first and falls back to \code{name} when \code{name2} is unav
 the package's internal 1-based closed coordinate system.
 
 For large files, \code{verbose = TRUE} prints major processing stages, while
-\code{progress = TRUE} additionally shows a text progress bar for exon parsing.
+\code{progress = TRUE} additionally shows a stage-level text progress bar.
 }
 \examples{
 \dontrun{
