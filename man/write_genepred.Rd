@@ -8,7 +8,9 @@ write_genepred(
   object,
   file,
   format = c("genePred", "genePredExt"),
-  coordinate = c("ucsc", "granges")
+  coordinate = c("ucsc", "granges"),
+  sort_output = TRUE,
+  chrom_order = NULL
 )
 }
 \arguments{
@@ -20,6 +22,10 @@ write_genepred(
 
 \item{coordinate}{Output coordinate system for GenePred/BED-like formats.
 \code{ucsc} means 0-based half-open where applicable; \code{granges} means 1-based closed.}
+
+\item{sort_output}{Whether to sort records before writing. Default TRUE. GenePred output is sorted by chromosome and transcript start. GFF/GTF output is sorted by chromosome, start, and feature hierarchy.}
+
+\item{chrom_order}{Optional chromosome order used for sorting. It can be NULL, a character vector of chromosome names, a data frame whose first column contains chromosome names, or a FASTA index \code{.fai} file path. If NULL, a natural chromosome order is used.}
 }
 \description{
 Backward-compatible wrapper around \code{write_feature()}.

@@ -10,7 +10,9 @@ write_feature(
   format = c("auto", "genepred", "genepredext", "gff", "gtf", "bed"),
   coordinate = c("ucsc", "granges"),
   overwrite = FALSE,
-  keep_attributes = TRUE
+  keep_attributes = TRUE,
+  sort_output = TRUE,
+  chrom_order = NULL
 )
 }
 \arguments{
@@ -26,6 +28,10 @@ write_feature(
 \item{overwrite}{Whether to overwrite an existing file.}
 
 \item{keep_attributes}{Whether to reuse existing \code{attribute} strings for GFF/GTF output when available.}
+
+\item{sort_output}{Whether to sort records before writing. Default TRUE. GenePred output is sorted by chromosome and transcript start. GFF/GTF output is sorted by chromosome, start, and feature hierarchy.}
+
+\item{chrom_order}{Optional chromosome order used for sorting. It can be NULL, a character vector of chromosome names, a data frame whose first column contains chromosome names, or a FASTA index \code{.fai} file path. If NULL, a natural chromosome order is used.}
 }
 \value{
 Invisibly returns the output file path.

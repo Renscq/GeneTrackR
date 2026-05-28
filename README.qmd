@@ -41,13 +41,23 @@ ncu12_summary <- summary_genepred(ncu12)
 write_feature(
   ncu12,
   file = 'E:/rensc/PHD/1404/database/norm/NC12_features.gtf',
-  format = 'gtf'
+  format = 'gtf',
+  sort_output = TRUE
 )
 
 write_feature(
   ncu12_gtf,
   file = 'E:/rensc/PHD/1404/database/norm/NC12_features.genepred',
-  format = 'genepredext'
+  format = 'genepredext',
+  overwrite = TRUE,
+  sort_output = TRUE
+)
+
+write_feature(
+  ncu12_gtf,
+  file = 'E:/rensc/PHD/1404/database/norm/NC12_features.genepred',
+  format = 'genepredext',
+  sort_output = TRUE
 )
 
 ################################################

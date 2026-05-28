@@ -7,7 +7,9 @@
 write_feature_track(
   object,
   file,
-  format = c("bed", "gff", "gtf", "genepred", "genepredext")
+  format = c("bed", "gff", "gtf", "genepred", "genepredext"),
+  sort_output = TRUE,
+  chrom_order = NULL
 )
 }
 \arguments{
@@ -16,6 +18,10 @@ write_feature_track(
 \item{file}{Output file path.}
 
 \item{format}{Output format. Use \code{auto}, \code{genepred}, \code{genepredext}, \code{gff}, \code{gtf}, or \code{bed}.}
+
+\item{sort_output}{Whether to sort records before writing. Default TRUE. GenePred output is sorted by chromosome and transcript start. GFF/GTF output is sorted by chromosome, start, and feature hierarchy.}
+
+\item{chrom_order}{Optional chromosome order used for sorting. It can be NULL, a character vector of chromosome names, a data frame whose first column contains chromosome names, or a FASTA index \code{.fai} file path. If NULL, a natural chromosome order is used.}
 }
 \description{
 Backward-compatible wrapper around \code{write_feature()}.
