@@ -120,12 +120,33 @@ bg1404 <- read_bwg(
     'E:/rensc/PHD/1404/bedgraph/mrna-rep2/WT2.mRNA2.bedgraph.gz'
   ),
   format = 'bedgraph',
+  use_tabix = 'yes',
   #sample_names = c("KO1", "KO2", "WT1", "WT2"),
-  mode = 'lazy'
+  mode = 'lazy',
+  verbose = TRUE
 )
 
 ################################################
-t1 <- query_bwg(bg1404, chrom = 'I', start = 1, end = 10000, strand = '+')
+system.time({
+  t1 <- query_bwg(
+    bg1404,
+    chrom = 'I',
+    start = 1,
+    end = 10000,
+    strand = '+',
+    verbose = TRUE,
+    progress = TRUE
+  )
+})
+
+t1 <- query_bwg(
+  bg1404,
+  chrom = 'I',
+  start = 1,
+  end = 10000,
+  strand = '+',
+  verbose = TRUE
+)
 
 ################################################
 plot_signal_gene(
@@ -356,21 +377,21 @@ gmx_bg <- read_bwg(
   ),
   format = 'bedgraph',
   use_tabix = 'yes',
-  #sample_names = c("KO1", "KO2", "WT1", "WT2"),
   mode = 'lazy'
 )
 
 ################################################
-t1 <- query_bwg(
-  gmx_bg,
-  chrom = 'NC_038256.2',
-  start = 47823683,
-  end = 47853121,
-  strand = '+',
-  verbose = TRUE,
-  progress = TRUE,
-  keep_empty_samples = TRUE
-)
+system.time({
+  t1 <- query_bwg(
+    gmx_bg,
+    chrom = 'NC_038256.2',
+    start = 47723683,
+    end = 47953121,
+    strand = '+',
+    verbose = TRUE,
+    progress = TRUE
+  )
+})
 
 ################################################
 plot_signal_gene(
