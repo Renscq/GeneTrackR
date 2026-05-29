@@ -4,23 +4,26 @@
 \alias{read_vcf}
 \title{Read a VCF file as a VariantTrack}
 \usage{
-read_vcf(file, verbose = TRUE)
+read_vcf(file, keep_genotype = TRUE, verbose = TRUE)
 }
 \arguments{
-\item{file}{VCF file path. Gzip-compressed files are supported by \code{data.table::fread()}.}
+\item{file}{VCF file path. Plain VCF, gzip-compressed VCF, and bgzip VCF are supported.}
 
-\item{verbose}{Whether to print progress messages.}
+\item{keep_genotype}{Logical. Whether to keep FORMAT and sample genotype columns.}
+
+\item{verbose}{Logical. Whether to print progress messages.}
 }
 \value{
 A VariantTrack object.
 }
 \description{
-Reads VCF records and stores them as genomic point variants. Genotype sample
-columns are not parsed; this function focuses on track visualization.
+Reads VCF records and stores them as genomic point variants. Standard VCF
+columns are always imported. If genotype sample columns are present, they are
+preserved for haplotype analysis.
 }
 \examples{
 \dontrun{
 variants <- read_vcf("variants.vcf.gz")
-plot_variant_track(variants, chrom = "chr1", start = 1, end = 10000)
+plot_variant(variants, chrom = "chr1", start = 1, end = 10000)
 }
 }

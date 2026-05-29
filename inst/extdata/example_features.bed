@@ -1,0 +1,4 @@
+chr1	80	180	PeakA	900	+
+chr1	300	420	PeakB	500	-
+chr1	700	860	MotifA	300	+
+chr2	120	260	PeakC	700	+

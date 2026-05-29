@@ -1,0 +1,13 @@
+sample_id	plant_height	seed_weight	protein_content	maturity_group
+Taxa01	82.1	18.4	41.2	early
+Taxa02	84.3	18.1	40.8	early
+Taxa03	81.7	17.9	41.5	early
+Taxa04	93.5	20.3	39.7	middle
+Taxa05	95.2	20.7	39.1	middle
+Taxa06	94.1	20.1	39.4	middle
+Taxa07	105.8	23.4	37.2	late
+Taxa08	108.2	23.9	36.8	late
+Taxa09	106.7	23.1	37.5	late
+Taxa10	83.6	18.5	41.0	early
+Taxa11	94.8	20.5	39.2	middle
+Taxa12	96.1	20.9	38.9	middle

@@ -93,6 +93,9 @@ plot_tracks <- function(annotation,
                         signal_y_scale = c("free", "fixed"),
                         signal_y_ticks = c("range", "pretty"),
                         grid_linewidth = 0.25,
+                        heatmap_bin_size = NULL,
+                        heatmap_max_bins = 800L,
+                        heatmap_summary = c("mean", "max", "sum", "median"),
                         collapse = c("none", "union_exon", "longest"),
                         strand = c("ignore", "+", "-", "both"),
                         bin_size = NULL,
@@ -121,6 +124,7 @@ plot_tracks <- function(annotation,
   signal_transform <- match.arg(signal_transform)
   signal_y_scale <- match.arg(signal_y_scale)
   signal_y_ticks <- match.arg(signal_y_ticks)
+  heatmap_summary <- match.arg(heatmap_summary)
   direction_mode <- match.arg(direction_mode)
   label_position <- match.arg(label_position)
   label_by <- match.arg(label_by)
@@ -238,6 +242,9 @@ plot_tracks <- function(annotation,
       signal_y_scale = signal_y_scale,
       signal_y_ticks = signal_y_ticks,
       grid_linewidth = grid_linewidth,
+      heatmap_bin_size = heatmap_bin_size,
+      heatmap_max_bins = heatmap_max_bins,
+      heatmap_summary = heatmap_summary,
       text_color = text_color,
       text_size = text_size
     )
@@ -320,7 +327,7 @@ make_variant_track_plots <- function(variants, chrom, start, end, text_color = "
   out <- list()
   for (nm in names(variants)) {
     stop_if_not(inherits(variants[[nm]], "VariantTrack"), "All `variants` entries must be VariantTrack objects.")
-    out[[nm]] <- plot_variant_track(
+    out[[nm]] <- plot_variant(
       variants[[nm]],
       chrom = chrom,
       start = start,

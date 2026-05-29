@@ -1,0 +1,6 @@
+chr1	GeneTrackR	gene	101	950	.	+	.	gene_id "GeneA"; gene_name "GeneA";
+chr1	GeneTrackR	transcript	101	950	.	+	.	gene_id "GeneA"; transcript_id "TxA1";
+chr1	GeneTrackR	exon	101	250	.	+	.	gene_id "GeneA"; transcript_id "TxA1";
+chr1	GeneTrackR	CDS	151	250	.	+	0	gene_id "GeneA"; transcript_id "TxA1";
+chr1	GeneTrackR	exon	500	950	.	+	.	gene_id "GeneA"; transcript_id "TxA1";
+chr1	GeneTrackR	CDS	500	800	.	+	0	gene_id "GeneA"; transcript_id "TxA1";

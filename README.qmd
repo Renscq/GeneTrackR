@@ -19,8 +19,8 @@ devtools::document()
 devtools::install()
 ```
 
-## First example
-
+## 1. First example
+### 1.1 操作gtf/genepred注释文件
 ```{r}
 ################################################
 ncu12 <- read_genepred(
@@ -40,6 +40,8 @@ ncu12_gff <- read_gff(
 
 ncu12_summary <- summary_genepred(ncu12)
 
+
+retrieve_feature(ncu12, gene_id = "NCU06011")
 
 ################################################
 write_feature(
@@ -122,7 +124,7 @@ plot_region(
 )
 ```
 
-
+### 1.2 操作bedgraph/bigwig信号文件
 ```{r}
 ################################################
 bg1404 <- read_bwg(
@@ -164,7 +166,7 @@ plot_signal_gene(
     "WT1" = "#D6604D",
     "WT2" = "#D6604D"
   ),
-  plot_type = "bar"
+  plot_type = "heatmap"
 )
 
 ################################################
@@ -185,11 +187,15 @@ plot_tracks(
   bg1404,
   chrom = "I",
   start = 110000,
-  end = 120000
+  end = 120000,
+  signal_type = 'heatmap',
+  grid_linewidt = 0.1
 )
+
+ncu12_flt <- retrieve_feature(ncu12, chrom = "I", start = 110000, end = 120000)
 ```
 
-
+### 1.3 操作bigwig信号文件
 ```{r}
 ################################################
 bwg1404 <- read_bwg(
@@ -265,6 +271,81 @@ plot_tracks(
   end = 120000
 )
 ```
+
+
+### 1.4 操作 vcf 文件
+
+```{r}
+vcf <- read_vcf('./inst/extdata/NC12_test_variants.vcf')
+
+plot_variant(
+  vcf,
+  chrom = "I",
+  start = 110000,
+  end = 120000
+)
+
+# 按变异类型着色：
+plot_variant(
+  vcf,
+  chrom = "I",
+  start = 110000,
+  end = 120000,
+  color_by = "variant_type"
+)
+
+# 按 FILTER 着色：
+plot_variant(
+  vcf,
+  chrom = "I",
+  start = 110000,
+  end = 120000,
+  color_by = "filter"
+)
+
+# 显示 variant ID：
+plot_variant(
+  vcf,
+  chrom = "I",
+  start = 110000,
+  end = 120000,
+  label_by = "variant_id"
+)
+
+# 只画 SNP：
+plot_variant(
+  vcf,
+  chrom = "I",
+  start = 110000,
+  end = 120000,
+  variant_type = "SNP"
+)
+
+#  画完整的track图
+plot_tracks(
+  annotation = ncu12,
+  signal = bg1404,
+  variants = vcf,
+  chrom = "I",
+  start = 110000,
+  end = 120000,
+  signal_type = "bar"
+)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ## Second example

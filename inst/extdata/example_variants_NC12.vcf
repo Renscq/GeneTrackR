@@ -1,0 +1,19 @@
+##fileformat=VCFv4.2
+##source=GeneTrackR_test
+##reference=NC12_test_region
+##INFO=<ID=VT,Number=1,Type=String,Description="Variant type used for visualization tests">
+##INFO=<ID=GENE,Number=1,Type=String,Description="Nearby gene identifier used for visualization tests">
+##INFO=<ID=NOTE,Number=1,Type=String,Description="Short note for plotting tests">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+I	110120	var_I_110120_A_G	A	G	60	PASS	VT=SNP;GENE=NCU08052;NOTE=region_test
+I	110780	var_I_110780_C_T	C	T	48	PASS	VT=SNP;GENE=NCU08052;NOTE=region_test
+I	111350	var_I_111350_G_GA	G	GA	52	PASS	VT=INS;GENE=NCU08052;NOTE=region_test
+I	112240	var_I_112240_AT_A	AT	A	35	LowQual	VT=DEL;GENE=NCU08053;NOTE=region_test
+I	113100	var_I_113100_T_C	T	C	67	PASS	VT=SNP;GENE=NCU08053;NOTE=region_test
+I	114220	var_I_114220_AC_GT	AC	GT	74	PASS	VT=MNV;GENE=NCU08054;NOTE=region_test
+I	115780	var_I_115780_G_A	G	A	55	PASS	VT=SNP;GENE=NCU08054;NOTE=region_test
+I	117910	var_I_117910_C_CT	C	CT	46	PASS	VT=INS;GENE=NCU08055;NOTE=region_test
+I	118640	var_I_118640_GA_G	GA	G	39	LowQual	VT=DEL;GENE=NCU08055;NOTE=region_test
+I	119400	var_I_119400_T_G	T	G	62	PASS	VT=SNP;GENE=NCU08055;NOTE=region_test
+III	112000	var_III_112000_A_C	A	C	50	PASS	VT=SNP;GENE=NCU09500;NOTE=chrom_filter_test
+V	115000	var_V_115000_G_T	G	T	50	PASS	VT=SNP;GENE=NCU08856;NOTE=chrom_filter_test

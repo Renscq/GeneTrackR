@@ -1,0 +1,7 @@
+##gff-version 3
+chr1	GeneTrackR	gene	101	950	.	+	.	ID=GeneA;Name=GeneA
+chr1	GeneTrackR	mRNA	101	950	.	+	.	ID=TxA1;Parent=GeneA;Name=TxA1
+chr1	GeneTrackR	exon	101	250	.	+	.	ID=TxA1.exon1;Parent=TxA1
+chr1	GeneTrackR	CDS	151	250	.	+	0	ID=TxA1.cds1;Parent=TxA1
+chr1	GeneTrackR	exon	500	950	.	+	.	ID=TxA1.exon2;Parent=TxA1
+chr1	GeneTrackR	CDS	500	800	.	+	0	ID=TxA1.cds2;Parent=TxA1

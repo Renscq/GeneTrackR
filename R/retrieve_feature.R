@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-28
-# Version: 0.2.21
+# Version: 0.2.23
 # Function: Retrieve Feature/GenePred-compatible annotation sub-objects or tables
 # Input: Feature-compatible annotation object
 # Output: Retrieved Feature/GenePred-compatible sub-object or data.table
@@ -54,17 +54,20 @@ retrieve_feature <- function(object,
   mode <- match.arg(mode)
   as <- match.arg(as)
 
-  has_region <- !is.null(chrom) && !is.null(start) && !is.null(end)
-
   normalize_id <- function(x) {
     x <- as.character(x)
     x <- x[!is.na(x) & nzchar(x)]
     unique(x)
   }
 
+  query_chrom <- normalize_id(chrom)
   gene_id <- normalize_id(gene_id)
   transcript_id <- normalize_id(transcript_id)
   type <- normalize_id(type)
+
+  has_chrom <- length(query_chrom) > 0L
+  has_interval <- !is.null(start) && !is.null(end)
+  has_region <- has_chrom && has_interval
 
   pattern_filter <- function(dt, fields) {
     dt <- data.table::as.data.table(dt)
@@ -104,10 +107,15 @@ retrieve_feature <- function(object,
 
   region_filter <- function(dt, start_col, end_col) {
     dt <- data.table::as.data.table(dt)
-    if (!is.null(chrom) && "chrom" %in% names(dt)) {
-      dt <- dt[as.character(dt[["chrom"]]) %in% as.character(chrom)]
+    if (has_chrom) {
+      stop_if_not(
+        "chrom" %in% names(dt),
+        "Chromosome filtering requires a `chrom` column."
+      )
+      keep <- as.character(dt[["chrom"]]) %in% query_chrom
+      dt <- dt[keep]
     }
-    if (has_region) {
+    if (has_interval) {
       stop_if_not(
         all(c(start_col, end_col) %in% names(dt)),
         "Region filtering requires valid start and end columns."
@@ -184,6 +192,27 @@ retrieve_feature <- function(object,
     genes <- build_gene_table(tx)
     data <- genepred_to_feature_table(tx, ex, genes)
 
+    # Apply a final chromosome guard to every table. This prevents coordinate-only
+    # interval hits from other chromosomes from leaking into the returned object.
+    if (has_chrom) {
+      if ("chrom" %in% names(tx)) {
+        keep <- as.character(tx[["chrom"]]) %in% query_chrom
+        tx <- tx[keep]
+      }
+      if ("chrom" %in% names(ex)) {
+        keep <- as.character(ex[["chrom"]]) %in% query_chrom
+        ex <- ex[keep]
+      }
+      if ("chrom" %in% names(genes)) {
+        keep <- as.character(genes[["chrom"]]) %in% query_chrom
+        genes <- genes[keep]
+      }
+      if ("chrom" %in% names(data)) {
+        keep <- as.character(data[["chrom"]]) %in% query_chrom
+        data <- data[keep]
+      }
+    }
+
     out <- Feature(
       data = data,
       genes = genes,
@@ -226,7 +255,7 @@ retrieve_feature <- function(object,
       }
       ex <- exact_filter(ex, "gene_id", gene_id)
       ex <- exact_filter(ex, "transcript_id", transcript_id)
-      if (!is.null(chrom) || has_region) {
+      if (has_chrom || has_interval) {
         ex <- region_filter(ex, "exon_start", "exon_end")
       }
       ex <- pattern_filter(ex, c("transcript_id", "gene_id"))

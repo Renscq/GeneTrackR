@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-28
-# Version: 0.2.19
+# Version: 0.2.20
 # Function: Internal helpers for retrieve APIs
 # Input: data.table-like genomic records
 # Output: Filtered records
@@ -10,8 +10,11 @@ filter_by_region_internal <- function(dt, chrom = NULL, start = NULL, end = NULL
                                       mode = c("overlap", "within")) {
   mode <- match.arg(mode)
   dt <- data.table::as.data.table(dt)
-  if (!is.null(chrom) && "chrom" %in% names(dt)) {
-    dt <- dt[dt[["chrom"]] %in% as.character(chrom)]
+  query_chrom <- as.character(chrom)
+  query_chrom <- query_chrom[!is.na(query_chrom) & nzchar(query_chrom)]
+  if (length(query_chrom) > 0L && "chrom" %in% names(dt)) {
+    keep <- as.character(dt[["chrom"]]) %in% query_chrom
+    dt <- dt[keep]
   }
   if (!is.null(start) && !is.null(end) && all(c(start_col, end_col) %in% names(dt))) {
     s <- as.integer(start)[1L]

@@ -4,12 +4,14 @@
 \alias{read_vcf_track}
 \title{Read a VCF file as a VariantTrack}
 \usage{
-read_vcf_track(file, verbose = TRUE)
+read_vcf_track(file, keep_genotype = TRUE, verbose = TRUE)
 }
 \arguments{
-\item{file}{VCF file path. Gzip-compressed files are supported by \code{data.table::fread()}.}
+\item{file}{VCF file path. Plain VCF, gzip-compressed VCF, and bgzip VCF are supported.}
 
-\item{verbose}{Whether to print progress messages.}
+\item{keep_genotype}{Logical. Whether to keep FORMAT and sample genotype columns.}
+
+\item{verbose}{Logical. Whether to print progress messages.}
 }
 \value{
 A VariantTrack object.

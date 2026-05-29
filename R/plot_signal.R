@@ -65,7 +65,7 @@
 #' )
 #' }
 #' @export
-plot_signal_transcript <- function(signal, annotation, transcript_id, samples = NULL, sample_groups = NULL, signal_color_by = c("sample", "group"), signal_summary = c("none", "mean", "median", "sum"), coordinate = c("transcript", "genomic"), plot_type = c("bar", "line", "area", "heatmap"), strand = c("auto", "+", "-", "both", "ignore"), bin_size = NULL, highlight = NULL, show_gene_model = TRUE, signal_palette = "Blues", signal_colors = NULL, signal_transform = c("none", "log2", "log10", "sqrt"), signal_y_scale = c("free", "fixed"), signal_y_ticks = c("range", "pretty"), grid_linewidth = 0.25, cds_width = 0.50, utr_width = 0.25, show_direction = TRUE, direction_mode = c("transcript", "gene", "end"), label_position = c("axis", "feature", "none"), label_by = c("gene", "transcript"), label_side = c("above", "below", "center"), label_offset = 0.45, text_color = "black", text_size = 14, label_size = 12) {
+plot_signal_transcript <- function(signal, annotation, transcript_id, samples = NULL, sample_groups = NULL, signal_color_by = c("sample", "group"), signal_summary = c("none", "mean", "median", "sum"), coordinate = c("transcript", "genomic"), plot_type = c("bar", "line", "area", "heatmap"), strand = c("auto", "+", "-", "both", "ignore"), bin_size = NULL, highlight = NULL, show_gene_model = TRUE, signal_palette = "Blues", signal_colors = NULL, signal_transform = c("none", "log2", "log10", "sqrt"), signal_y_scale = c("free", "fixed"), signal_y_ticks = c("range", "pretty"), grid_linewidth = 0.25, heatmap_bin_size = NULL, heatmap_max_bins = 800L, heatmap_summary = c("mean", "max", "sum", "median"), cds_width = 0.50, utr_width = 0.25, show_direction = TRUE, direction_mode = c("transcript", "gene", "end"), label_position = c("axis", "feature", "none"), label_by = c("gene", "transcript"), label_side = c("above", "below", "center"), label_offset = 0.45, text_color = "black", text_size = 14, label_size = 12) {
   stop_if_not(inherits(signal, "BwgTrack"), "`signal` must be a BwgTrack object.")
   stop_if_not(inherits(annotation, "GenePred"), "`annotation` must be a GenePred object.")
   coordinate <- match.arg(coordinate)
@@ -126,7 +126,10 @@ plot_signal_transcript <- function(signal, annotation, transcript_id, samples = 
     signal_y_ticks = signal_y_ticks,
     text_color = text_color,
     text_size = text_size,
-    grid_linewidth = grid_linewidth
+    grid_linewidth = grid_linewidth,
+    heatmap_bin_size = heatmap_bin_size,
+    heatmap_max_bins = heatmap_max_bins,
+    heatmap_summary = heatmap_summary
   )
 
   if (!show_gene_model) return(p_signal)
@@ -209,7 +212,7 @@ plot_signal_transcript <- function(signal, annotation, transcript_id, samples = 
 #' )
 #' }
 #' @export
-plot_signal_gene <- function(signal, annotation, gene_id, samples = NULL, sample_groups = NULL, signal_color_by = c("sample", "group"), signal_summary = c("none", "mean", "median", "sum"), plot_type = c("bar", "line", "area", "heatmap"), strand = c("auto", "+", "-", "both", "ignore"), bin_size = NULL, highlight = NULL, show_gene_model = TRUE, signal_palette = "Blues", signal_colors = NULL, signal_transform = c("none", "log2", "log10", "sqrt"), signal_y_scale = c("free", "fixed"), signal_y_ticks = c("range", "pretty"), grid_linewidth = 0.25, cds_width = 0.50, utr_width = 0.25, show_direction = TRUE, direction_mode = c("transcript", "gene", "end"), label_position = c("axis", "feature", "none"), label_by = c("gene", "transcript"), label_side = c("above", "below", "center"), label_offset = 0.45, text_color = "black", text_size = 14, label_size = 12) {
+plot_signal_gene <- function(signal, annotation, gene_id, samples = NULL, sample_groups = NULL, signal_color_by = c("sample", "group"), signal_summary = c("none", "mean", "median", "sum"), plot_type = c("bar", "line", "area", "heatmap"), strand = c("auto", "+", "-", "both", "ignore"), bin_size = NULL, highlight = NULL, show_gene_model = TRUE, signal_palette = "Blues", signal_colors = NULL, signal_transform = c("none", "log2", "log10", "sqrt"), signal_y_scale = c("free", "fixed"), signal_y_ticks = c("range", "pretty"), grid_linewidth = 0.25, heatmap_bin_size = NULL, heatmap_max_bins = 800L, heatmap_summary = c("mean", "max", "sum", "median"), cds_width = 0.50, utr_width = 0.25, show_direction = TRUE, direction_mode = c("transcript", "gene", "end"), label_position = c("axis", "feature", "none"), label_by = c("gene", "transcript"), label_side = c("above", "below", "center"), label_offset = 0.45, text_color = "black", text_size = 14, label_size = 12) {
   stop_if_not(inherits(signal, "BwgTrack"), "`signal` must be a BwgTrack object.")
   stop_if_not(inherits(annotation, "GenePred"), "`annotation` must be a GenePred object.")
   plot_type <- match.arg(plot_type)
@@ -257,7 +260,10 @@ plot_signal_gene <- function(signal, annotation, gene_id, samples = NULL, sample
     signal_y_ticks = signal_y_ticks,
     text_color = text_color,
     text_size = text_size,
-    grid_linewidth = grid_linewidth
+    grid_linewidth = grid_linewidth,
+    heatmap_bin_size = heatmap_bin_size,
+    heatmap_max_bins = heatmap_max_bins,
+    heatmap_summary = heatmap_summary
   )
 
   if (!show_gene_model) return(p_signal)
@@ -340,7 +346,7 @@ plot_signal_gene <- function(signal, annotation, gene_id, samples = NULL, sample
 #' )
 #' }
 #' @export
-plot_signal_region <- function(signal, chrom, start, end, samples = NULL, sample_groups = NULL, signal_color_by = c("sample", "group"), signal_summary = c("none", "mean", "median", "sum"), plot_type = c("bar", "line", "area", "heatmap"), strand = c("ignore", "+", "-", "both"), bin_size = NULL, highlight = NULL, annotation = NULL, show_gene_model = TRUE, signal_palette = "Blues", signal_colors = NULL, signal_transform = c("none", "log2", "log10", "sqrt"), signal_y_scale = c("free", "fixed"), signal_y_ticks = c("range", "pretty"), grid_linewidth = 0.25, cds_width = 0.50, utr_width = 0.25, show_direction = TRUE, direction_mode = c("transcript", "gene", "end"), label_position = c("axis", "feature", "none"), label_by = c("gene", "transcript"), label_side = c("above", "below", "center"), label_offset = 0.45, text_color = "black", text_size = 14, label_size = 12) {
+plot_signal_region <- function(signal, chrom, start, end, samples = NULL, sample_groups = NULL, signal_color_by = c("sample", "group"), signal_summary = c("none", "mean", "median", "sum"), plot_type = c("bar", "line", "area", "heatmap"), strand = c("ignore", "+", "-", "both"), bin_size = NULL, highlight = NULL, annotation = NULL, show_gene_model = TRUE, signal_palette = "Blues", signal_colors = NULL, signal_transform = c("none", "log2", "log10", "sqrt"), signal_y_scale = c("free", "fixed"), signal_y_ticks = c("range", "pretty"), grid_linewidth = 0.25, heatmap_bin_size = NULL, heatmap_max_bins = 800L, heatmap_summary = c("mean", "max", "sum", "median"), cds_width = 0.50, utr_width = 0.25, show_direction = TRUE, direction_mode = c("transcript", "gene", "end"), label_position = c("axis", "feature", "none"), label_by = c("gene", "transcript"), label_side = c("above", "below", "center"), label_offset = 0.45, text_color = "black", text_size = 14, label_size = 12) {
   stop_if_not(inherits(signal, "BwgTrack"), "`signal` must be a BwgTrack object.")
   plot_type <- match.arg(plot_type)
   strand <- match.arg(strand)
@@ -380,7 +386,10 @@ plot_signal_region <- function(signal, chrom, start, end, samples = NULL, sample
     signal_y_ticks = signal_y_ticks,
     text_color = text_color,
     text_size = text_size,
-    grid_linewidth = grid_linewidth
+    grid_linewidth = grid_linewidth,
+    heatmap_bin_size = heatmap_bin_size,
+    heatmap_max_bins = heatmap_max_bins,
+    heatmap_summary = heatmap_summary
   ) +
     ggplot2::coord_cartesian(xlim = c(start, end))
 
@@ -480,13 +489,67 @@ complete_empty_signal_tracks <- function(dt, sample_ids, chrom, start, end, stra
   out[]
 }
 
-plot_signal_core <- function(dt, plot_type = c("bar", "line", "area", "heatmap"), highlight = NULL, x_label = "Genomic coordinate", signal_palette = "Blues", signal_colors = NULL, sample_groups = NULL, signal_color_by = c("sample", "group"), signal_summary = c("none", "mean", "median", "sum"), signal_transform = c("none", "log2", "log10", "sqrt"), signal_y_scale = c("free", "fixed"), signal_y_ticks = c("range", "pretty"), text_color = "black", text_size = 14, grid_linewidth = 0.25) {
+
+aggregate_signal_for_heatmap <- function(dt, heatmap_bin_size = NULL, heatmap_max_bins = 800L, heatmap_summary = c("mean", "max", "sum", "median")) {
+  heatmap_summary <- match.arg(heatmap_summary)
+  dt <- data.table::as.data.table(dt)
+  if (nrow(dt) == 0L) return(dt[])
+
+  x_min <- suppressWarnings(min(as.integer(dt[["start"]]), na.rm = TRUE))
+  x_max <- suppressWarnings(max(as.integer(dt[["end"]]), na.rm = TRUE))
+  if (!is.finite(x_min) || !is.finite(x_max) || x_max < x_min) return(dt[])
+
+  region_width <- as.integer(x_max - x_min + 1L)
+  if (is.null(heatmap_bin_size)) {
+    heatmap_max_bins <- suppressWarnings(as.integer(heatmap_max_bins)[1L])
+    if (!is.finite(heatmap_max_bins) || heatmap_max_bins <= 0L) heatmap_max_bins <- 800L
+    interval_count <- length(unique(paste(dt[["sample_id"]], dt[["start"]], dt[["end"]], sep = "\r")))
+    if (region_width <= heatmap_max_bins && interval_count <= heatmap_max_bins * length(unique(dt[["sample_id"]]))) {
+      return(dt[])
+    }
+    heatmap_bin_size <- max(1L, as.integer(ceiling(region_width / heatmap_max_bins)))
+  } else {
+    heatmap_bin_size <- suppressWarnings(as.integer(heatmap_bin_size)[1L])
+    if (!is.finite(heatmap_bin_size) || heatmap_bin_size <= 0L) {
+      return(dt[])
+    }
+  }
+
+  dt[, heatmap_bin := as.integer(floor((mid - x_min) / heatmap_bin_size))]
+  dt[heatmap_bin < 0L, heatmap_bin := 0L]
+
+  group_cols <- c("sample_id", "heatmap_bin")
+  if ("sample_group" %in% names(dt)) group_cols <- c("sample_group", group_cols)
+  if ("chrom" %in% names(dt)) group_cols <- c("chrom", group_cols)
+  if ("strand" %in% names(dt)) group_cols <- c("strand", group_cols)
+
+  value_fun <- switch(
+    heatmap_summary,
+    mean = function(x) mean(x, na.rm = TRUE),
+    max = function(x) max(x, na.rm = TRUE),
+    sum = function(x) sum(x, na.rm = TRUE),
+    median = function(x) stats::median(x, na.rm = TRUE)
+  )
+
+  out <- dt[, .(
+    start = x_min + min(heatmap_bin) * heatmap_bin_size,
+    end = pmin(x_max, x_min + (max(heatmap_bin) + 1L) * heatmap_bin_size - 1L),
+    value = value_fun(value),
+    plot_value = value_fun(plot_value)
+  ), by = group_cols]
+  out[, mid := (start + end) / 2]
+  out[, heatmap_bin := NULL]
+  out[]
+}
+
+plot_signal_core <- function(dt, plot_type = c("bar", "line", "area", "heatmap"), highlight = NULL, x_label = "Genomic coordinate", signal_palette = "Blues", signal_colors = NULL, sample_groups = NULL, signal_color_by = c("sample", "group"), signal_summary = c("none", "mean", "median", "sum"), signal_transform = c("none", "log2", "log10", "sqrt"), signal_y_scale = c("free", "fixed"), signal_y_ticks = c("range", "pretty"), text_color = "black", text_size = 14, grid_linewidth = 0.25, heatmap_bin_size = NULL, heatmap_max_bins = 800L, heatmap_summary = c("mean", "max", "sum", "median")) {
   plot_type <- match.arg(plot_type)
   signal_color_by <- match.arg(signal_color_by)
   signal_summary <- match.arg(signal_summary)
   signal_transform <- match.arg(signal_transform)
   signal_y_scale <- match.arg(signal_y_scale)
   signal_y_ticks <- match.arg(signal_y_ticks)
+  heatmap_summary <- match.arg(heatmap_summary)
   dt <- data.table::as.data.table(dt)
   stop_if_not(nrow(dt) > 0L, "No signal records were found in the specified region.")
   dt[, mid := (start + end) / 2]
@@ -546,8 +609,14 @@ plot_signal_core <- function(dt, plot_type = c("bar", "line", "area", "heatmap")
     )
 
   if (plot_type == "heatmap") {
-    p <- ggplot2::ggplot(dt, ggplot2::aes(x = mid, y = sample_id, fill = plot_value)) +
-      ggplot2::geom_tile() +
+    dt <- aggregate_signal_for_heatmap(
+      dt,
+      heatmap_bin_size = heatmap_bin_size,
+      heatmap_max_bins = heatmap_max_bins,
+      heatmap_summary = heatmap_summary
+    )
+    p <- ggplot2::ggplot(dt, ggplot2::aes(x = mid, y = sample_id, fill = plot_value, width = pmax(end - start + 1L, 1L))) +
+      ggplot2::geom_tile(height = 0.90) +
       ggplot2::labs(x = x_label, y = NULL, fill = y_label) +
       apply_signal_continuous_fill_scale(signal_palette = signal_palette, signal_colors = signal_colors) +
       base_theme +
