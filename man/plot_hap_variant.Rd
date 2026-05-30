@@ -13,8 +13,8 @@ plot_hap_variant(
   variant_label = c("variant_id", "pos"),
   text_size = 14,
   table_text_size = 3.2,
+  table_x_angle = 90,
   genotype_text_size = NULL,
-  table_x_text_angle = 90,
   gene_track_height = 1.25,
   connector_height = 0.35,
   table_height = NULL,
@@ -27,7 +27,6 @@ plot_hap_variant(
   table_fill_colors = NULL,
   table_fill_alpha = 0.6,
   reference_fill = "white",
-  reference_indel_prefix = "i",
   variant_palette = "Set2",
   variant_colors = NULL
 )
@@ -51,9 +50,9 @@ a compact gene track is drawn above the haplotype table.}
 
 \item{table_text_size}{Haplotype table text size.}
 
-\item{genotype_text_size}{Genotype cell text size. If NULL, \code{table_text_size} is used.}
+\item{table_x_angle}{Angle of haplotype table x-axis labels. Default is 90.}
 
-\item{table_x_text_angle}{Angle of variant labels on the haplotype table x-axis.}
+\item{genotype_text_size}{Genotype cell text size. If NULL, \code{table_text_size} is used.}
 
 \item{gene_track_height}{Relative height of the gene track panel.}
 
@@ -78,8 +77,6 @@ a compact gene track is drawn above the haplotype table.}
 \item{table_fill_alpha}{Alpha value for haplotype table fill colors.}
 
 \item{reference_fill}{Background fill color for the REF/ALT reference row.}
-
-\item{reference_indel_prefix}{Prefix used to shorten long indel alleles in the REF/ALT reference row.}
 
 \item{variant_palette}{RColorBrewer palette name used for variant-type marker fills.}
 

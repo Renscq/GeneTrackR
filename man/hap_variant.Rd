@@ -38,7 +38,7 @@ hap_variant(
 
 \item{variant_type}{Optional variant types to keep.}
 
-\item{genotype_mode}{Genotype representation. \code{code} converts genotypes to compact 0/1 states, where 0 means reference genotype and 1 means any alternate allele is present. \code{string} converts genotypes to allele strings such as \code{A} or \code{A|G}.}
+\item{genotype_mode}{Genotype representation. \code{code} converts genotypes to compact 0/1 states, where 0 means reference genotype and 1 means any alternate allele is present. \code{string} converts genotypes to a single allele label; long InDel alleles are compressed as \code{iN}, where \code{N} is allele length.}
 
 \item{missing_genotype}{Missing genotype label. Default is \code{NA_character_}, which is displayed as \code{NA} in haplotype tables.}
 

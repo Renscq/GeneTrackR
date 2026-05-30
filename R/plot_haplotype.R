@@ -23,8 +23,8 @@
 #' @param variant_label Column used for variant labels. One of `variant_id`, `pos`, or an existing column in `hap$variants`.
 #' @param text_size Base text size.
 #' @param table_text_size Haplotype table text size.
+#' @param table_x_angle Angle of haplotype table x-axis labels. Default is 90.
 #' @param genotype_text_size Genotype cell text size. If NULL, `table_text_size` is used.
-#' @param table_x_text_angle Angle of variant labels on the haplotype table x-axis.
 #' @param gene_track_height Relative height of the gene track panel.
 #' @param connector_height Relative height of the connector panel.
 #' @param table_height Relative height of the haplotype table panel.
@@ -37,7 +37,6 @@
 #' @param table_fill_colors Optional custom fill colors for haplotype table genotypes.
 #' @param table_fill_alpha Alpha value for haplotype table fill colors.
 #' @param reference_fill Background fill color for the REF/ALT reference row.
-#' @param reference_indel_prefix Prefix used to shorten long indel alleles in the REF/ALT reference row.
 #' @param variant_palette RColorBrewer palette name used for variant-type marker fills.
 #' @param variant_colors Optional custom fill colors for variant-type markers.
 #' @return A patchwork object with attributes `plot_data`, `variant_data`, and `gene_data`.
@@ -50,8 +49,8 @@ plot_hap_variant <- function(hap,
                              variant_label = c("variant_id", "pos"),
                              text_size = 14,
                              table_text_size = 3.2,
+                             table_x_angle = 90,
                              genotype_text_size = NULL,
-                             table_x_text_angle = 90,
                              gene_track_height = 1.25,
                              connector_height = 0.35,
                              table_height = NULL,
@@ -64,7 +63,6 @@ plot_hap_variant <- function(hap,
                              table_fill_colors = NULL,
                              table_fill_alpha = 0.6,
                              reference_fill = "white",
-                             reference_indel_prefix = "i",
                              variant_palette = "Set2",
                              variant_colors = NULL) {
   stop_if_not(inherits(hap, "HapVariant"), "`hap` must be a HapVariant object.")
@@ -88,14 +86,9 @@ plot_hap_variant <- function(hap,
   if (is.na(genotype_text_size) || genotype_text_size <= 0) {
     genotype_text_size <- table_text_size
   }
-  table_x_text_angle <- as.numeric(table_x_text_angle)[1L]
-  if (is.na(table_x_text_angle)) {
-    table_x_text_angle <- 90
-  }
-  reference_indel_prefix <- as.character(reference_indel_prefix)[1L]
-  if (is.na(reference_indel_prefix) || reference_indel_prefix == "") {
-    reference_indel_prefix <- "i"
-  }
+  table_x_angle <- as.numeric(table_x_angle)[1L]
+  if (is.na(table_x_angle)) table_x_angle <- 90
+  table_x_angle <- max(0, min(180, table_x_angle))
   reference_fill <- as.character(reference_fill)[1L]
   if (is.na(reference_fill) || reference_fill == "") {
     reference_fill <- "white"
@@ -130,7 +123,7 @@ plot_hap_variant <- function(hap,
 
   table_long <- merge(
     table_long,
-    vars[, .(variant_id, variant_index, variant_label)],
+    vars[, .(variant_id, variant_index, variant_label, ref, alt)],
     by = "variant_id",
     all.x = TRUE,
     sort = FALSE
@@ -141,7 +134,12 @@ plot_hap_variant <- function(hap,
   hap_label_levels <- haps[match(hap_order, hap_id), paste0(hap_id, " (n=", sample_n, ")")]
   row_levels <- rev(hap_label_levels)
 
-  table_long[, "genotype_label" := as.character(genotype)]
+  table_long[, "genotype_label" := format_hap_table_genotype_label(
+    genotype = genotype,
+    ref = ref,
+    alt = alt,
+    genotype_mode = hap$meta$genotype_mode %||% NA_character_
+  )]
   table_long[is.na(genotype_label), "genotype_label" := "NA"]
 
   if (show_reference_row) {
@@ -151,16 +149,8 @@ plot_hap_variant <- function(hap,
       variant_index,
       variant_label,
       row_label = ref_row_label,
-      genotype = make_reference_variant_label(
-        ref = as.character(ref),
-        alt = as.character(alt),
-        prefix = reference_indel_prefix
-      ),
-      genotype_label = make_reference_variant_label(
-        ref = as.character(ref),
-        alt = as.character(alt),
-        prefix = reference_indel_prefix
-      )
+      genotype = format_hap_ref_alt(ref, alt),
+      genotype_label = format_hap_ref_alt(ref, alt)
     )]
     for (nm in setdiff(names(table_long), names(ref_alt))) {
       ref_alt[, (nm) := NA]
@@ -245,7 +235,8 @@ plot_hap_variant <- function(hap,
     ggplot2::geom_text(
       data = table_long,
       ggplot2::aes(x = .data$variant_index, y = .data$hap_y, label = .data$genotype_label),
-      size = genotype_text_size
+      size = genotype_text_size,
+      color = "black"
     ) +
     ggplot2::scale_x_continuous(
       breaks = x_breaks,
@@ -263,7 +254,8 @@ plot_hap_variant <- function(hap,
     ggplot2::labs(x = NULL, y = "Haplotype") +
     ggplot2::theme_bw() +
     ggplot2::theme(
-      axis.text.x = ggplot2::element_text(size = text_size * 0.68, angle = table_x_text_angle, hjust = 1, vjust = 0.5, color = "black"),
+      text = ggplot2::element_text(color = "black"),
+      axis.text.x = ggplot2::element_text(size = text_size * 0.68, angle = table_x_angle, hjust = 1, vjust = 0.5, color = "black"),
       axis.ticks.x = ggplot2::element_blank(),
       axis.text.y = ggplot2::element_text(size = text_size * 0.78, color = "black"),
       axis.title.y = ggplot2::element_text(size = text_size, color = "black"),
@@ -303,7 +295,10 @@ plot_hap_variant <- function(hap,
       ggplot2::scale_y_continuous(limits = c(0.7, 1.45), expand = c(0, 0)) +
       ggplot2::labs(x = NULL, y = NULL) +
       ggplot2::theme_void() +
-      ggplot2::theme(plot.margin = ggplot2::margin(8, 12, 0, 8))
+      ggplot2::theme(
+        text = ggplot2::element_text(color = "black"),
+        plot.margin = ggplot2::margin(8, 12, 0, 8)
+      )
     p <- p_variant / p_connector / p_table +
       patchwork::plot_layout(heights = c(0.75, connector_height, table_height))
   }
@@ -434,8 +429,8 @@ draw_hap_gene_track <- function(gene_data,
     tx = tx,
     cds_height = cds_height
   )
-  y_upper <- max(c(seg$ymax, vars$marker_y), na.rm = TRUE) + 0.35
-  y_lower <- 0.5
+  y_upper <- max(seg$ymax, na.rm = TRUE) + 0.35
+  y_lower <- min(c(0.5, vars$marker_y - 0.18), na.rm = TRUE)
   vars[, "connector_top_y" := y_lower]
 
   fill_scale <- make_hap_variant_fill_scale(
@@ -451,7 +446,8 @@ draw_hap_gene_track <- function(gene_data,
     ggplot2::geom_segment(
       data = tx,
       ggplot2::aes(x = .data$tx_xstart, xend = .data$tx_xend, y = .data$track_y, yend = .data$track_y),
-      linewidth = 0.35
+      linewidth = 0.35,
+      color = "black"
     ) +
     ggplot2::geom_rect(
       data = seg,
@@ -476,8 +472,8 @@ draw_hap_gene_track <- function(gene_data,
       data = vars,
       ggplot2::aes(x = .data$gene_x, y = .data$marker_y, fill = .data$variant_type_label),
       size = 2.8,
-      shape = 25,
-      color = "grey25"
+      shape = 24,
+      color = "black"
     ) +
     ggplot2::scale_fill_manual(
       values = fill_scale$colors,
@@ -503,6 +499,7 @@ draw_hap_gene_track <- function(gene_data,
     ggplot2::theme(
       axis.text.x = ggplot2::element_blank(),
       axis.ticks.x = ggplot2::element_blank(),
+      text = ggplot2::element_text(color = "black"),
       axis.text.y = ggplot2::element_text(size = text_size * 0.7, color = "black"),
       axis.ticks.y = ggplot2::element_blank(),
       panel.grid = ggplot2::element_blank(),
@@ -583,49 +580,62 @@ assign_variant_gene_track_y <- function(vars,
     data.table::set(vars, i = i, j = "gene_model_bottom_y", value = y_i - cds_height / 2)
   }
 
-  vars[, "marker_y" := gene_model_top_y + marker_offset]
+  vars[, "marker_y" := gene_model_bottom_y - marker_offset]
   vars[]
 }
 
+format_hap_table_genotype_label <- function(genotype,
+                                            ref = NULL,
+                                            alt = NULL,
+                                            genotype_mode = NA_character_) {
+  genotype <- as.character(genotype)
+  out <- genotype
+  out[is.na(out) | out == "" | out == "."] <- "NA"
 
-make_reference_variant_label <- function(ref,
-                                         alt,
-                                         prefix = "i") {
-  ref <- as.character(ref)
-  alt <- as.character(alt)
-  prefix <- as.character(prefix)[1L]
-  if (is.na(prefix) || prefix == "") {
-    prefix <- "i"
+  if (!identical(as.character(genotype_mode)[1L], "string")) {
+    return(out)
   }
 
-  out <- character(length(ref))
-  for (i in seq_along(ref)) {
-    ref_i <- ref[i]
-    alt_i <- alt[i]
-    if (is.na(ref_i) || ref_i == "" || is.na(alt_i) || alt_i == "") {
-      out[i] <- "NA"
-      next
+  n <- length(out)
+  if (is.null(ref)) ref <- rep(NA_character_, n)
+  if (is.null(alt)) alt <- rep(NA_character_, n)
+  ref <- rep(as.character(ref), length.out = n)
+  alt <- rep(as.character(alt), length.out = n)
+
+  vapply(seq_len(n), function(i) {
+    value <- out[i]
+    if (is.na(value) || value == "NA" || value == "") {
+      return("NA")
     }
 
-    alt_parts <- unlist(strsplit(alt_i, ",", fixed = TRUE), use.names = FALSE)
-    alleles <- c(ref_i, alt_parts)
-    allele_lengths <- nchar(alleles)
-    is_indel <- length(unique(allele_lengths)) > 1L || any(allele_lengths > 1L)
-
-    if (isTRUE(is_indel)) {
-      delta_lengths <- abs(nchar(alt_parts) - nchar(ref_i))
-      delta_lengths[is.na(delta_lengths)] <- 0L
-      indel_len <- max(delta_lengths, na.rm = TRUE)
-      if (!is.finite(indel_len) || indel_len <= 0L) {
-        indel_len <- max(allele_lengths, na.rm = TRUE)
-      }
-      out[i] <- paste0(prefix, indel_len)
-    } else {
-      out[i] <- paste0(ref_i, "/", alt_i)
+    parts <- unlist(strsplit(value, "[|/]", perl = TRUE), use.names = FALSE)
+    parts <- parts[!is.na(parts) & nzchar(parts) & parts != "."]
+    if (length(parts) == 0L) {
+      return("NA")
     }
-  }
 
-  out
+    compact_parts <- format_hap_allele(parts)
+    compact_parts <- compact_parts[!is.na(compact_parts) & nzchar(compact_parts)]
+    if (length(compact_parts) == 0L) {
+      return("NA")
+    }
+
+    ref_compact <- format_hap_allele(ref[i])
+    alt_parts <- strsplit(alt[i], ",", fixed = TRUE)[[1L]]
+    alt_compact <- format_hap_allele(alt_parts)
+    alt_compact <- alt_compact[!is.na(alt_compact) & nzchar(alt_compact)]
+
+    alt_hit <- compact_parts[compact_parts %in% alt_compact]
+    if (length(alt_hit) > 0L) {
+      return(alt_hit[1L])
+    }
+
+    if (!is.na(ref_compact) && ref_compact %in% compact_parts) {
+      return(ref_compact)
+    }
+
+    compact_parts[1L]
+  }, character(1L))
 }
 
 make_hap_variant_fill_scale <- function(gene_features,
@@ -736,6 +746,7 @@ plot_hap_pheno <- function(hap,
     ggplot2::labs(x = "Haplotype", y = "Phenotype value") +
     ggplot2::theme_bw() +
     ggplot2::theme(
+      text = ggplot2::element_text(color = "black"),
       axis.text.x = ggplot2::element_text(size = text_size, angle = 45, hjust = 1, color = "black"),
       axis.text.y = ggplot2::element_text(size = text_size, color = "black"),
       axis.title = ggplot2::element_text(size = text_size, color = "black"),

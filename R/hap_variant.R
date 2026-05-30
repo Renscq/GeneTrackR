@@ -21,7 +21,7 @@
 #' @param end Optional region end in 1-based closed coordinates.
 #' @param samples Optional sample names to keep.
 #' @param variant_type Optional variant types to keep.
-#' @param genotype_mode Genotype representation. `code` converts genotypes to compact 0/1 states, where 0 means reference genotype and 1 means any alternate allele is present. `string` converts genotypes to allele strings such as `A` or `A|G`.
+#' @param genotype_mode Genotype representation. `code` converts genotypes to compact 0/1 states, where 0 means reference genotype and 1 means any alternate allele is present. `string` converts genotypes to a single allele label; long InDel alleles are compressed as `iN`, where `N` is allele length.
 #' @param missing_genotype Missing genotype label. Default is `NA_character_`, which is displayed as `NA` in haplotype tables.
 #' @param min_variant_number Minimum number of non-missing variants required for a sample. If NULL, only samples with complete non-missing genotypes across all retained variants are kept.
 #' @return A HapVariant object.
@@ -312,7 +312,7 @@ convert_gt_to_string <- function(gt, ref, alt, missing_genotype = NA_character_)
       next
     }
 
-    # Display a single allele string per variant. If any ALT allele is present,
+    # Display one compact allele label per variant. If any ALT allele is present,
     # show the first observed ALT allele; otherwise show the REF allele.
     display_index <- if (any(idx_raw > 0L)) idx_raw[idx_raw > 0L][1L] + 1L else 1L
     if (display_index < 1L || display_index > length(allele_values)) {
@@ -320,7 +320,7 @@ convert_gt_to_string <- function(gt, ref, alt, missing_genotype = NA_character_)
       next
     }
 
-    value <- allele_values[display_index]
+    value <- format_hap_allele(allele_values[display_index])
     if (is.na(value) || !nzchar(value)) {
       out[i] <- missing_genotype
     } else {
@@ -329,4 +329,34 @@ convert_gt_to_string <- function(gt, ref, alt, missing_genotype = NA_character_)
   }
 
   replace_missing_label(out, missing_genotype)
+}
+
+format_hap_allele <- function(x) {
+  x <- as.character(x)
+  out <- x
+  invalid <- is.na(out) | out == "" | out == "."
+  allele_len <- nchar(out, type = "chars", allowNA = TRUE, keepNA = TRUE)
+  is_indel_like <- !invalid & !is.na(allele_len) & allele_len != 1L
+  out[is_indel_like] <- paste0("i", allele_len[is_indel_like])
+  out[invalid] <- NA_character_
+  out
+}
+
+format_hap_ref_alt <- function(ref, alt) {
+  ref <- as.character(ref)
+  alt <- as.character(alt)
+  n <- max(length(ref), length(alt))
+  ref <- rep(ref, length.out = n)
+  alt <- rep(alt, length.out = n)
+
+  vapply(seq_len(n), function(i) {
+    ref_i <- format_hap_allele(ref[i])
+    alt_i <- strsplit(alt[i], ",", fixed = TRUE)[[1L]]
+    alt_i <- alt_i[!is.na(alt_i) & nzchar(alt_i)]
+    alt_i <- format_hap_allele(alt_i)
+    alt_i <- alt_i[!is.na(alt_i) & nzchar(alt_i)]
+    if (is.na(ref_i) || !nzchar(ref_i)) ref_i <- "NA"
+    if (length(alt_i) == 0L) alt_i <- "NA"
+    paste0(ref_i, "/", paste(alt_i, collapse = ","))
+  }, character(1L))
 }
