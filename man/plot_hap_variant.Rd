@@ -2,31 +2,95 @@
 % Please edit documentation in R/plot_haplotype.R
 \name{plot_hap_variant}
 \alias{plot_hap_variant}
-\title{Plot variants and haplotype table}
+\title{Plot gene variants and haplotype table}
 \usage{
 plot_hap_variant(
   hap,
   annotation = NULL,
-  show_gene_model = !is.null(annotation),
+  show_gene_model = TRUE,
+  min_hap_samples = 5L,
+  show_reference_row = TRUE,
+  variant_label = c("variant_id", "pos"),
   text_size = 14,
-  table_text_size = 3.2
+  table_text_size = 3.2,
+  genotype_text_size = NULL,
+  table_x_text_angle = 90,
+  gene_track_height = 1.25,
+  connector_height = 0.35,
+  table_height = NULL,
+  exon_height = 0.22,
+  cds_height = 0.44,
+  color_palette = "Paired",
+  fill_colors = NULL,
+  border_color = NA,
+  table_fill_palette = "RdBu",
+  table_fill_colors = NULL,
+  table_fill_alpha = 0.6,
+  reference_fill = "white",
+  reference_indel_prefix = "i",
+  variant_palette = "Set2",
+  variant_colors = NULL
 )
 }
 \arguments{
 \item{hap}{A HapVariant object from \code{hap_variant()}.}
 
-\item{annotation}{Optional annotation object used to draw gene models.}
+\item{annotation}{Optional Feature/GenePred annotation object. When supplied,
+a compact gene track is drawn above the haplotype table.}
 
-\item{show_gene_model}{Logical. Whether to draw a gene model panel.}
+\item{show_gene_model}{Logical. Whether to draw the gene track when
+\code{annotation} is supplied.}
 
-\item{text_size}{Text size.}
+\item{min_hap_samples}{Minimum sample number required for a haplotype group to be displayed.}
+
+\item{show_reference_row}{Logical. Whether to add the first table row showing REF/ALT allele strings for each variant.}
+
+\item{variant_label}{Column used for variant labels. One of \code{variant_id}, \code{pos}, or an existing column in \code{hap$variants}.}
+
+\item{text_size}{Base text size.}
 
 \item{table_text_size}{Haplotype table text size.}
+
+\item{genotype_text_size}{Genotype cell text size. If NULL, \code{table_text_size} is used.}
+
+\item{table_x_text_angle}{Angle of variant labels on the haplotype table x-axis.}
+
+\item{gene_track_height}{Relative height of the gene track panel.}
+
+\item{connector_height}{Relative height of the connector panel.}
+
+\item{table_height}{Relative height of the haplotype table panel.}
+
+\item{exon_height}{Height of exon boxes in the compact gene track.}
+
+\item{cds_height}{Height of CDS boxes in the compact gene track.}
+
+\item{color_palette}{RColorBrewer palette name used for gene model feature fills.}
+
+\item{fill_colors}{Optional custom fill colors for gene model features.}
+
+\item{border_color}{Border color for gene model feature boxes.}
+
+\item{table_fill_palette}{RColorBrewer palette name used for haplotype table fills.}
+
+\item{table_fill_colors}{Optional custom fill colors for haplotype table genotypes.}
+
+\item{table_fill_alpha}{Alpha value for haplotype table fill colors.}
+
+\item{reference_fill}{Background fill color for the REF/ALT reference row.}
+
+\item{reference_indel_prefix}{Prefix used to shorten long indel alleles in the REF/ALT reference row.}
+
+\item{variant_palette}{RColorBrewer palette name used for variant-type marker fills.}
+
+\item{variant_colors}{Optional custom fill colors for variant-type markers.}
 }
 \value{
-A patchwork object.
+A patchwork object with attributes \code{plot_data}, \code{variant_data}, and \code{gene_data}.
 }
 \description{
-Draws a gene/region model, variant positions, and a haplotype genotype table.
-Variant columns are aligned by genomic position.
+Draws a haplotype-variant figure with a compact gene model track, variant
+markers, connector lines, and a haplotype genotype table. Genomic gaps are
+compressed by mapping variant positions to evenly spaced table columns while
+retaining the relative order of gene model features.
 }

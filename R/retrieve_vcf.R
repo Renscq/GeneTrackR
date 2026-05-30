@@ -25,27 +25,22 @@
 #' @param as Output type: `data.table` or `VariantTrack`.
 #' @return A data.table or VariantTrack object.
 #' @export
-retrieve_vcf <- function(
-  object,
-  pattern = NULL,
-  chrom = NULL,
-  start = NULL,
-  end = NULL,
-  variant_id = NULL,
-  variant_type = NULL,
-  ignore_case = TRUE,
-  fixed = FALSE,
-  as = c("data.table", "VariantTrack")
-) {
+retrieve_vcf <- function(object,
+                         pattern = NULL,
+                         chrom = NULL,
+                         start = NULL,
+                         end = NULL,
+                         variant_id = NULL,
+                         variant_type = NULL,
+                         ignore_case = TRUE,
+                         fixed = FALSE,
+                         as = c("data.table", "VariantTrack")) {
   as <- match.arg(as)
 
   if (is.character(object) && length(object) == 1L && file.exists(object)) {
     vt <- retrieve_vcf_file(object, chrom = chrom, start = start, end = end)
   } else {
-    stop_if_not(
-      inherits(object, "VariantTrack"),
-      "`object` must be a VariantTrack object or a VCF file path."
-    )
+    stop_if_not(inherits(object, "VariantTrack"), "`object` must be a VariantTrack object or a VCF file path.")
     vt <- object
   }
 
@@ -83,15 +78,10 @@ retrieve_vcf <- function(
   )
 
   if (nrow(dt) > 0L) {
-    data.table::setorderv(
-      dt,
-      intersect(c("chrom", "pos", "variant_id"), names(dt))
-    )
+    data.table::setorderv(dt, intersect(c("chrom", "pos", "variant_id"), names(dt)))
   }
 
-  if (as == "data.table") {
-    return(dt[])
-  }
+  if (as == "data.table") return(dt[])
   VariantTrack(dt, meta = vt$meta)
 }
 
@@ -99,20 +89,9 @@ retrieve_vcf_file <- function(file, chrom = NULL, start = NULL, end = NULL) {
   file <- normalizePath(file, winslash = "/", mustWork = TRUE)
   is_indexed <- has_vcf_tabix_index(file)
 
-  if (
-    isTRUE(is_indexed) && !is.null(chrom) && !is.null(start) && !is.null(end)
-  ) {
-    stop_if_not(
-      requireNamespace("Rsamtools", quietly = TRUE),
-      "Package `Rsamtools` is required for indexed VCF queries."
-    )
-    region <- paste0(
-      as.character(chrom)[1L],
-      ":",
-      as.integer(start)[1L],
-      "-",
-      as.integer(end)[1L]
-    )
+  if (isTRUE(is_indexed) && !is.null(chrom) && !is.null(start) && !is.null(end)) {
+    stop_if_not(requireNamespace("Rsamtools", quietly = TRUE), "Package `Rsamtools` is required for indexed VCF queries.")
+    region <- paste0(as.character(chrom)[1L], ":", as.integer(start)[1L], "-", as.integer(end)[1L])
     tbx <- Rsamtools::TabixFile(file)
     lines <- Rsamtools::scanTabix(tbx, param = region)[[1L]]
     header <- read_vcf_header_line(file)
@@ -122,10 +101,7 @@ retrieve_vcf_file <- function(file, chrom = NULL, start = NULL, end = NULL) {
       data.table::setnames(dt, col_names)
     } else {
       dt <- data.table::fread(
-        text = paste(
-          c(paste(col_names, collapse = "\t"), lines),
-          collapse = "\n"
-        ),
+        text = paste(c(paste(col_names, collapse = "\t"), lines), collapse = "\n"),
         sep = "\t",
         header = TRUE,
         data.table = TRUE,
@@ -143,38 +119,15 @@ vcf_table_to_variant_track <- function(dt, source_file = NULL) {
     data.table::setnames(dt, "#CHROM", "CHROM")
   }
   standard_in <- c("CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO")
-  stop_if_not(
-    all(standard_in %in% names(dt)),
-    "A VCF table must contain standard VCF columns."
-  )
+  stop_if_not(all(standard_in %in% names(dt)), "A VCF table must contain standard VCF columns.")
   sample_cols <- setdiff(names(dt), c(standard_in, "FORMAT"))
   has_format <- "FORMAT" %in% names(dt)
   data.table::setnames(
     dt,
     old = standard_in,
-    new = c(
-      "chrom",
-      "pos",
-      "variant_id",
-      "ref",
-      "alt",
-      "qual",
-      "filter",
-      "info"
-    )
+    new = c("chrom", "pos", "variant_id", "ref", "alt", "qual", "filter", "info")
   )
-  dt[
-    is.na(variant_id) | variant_id == "." | variant_id == "",
-    "variant_id" := paste0(
-      as.character(chrom),
-      ":",
-      as.integer(pos),
-      ":",
-      as.character(ref),
-      ":",
-      as.character(alt)
-    )
-  ]
+  dt[is.na(variant_id) | variant_id == "." | variant_id == "", "variant_id" := paste0(as.character(chrom), ":", as.integer(pos), ":", as.character(ref), ":", as.character(alt))]
   VariantTrack(
     dt,
     meta = list(
@@ -182,11 +135,7 @@ vcf_table_to_variant_track <- function(dt, source_file = NULL) {
       format = "VCF",
       coordinate_input = "1-based position",
       coordinate_internal = "1-based position",
-      indexed = if (!is.null(source_file)) {
-        has_vcf_tabix_index(source_file)
-      } else {
-        FALSE
-      },
+      indexed = if (!is.null(source_file)) has_vcf_tabix_index(source_file) else FALSE,
       has_genotype = length(sample_cols) > 0L,
       has_format = isTRUE(has_format),
       sample_names = sample_cols

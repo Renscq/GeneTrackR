@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-29
-# Version: 0.1.0
+# Version: 0.2.0
 # Function: Build haplotype tables from VCF variants
 # Input: VariantTrack objects, VCF files, and genomic locators
 # Output: HapVariant objects
@@ -21,10 +21,9 @@
 #' @param end Optional region end in 1-based closed coordinates.
 #' @param samples Optional sample names to keep.
 #' @param variant_type Optional variant types to keep.
-#' @param genotype_mode Genotype representation: `code` keeps GT codes, `allele` converts GT to REF/ALT alleles.
-#' @param missing_genotype Missing genotype symbol.
-#' @param min_variant_non_missing Minimum number of non-missing samples required for a variant.
-#' @param min_hap_samples Minimum number of samples required to keep a haplotype group.
+#' @param genotype_mode Genotype representation. `code` converts genotypes to compact 0/1 states, where 0 means reference genotype and 1 means any alternate allele is present. `string` converts genotypes to allele strings such as `A` or `A|G`.
+#' @param missing_genotype Missing genotype label. Default is `NA_character_`, which is displayed as `NA` in haplotype tables.
+#' @param min_variant_number Minimum number of non-missing variants required for a sample. If NULL, only samples with complete non-missing genotypes across all retained variants are kept.
 #' @return A HapVariant object.
 #' @export
 hap_variant <- function(vcf,
@@ -36,10 +35,9 @@ hap_variant <- function(vcf,
                         end = NULL,
                         samples = NULL,
                         variant_type = NULL,
-                        genotype_mode = c("code", "allele"),
-                        missing_genotype = "./.",
-                        min_variant_non_missing = 1L,
-                        min_hap_samples = 1L) {
+                        genotype_mode = c("code", "string"),
+                        missing_genotype = NA_character_,
+                        min_variant_number = NULL) {
   genotype_mode <- match.arg(genotype_mode)
 
   region <- resolve_haplotype_region(
@@ -77,14 +75,8 @@ hap_variant <- function(vcf,
     missing_genotype = missing_genotype
   )
 
-  if (nrow(geno_long) > 0L) {
-    non_missing <- geno_long[, .(non_missing_n = sum(!is.na(genotype) & genotype != missing_genotype)), by = variant_id]
-    keep_vars <- non_missing[non_missing_n >= as.integer(min_variant_non_missing), variant_id]
-    geno_long <- geno_long[variant_id %in% keep_vars]
-    vt$data <- vt$data[variant_id %in% keep_vars]
-  }
-
-  stop_if_not(nrow(vt$data) > 0L, "No variants remained after filtering.")
+  stop_if_not(nrow(vt$data) > 0L, "No variants were found in the selected region.")
+  stop_if_not(nrow(geno_long) > 0L, "No genotypes were found in the selected region.")
 
   geno_wide <- data.table::dcast(
     geno_long,
@@ -95,16 +87,28 @@ hap_variant <- function(vcf,
 
   variant_order <- vt$data[["variant_id"]]
   variant_order <- variant_order[variant_order %in% names(geno_wide)]
+  stop_if_not(length(variant_order) > 0L, "No genotype columns matched the retained variants.")
   data.table::setcolorder(geno_wide, c("sample_id", variant_order))
 
-  geno_wide[, "hap_pattern" := do.call(paste, c(.SD, sep = "|")), .SDcols = variant_order]
+  geno_wide[, "non_missing_variant_n" := rowSums(!is.na(.SD)), .SDcols = variant_order]
+
+  if (is.null(min_variant_number)) {
+    min_variant_number <- length(variant_order)
+  }
+  min_variant_number <- as.integer(min_variant_number)[1L]
+  stop_if_not(!is.na(min_variant_number) && min_variant_number >= 0L, "`min_variant_number` must be a non-negative integer or NULL.")
+
+  geno_wide <- geno_wide[non_missing_variant_n >= min_variant_number]
+  stop_if_not(nrow(geno_wide) > 0L, "No samples remained after `min_variant_number` filtering.")
+
+  geno_wide[, "hap_pattern" := do.call(paste, c(lapply(.SD, hap_value_to_string), sep = "|")), .SDcols = variant_order]
+
   hap_map <- geno_wide[, .(sample_n = .N, samples = paste(sample_id, collapse = ";")), by = hap_pattern]
   data.table::setorder(hap_map, -sample_n, hap_pattern)
   hap_map[, "hap_id" := paste0("Hap", seq_len(.N))]
-  hap_map <- hap_map[sample_n >= as.integer(min_hap_samples)]
 
-  geno_wide <- merge(geno_wide, hap_map[, .(hap_pattern, hap_id)], by = "hap_pattern", all.x = FALSE)
-  data.table::setcolorder(geno_wide, c("sample_id", "hap_id", "hap_pattern", variant_order))
+  geno_wide <- merge(geno_wide, hap_map[, .(hap_pattern, hap_id)], by = "hap_pattern", all.x = TRUE)
+  data.table::setcolorder(geno_wide, c("sample_id", "hap_id", "hap_pattern", "non_missing_variant_n", variant_order))
 
   hap_alleles <- geno_wide[, c("hap_id", variant_order), with = FALSE]
   hap_alleles <- unique(hap_alleles, by = "hap_id")
@@ -117,10 +121,11 @@ hap_variant <- function(vcf,
     genotype_long = geno_long[],
     genotype_wide = geno_wide[],
     haplotypes = hap_alleles[],
-    sample_haplotypes = geno_wide[, .(sample_id, hap_id, hap_pattern)],
+    sample_haplotypes = geno_wide[, .(sample_id, hap_id, hap_pattern, non_missing_variant_n)],
     meta = list(
       genotype_mode = genotype_mode,
       missing_genotype = missing_genotype,
+      min_variant_number = min_variant_number,
       sample_n = length(unique(geno_wide$sample_id)),
       variant_n = nrow(vt$data),
       haplotype_n = nrow(hap_alleles)
@@ -195,7 +200,7 @@ get_vcf_sample_columns <- function(vt) {
   setdiff(names(vt$data), standard_cols)
 }
 
-extract_vcf_genotype_long <- function(dt, sample_cols, genotype_mode = "code", missing_genotype = "./.") {
+extract_vcf_genotype_long <- function(dt, sample_cols, genotype_mode = "code", missing_genotype = NA_character_) {
   stop_if_not(length(sample_cols) > 0L, "No sample columns were supplied.")
   id_cols <- intersect(c("chrom", "pos", "variant_id", "ref", "alt", "variant_type", "FORMAT"), names(dt))
   x <- data.table::melt(
@@ -213,11 +218,17 @@ extract_vcf_genotype_long <- function(dt, sample_cols, genotype_mode = "code", m
   x[, .(sample_id = as.character(sample_id), chrom, pos, variant_id, ref, alt, variant_type, genotype)]
 }
 
-normalize_vcf_gt <- function(genotype_raw, format, ref, alt, mode = "code", missing_genotype = "./.") {
+normalize_vcf_gt <- function(genotype_raw, format, ref, alt, mode = c("code", "string"), missing_genotype = NA_character_) {
+  mode <- match.arg(mode)
   gt <- extract_gt_field(genotype_raw, format)
-  gt[is.na(gt) | gt == "." | gt == "" | grepl("\\.", gt)] <- missing_genotype
-  if (mode == "code") return(gt)
-  convert_gt_to_alleles(gt, ref, alt, missing_genotype = missing_genotype)
+  gt <- normalize_gt_separator(gt)
+  gt[is_missing_gt(gt)] <- NA_character_
+
+  if (mode == "code") {
+    return(convert_gt_to_code(gt, missing_genotype = missing_genotype))
+  }
+
+  convert_gt_to_string(gt, ref, alt, missing_genotype = missing_genotype)
 }
 
 extract_gt_field <- function(x, format) {
@@ -238,22 +249,84 @@ extract_gt_field <- function(x, format) {
   gt
 }
 
-convert_gt_to_alleles <- function(gt, ref, alt, missing_genotype = "./.") {
-  out <- gt
+normalize_gt_separator <- function(gt) {
+  gt <- as.character(gt)
+  gt <- gsub("/", "|", gt, fixed = TRUE)
+  gt
+}
+
+is_missing_gt <- function(gt) {
+  is.na(gt) | gt == "." | gt == "" | grepl("\\.", gt)
+}
+
+replace_missing_label <- function(x, missing_genotype = NA_character_) {
+  x[is.na(x)] <- missing_genotype
+  x
+}
+
+hap_value_to_string <- function(x) {
+  x <- as.character(x)
+  x[is.na(x)] <- "NA"
+  x
+}
+
+convert_gt_to_code <- function(gt, missing_genotype = NA_character_) {
+  out <- rep(NA_character_, length(gt))
+
   for (i in seq_along(gt)) {
     g <- gt[i]
-    if (is.na(g) || g == missing_genotype) {
+    if (is.na(g)) {
       out[i] <- missing_genotype
       next
     }
-    sep <- if (grepl("\\|", g)) "|" else "/"
-    alleles <- c(as.character(ref[i]), strsplit(as.character(alt[i]), ",", fixed = TRUE)[[1L]])
-    idx <- suppressWarnings(as.integer(strsplit(g, "[/|]")[[1L]])) + 1L
-    if (any(is.na(idx)) || any(idx < 1L) || any(idx > length(alleles))) {
+
+    idx <- suppressWarnings(as.integer(strsplit(g, "\\|", fixed = FALSE)[[1L]]))
+    if (length(idx) == 0L || any(is.na(idx))) {
+      out[i] <- missing_genotype
+      next
+    }
+
+    out[i] <- if (any(idx > 0L)) "1" else "0"
+  }
+
+  replace_missing_label(out, missing_genotype)
+}
+
+convert_gt_to_string <- function(gt, ref, alt, missing_genotype = NA_character_) {
+  out <- rep(NA_character_, length(gt))
+
+  for (i in seq_along(gt)) {
+    g <- gt[i]
+    if (is.na(g)) {
+      out[i] <- missing_genotype
+      next
+    }
+
+    alt_values <- strsplit(as.character(alt[i]), ",", fixed = TRUE)[[1L]]
+    alt_values <- alt_values[!is.na(alt_values) & nzchar(alt_values)]
+    allele_values <- c(as.character(ref[i]), alt_values)
+    idx_raw <- suppressWarnings(as.integer(strsplit(g, "\\|", fixed = FALSE)[[1L]]))
+
+    if (length(idx_raw) == 0L || any(is.na(idx_raw)) || any(idx_raw < 0L)) {
+      out[i] <- missing_genotype
+      next
+    }
+
+    # Display a single allele string per variant. If any ALT allele is present,
+    # show the first observed ALT allele; otherwise show the REF allele.
+    display_index <- if (any(idx_raw > 0L)) idx_raw[idx_raw > 0L][1L] + 1L else 1L
+    if (display_index < 1L || display_index > length(allele_values)) {
+      out[i] <- missing_genotype
+      next
+    }
+
+    value <- allele_values[display_index]
+    if (is.na(value) || !nzchar(value)) {
       out[i] <- missing_genotype
     } else {
-      out[i] <- paste(alleles[idx], collapse = sep)
+      out[i] <- value
     }
   }
-  out
+
+  replace_missing_label(out, missing_genotype)
 }

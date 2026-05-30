@@ -2,7 +2,8 @@
 % Please edit documentation in R/plot_haplotype.R
 \name{plot_hap_pheno}
 \alias{plot_hap_pheno}
-\title{Plot phenotype values grouped by haplotype}
+\title{Plot phenotype values grouped by haplotype
+Plot phenotype values grouped by haplotype}
 \usage{
 plot_hap_pheno(
   hap,

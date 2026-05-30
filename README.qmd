@@ -38,7 +38,7 @@ ncu12_gff <- read_gff(
   verbose = TRUE
 )
 
-ncu12_summary <- summary_genepred(ncu12)
+ncu12_summary <- summary_feature(ncu12)
 
 
 retrieve_feature(ncu12, gene_id = "NCU06011")
@@ -110,8 +110,8 @@ plot_transcript(
 plot_region(
   ncu12_gtf,
   chrom = "I",
-  start = 9100000,
-  end = 9160000,
+  start = 7120000,
+  end = 7140000,
   text_size = 14,
   label_size = 12,
   mode = 'trim',
@@ -186,13 +186,18 @@ plot_tracks(
   ncu12,
   bg1404,
   chrom = "I",
-  start = 110000,
-  end = 120000,
+  start = 7120000,
+  end = 7140000,
   signal_type = 'heatmap',
   grid_linewidt = 0.1
 )
 
-ncu12_flt <- retrieve_feature(ncu12, chrom = "I", start = 110000, end = 120000)
+ncu12_flt <- retrieve_feature(
+  ncu12,
+  chrom = "I",
+  start = 7120000,
+  end = 7140000
+)
 ```
 
 ### 1.3 操作bigwig信号文件
@@ -276,10 +281,10 @@ plot_tracks(
 ### 1.4 操作 vcf 文件
 
 ```{r}
-vcf <- read_vcf('./inst/extdata/NC12_test_variants.vcf')
+ncu12_vcf <- read_vcf('./inst/extdata/NC12_haplotype_test.vcf')
 
 plot_variant(
-  vcf,
+  ncu12_vcf,
   chrom = "I",
   start = 110000,
   end = 120000
@@ -287,7 +292,7 @@ plot_variant(
 
 # 按变异类型着色：
 plot_variant(
-  vcf,
+  ncu12_vcf,
   chrom = "I",
   start = 110000,
   end = 120000,
@@ -296,7 +301,7 @@ plot_variant(
 
 # 按 FILTER 着色：
 plot_variant(
-  vcf,
+  ncu12_vcf,
   chrom = "I",
   start = 110000,
   end = 120000,
@@ -305,7 +310,7 @@ plot_variant(
 
 # 显示 variant ID：
 plot_variant(
-  vcf,
+  ncu12_vcf,
   chrom = "I",
   start = 110000,
   end = 120000,
@@ -314,7 +319,7 @@ plot_variant(
 
 # 只画 SNP：
 plot_variant(
-  vcf,
+  ncu12_vcf,
   chrom = "I",
   start = 110000,
   end = 120000,
@@ -325,7 +330,7 @@ plot_variant(
 plot_tracks(
   annotation = ncu12,
   signal = bg1404,
-  variants = vcf,
+  variants = ncu12_vcf,
   chrom = "I",
   start = 110000,
   end = 120000,
@@ -333,7 +338,66 @@ plot_tracks(
 )
 ```
 
+### 1.5 操作单倍型文件
 
+```{r}
+ncu12_vcf <- read_vcf('./inst/extdata/NC12_haplotype_test.vcf')
+
+
+vcf_region <- retrieve_vcf(
+  ncu12_vcf,
+  chrom = "I",
+  start = 112000,
+  end = 115000,
+  as = "VariantTrack"
+)
+
+ncu12_hap <- hap_variant(
+  ncu12_vcf,
+  chrom = "I",
+  start = 110000,
+  end = 120000,
+  genotype_mode = "string"
+)
+
+# 按基因名：
+ncu12_hap <- hap_variant(
+  ncu12_vcf,
+  annotation = ncu12,
+  gene_id = "NCU08054"
+)
+
+# 按 transcript：
+ncu12_hap <- hap_variant(
+  ncu12_vcf,
+  annotation = ncu12,
+  transcript_id = "EAA34829",
+  genotype_mode = "string"
+)
+
+
+# 画自然变异位置 + 单倍型表格。
+plot_hap_variant(
+  ncu12_hap,
+  annotation = ncu12,
+  min_hap_samples = 1
+)
+
+plot_hap_variant(
+  ncu12_hap,
+  variant_label = "pos",
+  annotation = ncu12,
+  show_reference_row = T,
+  min_hap_samples = 1,
+  color_palette = "Paired",
+  variant_palette = "Set1",
+  table_fill_palette = "Set2",
+  reference_fill = "white",
+  table_fill_alpha = 0.6,
+  text_size = 18,
+  genotype_text_size = 5
+)
+```
 
 
 

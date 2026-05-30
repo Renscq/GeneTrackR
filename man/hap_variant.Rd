@@ -14,10 +14,9 @@ hap_variant(
   end = NULL,
   samples = NULL,
   variant_type = NULL,
-  genotype_mode = c("code", "allele"),
-  missing_genotype = "./.",
-  min_variant_non_missing = 1L,
-  min_hap_samples = 1L
+  genotype_mode = c("code", "string"),
+  missing_genotype = NA_character_,
+  min_variant_number = NULL
 )
 }
 \arguments{
@@ -39,13 +38,11 @@ hap_variant(
 
 \item{variant_type}{Optional variant types to keep.}
 
-\item{genotype_mode}{Genotype representation: \code{code} keeps GT codes, \code{allele} converts GT to REF/ALT alleles.}
+\item{genotype_mode}{Genotype representation. \code{code} converts genotypes to compact 0/1 states, where 0 means reference genotype and 1 means any alternate allele is present. \code{string} converts genotypes to allele strings such as \code{A} or \code{A|G}.}
 
-\item{missing_genotype}{Missing genotype symbol.}
+\item{missing_genotype}{Missing genotype label. Default is \code{NA_character_}, which is displayed as \code{NA} in haplotype tables.}
 
-\item{min_variant_non_missing}{Minimum number of non-missing samples required for a variant.}
-
-\item{min_hap_samples}{Minimum number of samples required to keep a haplotype group.}
+\item{min_variant_number}{Minimum number of non-missing variants required for a sample. If NULL, only samples with complete non-missing genotypes across all retained variants are kept.}
 }
 \value{
 A HapVariant object.
