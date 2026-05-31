@@ -1,41 +1,54 @@
 # GeneTrackR
 
-GeneTrackR is a lightweight R package for reading, slicing, writing, and visualizing genome annotations, genomic signal tracks, variants, haplotypes, and phenotype associations. It is designed for local genome-browser-like inspection of gene structures together with bedGraph / wig / bigWig coverage, BED/GFF/GTF feature tracks, VCF variant tracks, and haplotype-phenotype results.
-
-The package is useful when you need an IGV-like figure in R, but also want programmable access to the underlying annotation, coverage, variant, haplotype, and phenotype tables.
+**GeneTrackR** is a lightweight R package for reading, querying, writing, and visualizing gene annotations, genomic signal tracks, variant tracks, haplotypes, and phenotype associations. It is designed for programmable IGV-like visualization in R while keeping direct access to the underlying annotation, coverage, variant, haplotype, and phenotype tables.
 
 ## Main features
 
-- Read and standardize gene annotations from GenePred, GenePredExt, GTF, GFF3, and BED.
-- Read and query bedGraph, wig, and bigWig signal tracks.
-- Read, retrieve, merge, plot, and write VCF variant tracks.
+- Read and standardize annotations from **GenePred**, **GenePredExt**, **GTF**, **GFF3**, and **BED**.
+- Read and query **bedGraph**, **wig**, and **bigWig** signal tracks.
+- Read, lazily query, retrieve, merge, plot, and write **VCF** variant tracks.
 - Draw gene models by gene, transcript, or genomic region.
-- Draw signal coverage tracks as bar, line, area, or heatmap tracks.
-- Combine gene models, signal tracks, feature tracks, and variant tracks using `plot_tracks()`.
-- Extract haplotypes from a gene, transcript, or genomic region.
-- Draw gene-level haplotype-variant diagrams with variant markers and genotype tables.
-- Read phenotype tables and summarize missing values / trait types.
+- Draw signal tracks as bar, line, area, or heatmap tracks.
+- Combine gene models, signal tracks, feature tracks, and variant tracks with `plot_tracks()`.
+- Extract haplotypes from genes, transcripts, or arbitrary genomic regions.
+- Draw haplotype-variant diagrams with gene models, variant markers, connector lines, and genotype tables.
+- Read phenotype tables, summarize missingness/type, and draw phenotype distributions.
 - Draw haplotype-phenotype and single-variant phenotype association plots with pairwise statistical tests.
-- Export annotation, signal, and variant tracks to standard formats.
+- Export annotations, signal tracks, and variants to standard formats.
 
 ## Installation
 
+GeneTrackR depends on CRAN and Bioconductor packages. Install the dependencies first, then install GeneTrackR from GitHub.
+
 ```r
-# From github install package
-if(! require(BiocManager)) 
-    install.packages(c("BiocManager", "R.utils"))
-BiocManager::install(c("GenomicRanges", "IRanges"))
+## CRAN dependencies
+install.packages(c(
+  "devtools",
+  "data.table",
+  "ggplot2",
+  "patchwork",
+  "rlang",
+  "Rcpp",
+  "RColorBrewer"
+))
 
-if(! require(devtools)) 
-    install.packages("devtools")
-devtools::install_github("https://github.com/Renscq/GeneTrackR")
+## Bioconductor dependencies
+if (!requireNamespace("BiocManager", quietly = TRUE)) {
+  install.packages("BiocManager")
+}
 
-# From a local source directory
-git clone https://github.com/Renscq/GeneTrackR.git
+BiocManager::install(c(
+  "GenomicRanges",
+  "IRanges",
+  "Rsamtools"
+), ask = FALSE, update = FALSE)
 
-devtools::document()
-devtools::install()
-
+## Install GeneTrackR from GitHub
+devtools::install_github(
+  "Renscq/GeneTrackR",
+  dependencies = TRUE,
+  build_vignettes = FALSE
+)
 ```
 
 Load the package:
@@ -44,9 +57,19 @@ Load the package:
 library(GeneTrackR)
 ```
 
+For local development:
+
+```r
+git clone https://github.com/Renscq/GeneTrackR.git
+setwd("GeneTrackR")
+
+devtools::document()
+devtools::install()
+```
+
 ## Built-in example files
 
-GeneTrackR ships with example files under `inst/extdata`. These files are large enough to test the main modules without needing external data.
+GeneTrackR ships with example files in `inst/extdata`. The example data are large enough to test the major modules without external files.
 
 ```r
 gp_file <- system.file("extdata", "example.genePredExt", package = "GeneTrackR")
@@ -65,11 +88,11 @@ variant_file <- system.file("extdata", "example_variants.vcf", package = "GeneTr
 pheno_file <- system.file("extdata", "example_pheno.tsv", package = "GeneTrackR")
 ```
 
-The example data include roughly 100 genes, multiple chromosomes, positive/negative strands, coding/non-coding transcripts, random signal coverage across genes, 500 VCF records, 60 samples, and multiple numeric/categorical phenotypes.
+The example set includes approximately 100 genes, multiple chromosomes, coding/non-coding transcripts, positive/negative strands, random signal coverage, around 500 VCF records, 60 samples, and multiple phenotype traits.
 
-## 1. Annotation input module
+## 1. Annotation input
 
-### Read GenePred / GenePredExt
+### GenePred / GenePredExt
 
 ```r
 gp <- read_genepred(
@@ -79,9 +102,12 @@ gp <- read_genepred(
 )
 
 gp
+head(gp$genes)
+head(gp$transcripts)
+head(gp$exons)
 ```
 
-For silent loading:
+Silent loading:
 
 ```r
 gp <- read_genepred(
@@ -92,7 +118,7 @@ gp <- read_genepred(
 )
 ```
 
-### Read GTF / GFF3 / BED
+### GTF / GFF3 / BED
 
 ```r
 gtf <- read_gtf(gtf_file)
@@ -100,15 +126,11 @@ gff <- read_gff(gff_file)
 bed <- read_bed(bed_file)
 ```
 
-GenePred-like inputs return gene-model-compatible objects with `genes`, `transcripts`, and `exons` tables. Generic feature files return Feature-compatible objects that can be plotted as feature tracks or converted to standardized tables.
+`read_gtf()` and `read_gff()` standardize gene, transcript, exon, CDS, and UTR records when possible. `read_bed()` reads interval-style feature tracks.
 
-### Inspect annotation tables
+### Summarize annotation objects
 
 ```r
-head(gp$genes)
-head(gp$transcripts)
-head(gp$exons)
-
 summary_feature(gp, level = "gene")
 summary_feature(gp, level = "transcript")
 summary_feature(gp, level = "exon")
@@ -143,7 +165,7 @@ region_feature <- retrieve_feature(
 unique(region_feature$genes$chrom)
 ```
 
-### Return a data.table instead of a Feature object
+### Return standardized tables
 
 ```r
 gene_table <- retrieve_feature(
@@ -154,20 +176,16 @@ gene_table <- retrieve_feature(
   level = "gene",
   as = "data.table"
 )
-```
 
-### Convert to standard tables
-
-```r
 gene_dt <- as_gene_table(gp)
 tx_dt <- as_transcript_table(gp)
 exon_dt <- as_exon_table(gp)
 feature_dt <- as_feature_table(gp)
 ```
 
-## 3. Gene model plotting module
+## 3. Gene model plotting
 
-### Plot one gene
+### Plot a gene
 
 ```r
 plot_gene(
@@ -178,7 +196,7 @@ plot_gene(
 )
 ```
 
-### Plot one transcript
+### Plot a transcript
 
 ```r
 plot_transcript(
@@ -232,56 +250,32 @@ plot_gene(
 )
 ```
 
-### Highlight a region
-
-```r
-plot_region(
-  gp,
-  chrom = "chr1",
-  start = 1,
-  end = 20000,
-  highlight = data.frame(start = 5000, end = 8000)
-)
-```
-
 ## 4. Signal track module
 
-### Read bedGraph / wig / bigWig signal tracks
+### Read bedGraph / wig / bigWig
 
 ```r
 bg <- read_bwg(
   bg_files,
-  format = "bedgraph",
-  mode = "lazy"
+  format = "bedgraph"
 )
 
 bg
+summary_bwg(bg)
 ```
 
-### Retrieve signal in a region
-
-```r
-sig_region <- retrieve_bwg(
-  bg,
-  chrom = "chr1",
-  start = 1,
-  end = 20000
-)
-
-head(sig_region)
-```
+For bigWig files, GeneTrackR can use lazy region-based access, so large signal files do not need to be fully loaded before plotting.
 
 ### Plot signal over a gene
 
 ```r
 plot_signal_gene(
-  bg,
+  signal = bg,
   annotation = gp,
   gene_id = "GeneA",
   plot_type = "bar",
-  signal_palette = "Blues",
-  signal_y_scale = "free",
-  signal_y_ticks = "range"
+  signal_y_scale = "fixed",
+  signal_y_ticks = "pretty"
 )
 ```
 
@@ -289,95 +283,61 @@ plot_signal_gene(
 
 ```r
 plot_signal_transcript(
-  bg,
-  annotation = gp,
-  transcript_id = "TxA1",
-  coordinate = "genomic",
-  plot_type = "bar",
-  show_gene_model = TRUE
-)
-```
-
-### Plot signal in transcript coordinate
-
-```r
-plot_signal_transcript(
-  bg,
+  signal = bg,
   annotation = gp,
   transcript_id = "TxA1",
   coordinate = "transcript",
-  plot_type = "line"
-)
-```
-
-### Plot signal over a genomic region
-
-```r
-plot_signal_region(
-  bg,
-  annotation = gp,
-  chrom = "chr1",
-  start = 1,
-  end = 20000,
-  plot_type = "area",
-  signal_transform = "sqrt"
+  plot_type = "bar"
 )
 ```
 
 ### Heatmap signal with binning
 
-For long regions, heatmap tiles may become too narrow. Use automatic or explicit binning:
+For long regions, `plot_type = "heatmap"` may produce very narrow tiles. Use binning to make the heatmap readable:
 
 ```r
 plot_signal_gene(
-  bg,
-  annotation = gp,
-  gene_id = "GeneA",
-  plot_type = "heatmap",
-  heatmap_max_bins = 500,
-  heatmap_summary = "mean"
-)
-
-plot_signal_gene(
-  bg,
+  signal = bg,
   annotation = gp,
   gene_id = "GeneA",
   plot_type = "heatmap",
   heatmap_bin_size = 50,
-  heatmap_summary = "max"
-)
-```
-
-### Group and summarize signal samples
-
-```r
-groups <- c(
-  example_signal_A = "sample_A",
-  example_signal_B = "sample_B"
-)
-
-plot_signal_gene(
-  bg,
-  annotation = gp,
-  gene_id = "GeneA",
-  sample_groups = groups,
-  signal_color_by = "group",
-  signal_summary = "mean",
-  bin_size = 50,
-  signal_palette = "Set1"
+  heatmap_summary = "mean"
 )
 ```
 
 ## 5. Variant track module
 
-### Read VCF
+### Read VCF into memory
 
 ```r
-vcf <- read_vcf(vcf_file)
+vcf <- read_vcf(vcf_file, mode = "memory")
 vcf
+summary_vcf(vcf)
 ```
 
-### Retrieve variants by region
+### Lazy indexed VCF access
+
+For large `vcf.gz` files with `.tbi` or `.csi` indexes, use lazy mode. This reads the header and sample names first, then reads variants only for requested regions.
+
+```r
+vcf_lazy <- read_vcf(
+  "large.vcf.gz",
+  mode = "lazy"
+)
+
+vcf_region <- retrieve_vcf(
+  vcf_lazy,
+  chrom = "chr1",
+  start = 1,
+  end = 20000,
+  as = "VariantTrack"
+)
+```
+
+If no index is available, use memory mode or create a tabix index before lazy retrieval.
+
+### Retrieve and plot variants
 
 ```r
 vcf_region <- retrieve_vcf(
@@ -387,24 +347,6 @@ vcf_region <- retrieve_vcf(
   end = 20000
 )
 
-head(vcf_region$data)
-```
-
-For indexed large VCF files, `retrieve_vcf()` can query a bgzip-compressed VCF with a `.tbi` index:
-
-```r
-vcf_region <- retrieve_vcf(
-  "large.vcf.gz",
-  chrom = "chr1",
-  start = 1,
-  end = 20000,
-  as = "VariantTrack"
-)
-```
-
-### Plot variants
-
-```r
 plot_variant(
   vcf,
   chrom = "chr1",
@@ -414,23 +356,9 @@ plot_variant(
 )
 ```
 
-Show variant IDs:
+## 6. Browser-like combined tracks
 
-```r
-plot_variant(
-  vcf,
-  chrom = "chr1",
-  start = 1,
-  end = 20000,
-  label_by = "variant_id"
-)
-```
-
-## 6. Combined browser-like plotting with `plot_tracks()`
-
-`plot_tracks()` is the high-level function for combining gene model, signal, feature, and variant tracks.
-
-### Gene + signal by gene ID
+`plot_tracks()` combines gene models, signal tracks, BED feature tracks, and VCF variant tracks.
 
 ```r
 plot_tracks(
@@ -441,55 +369,14 @@ plot_tracks(
 )
 ```
 
-### Gene + signal by transcript ID
-
-```r
-plot_tracks(
-  annotation = gp,
-  signal = bg,
-  transcript_id = "TxA1",
-  signal_type = "line"
-)
-```
-
-### Gene + signal by genomic region
-
-```r
-plot_tracks(
-  annotation = gp,
-  signal = bg,
-  chrom = "chr1",
-  start = 1,
-  end = 20000,
-  signal_type = "area"
-)
-```
-
-### Add feature and variant tracks
-
-```r
-features <- read_bed(bed_file)
-vars_basic <- read_vcf(variant_file)
-
-plot_tracks(
-  annotation = gp,
-  signal = bg,
-  features = features,
-  variants = vars_basic,
-  chrom = "chr1",
-  start = 1,
-  end = 20000,
-  signal_type = "bar"
-)
-```
-
-### Customize gene track colors in combined plots
+Customize gene model colors in combined tracks:
 
 ```r
 plot_tracks(
   annotation = gp,
   signal = bg,
   gene_id = "GeneA",
+  signal_type = "bar",
   gene_color_palette = "Set2",
   gene_border_color = "black"
 )
@@ -506,34 +393,38 @@ plot_tracks(
 )
 ```
 
-## 7. Haplotype extraction module
-
-GeneTrackR supports two explicit haplotype extraction interfaces:
-
-- `hap_gene_variant()` for a gene or transcript.
-- `hap_region_variant()` for a genomic interval.
-
-`hap_variant()` is retained as a compatibility wrapper.
-
-### Extract haplotypes for a gene
+Add feature and variant tracks:
 
 ```r
-hap <- hap_gene_variant(
+features <- read_bed(bed_file)
+variants <- read_vcf(variant_file)
+
+plot_tracks(
+  annotation = gp,
+  signal = bg,
+  features = features,
+  variants = variants,
+  chrom = "chr1",
+  start = 1,
+  end = 20000,
+  signal_type = "bar"
+)
+```
+
+## 7. Haplotype extraction
+
+GeneTrackR now separates gene/transcript-based and region-based haplotype extraction.
+
+### Gene or transcript haplotypes
+
+```r
+hap_gene <- hap_gene_variant(
   vcf,
   annotation = gp,
   gene_id = "GeneA",
   genotype_mode = "string"
 )
 
-hap
-hap$variants
-hap$haplotypes
-hap$sample_haplotypes
-```
-
-### Extract haplotypes for a transcript
-
-```r
 hap_tx <- hap_gene_variant(
   vcf,
   annotation = gp,
@@ -542,12 +433,10 @@ hap_tx <- hap_gene_variant(
 )
 ```
 
-### Include upstream and downstream variants
-
-By default, upstream/downstream extension is strand-aware.
+Include upstream/downstream variants around a gene or transcript:
 
 ```r
-hap_updown <- hap_gene_variant(
+hap_gene_ext <- hap_gene_variant(
   vcf,
   annotation = gp,
   gene_id = "GeneA",
@@ -558,21 +447,7 @@ hap_updown <- hap_gene_variant(
 )
 ```
 
-For coordinate-based extension independent of strand:
-
-```r
-hap_updown2 <- hap_gene_variant(
-  vcf,
-  annotation = gp,
-  gene_id = "GeneA",
-  upstream = 1000,
-  downstream = 1000,
-  strand_aware = FALSE,
-  genotype_mode = "string"
-)
-```
-
-### Extract haplotypes from a region
+### Region haplotypes
 
 ```r
 hap_region <- hap_region_variant(
@@ -584,373 +459,226 @@ hap_region <- hap_region_variant(
 )
 ```
 
-### Genotype display modes
+`hap_variant()` is retained as a compatibility wrapper, but new code should prefer `hap_gene_variant()` and `hap_region_variant()`.
+
+### Inspect haplotype tables
 
 ```r
-hap_code <- hap_gene_variant(
-  vcf,
-  annotation = gp,
-  gene_id = "GeneA",
-  genotype_mode = "code"
-)
-
-hap_string <- hap_gene_variant(
-  vcf,
-  annotation = gp,
-  gene_id = "GeneA",
-  genotype_mode = "string"
-)
+hap_gene$region
+hap_gene$variants
+hap_gene$haplotypes
+hap_gene$sample_haplotypes
 ```
 
-- `code`: shows `0`, `1`, or `NA`.
-- `string`: shows compact allele strings such as `A`, `G`, `i2`, `i6`, or `NA`.
+## 8. Haplotype-variant plot
 
-Long insertion/deletion alleles are compressed as `iN`, where `N` is the allele length. For example, `AT/A` becomes `i2/A`, and `G/GTTACA` becomes `G/i6`.
-
-## 8. Haplotype-variant plotting module
-
-`plot_hap_variant()` draws a gene model, variant markers, connector lines, and a haplotype genotype table.
+`plot_hap_variant()` draws a gene model, variant markers, connector lines, and a genotype table.
 
 ```r
 plot_hap_variant(
-  hap,
-  annotation = gp,
-  min_hap_samples = 3
-)
-```
-
-### Show reference row and compact InDel labels
-
-```r
-plot_hap_variant(
-  hap,
+  hap_gene,
   annotation = gp,
   min_hap_samples = 3,
   show_reference_row = TRUE,
-  genotype_text_size = 3,
   table_x_angle = 90
 )
 ```
 
-### Customize table colors
+Customize table and variant colors:
 
 ```r
 plot_hap_variant(
-  hap,
+  hap_gene,
   annotation = gp,
   min_hap_samples = 3,
   table_fill_palette = "RdBu",
   table_fill_alpha = 0.6,
-  reference_fill = "white"
+  variant_palette = "Set2",
+  genotype_text_size = 3
 )
 ```
 
-### Customize variant marker colors
+## 9. Phenotype input and summary
 
-```r
-plot_hap_variant(
-  hap,
-  annotation = gp,
-  min_hap_samples = 3,
-  variant_palette = "Set2"
-)
-
-plot_hap_variant(
-  hap,
-  annotation = gp,
-  min_hap_samples = 3,
-  variant_colors = c(
-    SNP = "#1b9e77",
-    Insertion = "#d95f02",
-    Deletion = "#7570b3"
-  )
-)
-```
-
-### Show genomic coordinate axis above the gene track
-
-```r
-plot_hap_variant(
-  hap,
-  annotation = gp,
-  min_hap_samples = 3,
-  show_gene_position_axis = TRUE,
-  gene_position_axis_n = 5
-)
-```
-
-The coordinate title includes chromosome information, for example `Chromosome chr1 position (bp)`.
-
-## 9. Phenotype module
-
-### Read phenotype table
-
-The phenotype table should contain a sample column. By default, GeneTrackR expects `sample_id`.
+The phenotype table should contain sample/taxa IDs in the first column or a named sample column. Each additional column is treated as one trait.
 
 ```r
 pheno <- read_pheno(pheno_file)
-head(pheno)
-```
 
-### Summarize phenotype types and missing values
-
-```r
 summary_pheno(pheno)
-```
-
-### Plot phenotype distributions
-
-```r
-plot_pheno(pheno)
 
 plot_pheno(
   pheno,
-  traits = c("plant_height", "seed_weight", "protein_content")
+  traits = c("plant_height", "seed_weight")
 )
 ```
 
-## 10. Haplotype-phenotype association plotting
+## 10. Haplotype-phenotype association
 
-`plot_hap_pheno()` uses a HapVariant object and a phenotype table. It returns a structured list:
-
-```r
-list(
-  figure = p,
-  pvalue = test_table,
-  summary = summary_table,
-  bracket = bracket_table,
-  plot_data = plot_data
-)
-```
-
-### Basic haplotype phenotype plot
+`plot_hap_pheno()` compares phenotype distributions among haplotype groups. It returns both the figure and the p-value table.
 
 ```r
-res <- plot_hap_pheno(
-  hap = hap,
+hap_res <- plot_hap_pheno(
+  hap = hap_gene,
   phenotype = pheno,
   traits = "plant_height",
-  min_hap_samples = 3
-)
-
-res$figure
-res$pvalue
-```
-
-### Multiple traits
-
-```r
-res_multi <- plot_hap_pheno(
-  hap = hap,
-  phenotype = pheno,
-  traits = c("plant_height", "seed_weight", "protein_content"),
   min_hap_samples = 3,
-  strip_label_width = 18
-)
-
-res_multi$figure
-res_multi$pvalue
-```
-
-### Statistical test options
-
-```r
-plot_hap_pheno(
-  hap = hap,
-  phenotype = pheno,
-  traits = "plant_height",
   test_method = "t.test",
-  p_label = "stars",
-  p_value_type = "raw"
-)$figure
-
-plot_hap_pheno(
-  hap = hap,
-  phenotype = pheno,
-  traits = "plant_height",
-  test_method = "wilcox.test",
-  p_label = "number"
-)$figure
-```
-
-Supported tests:
-
-- `t.test`
-- `wilcox.test`
-- `ks.test`
-
-Supported p-value labels:
-
-- `stars`: `*`, `**`, `***`
-- `number`: numeric p-value, using scientific notation for very small values
-- `both`: stars and numeric p-value
-
-### Customize phenotype plot style
-
-```r
-res <- plot_hap_pheno(
-  hap = hap,
-  phenotype = pheno,
-  traits = "plant_height",
-  plot_type = "violin_boxplot",
-  fill_palette = "RdBu",
-  show_points = FALSE,
-  show_outliers = FALSE,
-  x_text_angle = 90
+  p_value_type = "raw",
+  p_label = "stars"
 )
 
-res$figure
+hap_res$figure
+hap_res$pvalue
+hap_res$summary
 ```
 
-The default plot is a violin plot with a narrow boxplot in the middle. Haplotype groups are ordered by sample number from left to right, and x-axis labels are shown as `Hap (n)`.
-
-## 11. Single-variant phenotype association plotting
-
-`plot_variant_pheno()` is the single-variant version of `plot_hap_pheno()`. It groups samples by genotype/allele state at one variant site.
-
-### Plot by variant ID
+Use Wilcoxon or KS tests:
 
 ```r
-res_var <- plot_variant_pheno(
+plot_hap_pheno(
+  hap = hap_gene,
+  phenotype = pheno,
+  traits = "seed_weight",
+  test_method = "wilcox.test",
+  min_hap_samples = 3
+)$figure
+```
+
+Long trait names are wrapped in facet strips:
+
+```r
+plot_hap_pheno(
+  hap = hap_gene,
+  phenotype = pheno,
+  traits = c(
+    "plant_height",
+    "very_long_trait_name_related_to_seed_weight_under_stress"
+  ),
+  strip_label_width = 12,
+  strip_border_color = NULL,
+  min_hap_samples = 3
+)$figure
+```
+
+## 11. Single-variant phenotype association
+
+`plot_variant_pheno()` is the single-variant version of `plot_hap_pheno()`. It groups samples by genotype or allele state at one variant.
+
+```r
+variant_res <- plot_variant_pheno(
   variant = vcf,
   phenotype = pheno,
   variant_id = "rsA1",
-  traits = "plant_height",
-  min_group_samples = 3
-)
-
-res_var$figure
-res_var$pvalue
-res_var$variant_data
-```
-
-### Plot by chromosome position
-
-```r
-res_var_pos <- plot_variant_pheno(
-  variant = vcf,
-  phenotype = pheno,
-  chrom = "chr1",
-  pos = 5000,
   traits = "plant_height",
   genotype_mode = "string",
   min_group_samples = 3
 )
 
-res_var_pos$figure
-res_var_pos$pvalue
+variant_res$figure
+variant_res$pvalue
+variant_res$variant_data
 ```
 
-### Use a VCF file path directly
+You can also select a variant by genomic position:
 
 ```r
-res_var_file <- plot_variant_pheno(
-  variant = vcf_file,
+plot_variant_pheno(
+  variant = vcf,
   phenotype = pheno,
-  variant_id = "rsA1",
+  chrom = "chr1",
+  pos = 1000,
   traits = "plant_height",
+  genotype_mode = "code",
   min_group_samples = 3
-)
+)$figure
 ```
 
-For indexed large VCF files, pass `chrom` and `pos` to retrieve only the target site.
+## 12. Export module
 
-## 12. Writing output files
-
-### Write annotation files
+### Export annotations
 
 ```r
 write_feature(
   gp,
-  file = "example_output.gtf",
+  file = "example.output.gtf",
   format = "gtf",
   overwrite = TRUE
 )
 
 write_feature(
   gp,
-  file = "example_output.bed12",
-  format = "bed12",
+  file = "example.output.bed6",
+  format = "bed6",
   overwrite = TRUE
 )
 
 write_feature(
   gp,
-  file = "example_output.bed6",
-  format = "bed6",
+  file = "example.output.bed12",
+  format = "bed12",
   overwrite = TRUE
 )
 ```
 
-### Write VCF
+### Export variants
 
 ```r
 write_vcf(
   vcf,
-  file = "example_output.vcf",
+  file = "example.output.vcf",
   overwrite = TRUE
 )
 ```
 
-### Save figures
+### Save figures and tables
 
 ```r
-p <- plot_tracks(
-  annotation = gp,
-  signal = bg,
-  gene_id = "GeneA"
-)
-
 ggplot2::ggsave(
-  filename = "GeneA_tracks.pdf",
-  plot = p,
-  width = 8,
-  height = 5
-)
-
-res <- plot_hap_pheno(
-  hap = hap,
-  phenotype = pheno,
-  traits = "plant_height",
-  min_hap_samples = 3
-)
-
-ggplot2::ggsave(
-  filename = "GeneA_hap_pheno.pdf",
-  plot = res$figure,
+  filename = "hap_pheno.pdf",
+  plot = hap_res$figure,
   width = 6,
   height = 5
 )
 
 data.table::fwrite(
-  res$pvalue,
-  file = "GeneA_hap_pheno_pvalue.tsv",
+  hap_res$pvalue,
+  file = "hap_pheno.pvalue.tsv",
   sep = "\t"
 )
 ```
 
-## 13. Suggested analysis workflow
-
-A typical workflow is:
+## 13. Recommended workflow
 
 ```r
 library(GeneTrackR)
 
-# 1. Read annotation, signal, VCF, and phenotype files
-gp <- read_genepred(gp_file, format = "genePredExt", verbose = FALSE)
-bg <- read_bwg(bg_files, format = "bedgraph", mode = "lazy")
-vcf <- read_vcf(vcf_file)
-pheno <- read_pheno(pheno_file)
+## Input files
+gp_file <- system.file("extdata", "example.genePredExt", package = "GeneTrackR")
+vcf_file <- system.file("extdata", "example_haplotype.vcf", package = "GeneTrackR")
+pheno_file <- system.file("extdata", "example_pheno.tsv", package = "GeneTrackR")
+bg_files <- system.file(
+  "extdata",
+  c("example_signal_A.bedgraph", "example_signal_B.bedgraph"),
+  package = "GeneTrackR"
+)
 
-# 2. Inspect a locus with gene model and signal coverage
+## Read data
+gp <- read_genepred(gp_file, format = "genePredExt", verbose = FALSE)
+vcf <- read_vcf(vcf_file, mode = "memory")
+pheno <- read_pheno(pheno_file)
+bg <- read_bwg(bg_files, format = "bedgraph")
+
+## Browser-like view
 plot_tracks(
   annotation = gp,
   signal = bg,
+  variants = vcf,
   gene_id = "GeneA",
   signal_type = "bar"
 )
 
-# 3. Extract gene-level haplotypes
+## Haplotype extraction
 hap <- hap_gene_variant(
   vcf,
   annotation = gp,
@@ -960,42 +688,29 @@ hap <- hap_gene_variant(
   genotype_mode = "string"
 )
 
-# 4. Visualize variants and haplotype table
+## Haplotype-variant figure
 plot_hap_variant(
   hap,
   annotation = gp,
   min_hap_samples = 3
 )
 
-# 5. Test haplotype-phenotype association
-hap_pheno <- plot_hap_pheno(
+## Haplotype-phenotype association
+res <- plot_hap_pheno(
   hap,
   phenotype = pheno,
   traits = "plant_height",
   min_hap_samples = 3
 )
 
-hap_pheno$figure
-hap_pheno$pvalue
-
-# 6. Test a single variant-phenotype association
-variant_pheno <- plot_variant_pheno(
-  variant = vcf,
-  phenotype = pheno,
-  variant_id = "rsA1",
-  traits = "plant_height",
-  min_group_samples = 3
-)
-
-variant_pheno$figure
-variant_pheno$pvalue
+res$figure
+res$pvalue
 ```
 
 ## Notes
 
-- GenePred / GTF / GFF3 annotations are represented internally as standardized Feature/GenePred-compatible objects.
-- Coordinates in gene model objects are 1-based closed unless otherwise specified.
-- BED output follows standard BED conventions: 0-based half-open intervals.
-- `plot_tracks()` requires exactly one locator: `gene_id`, `transcript_id`, or `chrom + start + end`.
-- `plot_hap_pheno()` and `plot_variant_pheno()` return both the figure and the statistical result table.
-- For large VCF files, bgzip compression and tabix indexing are recommended.
+- For large indexed VCF files, use `read_vcf(file, mode = "lazy")` and query regions with `retrieve_vcf()` or directly through `hap_gene_variant()` / `hap_region_variant()`.
+- For bigWig files, region-based access avoids loading the whole signal file into memory.
+- For long signal regions, use `bin_size`, `heatmap_bin_size`, or `heatmap_max_bins` to keep plots readable.
+- `hap_variant()` remains available for compatibility, but new code should use `hap_gene_variant()` or `hap_region_variant()`.
+- `plot_hap_pheno()` and `plot_variant_pheno()` return structured lists. Use `$figure` for plotting and `$pvalue` for statistical results.
