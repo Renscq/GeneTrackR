@@ -198,14 +198,3 @@ vcf_progress_message <- function(enabled) {
   }
 }
 
-format_file_size <- function(size) {
-  size <- as.numeric(size)[1L]
-  if (is.na(size)) return("unknown size")
-  units <- c("B", "KB", "MB", "GB", "TB")
-  i <- 1L
-  while (size >= 1024 && i < length(units)) {
-    size <- size / 1024
-    i <- i + 1L
-  }
-  paste0(format(round(size, 2), nsmall = ifelse(i == 1L, 0L, 2L)), " ", units[i])
-}

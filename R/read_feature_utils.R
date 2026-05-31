@@ -61,15 +61,38 @@ with_quiet_datatable <- function(expr) {
   force(expr)
 }
 
-get_file_size_mb <- function(file) {
-  suppressWarnings(file.info(file)$size / 1024^2)
+get_file_size_bytes <- function(file) {
+  suppressWarnings(as.numeric(file.info(file)$size)[1L])
+}
+
+format_file_size <- function(size) {
+  size <- suppressWarnings(as.numeric(size)[1L])
+  if (!is.finite(size) || is.na(size)) {
+    return("unknown size")
+  }
+  if (size < 0) {
+    return("unknown size")
+  }
+
+  units <- c("B", "KB", "MB", "GB", "TB")
+  unit_id <- 1L
+  while (size >= 1024 && unit_id < length(units)) {
+    size <- size / 1024
+    unit_id <- unit_id + 1L
+  }
+
+  if (unit_id == 1L) {
+    paste0(format(round(size), big.mark = ",", scientific = FALSE), " ", units[unit_id])
+  } else {
+    paste0(format(round(size, 2), nsmall = 2, big.mark = ",", scientific = FALSE), " ", units[unit_id])
+  }
 }
 
 format_file_size_message <- function(prefix, file) {
   input_file <- normalizePath(file, winslash = "/", mustWork = FALSE)
-  file_size_mb <- get_file_size_mb(file)
-  if (is.finite(file_size_mb)) {
-    sprintf("[GeneTrackR] Reading %s file: %s (%.2f MB)", prefix, input_file, file_size_mb)
+  file_size <- get_file_size_bytes(file)
+  if (is.finite(file_size) && !is.na(file_size)) {
+    sprintf("[GeneTrackR] Reading %s file: %s (%s)", prefix, input_file, format_file_size(file_size))
   } else {
     sprintf("[GeneTrackR] Reading %s file: %s", prefix, input_file)
   }
