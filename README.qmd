@@ -400,6 +400,52 @@ plot_hap_variant(
 ```
 
 
+### 1.6 操作表型的数据
+
+```{r}
+# 读取表型数据
+pheno <- read_pheno(
+  file = './inst/extdata/NC12_haplotype_pheno.tsv',
+  sep = "auto"
+)
+
+# 画单倍型boxplot
+plot_hap_pheno(
+  ncu12_hap,
+  pheno,
+  min_hap_samples = 2L,
+  plot_type = "violin",
+  show_points = FALSE,
+  test_method = "t.test",
+  p_adjust = "BH",
+  p_label = 'number',
+  show_signif_only = F,
+  p_value_type = 'raw',
+  fill_palette = "Blues",
+  bracket_step = 0.2,
+  strip_label_width = 8,
+  text_size = 14
+)
+
+
+# 画单一位点的单倍型boxplot
+plot_variant_pheno(
+  ncu12_hap,
+  pheno,
+  variant_id = "var_I_110120_A_G",
+  plot_type = "violin",
+  show_points = FALSE,
+  test_method = "t.test",
+  p_adjust = "BH",
+  p_label = 'number',
+  show_signif_only = F,
+  p_value_type = 'raw',
+  fill_palette = "Blues",
+  bracket_step = 0.5,
+  strip_label_width = 14,
+  text_size = 14
+)
+```
 
 
 

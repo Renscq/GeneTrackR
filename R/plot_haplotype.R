@@ -40,6 +40,20 @@
 #' @param variant_palette RColorBrewer palette name used for variant-type marker fills.
 #' @param variant_colors Optional custom fill colors for variant-type markers.
 #' @return A patchwork object with attributes `plot_data`, `variant_data`, and `gene_data`.
+#' @examples
+#' vcf_file <- system.file("extdata", "example_haplotype.vcf", package = "GeneTrackR")
+#' anno_file <- system.file("extdata", "example.genePredExt", package = "GeneTrackR")
+#' vcf <- read_vcf(vcf_file)
+#' anno <- read_genepred(anno_file, format = "genePredExt", verbose = FALSE)
+#' hap <- hap_variant(vcf, annotation = anno, gene_id = "GeneA", genotype_mode = "string")
+#' plot_hap_variant(hap, annotation = anno, min_hap_samples = 1)
+#' plot_hap_variant(
+#'   hap,
+#'   annotation = anno,
+#'   min_hap_samples = 1,
+#'   table_x_angle = 90,
+#'   table_fill_palette = "RdBu"
+#' )
 #' @export
 plot_hap_variant <- function(hap,
                              annotation = NULL,
@@ -681,46 +695,125 @@ make_hap_variant_fill_scale <- function(gene_features,
 }
 
 #' Plot phenotype values grouped by haplotype
-#' Plot phenotype values grouped by haplotype
 #'
 #' @description
-#' Merges haplotype assignments and phenotype values, then draws boxplots with
-#' pairwise t-test summaries.
+#' Merges haplotype assignments and phenotype values, then draws phenotype
+#' distributions for each haplotype. Haplotype groups are ordered by sample
+#' number from left to right. Fill colors are mapped to the median phenotype
+#' value of each haplotype group.
 #'
 #' @param hap A HapVariant object from `hap_variant()`.
 #' @param phenotype A phenotype table returned by `read_pheno()` or a compatible data.frame.
 #' @param traits Phenotype trait names. If NULL, all numeric traits are used.
 #' @param sample_col Sample column name in phenotype table.
 #' @param min_hap_samples Minimum sample number required for a haplotype group.
+#' @param plot_type Plot type. One of `violin`, `boxplot`, or `violin_boxplot`.
+#' @param test_method Pairwise test method. One of `t.test`, `wilcox.test`, or `ks.test`.
 #' @param p_adjust P-value adjustment method passed to `p.adjust()`.
+#' @param p_label P-value label style. One of `stars`, `number`, or `both`.
+#' @param p_cutoff Significance cutoff used for displaying pairwise comparisons.
+#' @param p_value_type Which p-value is used for filtering and labeling. One of `raw` or `adjusted`.
+#' @param show_signif_only Logical. Whether to only display significant comparisons.
 #' @param show_points Logical. Whether to show sample points.
+#' @param x_text_angle Rotation angle for haplotype labels on the x-axis.
+#' @param strip_label_width Maximum character width for wrapping long facet strip labels.
+#' @param show_outliers Logical. Whether to show boxplot outliers.
+#' @param fill_palette RColorBrewer palette name used for median-based haplotype fills.
+#' @param fill_colors Optional custom fill colors for haplotypes.
+#' @param fill_alpha Alpha value for violin/boxplot fill colors.
+#' @param violin_width Violin plot width.
+#' @param box_width Boxplot width.
+#' @param bracket_step Fraction of y-range used to separate significance brackets.
+#' @param bracket_tip_fraction Fraction of bracket vertical spacing used for the short downward bracket tips.
 #' @param text_size Text size.
-#' @return A ggplot object with attributes `plot_data` and `test_table`.
+#' @return A ggplot object with attributes `plot_data`, `summary_table`, and `test_table`.
+#' @examples
+#' vcf_file <- system.file("extdata", "example_haplotype.vcf", package = "GeneTrackR")
+#' anno_file <- system.file("extdata", "example.genePredExt", package = "GeneTrackR")
+#' pheno_file <- system.file("extdata", "example_pheno.tsv", package = "GeneTrackR")
+#' vcf <- read_vcf(vcf_file)
+#' anno <- read_genepred(anno_file, format = "genePredExt", verbose = FALSE)
+#' hap <- hap_variant(vcf, annotation = anno, gene_id = "GeneA", genotype_mode = "code")
+#' pheno <- read_pheno(pheno_file)
+#' plot_hap_pheno(hap, phenotype = pheno, traits = "plant_height", min_hap_samples = 1)
+#' plot_hap_pheno(hap, phenotype = pheno, traits = "plant_height", min_hap_samples = 1,
+#'                test_method = "wilcox.test", p_label = "number")
 #' @export
 plot_hap_pheno <- function(hap,
                            phenotype,
                            traits = NULL,
                            sample_col = "sample_id",
                            min_hap_samples = 2L,
+                           plot_type = c("violin_boxplot", "violin", "boxplot"),
+                           test_method = c("t.test", "wilcox.test", "ks.test"),
                            p_adjust = "BH",
-                           show_points = TRUE,
+                           p_label = c("stars", "number", "both"),
+                           p_cutoff = 0.05,
+                           p_value_type = c("raw", "adjusted"),
+                           show_signif_only = TRUE,
+                           show_points = FALSE,
+                           show_outliers = FALSE,
+                           fill_palette = "RdBu",
+                           fill_colors = NULL,
+                           fill_alpha = 0.75,
+                           violin_width = 0.9,
+                           box_width = 0.18,
+                           bracket_step = 0.08,
+                           bracket_tip_fraction = 0.12,
+                           x_text_angle = 90,
+                           strip_label_width = 24,
+                           strip_fill = "white",
+                           strip_border_color = NULL,
+                           strip_text_lineheight = 0.9,
                            text_size = 14) {
   stop_if_not(inherits(hap, "HapVariant"), "`hap` must be a HapVariant object.")
+  plot_type <- match.arg(plot_type)
+  test_method <- match.arg(test_method)
+  p_label <- match.arg(p_label)
+  p_value_type <- match.arg(p_value_type)
+
+  min_hap_samples <- as.integer(min_hap_samples)[1L]
+  stop_if_not(!is.na(min_hap_samples) && min_hap_samples >= 1L, "`min_hap_samples` must be a positive integer.")
+  p_cutoff <- as.numeric(p_cutoff)[1L]
+  if (is.na(p_cutoff) || p_cutoff <= 0 || p_cutoff > 1) {
+    p_cutoff <- 0.05
+  }
+  fill_alpha <- as.numeric(fill_alpha)[1L]
+  if (is.na(fill_alpha)) fill_alpha <- 0.75
+  fill_alpha <- max(0, min(1, fill_alpha))
+  x_text_angle <- as.numeric(x_text_angle)[1L]
+  if (is.na(x_text_angle)) x_text_angle <- 90
+  strip_label_width <- as.integer(strip_label_width)[1L]
+  if (is.na(strip_label_width) || strip_label_width < 1L) strip_label_width <- 24L
+  strip_text_lineheight <- as.numeric(strip_text_lineheight)[1L]
+  if (is.na(strip_text_lineheight) || strip_text_lineheight <= 0) strip_text_lineheight <- 0.9
+  strip_fill <- as.character(strip_fill)[1L]
+  if (is.na(strip_fill) || strip_fill == "") strip_fill <- "white"
+  if (is.null(strip_border_color) || length(strip_border_color) == 0L || is.na(strip_border_color[1L]) || strip_border_color[1L] == "") {
+    strip_border_color <- NA_character_
+  } else {
+    strip_border_color <- as.character(strip_border_color)[1L]
+  }
+
   pheno <- data.table::as.data.table(phenotype)
   stop_if_not(sample_col %in% names(pheno), paste0("Sample column was not found: ", sample_col))
   data.table::setnames(pheno, sample_col, "sample_id")
 
   hap_sample <- data.table::as.data.table(hap$sample_haplotypes)
+  stop_if_not(all(c("sample_id", "hap_id") %in% names(hap_sample)), "`hap$sample_haplotypes` must contain sample_id and hap_id columns.")
+
   dt <- merge(hap_sample[, .(sample_id, hap_id)], pheno, by = "sample_id", all.x = FALSE)
   stop_if_not(nrow(dt) > 0L, "No matched samples were found between haplotypes and phenotype table.")
 
-  hap_keep <- dt[, .N, by = hap_id][N >= as.integer(min_hap_samples), hap_id]
+  hap_count <- dt[, .(sample_n = .N), by = hap_id]
+  hap_keep <- hap_count[sample_n >= min_hap_samples, hap_id]
   dt <- dt[hap_id %in% hap_keep]
+  hap_count <- hap_count[hap_id %in% hap_keep]
   stop_if_not(length(unique(dt$hap_id)) >= 2L, "At least two haplotypes with enough samples are required.")
 
   if (is.null(traits)) {
     trait_info <- summary_pheno(dt, sample_col = "sample_id")
-    traits <- trait_info[type == "numeric" & trait != "hap_id", trait]
+    traits <- trait_info[type == "numeric" & !trait %in% c("hap_id", "sample_n"), trait]
   }
   traits <- as.character(traits)
   stop_if_not(length(traits) > 0L, "No numeric phenotype traits were selected.")
@@ -734,82 +827,328 @@ plot_hap_pheno <- function(hap,
     value.name = "value",
     variable.factor = FALSE
   )
+  long[, "value" := suppressWarnings(as.numeric(value))]
   long <- long[!is.na(value)]
   stop_if_not(nrow(long) > 0L, "No non-missing phenotype values were available.")
 
-  test_dt <- pairwise_hap_ttest(long, p_adjust = p_adjust)
-  label_dt <- make_hap_test_labels(long, test_dt)
+  # Haplotype order is controlled by group size from left to right.
+  hap_count <- hap_count[order(-sample_n, hap_id)]
+  hap_order <- hap_count$hap_id
+  hap_axis_labels <- paste0(as.character(hap_count$hap_id), " (", hap_count$sample_n, ")")
+  names(hap_axis_labels) <- as.character(hap_count$hap_id)
+  long[, "hap_id" := factor(hap_id, levels = hap_order)]
 
-  p <- ggplot2::ggplot(long, ggplot2::aes(x = .data$hap_id, y = .data$value, fill = .data$hap_id)) +
-    ggplot2::geom_boxplot(outlier.shape = NA, alpha = 0.75) +
-    ggplot2::facet_wrap(ggplot2::vars(.data$trait), scales = "free_y") +
+  summary_dt <- long[, .(
+    sample_n = .N,
+    median_value = stats::median(value, na.rm = TRUE),
+    mean_value = mean(value, na.rm = TRUE),
+    min_value = min(value, na.rm = TRUE),
+    max_value = max(value, na.rm = TRUE)
+  ), by = .(trait, hap_id)]
+
+  fill_dt <- make_hap_pheno_fill_table(summary_dt, fill_palette = fill_palette, fill_colors = fill_colors, alpha = fill_alpha)
+  long <- merge(long, fill_dt[, .(trait, hap_id, hap_fill)], by = c("trait", "hap_id"), all.x = TRUE, sort = FALSE)
+
+  test_dt <- pairwise_hap_test(long, method = test_method, p_adjust = p_adjust)
+  bracket_dt <- make_hap_brackets(
+    long = long,
+    test_dt = test_dt,
+    p_cutoff = p_cutoff,
+    p_label = p_label,
+    p_value_type = p_value_type,
+    show_signif_only = show_signif_only,
+    bracket_step = bracket_step,
+    bracket_tip_fraction = bracket_tip_fraction
+  )
+
+  p <- ggplot2::ggplot(long, ggplot2::aes(x = .data$hap_id, y = .data$value, fill = .data$hap_fill))
+
+  if (plot_type %in% c("violin", "violin_boxplot")) {
+    p <- p + ggplot2::geom_violin(
+      width = violin_width,
+      trim = FALSE,
+      color = "black",
+      linewidth = 0.35,
+      alpha = fill_alpha
+    )
+  }
+
+  if (plot_type %in% c("boxplot", "violin_boxplot")) {
+    outlier_shape <- if (isTRUE(show_outliers)) 19 else NA
+    p <- p + ggplot2::geom_boxplot(
+      width = box_width,
+      outlier.shape = outlier_shape,
+      color = "black",
+      linewidth = 0.35,
+      alpha = min(1, fill_alpha + 0.15)
+    )
+  }
+
+  if (isTRUE(show_points)) {
+    p <- p + ggplot2::geom_jitter(
+      width = 0.12,
+      height = 0,
+      size = 1.4,
+      alpha = 0.65,
+      color = "black"
+    )
+  }
+
+  if (length(traits) > 1L) {
+    p <- p + ggplot2::facet_wrap(
+      ggplot2::vars(.data$trait),
+      scales = "free_y",
+      labeller = ggplot2::as_labeller(function(x) wrap_strip_labels(x, width = strip_label_width))
+    )
+  }
+
+  if (nrow(bracket_dt) > 0L) {
+    p <- p +
+      ggplot2::geom_segment(
+        data = bracket_dt,
+        ggplot2::aes(x = .data$x1, xend = .data$x2, y = .data$y, yend = .data$y),
+        inherit.aes = FALSE,
+        color = "black",
+        linewidth = 0.35
+      ) +
+      ggplot2::geom_segment(
+        data = bracket_dt,
+        ggplot2::aes(x = .data$x1, xend = .data$x1, y = .data$y, yend = .data$y_tip),
+        inherit.aes = FALSE,
+        color = "black",
+        linewidth = 0.35
+      ) +
+      ggplot2::geom_segment(
+        data = bracket_dt,
+        ggplot2::aes(x = .data$x2, xend = .data$x2, y = .data$y, yend = .data$y_tip),
+        inherit.aes = FALSE,
+        color = "black",
+        linewidth = 0.35
+      ) +
+      ggplot2::geom_text(
+        data = bracket_dt,
+        ggplot2::aes(x = .data$x_mid, y = .data$label_y, label = .data$label),
+        inherit.aes = FALSE,
+        color = "black",
+        size = text_size / 3.2,
+        vjust = 0
+      )
+  }
+
+  fill_values <- unique(long[, .(hap_fill)])$hap_fill
+  names(fill_values) <- fill_values
+
+  p <- p +
+    ggplot2::scale_x_discrete(labels = hap_axis_labels) +
+    ggplot2::scale_fill_identity() +
     ggplot2::labs(x = "Haplotype", y = "Phenotype value") +
     ggplot2::theme_bw() +
     ggplot2::theme(
       text = ggplot2::element_text(color = "black"),
-      axis.text.x = ggplot2::element_text(size = text_size, angle = 45, hjust = 1, color = "black"),
+      axis.text.x = ggplot2::element_text(size = text_size, angle = x_text_angle, hjust = 1, vjust = 0.5, color = "black"),
       axis.text.y = ggplot2::element_text(size = text_size, color = "black"),
       axis.title = ggplot2::element_text(size = text_size, color = "black"),
-      strip.text = ggplot2::element_text(size = text_size, color = "black"),
+      strip.text = ggplot2::element_text(size = text_size, color = "black", lineheight = strip_text_lineheight, margin = ggplot2::margin(3, 3, 3, 3)),
+      strip.background = ggplot2::element_rect(fill = strip_fill, color = strip_border_color),
+      panel.grid.major.x = ggplot2::element_blank(),
       legend.position = "none"
     )
 
-  if (isTRUE(show_points)) {
-    p <- p + ggplot2::geom_jitter(width = 0.15, height = 0, size = 1.6, alpha = 0.75)
-  }
-
-  if (nrow(label_dt) > 0L) {
-    p <- p + ggplot2::geom_text(
-      data = label_dt,
-      ggplot2::aes(x = .data$x, y = .data$y, label = .data$label),
-      inherit.aes = FALSE,
-      size = text_size / 3.2,
-      hjust = 0.5,
-      vjust = 1
-    )
-  }
-
   attr(p, "plot_data") <- long[]
+  attr(p, "summary_table") <- summary_dt[]
   attr(p, "test_table") <- test_dt[]
+  attr(p, "bracket_table") <- bracket_dt[]
   p
 }
 
-pairwise_hap_ttest <- function(long, p_adjust = "BH") {
+wrap_strip_labels <- function(labels, width = 24) {
+  width <- as.integer(width)[1L]
+  if (is.na(width) || width < 1L) width <- 24L
+  vapply(as.character(labels), function(label) {
+    if (is.na(label) || label == "") {
+      return(label)
+    }
+    label <- gsub("[_\\.]+", " ", label)
+    label <- gsub("\\s+", " ", trimws(label))
+    pieces <- unlist(strsplit(label, " ", fixed = TRUE), use.names = FALSE)
+    pieces <- pieces[nzchar(pieces)]
+    if (length(pieces) == 0L) {
+      return(label)
+    }
+    chunks <- character()
+    current <- ""
+    for (piece in pieces) {
+      if (nchar(piece, type = "width") > width) {
+        starts <- seq(1L, nchar(piece), by = width)
+        hard <- substring(piece, starts, pmin(starts + width - 1L, nchar(piece)))
+        if (nzchar(current)) {
+          chunks <- c(chunks, current)
+          current <- ""
+        }
+        chunks <- c(chunks, hard)
+      } else if (!nzchar(current)) {
+        current <- piece
+      } else if (nchar(paste(current, piece), type = "width") <= width) {
+        current <- paste(current, piece)
+      } else {
+        chunks <- c(chunks, current)
+        current <- piece
+      }
+    }
+    if (nzchar(current)) {
+      chunks <- c(chunks, current)
+    }
+    paste(chunks, collapse = "\n")
+  }, character(1L), USE.NAMES = FALSE)
+}
+
+make_hap_pheno_fill_table <- function(summary_dt,
+                                      fill_palette = "RdBu",
+                                      fill_colors = NULL,
+                                      alpha = 0.75) {
+  dt <- data.table::copy(summary_dt)
+  dt[, "hap_fill" := NA_character_]
+
+  for (trait_i in unique(as.character(dt$trait))) {
+    idx <- which(as.character(dt$trait) == trait_i)
+    med <- dt$median_value[idx]
+    n <- length(idx)
+    if (!is.null(fill_colors)) {
+      cols <- as.character(fill_colors)
+      if (!is.null(names(cols)) && all(as.character(dt$hap_id[idx]) %in% names(cols))) {
+        cols <- cols[as.character(dt$hap_id[idx])]
+      } else {
+        if (length(cols) < n) cols <- grDevices::colorRampPalette(cols)(n)
+        cols <- cols[seq_len(n)]
+      }
+    } else {
+      cols <- normalize_discrete_fill_colors(n = n, color_palette = fill_palette, fill_colors = NULL)
+    }
+    ord <- order(med, na.last = TRUE)
+    assigned <- rep(NA_character_, n)
+    assigned[ord] <- cols[seq_len(n)]
+    dt$hap_fill[idx] <- grDevices::adjustcolor(assigned, alpha.f = alpha)
+  }
+
+  dt[]
+}
+
+pairwise_hap_test <- function(long,
+                              method = "t.test",
+                              p_adjust = "BH") {
   out <- long[, {
-    haps <- unique(hap_id)
+    haps <- as.character(stats::na.omit(unique(hap_id)))
     if (length(haps) < 2L) {
       return(data.table::data.table(group1 = character(), group2 = character(), p_value = numeric()))
     }
     pairs <- utils::combn(haps, 2L, simplify = FALSE)
     res <- lapply(pairs, function(pair) {
-      x <- value[hap_id == pair[1L]]
-      y <- value[hap_id == pair[2L]]
-      if (length(x) < 2L || length(y) < 2L) {
-        pval <- NA_real_
-      } else {
-        pval <- tryCatch(stats::t.test(x, y)$p.value, error = function(e) NA_real_)
-      }
+      x <- value[as.character(hap_id) == pair[1L]]
+      y <- value[as.character(hap_id) == pair[2L]]
+      pval <- run_hap_pair_test(x, y, method = method)
       data.table::data.table(group1 = pair[1L], group2 = pair[2L], p_value = pval)
     })
     data.table::rbindlist(res)
   }, by = trait]
   out[, "p_adj" := stats::p.adjust(p_value, method = p_adjust), by = trait]
-  out[, "label" := paste0(group1, " vs ", group2, ": p=", format_p_value(p_adj))]
+  out[, "method" := method]
   out[]
 }
 
-make_hap_test_labels <- function(long, test_dt) {
+run_hap_pair_test <- function(x, y, method = "t.test") {
+  x <- x[!is.na(x)]
+  y <- y[!is.na(y)]
+  if (length(x) < 2L || length(y) < 2L) {
+    return(NA_real_)
+  }
+  tryCatch({
+    if (identical(method, "t.test")) {
+      stats::t.test(x, y)$p.value
+    } else if (identical(method, "wilcox.test")) {
+      stats::wilcox.test(x, y)$p.value
+    } else if (identical(method, "ks.test")) {
+      stats::ks.test(x, y)$p.value
+    } else {
+      NA_real_
+    }
+  }, error = function(e) NA_real_)
+}
+
+make_hap_brackets <- function(long,
+                              test_dt,
+                              p_cutoff = 0.05,
+                              p_label = "stars",
+                              p_value_type = "adjusted",
+                              show_signif_only = TRUE,
+                              bracket_step = 0.08,
+                              bracket_tip_fraction = 0.12) {
   if (nrow(test_dt) == 0L) return(data.table::data.table())
-  best <- test_dt[!is.na(p_adj)]
-  if (nrow(best) == 0L) return(data.table::data.table())
-  data.table::setorder(best, trait, p_adj)
-  best <- best[, .SD[1L], by = trait]
-  y_dt <- long[, .(y = max(value, na.rm = TRUE)), by = trait]
-  y_dt[, "y" := y + abs(y) * 0.08 + 1e-8]
-  x_dt <- long[, .(x = mean(seq_along(unique(hap_id)))), by = trait]
-  merge(best[, .(trait, label)], merge(y_dt, x_dt, by = "trait"), by = "trait")
+  dt <- data.table::copy(test_dt)
+  dt[, "p_display" := if (identical(p_value_type, "raw")) p_value else p_adj]
+  if (isTRUE(show_signif_only)) {
+    dt <- dt[!is.na(p_display) & p_display <= p_cutoff]
+  } else {
+    dt <- dt[!is.na(p_display)]
+  }
+  if (nrow(dt) == 0L) return(data.table::data.table())
+
+  level_dt <- unique(long[, .(hap_id)])
+  level_dt[, "x" := as.integer(hap_id)]
+  level_dt[, "hap_id_chr" := as.character(hap_id)]
+
+  y_info <- long[, .(
+    y_max = max(value, na.rm = TRUE),
+    y_min = min(value, na.rm = TRUE)
+  ), by = trait]
+  y_info[, "y_range" := y_max - y_min]
+  y_info[y_range == 0 | is.na(y_range), "y_range" := abs(y_max)]
+  y_info[y_range == 0 | is.na(y_range), "y_range" := 1]
+  dt <- merge(dt, y_info, by = "trait", all.x = TRUE, sort = FALSE)
+
+  dt[, "x1" := level_dt$x[match(group1, level_dt$hap_id_chr)]]
+  dt[, "x2" := level_dt$x[match(group2, level_dt$hap_id_chr)]]
+  dt <- dt[!is.na(x1) & !is.na(x2)]
+  if (nrow(dt) == 0L) return(data.table::data.table())
+
+  data.table::setorder(dt, trait, p_display, group1, group2)
+  dt[, "bracket_index" := seq_len(.N), by = trait]
+  step <- as.numeric(bracket_step)[1L]
+  if (is.na(step) || step <= 0) step <- 0.08
+  tip_fraction <- as.numeric(bracket_tip_fraction)[1L]
+  if (is.na(tip_fraction) || tip_fraction < 0) tip_fraction <- 0.12
+  tip_fraction <- min(tip_fraction, 1)
+  dt[, "y" := y_max + y_range * step * bracket_index]
+  dt[, "y_tip" := y - y_range * step * tip_fraction]
+  dt[, "label_y" := y + y_range * step * 0.05]
+  dt[, "x_mid" := (x1 + x2) / 2]
+  dt[, "label" := format_hap_p_label(p_display, style = p_label)]
+  dt[]
+}
+
+format_hap_p_label <- function(p, style = "stars") {
+  stars <- ifelse(
+    is.na(p), "NA",
+    ifelse(p <= 0.001, "***", ifelse(p <= 0.01, "**", ifelse(p <= 0.05, "*", "ns")))
+  )
+  num <- format_p_value(p)
+  if (identical(style, "number")) {
+    num
+  } else if (identical(style, "both")) {
+    paste0(stars, "\n", num)
+  } else {
+    stars
+  }
 }
 
 format_p_value <- function(p) {
-  ifelse(is.na(p), "NA", ifelse(p < 0.001, "<0.001", sprintf("%.3g", p)))
+  out <- ifelse(
+    is.na(p),
+    "NA",
+    ifelse(
+      p < 0.001,
+      formatC(p, format = "e", digits = 2),
+      sprintf("%.3g", p)
+    )
+  )
+  out
 }

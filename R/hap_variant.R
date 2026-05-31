@@ -25,6 +25,16 @@
 #' @param missing_genotype Missing genotype label. Default is `NA_character_`, which is displayed as `NA` in haplotype tables.
 #' @param min_variant_number Minimum number of non-missing variants required for a sample. If NULL, only samples with complete non-missing genotypes across all retained variants are kept.
 #' @return A HapVariant object.
+#' @examples
+#' vcf_file <- system.file("extdata", "example_haplotype.vcf", package = "GeneTrackR")
+#' anno_file <- system.file("extdata", "example.genePredExt", package = "GeneTrackR")
+#' vcf <- read_vcf(vcf_file)
+#' anno <- read_genepred(anno_file, format = "genePredExt", verbose = FALSE)
+#' hap <- hap_variant(vcf, annotation = anno, gene_id = "GeneA", genotype_mode = "code")
+#' hap
+#' hap$haplotypes
+#' hap_string <- hap_variant(vcf, annotation = anno, gene_id = "GeneA", genotype_mode = "string")
+#' hap_string$haplotypes
 #' @export
 hap_variant <- function(vcf,
                         annotation = NULL,

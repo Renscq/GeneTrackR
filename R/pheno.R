@@ -16,6 +16,12 @@
 #' @param sample_col Optional sample column name. If NULL, the first column is used.
 #' @param na_strings Strings treated as missing values.
 #' @return A data.table with the first column standardized as `sample_id`.
+#' @examples
+#' pheno_file <- system.file("extdata", "example_pheno.tsv", package = "GeneTrackR")
+#' pheno <- read_pheno(pheno_file)
+#' head(pheno)
+#' summary_pheno(pheno)
+#' plot_pheno(pheno, traits = c("plant_height", "seed_weight"))
 #' @export
 read_pheno <- function(file,
                        sep = "auto",

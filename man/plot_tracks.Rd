@@ -21,6 +21,9 @@ plot_tracks(
   signal_type = c("bar", "line", "area", "heatmap"),
   signal_palette = "Blues",
   signal_colors = NULL,
+  gene_color_palette = "Paired",
+  gene_fill_colors = NULL,
+  gene_border_color = NA,
   signal_transform = c("none", "log2", "log10", "sqrt"),
   signal_y_scale = c("free", "fixed"),
   signal_y_ticks = c("range", "pretty"),
@@ -80,6 +83,12 @@ plot_tracks(
 
 \item{signal_colors}{Optional named or unnamed vector of colors for signal samples.}
 
+\item{gene_color_palette}{RColorBrewer palette name used for gene model feature fills.}
+
+\item{gene_fill_colors}{Optional custom fill colors for gene model features. Use a named vector such as \code{c(CDS = "#33a02c", UTR = "#b2df8a", exon = "#fb9a99")}.}
+
+\item{gene_border_color}{Optional rectangle border color for gene model features. Use \code{NA} to hide borders.}
+
 \item{signal_transform}{Signal-axis transformation. Use \code{none}, \code{log2}, \code{log10}, or \code{sqrt}.}
 
 \item{signal_y_scale}{Signal y-axis scale mode. Use \code{free} for independent sample-specific y-axis ranges or \code{fixed} for a shared y-axis range across samples.}
@@ -115,8 +124,6 @@ plot_tracks(
 \item{label_side}{Label placement when \code{label_position = "feature"}. Use \code{above}, \code{below}, or \code{center}.}
 
 \item{label_offset}{Vertical offset used for feature labels when \code{label_side} is \code{above} or \code{below}.}
-
-\item{text_color}{Text color for axis text, axis titles, legends, and in-plot labels.}
 
 \item{text_size}{Text size in points for axis text, axis titles, legends, and facet labels.}
 

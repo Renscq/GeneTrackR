@@ -29,6 +29,9 @@
 #' @param signal_type Signal plot type.
 #' @param signal_palette Signal color palette for signal tracks. Any palette name from `RColorBrewer::brewer.pal.info` can be used.
 #' @param signal_colors Optional named or unnamed vector of colors for signal samples.
+#' @param gene_color_palette RColorBrewer palette name used for gene model feature fills.
+#' @param gene_fill_colors Optional custom fill colors for gene model features. Use a named vector such as `c(CDS = "#33a02c", UTR = "#b2df8a", exon = "#fb9a99")`.
+#' @param gene_border_color Optional rectangle border color for gene model features. Use `NA` to hide borders.
 #' @param signal_transform Signal-axis transformation. Use `none`, `log2`, `log10`, or `sqrt`.
 #' @param signal_y_scale Signal y-axis scale mode. Use `free` for independent sample-specific y-axis ranges or `fixed` for a shared y-axis range across samples.
 #' @param signal_y_ticks Signal y-axis tick mode. Use `range` to show only integer minimum and maximum limits or `pretty` for default-style breaks.
@@ -47,7 +50,6 @@
 #' @param label_by Which identifier to use for gene model labels. Use `gene` for gene IDs or `transcript` for transcript IDs.
 #' @param label_side Label placement when `label_position = "feature"`. Use `above`, `below`, or `center`.
 #' @param label_offset Vertical offset used for feature labels when `label_side` is `above` or `below`.
-#' @param text_color Text color for axis text, axis titles, legends, and in-plot labels.
 #' @param text_size Text size in points for axis text, axis titles, legends, and facet labels.
 #' @param label_size Text size in points for gene model labels drawn when `label_position = "feature"`.
 #'
@@ -89,6 +91,9 @@ plot_tracks <- function(annotation,
                         signal_type = c("bar", "line", "area", "heatmap"),
                         signal_palette = "Blues",
                         signal_colors = NULL,
+                        gene_color_palette = "Paired",
+                        gene_fill_colors = NULL,
+                        gene_border_color = NA,
                         signal_transform = c("none", "log2", "log10", "sqrt"),
                         signal_y_scale = c("free", "fixed"),
                         signal_y_ticks = c("range", "pretty"),
@@ -130,6 +135,8 @@ plot_tracks <- function(annotation,
   label_by <- match.arg(label_by)
   label_side <- match.arg(label_side)
 
+  gene_border_color <- normalize_border_color(gene_border_color)
+
   has_gene_id <- !is.null(gene_id)
   has_transcript_id <- !is.null(transcript_id)
   has_region <- !is.null(chrom) || !is.null(start) || !is.null(end)
@@ -156,6 +163,9 @@ plot_tracks <- function(annotation,
       utr_width = utr_width,
       show_direction = show_direction,
       direction_mode = direction_mode,
+      color_palette = gene_color_palette,
+      fill_colors = gene_fill_colors,
+      border_color = gene_border_color,
       label_position = label_position,
       label_by = label_by,
       label_side = label_side,
@@ -180,6 +190,9 @@ plot_tracks <- function(annotation,
       utr_width = utr_width,
       show_direction = show_direction,
       direction_mode = direction_mode,
+      color_palette = gene_color_palette,
+      fill_colors = gene_fill_colors,
+      border_color = gene_border_color,
       label_position = label_position,
       label_by = label_by,
       label_side = label_side,
@@ -206,6 +219,9 @@ plot_tracks <- function(annotation,
       utr_width = utr_width,
       show_direction = show_direction,
       direction_mode = direction_mode,
+      color_palette = gene_color_palette,
+      fill_colors = gene_fill_colors,
+      border_color = gene_border_color,
       label_position = label_position,
       label_by = label_by,
       label_side = label_side,

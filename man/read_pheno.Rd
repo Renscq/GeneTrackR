@@ -27,3 +27,10 @@ A data.table with the first column standardized as \code{sample_id}.
 Reads a phenotype table where the first column contains taxa/sample IDs and
 all remaining columns are phenotype traits.
 }
+\examples{
+pheno_file <- system.file("extdata", "example_pheno.tsv", package = "GeneTrackR")
+pheno <- read_pheno(pheno_file)
+head(pheno)
+summary_pheno(pheno)
+plot_pheno(pheno, traits = c("plant_height", "seed_weight"))
+}

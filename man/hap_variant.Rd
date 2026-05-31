@@ -52,3 +52,14 @@ Extracts variants from a VCF/VariantTrack object and converts sample genotype
 profiles into haplotypes. The function supports region-based queries and
 annotation-guided gene/transcript queries.
 }
+\examples{
+vcf_file <- system.file("extdata", "example_haplotype.vcf", package = "GeneTrackR")
+anno_file <- system.file("extdata", "example.genePredExt", package = "GeneTrackR")
+vcf <- read_vcf(vcf_file)
+anno <- read_genepred(anno_file, format = "genePredExt", verbose = FALSE)
+hap <- hap_variant(vcf, annotation = anno, gene_id = "GeneA", genotype_mode = "code")
+hap
+hap$haplotypes
+hap_string <- hap_variant(vcf, annotation = anno, gene_id = "GeneA", genotype_mode = "string")
+hap_string$haplotypes
+}
