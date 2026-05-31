@@ -15,7 +15,15 @@
 #' @param meta A list of metadata.
 #' @return A VariantTrack object.
 #' @export
-VariantTrack <- function(data, meta = list()) {
+VariantTrack <- function(data = NULL, meta = list()) {
+  if (is.null(data)) {
+    meta$lazy <- isTRUE(meta$lazy)
+    return(structure(
+      list(data = NULL, meta = meta),
+      class = "VariantTrack"
+    ))
+  }
+
   dt <- data.table::as.data.table(data)
   stop_if_not(all(c("chrom", "pos") %in% names(dt)), "`data` must contain `chrom` and `pos` columns.")
 
@@ -40,10 +48,15 @@ VariantTrack <- function(data, meta = list()) {
   dt[, "variant_type" := as.character(dt[["variant_type"]])]
 
   data.table::setorderv(dt, c("chrom", "pos", "variant_id"))
+  meta$lazy <- FALSE
   structure(
     list(data = dt, meta = meta),
     class = "VariantTrack"
   )
+}
+
+is_lazy_variant_track <- function(x) {
+  inherits(x, "VariantTrack") && is.null(x$data) && isTRUE(x$meta$lazy)
 }
 
 #' @export

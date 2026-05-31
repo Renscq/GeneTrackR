@@ -7,6 +7,7 @@
 read_vcf_track(
   file,
   keep_genotype = TRUE,
+  mode = c("auto", "memory", "lazy"),
   chrom = NULL,
   start = NULL,
   end = NULL,
@@ -18,6 +19,8 @@ read_vcf_track(
 \item{file}{VCF file path. Plain VCF, gzip-compressed VCF, and bgzip VCF are supported.}
 
 \item{keep_genotype}{Logical. Whether to keep FORMAT and sample genotype columns.}
+
+\item{mode}{Reading mode. \code{memory} parses records immediately, \code{lazy} stores indexed VCF metadata only, and \code{auto} uses lazy mode for indexed VCF files when no region is supplied.}
 
 \item{chrom}{Optional chromosome name for indexed regional reading.}
 

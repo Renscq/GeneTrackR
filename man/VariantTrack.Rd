@@ -4,7 +4,7 @@
 \alias{VariantTrack}
 \title{Create a VariantTrack object}
 \usage{
-VariantTrack(data, meta = list())
+VariantTrack(data = NULL, meta = list())
 }
 \arguments{
 \item{data}{A data.frame or data.table containing at least \code{chrom} and \code{pos}.}

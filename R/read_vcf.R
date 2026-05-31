@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-31
-# Version: 0.4.0
+# Version: 0.5.0
 # Function: Read VCF files into genome-level VariantTrack objects
 # Input: VCF files
 # Output: VariantTrack objects
@@ -16,6 +16,7 @@
 #'
 #' @param file VCF file path. Plain VCF, gzip-compressed VCF, and bgzip VCF are supported.
 #' @param keep_genotype Logical. Whether to keep FORMAT and sample genotype columns.
+#' @param mode Reading mode. `memory` parses records immediately, `lazy` stores indexed VCF metadata only, and `auto` uses lazy mode for indexed VCF files when no region is supplied.
 #' @param chrom Optional chromosome name for indexed regional reading.
 #' @param start Optional 1-based region start for indexed regional reading.
 #' @param end Optional 1-based region end for indexed regional reading.
@@ -31,21 +32,39 @@
 #' @export
 read_vcf <- function(file,
                      keep_genotype = TRUE,
+                     mode = c("auto", "memory", "lazy"),
                      chrom = NULL,
                      start = NULL,
                      end = NULL,
                      verbose = TRUE,
                      progress = interactive() && isTRUE(verbose)) {
   stop_if_not(file.exists(file), paste0("File does not exist: ", file))
+  mode <- match.arg(mode)
 
   file_path <- normalizePath(file, winslash = "/", mustWork = FALSE)
   verbose <- isTRUE(verbose)
   progress_msg <- vcf_progress_message(verbose && isTRUE(progress))
 
   has_region <- !is.null(chrom) || !is.null(start) || !is.null(end)
+  is_indexed <- has_vcf_tabix_index(file_path)
+  if (!isTRUE(has_region) && mode %in% c("auto", "lazy") && isTRUE(is_indexed)) {
+    if (verbose) {
+      message("[GeneTrackR] Indexed VCF detected. Creating lazy VariantTrack: ", file_path)
+    }
+    return(make_lazy_vcf_track(
+      file = file_path,
+      keep_genotype = keep_genotype,
+      verbose = verbose,
+      progress = progress
+    ))
+  }
+  if (!isTRUE(has_region) && mode == "lazy" && !isTRUE(is_indexed)) {
+    warning("`mode = 'lazy'` requires a bgzip-compressed VCF with a .tbi index. Falling back to memory mode.", call. = FALSE)
+  }
+
   if (isTRUE(has_region)) {
     stop_if_not(!is.null(chrom) && !is.null(start) && !is.null(end), "`chrom`, `start`, and `end` must all be supplied for regional VCF reading.")
-    if (has_vcf_tabix_index(file_path)) {
+    if (is_indexed) {
       if (verbose) {
         message("[GeneTrackR] Indexed VCF detected. Reading region with tabix: ", file_path)
       }
@@ -115,14 +134,17 @@ read_vcf <- function(file,
 #' @export
 read_vcf_track <- function(file,
                            keep_genotype = TRUE,
+                           mode = c("auto", "memory", "lazy"),
                            chrom = NULL,
                            start = NULL,
                            end = NULL,
                            verbose = TRUE,
                            progress = interactive() && isTRUE(verbose)) {
+  mode <- match.arg(mode)
   read_vcf(
     file = file,
     keep_genotype = keep_genotype,
+    mode = mode,
     chrom = chrom,
     start = start,
     end = end,

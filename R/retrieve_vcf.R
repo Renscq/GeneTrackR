@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-31
-# Version: 0.4.0
+# Version: 0.5.0
 # Function: Retrieve variants from VariantTrack objects or indexed VCF files
 # Input: VariantTrack object or VCF path and filters
 # Output: data.table or VariantTrack object
@@ -64,7 +64,20 @@ retrieve_vcf <- function(object,
     )
   } else {
     stop_if_not(inherits(object, "VariantTrack"), "`object` must be a VariantTrack object or a VCF file path.")
-    vt <- object
+    if (is_lazy_variant_track(object)) {
+      stop_if_not(!is.null(chrom) && !is.null(start) && !is.null(end), "Lazy VariantTrack queries require `chrom`, `start`, and `end`.")
+      vt <- retrieve_vcf_file(
+        file = object$meta$source_file,
+        chrom = chrom,
+        start = start,
+        end = end,
+        keep_genotype = keep_genotype %||% object$meta$keep_genotype %||% TRUE,
+        verbose = verbose,
+        progress = progress
+      )
+    } else {
+      vt <- object
+    }
   }
 
   dt <- data.table::copy(vt$data)
@@ -168,7 +181,7 @@ retrieve_vcf_file <- function(file,
   } else if (verbose) {
     message("[GeneTrackR] Indexed VCF detected, but no complete region was supplied. Reading full VCF file: ", file)
   }
-  read_vcf(file, keep_genotype = keep_genotype, verbose = verbose, progress = progress)
+  read_vcf(file, keep_genotype = keep_genotype, mode = "memory", verbose = verbose, progress = progress)
 }
 
 vcf_table_to_variant_track <- function(dt, source_file = NULL, keep_genotype = TRUE) {
