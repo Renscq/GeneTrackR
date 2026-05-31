@@ -11,6 +11,9 @@ plot_hap_variant(
   min_hap_samples = 5L,
   show_reference_row = TRUE,
   variant_label = c("variant_id", "pos"),
+  show_gene_position_axis = TRUE,
+  gene_position_axis_n = 5L,
+  gene_position_axis_label = NULL,
   text_size = 14,
   table_text_size = 3.2,
   table_x_angle = 90,
@@ -45,6 +48,12 @@ a compact gene track is drawn above the haplotype table.}
 \item{show_reference_row}{Logical. Whether to add the first table row showing REF/ALT allele strings for each variant.}
 
 \item{variant_label}{Column used for variant labels. One of \code{variant_id}, \code{pos}, or an existing column in \code{hap$variants}.}
+
+\item{show_gene_position_axis}{Logical. Whether to show genomic coordinate labels above the gene track.}
+
+\item{gene_position_axis_n}{Approximate number of genomic coordinate ticks above the gene track.}
+
+\item{gene_position_axis_label}{Optional x-axis title for genomic coordinate labels.}
 
 \item{text_size}{Base text size.}
 

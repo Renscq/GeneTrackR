@@ -416,7 +416,7 @@ p1 <- plot_hap_pheno(
   min_hap_samples = 2L,
   plot_type = "violin",
   show_points = FALSE,
-  test_method = "t.test",
+  test_method = "wilcox.test",
   p_adjust = "BH",
   p_label = 'number',
   show_signif_only = F,

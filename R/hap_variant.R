@@ -5,12 +5,134 @@
 # Input: VariantTrack objects, VCF files, and genomic locators
 # Output: HapVariant objects
 
-#' Build haplotypes from variants in a gene or genomic region
+#' Build haplotypes from variants in a gene or transcript region
 #'
 #' @description
-#' Extracts variants from a VCF/VariantTrack object and converts sample genotype
-#' profiles into haplotypes. The function supports region-based queries and
-#' annotation-guided gene/transcript queries.
+#' Extracts variants for a specified gene or transcript, optionally including
+#' upstream and downstream flanking regions, and converts sample genotype
+#' profiles into haplotypes.
+#'
+#' @param vcf A VariantTrack object or VCF file path.
+#' @param annotation A gene annotation object used to locate `gene_id` or `transcript_id`.
+#' @param gene_id Optional gene ID. Use exactly one of `gene_id` or `transcript_id`.
+#' @param transcript_id Optional transcript ID. Use exactly one of `gene_id` or `transcript_id`.
+#' @param upstream Upstream flanking length in bp. When `strand_aware = TRUE`, upstream is interpreted relative to the gene/transcript strand.
+#' @param downstream Downstream flanking length in bp. When `strand_aware = TRUE`, downstream is interpreted relative to the gene/transcript strand.
+#' @param strand_aware Logical. Whether upstream/downstream should follow strand direction. Default TRUE.
+#' @param samples Optional sample names to keep.
+#' @param variant_type Optional variant types to keep.
+#' @param genotype_mode Genotype representation. `code` converts genotypes to compact 0/1 states, where 0 means reference genotype and 1 means any alternate allele is present. `string` converts genotypes to a single allele label; long InDel alleles are compressed as `iN`, where `N` is allele length.
+#' @param missing_genotype Missing genotype label. Default is `NA_character_`, which is displayed as `NA` in haplotype tables.
+#' @param min_variant_number Minimum number of non-missing variants required for a sample. If NULL, only samples with complete non-missing genotypes across all retained variants are kept.
+#' @return A HapVariant object.
+#' @examples
+#' vcf_file <- system.file("extdata", "example_haplotype.vcf", package = "GeneTrackR")
+#' anno_file <- system.file("extdata", "example.genePredExt", package = "GeneTrackR")
+#' vcf <- read_vcf(vcf_file)
+#' anno <- read_genepred(anno_file, format = "genePredExt", verbose = FALSE)
+#' hap <- hap_gene_variant(vcf, annotation = anno, gene_id = "GeneA", upstream = 500, downstream = 300)
+#' hap
+#' hap$haplotypes
+#' hap_tx <- hap_gene_variant(vcf, annotation = anno, transcript_id = "TxA1", genotype_mode = "string")
+#' hap_tx$haplotypes
+#' @export
+hap_gene_variant <- function(vcf,
+                             annotation,
+                             gene_id = NULL,
+                             transcript_id = NULL,
+                             upstream = 0L,
+                             downstream = 0L,
+                             strand_aware = TRUE,
+                             samples = NULL,
+                             variant_type = NULL,
+                             genotype_mode = c("code", "string"),
+                             missing_genotype = NA_character_,
+                             min_variant_number = NULL) {
+  genotype_mode <- match.arg(genotype_mode)
+  region <- resolve_haplotype_gene_region(
+    annotation = annotation,
+    gene_id = gene_id,
+    transcript_id = transcript_id,
+    upstream = upstream,
+    downstream = downstream,
+    strand_aware = strand_aware
+  )
+
+  build_haplotype_from_region(
+    vcf = vcf,
+    region = region,
+    samples = samples,
+    variant_type = variant_type,
+    genotype_mode = genotype_mode,
+    missing_genotype = missing_genotype,
+    min_variant_number = min_variant_number
+  )
+}
+
+#' Build haplotypes from variants in a genomic region
+#'
+#' @description
+#' Extracts variants from a user-defined genomic interval and converts sample
+#' genotype profiles into haplotypes.
+#'
+#' @param vcf A VariantTrack object or VCF file path.
+#' @param chrom Chromosome name.
+#' @param start Region start in 1-based closed coordinates.
+#' @param end Region end in 1-based closed coordinates.
+#' @param samples Optional sample names to keep.
+#' @param variant_type Optional variant types to keep.
+#' @param genotype_mode Genotype representation. `code` converts genotypes to compact 0/1 states, where 0 means reference genotype and 1 means any alternate allele is present. `string` converts genotypes to a single allele label; long InDel alleles are compressed as `iN`, where `N` is allele length.
+#' @param missing_genotype Missing genotype label. Default is `NA_character_`, which is displayed as `NA` in haplotype tables.
+#' @param min_variant_number Minimum number of non-missing variants required for a sample. If NULL, only samples with complete non-missing genotypes across all retained variants are kept.
+#' @return A HapVariant object.
+#' @examples
+#' vcf_file <- system.file("extdata", "example_haplotype.vcf", package = "GeneTrackR")
+#' vcf <- read_vcf(vcf_file)
+#' hap <- hap_region_variant(vcf, chrom = "chr1", start = 1000, end = 12000, genotype_mode = "code")
+#' hap
+#' hap$haplotypes
+#' @export
+hap_region_variant <- function(vcf,
+                               chrom,
+                               start,
+                               end,
+                               samples = NULL,
+                               variant_type = NULL,
+                               genotype_mode = c("code", "string"),
+                               missing_genotype = NA_character_,
+                               min_variant_number = NULL) {
+  genotype_mode <- match.arg(genotype_mode)
+  check_region(chrom, start, end)
+  region <- list(
+    locator = "region",
+    id = paste0(as.character(chrom)[1L], ":", as.integer(start)[1L], "-", as.integer(end)[1L]),
+    chrom = as.character(chrom)[1L],
+    start = as.integer(start)[1L],
+    end = as.integer(end)[1L],
+    core_start = as.integer(start)[1L],
+    core_end = as.integer(end)[1L],
+    upstream = 0L,
+    downstream = 0L,
+    strand = NA_character_
+  )
+
+  build_haplotype_from_region(
+    vcf = vcf,
+    region = region,
+    samples = samples,
+    variant_type = variant_type,
+    genotype_mode = genotype_mode,
+    missing_genotype = missing_genotype,
+    min_variant_number = min_variant_number
+  )
+}
+
+#' Build haplotypes from variants in a gene, transcript, or genomic region
+#'
+#' @description
+#' Compatibility wrapper for haplotype construction. For new code, prefer
+#' `hap_gene_variant()` for gene/transcript queries and `hap_region_variant()`
+#' for direct genomic interval queries.
 #'
 #' @param vcf A VariantTrack object or VCF file path.
 #' @param annotation Optional gene annotation object used for `gene_id` or `transcript_id` queries.
@@ -19,6 +141,9 @@
 #' @param chrom Optional chromosome name.
 #' @param start Optional region start in 1-based closed coordinates.
 #' @param end Optional region end in 1-based closed coordinates.
+#' @param upstream Upstream flanking length in bp for gene/transcript queries.
+#' @param downstream Downstream flanking length in bp for gene/transcript queries.
+#' @param strand_aware Logical. Whether upstream/downstream should follow strand direction. Default TRUE.
 #' @param samples Optional sample names to keep.
 #' @param variant_type Optional variant types to keep.
 #' @param genotype_mode Genotype representation. `code` converts genotypes to compact 0/1 states, where 0 means reference genotype and 1 means any alternate allele is present. `string` converts genotypes to a single allele label; long InDel alleles are compressed as `iN`, where `N` is allele length.
@@ -32,9 +157,8 @@
 #' anno <- read_genepred(anno_file, format = "genePredExt", verbose = FALSE)
 #' hap <- hap_variant(vcf, annotation = anno, gene_id = "GeneA", genotype_mode = "code")
 #' hap
-#' hap$haplotypes
-#' hap_string <- hap_variant(vcf, annotation = anno, gene_id = "GeneA", genotype_mode = "string")
-#' hap_string$haplotypes
+#' hap_region <- hap_variant(vcf, chrom = "chr1", start = 1000, end = 12000)
+#' hap_region$haplotypes
 #' @export
 hap_variant <- function(vcf,
                         annotation = NULL,
@@ -43,6 +167,9 @@ hap_variant <- function(vcf,
                         chrom = NULL,
                         start = NULL,
                         end = NULL,
+                        upstream = 0L,
+                        downstream = 0L,
+                        strand_aware = TRUE,
                         samples = NULL,
                         variant_type = NULL,
                         genotype_mode = c("code", "string"),
@@ -50,14 +177,44 @@ hap_variant <- function(vcf,
                         min_variant_number = NULL) {
   genotype_mode <- match.arg(genotype_mode)
 
-  region <- resolve_haplotype_region(
-    annotation = annotation,
-    gene_id = gene_id,
-    transcript_id = transcript_id,
+  if (!is.null(gene_id) || !is.null(transcript_id)) {
+    return(hap_gene_variant(
+      vcf = vcf,
+      annotation = annotation,
+      gene_id = gene_id,
+      transcript_id = transcript_id,
+      upstream = upstream,
+      downstream = downstream,
+      strand_aware = strand_aware,
+      samples = samples,
+      variant_type = variant_type,
+      genotype_mode = genotype_mode,
+      missing_genotype = missing_genotype,
+      min_variant_number = min_variant_number
+    ))
+  }
+
+  hap_region_variant(
+    vcf = vcf,
     chrom = chrom,
     start = start,
-    end = end
+    end = end,
+    samples = samples,
+    variant_type = variant_type,
+    genotype_mode = genotype_mode,
+    missing_genotype = missing_genotype,
+    min_variant_number = min_variant_number
   )
+}
+
+build_haplotype_from_region <- function(vcf,
+                                        region,
+                                        samples = NULL,
+                                        variant_type = NULL,
+                                        genotype_mode = c("code", "string"),
+                                        missing_genotype = NA_character_,
+                                        min_variant_number = NULL) {
+  genotype_mode <- match.arg(genotype_mode)
 
   vt <- retrieve_vcf(
     vcf,
@@ -78,6 +235,8 @@ hap_variant <- function(vcf,
     sample_cols <- samples
   }
 
+  stop_if_not(nrow(vt$data) > 0L, "No variants were found in the selected region.")
+
   geno_long <- extract_vcf_genotype_long(
     vt$data,
     sample_cols = sample_cols,
@@ -85,7 +244,6 @@ hap_variant <- function(vcf,
     missing_genotype = missing_genotype
   )
 
-  stop_if_not(nrow(vt$data) > 0L, "No variants were found in the selected region.")
   stop_if_not(nrow(geno_long) > 0L, "No genotypes were found in the selected region.")
 
   geno_wide <- data.table::dcast(
@@ -155,48 +313,68 @@ print.HapVariant <- function(x, ...) {
   invisible(x)
 }
 
-resolve_haplotype_region <- function(annotation = NULL,
-                                     gene_id = NULL,
-                                     transcript_id = NULL,
-                                     chrom = NULL,
-                                     start = NULL,
-                                     end = NULL) {
-  locators <- sum(c(!is.null(gene_id), !is.null(transcript_id), !is.null(chrom) || !is.null(start) || !is.null(end)))
-  stop_if_not(locators == 1L, "Specify exactly one locator: `gene_id`, `transcript_id`, or `chrom` + `start` + `end`.")
+resolve_haplotype_gene_region <- function(annotation,
+                                          gene_id = NULL,
+                                          transcript_id = NULL,
+                                          upstream = 0L,
+                                          downstream = 0L,
+                                          strand_aware = TRUE) {
+  stop_if_not(!is.null(annotation), "`annotation` is required for gene/transcript haplotype queries.")
+  locators <- sum(c(!is.null(gene_id), !is.null(transcript_id)))
+  stop_if_not(locators == 1L, "Specify exactly one of `gene_id` or `transcript_id`.")
+
+  upstream <- as.integer(upstream)[1L]
+  downstream <- as.integer(downstream)[1L]
+  if (is.na(upstream)) upstream <- 0L
+  if (is.na(downstream)) downstream <- 0L
+  stop_if_not(upstream >= 0L, "`upstream` must be a non-negative integer.")
+  stop_if_not(downstream >= 0L, "`downstream` must be a non-negative integer.")
 
   if (!is.null(gene_id)) {
-    stop_if_not(!is.null(annotation), "`annotation` is required when `gene_id` is used.")
-    x <- retrieve_feature(annotation, gene_id = as.character(gene_id)[1L], as = "Feature")
+    target_id <- as.character(gene_id)[1L]
+    x <- retrieve_feature(annotation, gene_id = target_id, as = "Feature")
     stop_if_not(nrow(x$genes) > 0L, "Gene ID was not found in annotation.")
-    return(list(
-      locator = "gene",
-      id = as.character(gene_id)[1L],
-      chrom = as.character(x$genes$chrom[1L]),
-      start = as.integer(min(x$genes$gene_start, na.rm = TRUE)),
-      end = as.integer(max(x$genes$gene_end, na.rm = TRUE))
-    ))
-  }
-
-  if (!is.null(transcript_id)) {
-    stop_if_not(!is.null(annotation), "`annotation` is required when `transcript_id` is used.")
-    x <- retrieve_feature(annotation, transcript_id = as.character(transcript_id)[1L], as = "Feature")
+    dt <- data.table::as.data.table(x$genes)
+    chrom <- as.character(dt[["chrom"]][1L])
+    strand <- if ("strand" %in% names(dt)) as.character(dt[["strand"]][1L]) else NA_character_
+    core_start <- as.integer(min(dt[["gene_start"]], na.rm = TRUE))
+    core_end <- as.integer(max(dt[["gene_end"]], na.rm = TRUE))
+    locator <- "gene"
+  } else {
+    target_id <- as.character(transcript_id)[1L]
+    x <- retrieve_feature(annotation, transcript_id = target_id, as = "Feature")
     stop_if_not(nrow(x$transcripts) > 0L, "Transcript ID was not found in annotation.")
-    return(list(
-      locator = "transcript",
-      id = as.character(transcript_id)[1L],
-      chrom = as.character(x$transcripts$chrom[1L]),
-      start = as.integer(min(x$transcripts$tx_start, na.rm = TRUE)),
-      end = as.integer(max(x$transcripts$tx_end, na.rm = TRUE))
-    ))
+    dt <- data.table::as.data.table(x$transcripts)
+    chrom <- as.character(dt[["chrom"]][1L])
+    strand <- if ("strand" %in% names(dt)) as.character(dt[["strand"]][1L]) else NA_character_
+    core_start <- as.integer(min(dt[["tx_start"]], na.rm = TRUE))
+    core_end <- as.integer(max(dt[["tx_end"]], na.rm = TRUE))
+    locator <- "transcript"
   }
 
-  check_region(chrom, start, end)
+  if (isTRUE(strand_aware) && identical(strand, "-")) {
+    region_start <- core_start - downstream
+    region_end <- core_end + upstream
+  } else {
+    region_start <- core_start - upstream
+    region_end <- core_end + downstream
+  }
+
+  region_start <- max(1L, as.integer(region_start))
+  region_end <- max(region_start, as.integer(region_end))
+
   list(
-    locator = "region",
-    id = paste0(as.character(chrom)[1L], ":", as.integer(start)[1L], "-", as.integer(end)[1L]),
-    chrom = as.character(chrom)[1L],
-    start = as.integer(start)[1L],
-    end = as.integer(end)[1L]
+    locator = locator,
+    id = target_id,
+    chrom = chrom,
+    start = region_start,
+    end = region_end,
+    core_start = core_start,
+    core_end = core_end,
+    upstream = upstream,
+    downstream = downstream,
+    strand = strand,
+    strand_aware = isTRUE(strand_aware)
   )
 }
 

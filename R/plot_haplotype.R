@@ -21,6 +21,9 @@
 #' @param min_hap_samples Minimum sample number required for a haplotype group to be displayed.
 #' @param show_reference_row Logical. Whether to add the first table row showing REF/ALT allele strings for each variant.
 #' @param variant_label Column used for variant labels. One of `variant_id`, `pos`, or an existing column in `hap$variants`.
+#' @param show_gene_position_axis Logical. Whether to show genomic coordinate labels above the gene track.
+#' @param gene_position_axis_n Approximate number of genomic coordinate ticks above the gene track.
+#' @param gene_position_axis_label Optional x-axis title for genomic coordinate labels.
 #' @param text_size Base text size.
 #' @param table_text_size Haplotype table text size.
 #' @param table_x_angle Angle of haplotype table x-axis labels. Default is 90.
@@ -61,6 +64,9 @@ plot_hap_variant <- function(hap,
                              min_hap_samples = 5L,
                              show_reference_row = TRUE,
                              variant_label = c("variant_id", "pos"),
+                             show_gene_position_axis = TRUE,
+                             gene_position_axis_n = 5L,
+                             gene_position_axis_label = NULL,
                              text_size = 14,
                              table_text_size = 3.2,
                              table_x_angle = 90,
@@ -119,6 +125,16 @@ plot_hap_variant <- function(hap,
   vars[, "variant_index" := seq_len(.N)]
 
   variant_label <- match.arg(variant_label)
+  show_gene_position_axis <- isTRUE(show_gene_position_axis)
+  gene_position_axis_n <- as.integer(gene_position_axis_n)[1L]
+  if (is.na(gene_position_axis_n) || gene_position_axis_n < 2L) {
+    gene_position_axis_n <- 5L
+  }
+  if (is.null(gene_position_axis_label)) {
+    gene_position_axis_label <- NA_character_
+  }
+  gene_position_axis_label <- as.character(gene_position_axis_label)[1L]
+
   if (!variant_label %in% names(vars)) {
     variant_label <- "variant_id"
   }
@@ -203,7 +219,10 @@ plot_hap_variant <- function(hap,
         fill_colors = fill_colors,
         border_color = border_color,
         variant_palette = variant_palette,
-        variant_colors = variant_colors
+        variant_colors = variant_colors,
+        show_gene_position_axis = show_gene_position_axis,
+        gene_position_axis_n = gene_position_axis_n,
+        gene_position_axis_label = gene_position_axis_label
       )
     }
   }
@@ -307,7 +326,7 @@ plot_hap_variant <- function(hap,
       ) +
       ggplot2::scale_x_continuous(breaks = x_breaks, labels = x_labels, limits = x_limits, expand = c(0, 0)) +
       ggplot2::scale_y_continuous(limits = c(0.7, 1.45), expand = c(0, 0)) +
-      ggplot2::labs(x = NULL, y = NULL) +
+      ggplot2::labs(x = x_axis_title, y = NULL) +
       ggplot2::theme_void() +
       ggplot2::theme(
         text = ggplot2::element_text(color = "black"),
@@ -413,7 +432,58 @@ prepare_hap_gene_track <- function(annotation, hap, vars, mapper) {
   seg[, "plot_end" := mapper(pmin(query_end, as.integer(get("end"))))]
   seg <- seg[!is.na(plot_start) & !is.na(plot_end) & plot_start <= plot_end]
 
-  list(transcripts = tx[], segments = seg[])
+  axis_breaks <- make_hap_gene_position_breaks(
+    chrom = chrom,
+    start = query_start,
+    end = query_end,
+    mapper = mapper,
+    n = 5L
+  )
+
+  list(
+    transcripts = tx[],
+    segments = seg[],
+    region = list(chrom = chrom, start = query_start, end = query_end),
+    axis_breaks = axis_breaks
+  )
+}
+
+
+make_hap_gene_position_breaks <- function(chrom,
+                                         start,
+                                         end,
+                                         mapper,
+                                         n = 5L) {
+  start <- suppressWarnings(as.numeric(start)[1L])
+  end <- suppressWarnings(as.numeric(end)[1L])
+  n <- as.integer(n)[1L]
+  if (is.na(n) || n < 2L) n <- 5L
+  if (is.na(start) || is.na(end)) {
+    return(data.table::data.table(x = numeric(), pos = numeric(), label = character()))
+  }
+  if (start > end) {
+    tmp <- start
+    start <- end
+    end <- tmp
+  }
+  if (isTRUE(all.equal(start, end))) {
+    positions <- start
+  } else {
+    positions <- pretty(c(start, end), n = n)
+    positions <- positions[positions >= start & positions <= end]
+    if (!start %in% positions) positions <- c(start, positions)
+    if (!end %in% positions) positions <- c(positions, end)
+    positions <- sort(unique(round(positions)))
+  }
+  x <- mapper(positions)
+  keep <- !is.na(x) & is.finite(x)
+  positions <- positions[keep]
+  x <- x[keep]
+  if (length(positions) == 0L) {
+    return(data.table::data.table(x = numeric(), pos = numeric(), label = character()))
+  }
+  labels <- format(as.integer(positions), big.mark = ",", scientific = FALSE, trim = TRUE)
+  data.table::data.table(x = x, pos = positions, label = labels)
 }
 
 draw_hap_gene_track <- function(gene_data,
@@ -428,11 +498,32 @@ draw_hap_gene_track <- function(gene_data,
                                 fill_colors = NULL,
                                 border_color = NA,
                                 variant_palette = "Set2",
-                                variant_colors = NULL) {
+                                variant_colors = NULL,
+                                show_gene_position_axis = TRUE,
+                                gene_position_axis_n = 5L,
+                                gene_position_axis_label = "Genomic position (bp)") {
   tx <- data.table::copy(gene_data$transcripts)
   seg <- data.table::copy(gene_data$segments)
   vars <- data.table::copy(vars)
   max_y <- max(tx$track_y, na.rm = TRUE)
+  axis_breaks <- gene_data$axis_breaks
+  if (isTRUE(show_gene_position_axis) && !is.null(gene_data$region)) {
+    axis_breaks <- make_hap_gene_position_breaks(
+      chrom = gene_data$region$chrom,
+      start = gene_data$region$start,
+      end = gene_data$region$end,
+      mapper = function(x) {
+        start <- as.numeric(gene_data$region$start)
+        end <- as.numeric(gene_data$region$end)
+        n_span <- diff(x_limits)
+        if (isTRUE(all.equal(start, end))) {
+          return(rep(mean(x_limits), length(x)))
+        }
+        x_limits[1L] + (as.numeric(x) - start) / (end - start) * n_span
+      },
+      n = gene_position_axis_n
+    )
+  }
 
   seg[, "feature_width" := ifelse(as.character(feature) == "CDS", cds_height, exon_height)]
   seg[, "ymin" := as.numeric(track_y) - as.numeric(feature_width) / 2]
@@ -446,6 +537,33 @@ draw_hap_gene_track <- function(gene_data,
   y_upper <- max(seg$ymax, na.rm = TRUE) + 0.35
   y_lower <- min(c(0.5, vars$marker_y - 0.18), na.rm = TRUE)
   vars[, "connector_top_y" := y_lower]
+
+  x_axis_breaks <- NULL
+  x_axis_labels <- NULL
+  x_axis_title <- NULL
+  x_axis_text <- ggplot2::element_blank()
+  x_axis_ticks <- ggplot2::element_blank()
+  if (isTRUE(show_gene_position_axis) && !is.null(axis_breaks) && nrow(axis_breaks) > 0L) {
+    x_axis_breaks <- axis_breaks$x
+    x_axis_labels <- axis_breaks$label
+    x_axis_title <- gene_position_axis_label
+    if (is.null(x_axis_title) || is.na(x_axis_title) || x_axis_title == "") {
+      chr_label <- as.character(gene_data$region$chrom %||% NA_character_)
+      if (!is.na(chr_label) && nzchar(chr_label)) {
+        x_axis_title <- paste0("Chromosome ", chr_label, " position (bp)")
+      } else {
+        x_axis_title <- "Genomic position (bp)"
+      }
+    }
+    x_axis_text <- ggplot2::element_text(
+      size = text_size * 0.65,
+      angle = 0,
+      hjust = 0.5,
+      vjust = 0,
+      color = "black"
+    )
+    x_axis_ticks <- ggplot2::element_line(color = "black", linewidth = 0.25)
+  }
 
   fill_scale <- make_hap_variant_fill_scale(
     gene_features = unique(as.character(seg$feature)),
@@ -496,8 +614,8 @@ draw_hap_gene_track <- function(gene_data,
       drop = FALSE
     ) +
     ggplot2::scale_x_continuous(
-      breaks = x_breaks,
-      labels = x_labels,
+      breaks = x_axis_breaks,
+      labels = x_axis_labels,
       limits = x_limits,
       expand = c(0, 0),
       position = "top"
@@ -508,11 +626,12 @@ draw_hap_gene_track <- function(gene_data,
       limits = c(y_lower, y_upper),
       expand = c(0, 0)
     ) +
-    ggplot2::labs(x = NULL, y = NULL) +
+    ggplot2::labs(x = x_axis_title, y = NULL) +
     ggplot2::theme_bw() +
     ggplot2::theme(
-      axis.text.x = ggplot2::element_blank(),
-      axis.ticks.x = ggplot2::element_blank(),
+      axis.text.x = x_axis_text,
+      axis.ticks.x = x_axis_ticks,
+      axis.title.x = ggplot2::element_text(size = text_size * 0.7, color = "black"),
       text = ggplot2::element_text(color = "black"),
       axis.text.y = ggplot2::element_text(size = text_size * 0.7, color = "black"),
       axis.ticks.y = ggplot2::element_blank(),
@@ -939,16 +1058,26 @@ plot_hap_pheno <- function(hap,
   fill_values <- unique(long[, .(hap_fill)])$hap_fill
   names(fill_values) <- fill_values
 
+  plot_title <- NULL
+  if (!is.null(traits) && length(traits) > 0L) {
+    if (length(traits) == 1L) {
+      plot_title <- as.character(traits[1L])
+    } else {
+      plot_title <- paste(as.character(traits), collapse = ", ")
+    }
+  }
+
   p <- p +
     ggplot2::scale_x_discrete(labels = hap_axis_labels) +
     ggplot2::scale_fill_identity() +
-    ggplot2::labs(x = "Haplotype", y = "Phenotype value") +
+    ggplot2::labs(x = "Haplotype", y = "Phenotype value", title = plot_title) +
     ggplot2::theme_bw() +
     ggplot2::theme(
       text = ggplot2::element_text(color = "black"),
       axis.text.x = ggplot2::element_text(size = text_size, angle = x_text_angle, hjust = 1, vjust = 0.5, color = "black"),
       axis.text.y = ggplot2::element_text(size = text_size, color = "black"),
       axis.title = ggplot2::element_text(size = text_size, color = "black"),
+      plot.title = ggplot2::element_text(size = text_size, color = "black", hjust = 0.5),
       strip.text = ggplot2::element_text(size = text_size, color = "black", lineheight = strip_text_lineheight, margin = ggplot2::margin(3, 3, 3, 3)),
       strip.background = ggplot2::element_rect(fill = strip_fill, color = strip_border_color),
       panel.grid.major.x = ggplot2::element_blank(),
