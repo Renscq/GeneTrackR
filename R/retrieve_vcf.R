@@ -149,9 +149,23 @@ retrieve_vcf_file <- function(file,
     col_names <- parse_vcf_header_names(header)
 
     progress_msg(2L, 4L, "Scanning tabix index.")
+    stop_if_not(requireNamespace("GenomicRanges", quietly = TRUE), "Package `GenomicRanges` is required for indexed VCF queries.")
+    stop_if_not(requireNamespace("IRanges", quietly = TRUE), "Package `IRanges` is required for indexed VCF queries.")
+
+    query_gr <- GenomicRanges::GRanges(
+      seqnames = as.character(chrom)[1L],
+      ranges = IRanges::IRanges(
+        start = as.integer(start)[1L],
+        end = as.integer(end)[1L]
+      )
+    )
+
+    # Older Rsamtools versions do not dispatch scanTabix(TabixFile, character).
+    # Using a GRanges param is compatible with TabixFile across Bioconductor
+    # versions and avoids the "signature file = TabixFile, param = character" error.
     tbx <- Rsamtools::TabixFile(file)
     on.exit(try(close(tbx), silent = TRUE), add = TRUE)
-    lines <- Rsamtools::scanTabix(tbx, param = region)[[1L]]
+    lines <- Rsamtools::scanTabix(tbx, param = query_gr)[[1L]]
 
     progress_msg(3L, 4L, paste0("Parsing ", format(length(lines), big.mark = ","), " VCF records."))
     if (length(lines) == 0L) {

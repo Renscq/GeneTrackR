@@ -170,7 +170,17 @@ parse_vcf_header_names <- function(header) {
 }
 
 has_vcf_tabix_index <- function(file) {
-  file.exists(paste0(file, ".tbi")) || file.exists(sub("\\.gz$", ".tbi", file, ignore.case = TRUE))
+  file <- as.character(file)[1L]
+  if (is.na(file) || !nzchar(file)) {
+    return(FALSE)
+  }
+
+  # A valid tabix index for bgzip-compressed VCF is normally
+  # <file>.tbi. CSI is also accepted for very large contigs.
+  # Do not infer <prefix>.tbi from <prefix>.vcf.gz because it can
+  # incorrectly match unrelated stale indexes and make non-indexed
+  # files look indexed.
+  file.exists(paste0(file, ".tbi")) || file.exists(paste0(file, ".csi"))
 }
 
 vcf_progress_message <- function(enabled) {
