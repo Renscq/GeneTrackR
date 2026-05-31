@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-05-29
-# Version: 0.3.1
+# Date: 2026-05-31
+# Version: 0.4.0
 # Function: Read VCF files into genome-level VariantTrack objects
 # Input: VCF files
 # Output: VariantTrack objects
@@ -10,31 +10,77 @@
 #' @description
 #' Reads VCF records and stores them as genomic point variants. Standard VCF
 #' columns are always imported. If genotype sample columns are present, they are
-#' preserved for haplotype analysis.
+#' preserved for haplotype analysis. For bgzip-compressed VCF files with a tabix
+#' index, `chrom`, `start`, and `end` can be supplied to load only a genomic
+#' interval instead of parsing the whole VCF file.
 #'
 #' @param file VCF file path. Plain VCF, gzip-compressed VCF, and bgzip VCF are supported.
 #' @param keep_genotype Logical. Whether to keep FORMAT and sample genotype columns.
+#' @param chrom Optional chromosome name for indexed regional reading.
+#' @param start Optional 1-based region start for indexed regional reading.
+#' @param end Optional 1-based region end for indexed regional reading.
 #' @param verbose Logical. Whether to print progress messages.
+#' @param progress Logical. Whether to print a compact stage-level progress indicator.
 #' @return A VariantTrack object.
 #' @examples
 #' \dontrun{
 #' variants <- read_vcf("variants.vcf.gz")
-#' plot_variant(variants, chrom = "chr1", start = 1, end = 10000)
+#' region_variants <- read_vcf("variants.vcf.gz", chrom = "chr1", start = 1, end = 10000)
+#' plot_variant(region_variants, chrom = "chr1", start = 1, end = 10000)
 #' }
 #' @export
-read_vcf <- function(file, keep_genotype = TRUE, verbose = TRUE) {
+read_vcf <- function(file,
+                     keep_genotype = TRUE,
+                     chrom = NULL,
+                     start = NULL,
+                     end = NULL,
+                     verbose = TRUE,
+                     progress = interactive() && isTRUE(verbose)) {
   stop_if_not(file.exists(file), paste0("File does not exist: ", file))
 
   file_path <- normalizePath(file, winslash = "/", mustWork = FALSE)
-  if (isTRUE(verbose)) {
-    message("[GeneTrackR] Reading VCF file: ", file_path)
+  verbose <- isTRUE(verbose)
+  progress_msg <- vcf_progress_message(verbose && isTRUE(progress))
+
+  has_region <- !is.null(chrom) || !is.null(start) || !is.null(end)
+  if (isTRUE(has_region)) {
+    stop_if_not(!is.null(chrom) && !is.null(start) && !is.null(end), "`chrom`, `start`, and `end` must all be supplied for regional VCF reading.")
+    if (has_vcf_tabix_index(file_path)) {
+      if (verbose) {
+        message("[GeneTrackR] Indexed VCF detected. Reading region with tabix: ", file_path)
+      }
+      vt <- retrieve_vcf_file(
+        file = file_path,
+        chrom = chrom,
+        start = start,
+        end = end,
+        keep_genotype = keep_genotype,
+        verbose = verbose,
+        progress = progress
+      )
+      return(vt)
+    }
+    if (verbose) {
+      message("[GeneTrackR] No tabix index detected. Falling back to full VCF reading before region filtering.")
+    }
   }
 
-  header <- read_vcf_header_line(file)
+  if (verbose) {
+    file_size <- tryCatch(file.info(file_path)$size, error = function(e) NA_real_)
+    size_label <- if (is.na(file_size)) "unknown size" else format_file_size(file_size)
+    message("[GeneTrackR] Reading VCF file: ", file_path, " (", size_label, ")")
+    if (has_vcf_tabix_index(file_path) && !has_region) {
+      message("[GeneTrackR] Tabix index detected. For large files, use `read_vcf(file, chrom=, start=, end=)` or `retrieve_vcf(file, ...)` to avoid full-file parsing.")
+    }
+  }
+
+  progress_msg(1L, 4L, "Reading VCF header.")
+  header <- read_vcf_header_line(file_path)
   col_names <- parse_vcf_header_names(header)
 
+  progress_msg(2L, 4L, "Loading VCF records.")
   dt <- data.table::fread(
-    file,
+    file_path,
     skip = "#CHROM",
     header = TRUE,
     sep = "\t",
@@ -42,57 +88,20 @@ read_vcf <- function(file, keep_genotype = TRUE, verbose = TRUE) {
     showProgress = FALSE
   )
 
-  if (nrow(dt) == 0L && length(col_names) > 0L) {
-    dt <- data.table::data.table(matrix(ncol = length(col_names), nrow = 0L))
-    data.table::setnames(dt, col_names)
+  progress_msg(3L, 4L, "Standardizing VCF table.")
+  vt <- vcf_table_to_variant_track(dt, source_file = file_path, keep_genotype = keep_genotype)
+
+  if (isTRUE(has_region)) {
+    query_chrom <- as.character(chrom)[1L]
+    query_start <- as.integer(start)[1L]
+    query_end <- as.integer(end)[1L]
+    vt$data <- vt$data[as.character(vt$data[["chrom"]]) == query_chrom & as.integer(vt$data[["pos"]]) >= query_start & as.integer(vt$data[["pos"]]) <= query_end]
   }
 
-  if (length(col_names) == ncol(dt)) {
-    data.table::setnames(dt, col_names)
-  } else {
-    data.table::setnames(dt, seq_len(min(8L, ncol(dt))), c("#CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO")[seq_len(min(8L, ncol(dt)))])
-  }
-
-  if ("#CHROM" %in% names(dt) && !"CHROM" %in% names(dt)) {
-    data.table::setnames(dt, "#CHROM", "CHROM")
-  }
-  standard_in <- c("CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO")
-  stop_if_not(all(standard_in %in% names(dt)), "A VCF file must contain standard VCF columns.")
-
-  sample_cols <- setdiff(names(dt), c(standard_in, "FORMAT"))
-  has_format <- "FORMAT" %in% names(dt)
-
-  data.table::setnames(
-    dt,
-    old = standard_in,
-    new = c("chrom", "pos", "variant_id", "ref", "alt", "qual", "filter", "info")
-  )
-
-  dt[is.na(variant_id) | variant_id == "." | variant_id == "", "variant_id" := paste0(as.character(chrom), ":", as.integer(pos), ":", as.character(ref), ":", as.character(alt))]
-
-  if (!isTRUE(keep_genotype)) {
-    keep_cols <- c("chrom", "pos", "variant_id", "ref", "alt", "qual", "filter", "info")
-    dt <- dt[, ..keep_cols]
-    sample_cols <- character()
-    has_format <- FALSE
-  }
-
-  vt <- VariantTrack(
-    dt,
-    meta = list(
-      source_file = file_path,
-      format = "VCF",
-      coordinate_input = "1-based position",
-      coordinate_internal = "1-based position",
-      indexed = has_vcf_tabix_index(file_path),
-      has_genotype = length(sample_cols) > 0L,
-      has_format = isTRUE(has_format),
-      sample_names = sample_cols
-    )
-  )
-
-  if (isTRUE(verbose)) {
-    message("[GeneTrackR] Finished. variants: ", format(nrow(vt$data), big.mark = ","), "; samples: ", length(sample_cols), ".")
+  progress_msg(4L, 4L, "Finished VCF reading.")
+  if (verbose) {
+    sample_n <- length(vt$meta$sample_names %||% character())
+    message("[GeneTrackR] Finished. variants: ", format(nrow(vt$data), big.mark = ","), "; samples: ", sample_n, ".")
   }
 
   vt
@@ -104,8 +113,22 @@ read_vcf <- function(file, keep_genotype = TRUE, verbose = TRUE) {
 #' @inheritParams read_vcf
 #' @return A VariantTrack object.
 #' @export
-read_vcf_track <- function(file, keep_genotype = TRUE, verbose = TRUE) {
-  read_vcf(file = file, keep_genotype = keep_genotype, verbose = verbose)
+read_vcf_track <- function(file,
+                           keep_genotype = TRUE,
+                           chrom = NULL,
+                           start = NULL,
+                           end = NULL,
+                           verbose = TRUE,
+                           progress = interactive() && isTRUE(verbose)) {
+  read_vcf(
+    file = file,
+    keep_genotype = keep_genotype,
+    chrom = chrom,
+    start = start,
+    end = end,
+    verbose = verbose,
+    progress = progress
+  )
 }
 
 read_vcf_header_line <- function(file) {
@@ -126,4 +149,31 @@ parse_vcf_header_names <- function(header) {
 
 has_vcf_tabix_index <- function(file) {
   file.exists(paste0(file, ".tbi")) || file.exists(sub("\\.gz$", ".tbi", file, ignore.case = TRUE))
+}
+
+vcf_progress_message <- function(enabled) {
+  force(enabled)
+  function(step, total, label = NULL) {
+    if (!isTRUE(enabled)) return(invisible(NULL))
+    pct <- if (total > 0L) step / total * 100 else 100
+    width <- 30L
+    filled <- max(0L, min(width, round(width * pct / 100)))
+    bar <- paste0(strrep("=", filled), strrep(".", width - filled))
+    msg <- sprintf("[GeneTrackR] Progress [%s] %s/%s (%3.0f%%)", bar, step, total, pct)
+    if (!is.null(label) && nzchar(label)) msg <- paste(msg, label)
+    message(msg)
+    invisible(NULL)
+  }
+}
+
+format_file_size <- function(size) {
+  size <- as.numeric(size)[1L]
+  if (is.na(size)) return("unknown size")
+  units <- c("B", "KB", "MB", "GB", "TB")
+  i <- 1L
+  while (size >= 1024 && i < length(units)) {
+    size <- size / 1024
+    i <- i + 1L
+  }
+  paste0(format(round(size, 2), nsmall = ifelse(i == 1L, 0L, 2L)), " ", units[i])
 }

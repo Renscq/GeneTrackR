@@ -4,14 +4,30 @@
 \alias{read_vcf_track}
 \title{Read a VCF file as a VariantTrack}
 \usage{
-read_vcf_track(file, keep_genotype = TRUE, verbose = TRUE)
+read_vcf_track(
+  file,
+  keep_genotype = TRUE,
+  chrom = NULL,
+  start = NULL,
+  end = NULL,
+  verbose = TRUE,
+  progress = interactive() && isTRUE(verbose)
+)
 }
 \arguments{
 \item{file}{VCF file path. Plain VCF, gzip-compressed VCF, and bgzip VCF are supported.}
 
 \item{keep_genotype}{Logical. Whether to keep FORMAT and sample genotype columns.}
 
+\item{chrom}{Optional chromosome name for indexed regional reading.}
+
+\item{start}{Optional 1-based region start for indexed regional reading.}
+
+\item{end}{Optional 1-based region end for indexed regional reading.}
+
 \item{verbose}{Logical. Whether to print progress messages.}
+
+\item{progress}{Logical. Whether to print a compact stage-level progress indicator.}
 }
 \value{
 A VariantTrack object.

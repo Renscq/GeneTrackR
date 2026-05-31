@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-05-29
-# Version: 0.3.1
+# Date: 2026-05-31
+# Version: 0.4.0
 # Function: Retrieve variants from VariantTrack objects or indexed VCF files
 # Input: VariantTrack object or VCF path and filters
 # Output: data.table or VariantTrack object
@@ -20,9 +20,12 @@
 #' @param end Optional 1-based region end.
 #' @param variant_id Optional variant ID vector.
 #' @param variant_type Optional variant type vector, such as `SNP`, `INS`, `DEL`, or `MNV`.
+#' @param keep_genotype Logical. Whether to keep FORMAT and sample genotype columns when `object` is a VCF file path.
 #' @param ignore_case Logical. Whether pattern matching ignores case.
 #' @param fixed Logical. Whether pattern is matched as a fixed string.
 #' @param as Output type: `data.table` or `VariantTrack`.
+#' @param verbose Logical. Whether to print progress messages.
+#' @param progress Logical. Whether to print a compact stage-level progress indicator.
 #' @return A data.table or VariantTrack object.
 #' @examples
 #' vcf_file <- system.file("extdata", "example_haplotype.vcf", package = "GeneTrackR")
@@ -40,13 +43,25 @@ retrieve_vcf <- function(object,
                          end = NULL,
                          variant_id = NULL,
                          variant_type = NULL,
+                         keep_genotype = TRUE,
                          ignore_case = TRUE,
                          fixed = FALSE,
-                         as = c("data.table", "VariantTrack")) {
+                         as = c("data.table", "VariantTrack"),
+                         verbose = TRUE,
+                         progress = interactive() && isTRUE(verbose)) {
   as <- match.arg(as)
+  verbose <- isTRUE(verbose)
 
   if (is.character(object) && length(object) == 1L && file.exists(object)) {
-    vt <- retrieve_vcf_file(object, chrom = chrom, start = start, end = end)
+    vt <- retrieve_vcf_file(
+      object,
+      chrom = chrom,
+      start = start,
+      end = end,
+      keep_genotype = keep_genotype,
+      verbose = verbose,
+      progress = progress
+    )
   } else {
     stop_if_not(inherits(object, "VariantTrack"), "`object` must be a VariantTrack object or a VCF file path.")
     vt <- object
@@ -89,21 +104,43 @@ retrieve_vcf <- function(object,
     data.table::setorderv(dt, intersect(c("chrom", "pos", "variant_id"), names(dt)))
   }
 
+  if (verbose && !(is.character(object) && length(object) == 1L && file.exists(object))) {
+    message("[GeneTrackR] Retrieved variants: ", format(nrow(dt), big.mark = ","), ".")
+  }
+
   if (as == "data.table") return(dt[])
   VariantTrack(dt, meta = vt$meta)
 }
 
-retrieve_vcf_file <- function(file, chrom = NULL, start = NULL, end = NULL) {
+retrieve_vcf_file <- function(file,
+                              chrom = NULL,
+                              start = NULL,
+                              end = NULL,
+                              keep_genotype = TRUE,
+                              verbose = TRUE,
+                              progress = interactive() && isTRUE(verbose)) {
   file <- normalizePath(file, winslash = "/", mustWork = TRUE)
   is_indexed <- has_vcf_tabix_index(file)
+  verbose <- isTRUE(verbose)
+  progress_msg <- vcf_progress_message(verbose && isTRUE(progress))
 
   if (isTRUE(is_indexed) && !is.null(chrom) && !is.null(start) && !is.null(end)) {
     stop_if_not(requireNamespace("Rsamtools", quietly = TRUE), "Package `Rsamtools` is required for indexed VCF queries.")
     region <- paste0(as.character(chrom)[1L], ":", as.integer(start)[1L], "-", as.integer(end)[1L])
-    tbx <- Rsamtools::TabixFile(file)
-    lines <- Rsamtools::scanTabix(tbx, param = region)[[1L]]
+    if (verbose) {
+      message("[GeneTrackR] Querying indexed VCF region: ", region)
+    }
+
+    progress_msg(1L, 4L, "Reading VCF header.")
     header <- read_vcf_header_line(file)
     col_names <- parse_vcf_header_names(header)
+
+    progress_msg(2L, 4L, "Scanning tabix index.")
+    tbx <- Rsamtools::TabixFile(file)
+    on.exit(try(close(tbx), silent = TRUE), add = TRUE)
+    lines <- Rsamtools::scanTabix(tbx, param = region)[[1L]]
+
+    progress_msg(3L, 4L, paste0("Parsing ", format(length(lines), big.mark = ","), " VCF records."))
     if (length(lines) == 0L) {
       dt <- data.table::data.table(matrix(ncol = length(col_names), nrow = 0L))
       data.table::setnames(dt, col_names)
@@ -116,13 +153,31 @@ retrieve_vcf_file <- function(file, chrom = NULL, start = NULL, end = NULL) {
         showProgress = FALSE
       )
     }
-    return(vcf_table_to_variant_track(dt, file))
+
+    vt <- vcf_table_to_variant_track(dt, source_file = file, keep_genotype = keep_genotype)
+    progress_msg(4L, 4L, "Finished indexed VCF query.")
+    if (verbose) {
+      sample_n <- length(vt$meta$sample_names %||% character())
+      message("[GeneTrackR] Finished. variants: ", format(nrow(vt$data), big.mark = ","), "; samples: ", sample_n, ".")
+    }
+    return(vt)
   }
 
-  read_vcf(file, verbose = FALSE)
+  if (verbose && !isTRUE(is_indexed)) {
+    message("[GeneTrackR] No tabix index detected. Reading full VCF file: ", file)
+  } else if (verbose) {
+    message("[GeneTrackR] Indexed VCF detected, but no complete region was supplied. Reading full VCF file: ", file)
+  }
+  read_vcf(file, keep_genotype = keep_genotype, verbose = verbose, progress = progress)
 }
 
-vcf_table_to_variant_track <- function(dt, source_file = NULL) {
+vcf_table_to_variant_track <- function(dt, source_file = NULL, keep_genotype = TRUE) {
+  if (nrow(dt) == 0L && ncol(dt) == 0L) {
+    standard_empty <- c("CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO")
+    dt <- data.table::data.table(matrix(ncol = length(standard_empty), nrow = 0L))
+    data.table::setnames(dt, standard_empty)
+  }
+
   if ("#CHROM" %in% names(dt) && !"CHROM" %in% names(dt)) {
     data.table::setnames(dt, "#CHROM", "CHROM")
   }
@@ -130,12 +185,21 @@ vcf_table_to_variant_track <- function(dt, source_file = NULL) {
   stop_if_not(all(standard_in %in% names(dt)), "A VCF table must contain standard VCF columns.")
   sample_cols <- setdiff(names(dt), c(standard_in, "FORMAT"))
   has_format <- "FORMAT" %in% names(dt)
+
   data.table::setnames(
     dt,
     old = standard_in,
     new = c("chrom", "pos", "variant_id", "ref", "alt", "qual", "filter", "info")
   )
   dt[is.na(variant_id) | variant_id == "." | variant_id == "", "variant_id" := paste0(as.character(chrom), ":", as.integer(pos), ":", as.character(ref), ":", as.character(alt))]
+
+  if (!isTRUE(keep_genotype)) {
+    keep_cols <- c("chrom", "pos", "variant_id", "ref", "alt", "qual", "filter", "info")
+    dt <- dt[, ..keep_cols]
+    sample_cols <- character()
+    has_format <- FALSE
+  }
+
   VariantTrack(
     dt,
     meta = list(

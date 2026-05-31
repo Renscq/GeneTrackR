@@ -12,9 +12,12 @@ retrieve_vcf(
   end = NULL,
   variant_id = NULL,
   variant_type = NULL,
+  keep_genotype = TRUE,
   ignore_case = TRUE,
   fixed = FALSE,
-  as = c("data.table", "VariantTrack")
+  as = c("data.table", "VariantTrack"),
+  verbose = TRUE,
+  progress = interactive() && isTRUE(verbose)
 )
 }
 \arguments{
@@ -32,11 +35,17 @@ retrieve_vcf(
 
 \item{variant_type}{Optional variant type vector, such as \code{SNP}, \code{INS}, \code{DEL}, or \code{MNV}.}
 
+\item{keep_genotype}{Logical. Whether to keep FORMAT and sample genotype columns when \code{object} is a VCF file path.}
+
 \item{ignore_case}{Logical. Whether pattern matching ignores case.}
 
 \item{fixed}{Logical. Whether pattern is matched as a fixed string.}
 
 \item{as}{Output type: \code{data.table} or \code{VariantTrack}.}
+
+\item{verbose}{Logical. Whether to print progress messages.}
+
+\item{progress}{Logical. Whether to print a compact stage-level progress indicator.}
 }
 \value{
 A data.table or VariantTrack object.

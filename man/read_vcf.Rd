@@ -4,14 +4,30 @@
 \alias{read_vcf}
 \title{Read a VCF file as a VariantTrack}
 \usage{
-read_vcf(file, keep_genotype = TRUE, verbose = TRUE)
+read_vcf(
+  file,
+  keep_genotype = TRUE,
+  chrom = NULL,
+  start = NULL,
+  end = NULL,
+  verbose = TRUE,
+  progress = interactive() && isTRUE(verbose)
+)
 }
 \arguments{
 \item{file}{VCF file path. Plain VCF, gzip-compressed VCF, and bgzip VCF are supported.}
 
 \item{keep_genotype}{Logical. Whether to keep FORMAT and sample genotype columns.}
 
+\item{chrom}{Optional chromosome name for indexed regional reading.}
+
+\item{start}{Optional 1-based region start for indexed regional reading.}
+
+\item{end}{Optional 1-based region end for indexed regional reading.}
+
 \item{verbose}{Logical. Whether to print progress messages.}
+
+\item{progress}{Logical. Whether to print a compact stage-level progress indicator.}
 }
 \value{
 A VariantTrack object.
@@ -19,11 +35,14 @@ A VariantTrack object.
 \description{
 Reads VCF records and stores them as genomic point variants. Standard VCF
 columns are always imported. If genotype sample columns are present, they are
-preserved for haplotype analysis.
+preserved for haplotype analysis. For bgzip-compressed VCF files with a tabix
+index, \code{chrom}, \code{start}, and \code{end} can be supplied to load only a genomic
+interval instead of parsing the whole VCF file.
 }
 \examples{
 \dontrun{
 variants <- read_vcf("variants.vcf.gz")
-plot_variant(variants, chrom = "chr1", start = 1, end = 10000)
+region_variants <- read_vcf("variants.vcf.gz", chrom = "chr1", start = 1, end = 10000)
+plot_variant(region_variants, chrom = "chr1", start = 1, end = 10000)
 }
 }

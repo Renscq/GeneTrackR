@@ -21,12 +21,21 @@ The package is useful when you need an IGV-like figure in R, but also want progr
 ## Installation
 
 ```r
+# From github install package
+if(! require(BiocManager)) 
+    install.packages(c("BiocManager", "R.utils"))
+BiocManager::install(c("GenomicRanges", "IRanges"))
+
+if(! require(devtools)) 
+    install.packages("devtools")
+devtools::install_github("https://github.com/Renscq/GeneTrackR")
+
 # From a local source directory
+git clone https://github.com/Renscq/GeneTrackR.git
+
 devtools::document()
 devtools::install()
 
-# Or install from a local package archive
-remotes::install_local("GeneTrackR.tar.gz", force = TRUE)
 ```
 
 Load the package:
