@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-28
-# Version: 0.2.4
+# Version: 0.2.5
 # Function: Shared parsers for feature annotation files
 # Input: GFF/GTF attribute strings and feature tables
 # Output: Standardized feature tables
@@ -147,15 +147,86 @@ read_gff_gtf <- function(file,
   stage$tick()
 
   progress_msg("[GeneTrackR] Building standardized feature table.")
-  dt[, "parent_id" := pick_first_nonempty(attrs$Parent, NA_character_)]
-  dt[, "feature_id" := pick_first_nonempty(attrs$ID, attrs$transcript_id, attrs$gene_id, attrs$Name, paste0(format, "_", seq_len(.N)))]
-  dt[, "name" := pick_first_nonempty(attrs$Name, attrs$gene_name, attrs$gene_id, attrs$transcript_id, dt[["feature_id"]])]
+
+  # Keep parsed attributes as ordinary data.table columns before any subset
+  # assignment. This avoids data.table RHS recycling errors when assigning a
+  # full-length parsed attribute vector into a subset of feature rows.
+  dt[, "attr_id" := attrs$ID]
+  dt[, "attr_name" := attrs$Name]
+  dt[, "attr_parent" := normalize_gff_parent(attrs$Parent)]
+  dt[, "attr_gene_id" := attrs$gene_id]
+  dt[, "attr_transcript_id" := attrs$transcript_id]
+  dt[, "attr_exon_id" := attrs$exon_id]
+  dt[, "attr_gene_name" := attrs$gene_name]
+  dt[, "attr_gene_type" := pick_first_nonempty(
+    attrs$gene_biotype,
+    attrs$gene_type,
+    attrs$transcript_biotype,
+    attrs$transcript_type,
+    attrs$biotype,
+    NA_character_
+  )]
+
   dt[, "level" := infer_feature_level(type)]
-  dt[, "gene_id" := pick_first_nonempty(attrs$gene_id, data.table::fifelse(level == "gene", feature_id, NA_character_), NA_character_)]
-  dt[, "transcript_id" := pick_first_nonempty(attrs$transcript_id, data.table::fifelse(level == "transcript", feature_id, NA_character_), data.table::fifelse(level %in% c("exon", "subfeature"), parent_id, NA_character_), NA_character_)]
-  dt[level == "transcript" & (is.na(gene_id) | gene_id == ""), "gene_id" := parent_id]
-  dt[level %in% c("exon", "subfeature") & (is.na(gene_id) | gene_id == ""), "gene_id" := attrs$gene_id]
-  dt[, "gene_type" := pick_first_nonempty(attrs$gene_biotype, attrs$gene_type, attrs$transcript_biotype, attrs$transcript_type, attrs$biotype, NA_character_)]
+  dt[, "parent_id" := pick_first_nonempty(attr_parent, NA_character_)]
+  dt[, "feature_id" := pick_first_nonempty(
+    attr_id,
+    attr_exon_id,
+    data.table::fifelse(level == "transcript", attr_transcript_id, NA_character_),
+    data.table::fifelse(level == "gene", attr_gene_id, NA_character_),
+    attr_name,
+    paste0(format, "_", seq_len(.N))
+  )]
+  idx_sub_missing_id <- which(
+    as.character(dt$level) %in% c("exon", "subfeature") &
+      (is.na(dt$feature_id) | dt$feature_id == "")
+  )
+  if (length(idx_sub_missing_id) > 0L) {
+    fallback_id <- paste0(
+      pick_first_nonempty(dt$attr_transcript_id[idx_sub_missing_id], dt$attr_parent[idx_sub_missing_id], "feature"),
+      ".",
+      as.character(dt$type[idx_sub_missing_id]),
+      ".",
+      seq_along(idx_sub_missing_id)
+    )
+    data.table::set(dt, i = idx_sub_missing_id, j = "feature_id", value = fallback_id)
+  }
+  dt[, "name" := pick_first_nonempty(attr_name, attr_gene_name, attr_gene_id, attr_transcript_id, feature_id)]
+
+  dt[, "gene_id" := pick_first_nonempty(
+    attr_gene_id,
+    data.table::fifelse(level == "gene", feature_id, NA_character_),
+    data.table::fifelse(level == "transcript", parent_id, NA_character_),
+    NA_character_
+  )]
+
+  dt[, "transcript_id" := pick_first_nonempty(
+    attr_transcript_id,
+    data.table::fifelse(level == "transcript", feature_id, NA_character_),
+    data.table::fifelse(level %in% c("exon", "subfeature"), parent_id, NA_character_),
+    NA_character_
+  )]
+
+  # In GFF3, exon/CDS/UTR rows usually only carry Parent=<transcript_id>.
+  # Fill their gene_id from the corresponding transcript rows when possible.
+  tx_gene_map <- dt[level == "transcript" & !is.na(transcript_id) & transcript_id != "", .(
+    transcript_id = as.character(transcript_id),
+    mapped_gene_id = as.character(gene_id)
+  )]
+  if (nrow(tx_gene_map) > 0L) {
+    tx_gene_map <- tx_gene_map[!is.na(mapped_gene_id) & mapped_gene_id != ""]
+    tx_gene_map <- tx_gene_map[!duplicated(transcript_id)]
+    tx_gene_lookup <- stats::setNames(tx_gene_map$mapped_gene_id, tx_gene_map$transcript_id)
+    idx_missing_gene <- which((is.na(dt$gene_id) | dt$gene_id == "") & !is.na(dt$transcript_id) & dt$transcript_id != "")
+    if (length(idx_missing_gene) > 0L) {
+      fill_gene <- unname(tx_gene_lookup[as.character(dt$transcript_id[idx_missing_gene])])
+      data.table::set(dt, i = idx_missing_gene, j = "gene_id", value = fill_gene)
+    }
+  }
+
+  dt[is.na(gene_id) | gene_id == "", "gene_id" := data.table::fifelse(level == "gene", feature_id, NA_character_)]
+  dt[is.na(transcript_id) | transcript_id == "", "transcript_id" := data.table::fifelse(level == "transcript", feature_id, NA_character_)]
+  dt[, "gene_type" := attr_gene_type]
   dt[, "exon_number" := suppressWarnings(as.integer(pick_first_nonempty(attrs$exon_number, NA_character_)))]
   dt[, "score" := suppressWarnings(as.numeric(dt[["score"]]))]
   dt[is.na(score), "score" := NA_real_]
@@ -212,7 +283,7 @@ parse_feature_attributes_fast <- function(x, format = c("GFF", "GTF"), keys = NU
     keys <- c(
       "ID", "Name", "Parent", "gene_id", "transcript_id", "gene_name",
       "gene_biotype", "gene_type", "transcript_biotype", "transcript_type",
-      "biotype", "exon_number", "protein_id", "ccds_id"
+      "biotype", "exon_number", "exon_id", "protein_id", "ccds_id"
     )
   }
   out <- stats::setNames(vector("list", length(keys)), keys)
@@ -261,6 +332,18 @@ pick_first_nonempty <- function(...) {
   out
 }
 
+normalize_gff_parent <- function(x) {
+  x <- as.character(x)
+  x[is.na(x)] <- NA_character_
+  # GFF3 allows comma-separated Parent values. GeneTrackR uses one primary
+  # parent in its transcript/exon hierarchy, so keep the first non-empty parent.
+  out <- sub(",.*$", "", x)
+  out <- trimws(out)
+  out[out == ""] <- NA_character_
+  out
+}
+
+
 
 derive_feature_hierarchy_fast <- function(dt) {
   x <- data.table::copy(data.table::as.data.table(dt))
@@ -270,6 +353,20 @@ derive_feature_hierarchy_fast <- function(dt) {
   tx_rows <- x[tolower(x[["level"]]) == "transcript" | is_transcript_feature_type(x[["type"]])]
   exon_rows <- x[tolower(x[["level"]]) == "exon" | tolower(x[["type"]]) == "exon"]
   cds_rows <- x[tolower(x[["type"]]) == "cds"]
+
+  # Some compact GTF/GFF files only contain CDS/UTR records without explicit
+  # exon features. Use transcript subfeatures as exon-like ranges in that case
+  # so downstream gene-track plotting still has a usable structure.
+  if (nrow(exon_rows) == 0L) {
+    exon_like_types <- c(
+      "cds", "utr", "five_prime_utr", "three_prime_utr",
+      "5utr", "3utr", "fiveutr", "threeutr"
+    )
+    exon_rows <- x[
+      tolower(x[["type"]]) %in% exon_like_types &
+        !is.na(x[["transcript_id"]]) & x[["transcript_id"]] != ""
+    ]
+  }
 
   if (nrow(tx_rows) > 0L) {
     tx <- data.table::copy(tx_rows)
