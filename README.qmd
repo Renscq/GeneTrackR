@@ -410,7 +410,7 @@ pheno <- read_pheno(
 )
 
 # 画单倍型boxplot
-plot_hap_pheno(
+p1 <- plot_hap_pheno(
   ncu12_hap,
   pheno,
   min_hap_samples = 2L,

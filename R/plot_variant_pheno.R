@@ -54,8 +54,8 @@
 #' @param strip_border_color Strip border color. Default NULL removes the strip border.
 #' @param strip_text_lineheight Line height for wrapped strip labels.
 #' @param text_size Text size.
-#' @return A ggplot object with attributes `plot_data`, `summary_table`,
-#' `test_table`, `bracket_table`, and `variant_data`.
+#' @return A list with `figure` and `pvalue` elements. Additional elements include
+#' `summary`, `bracket`, `plot_data`, and `variant_data`.
 #' @examples
 #' vcf_file <- system.file("extdata", "example_haplotype.vcf", package = "GeneTrackR")
 #' pheno_file <- system.file("extdata", "example_pheno.tsv", package = "GeneTrackR")
@@ -214,6 +214,7 @@ plot_variant_pheno <- function(variant,
     bracket_tip_fraction = bracket_tip_fraction
   )
 
+
   variant_title <- make_variant_pheno_title(variant_info$variant)
   p <- ggplot2::ggplot(long, ggplot2::aes(x = .data$hap_id, y = .data$value, fill = .data$hap_fill))
 
@@ -311,7 +312,17 @@ plot_variant_pheno <- function(variant,
   attr(p, "test_table") <- test_dt[]
   attr(p, "bracket_table") <- bracket_dt[]
   attr(p, "variant_data") <- variant_info$variant[]
-  p
+
+  out <- list(
+    figure = p,
+    pvalue = test_dt[],
+    summary = summary_dt[],
+    bracket = bracket_dt[],
+    plot_data = long[],
+    variant_data = variant_info$variant[]
+  )
+  class(out) <- c("GeneTrackRPhenoPlot", "list")
+  out
 }
 
 extract_single_variant_genotype <- function(variant,

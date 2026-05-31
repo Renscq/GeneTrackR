@@ -120,8 +120,8 @@ alleles are compressed as \code{iN}, where \code{N} is allele length.}
 \item{text_size}{Text size.}
 }
 \value{
-A ggplot object with attributes \code{plot_data}, \code{summary_table},
-\code{test_table}, \code{bracket_table}, and \code{variant_data}.
+A list with \code{figure} and \code{pvalue} elements. Additional elements include
+\code{summary}, \code{bracket}, \code{plot_data}, and \code{variant_data}.
 }
 \description{
 Draws phenotype distributions for genotype groups at one variant site. The

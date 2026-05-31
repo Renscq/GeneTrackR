@@ -84,7 +84,7 @@ plot_hap_pheno(
 \item{text_size}{Text size.}
 }
 \value{
-A ggplot object with attributes \code{plot_data}, \code{summary_table}, and \code{test_table}.
+A list with \code{figure} and \code{pvalue} elements. Additional elements include \code{summary}, \code{bracket}, and \code{plot_data}.
 }
 \description{
 Merges haplotype assignments and phenotype values, then draws phenotype

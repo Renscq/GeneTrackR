@@ -726,7 +726,7 @@ make_hap_variant_fill_scale <- function(gene_features,
 #' @param bracket_step Fraction of y-range used to separate significance brackets.
 #' @param bracket_tip_fraction Fraction of bracket vertical spacing used for the short downward bracket tips.
 #' @param text_size Text size.
-#' @return A ggplot object with attributes `plot_data`, `summary_table`, and `test_table`.
+#' @return A list with `figure` and `pvalue` elements. Additional elements include `summary`, `bracket`, and `plot_data`.
 #' @examples
 #' vcf_file <- system.file("extdata", "example_haplotype.vcf", package = "GeneTrackR")
 #' anno_file <- system.file("extdata", "example.genePredExt", package = "GeneTrackR")
@@ -861,6 +861,7 @@ plot_hap_pheno <- function(hap,
     bracket_tip_fraction = bracket_tip_fraction
   )
 
+
   p <- ggplot2::ggplot(long, ggplot2::aes(x = .data$hap_id, y = .data$value, fill = .data$hap_fill))
 
   if (plot_type %in% c("violin", "violin_boxplot")) {
@@ -958,8 +959,19 @@ plot_hap_pheno <- function(hap,
   attr(p, "summary_table") <- summary_dt[]
   attr(p, "test_table") <- test_dt[]
   attr(p, "bracket_table") <- bracket_dt[]
-  p
+
+  out <- list(
+    figure = p,
+    pvalue = test_dt[],
+    summary = summary_dt[],
+    bracket = bracket_dt[],
+    plot_data = long[]
+  )
+  class(out) <- c("GeneTrackRPhenoPlot", "list")
+  out
 }
+
+
 
 wrap_strip_labels <- function(labels, width = 24) {
   width <- as.integer(width)[1L]
