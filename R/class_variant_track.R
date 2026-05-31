@@ -55,6 +55,40 @@ VariantTrack <- function(data = NULL, meta = list()) {
   )
 }
 
+make_lazy_vcf_track <- function(file,
+                                keep_genotype = TRUE,
+                                verbose = TRUE,
+                                progress = interactive() && isTRUE(verbose)) {
+  file <- normalizePath(file, winslash = "/", mustWork = TRUE)
+  stop_if_not(has_vcf_tabix_index(file), "Lazy VCF mode requires a bgzip-compressed VCF with a .tbi index.")
+
+  progress_msg <- vcf_progress_message(isTRUE(verbose) && isTRUE(progress))
+  progress_msg(1L, 2L, "Reading VCF header.")
+  header <- read_vcf_header_line(file)
+  col_names <- parse_vcf_header_names(header)
+
+  sample_names <- character()
+  if (isTRUE(keep_genotype) && length(col_names) > 9L) {
+    sample_names <- col_names[10L:length(col_names)]
+  }
+
+  progress_msg(2L, 2L, "Created lazy VariantTrack.")
+
+  VariantTrack(
+    data = NULL,
+    meta = list(
+      source_file = file,
+      format = "VCF",
+      coordinate_internal = "1-based position",
+      lazy = TRUE,
+      keep_genotype = isTRUE(keep_genotype),
+      sample_names = sample_names,
+      header_names = col_names,
+      indexed = TRUE
+    )
+  )
+}
+
 is_lazy_variant_track <- function(x) {
   inherits(x, "VariantTrack") && is.null(x$data) && isTRUE(x$meta$lazy)
 }
@@ -62,6 +96,16 @@ is_lazy_variant_track <- function(x) {
 #' @export
 print.VariantTrack <- function(x, ...) {
   cat("<VariantTrack>\n")
+  if (is_lazy_variant_track(x)) {
+    cat("  mode      : lazy\n")
+    cat("  source    :", x$meta$source_file %||% "unknown", "\n")
+    cat("  variants  : not loaded in memory\n")
+    cat("  samples   :", length(x$meta$sample_names %||% character()), "\n")
+    cat("  format    :", x$meta$format %||% "VCF", "\n")
+    cat("  coordinate:", x$meta$coordinate_internal %||% "1-based position", "\n")
+    cat("  note      : use retrieve_vcf(object, chrom, start, end) to read a region\n")
+    return(invisible(x))
+  }
   cat("  variants  :", format(nrow(x$data), big.mark = ","), "\n")
   cat("  format    :", x$meta$format %||% "VCF", "\n")
   cat("  coordinate:", x$meta$coordinate_internal %||% "1-based position", "\n")
