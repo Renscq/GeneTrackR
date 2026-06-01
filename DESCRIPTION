@@ -1,7 +1,7 @@
 Package: GeneTrackR
 Type: Package
 Title: GenePred Gene Model and Genomic Signal Track Visualization
-Version: 0.3.10
+Version: 0.3.11
 Authors@R: person("Rensc", role = c("aut", "cre"), email = "rensc@example.com")
 Description: Provides lightweight tools to read, validate, summarize, slice, merge,
     write, and visualize GenePred annotations and genomic signal tracks from

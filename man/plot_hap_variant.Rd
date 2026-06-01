@@ -11,13 +11,14 @@ plot_hap_variant(
   min_hap_samples = 5L,
   show_reference_row = TRUE,
   variant_label = c("variant_id", "pos"),
-  show_gene_position_axis = TRUE,
-  gene_position_axis_n = 5L,
-  gene_position_axis_label = NULL,
+  show_gene_pos_axis = TRUE,
+  gene_pos_axis_n = 5L,
+  gene_pos_axis_label = NULL,
+  gene_pos_x_angle = 0,
+  gene_track_legend_position = c("right", "top", "none"),
   text_size = 14,
-  table_text_size = 3.2,
   table_x_angle = 90,
-  genotype_text_size = NULL,
+  genotype_text_size = 3.2,
   gene_track_height = 1.25,
   connector_height = 0.35,
   table_height = NULL,
@@ -49,19 +50,21 @@ a compact gene track is drawn above the haplotype table.}
 
 \item{variant_label}{Column used for variant labels. One of \code{variant_id}, \code{pos}, or an existing column in \code{hap$variants}.}
 
-\item{show_gene_position_axis}{Logical. Whether to show genomic coordinate labels above the gene track.}
+\item{show_gene_pos_axis}{Logical. Whether to show genomic coordinate labels above the gene track.}
 
-\item{gene_position_axis_n}{Approximate number of genomic coordinate ticks above the gene track.}
+\item{gene_pos_axis_n}{Approximate number of genomic coordinate ticks above the gene track.}
 
-\item{gene_position_axis_label}{Optional x-axis title for genomic coordinate labels.}
+\item{gene_pos_axis_label}{Optional x-axis title for genomic coordinate labels.}
 
-\item{text_size}{Base text size.}
+\item{gene_pos_x_angle}{Angle of gene-position x-axis labels. Default is 0.}
 
-\item{table_text_size}{Haplotype table text size.}
+\item{gene_track_legend_position}{Legend position for variant-type markers in the gene track. One of \code{right}, \code{top}, or \code{none}.}
+
+\item{text_size}{Base text size for gene-track labels, axes, legends, and table axes.}
 
 \item{table_x_angle}{Angle of haplotype table x-axis labels. Default is 90.}
 
-\item{genotype_text_size}{Genotype cell text size. If NULL, \code{table_text_size} is used.}
+\item{genotype_text_size}{Genotype cell text size only. Default is 3.2.}
 
 \item{gene_track_height}{Relative height of the gene track panel.}
 
