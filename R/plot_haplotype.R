@@ -185,7 +185,15 @@ plot_hap_variant <- function(hap,
       variant_label,
       row_label = ref_row_label,
       genotype = format_hap_ref_alt(ref, alt),
-      genotype_label = format_hap_ref_alt(ref, alt)
+      genotype_label = format_hap_ref_alt(ref, alt),
+      ref_label = format_hap_allele(ref),
+      alt_label = vapply(strsplit(as.character(alt), ",", fixed = TRUE), function(x) {
+        x <- x[!is.na(x) & nzchar(x)]
+        x <- format_hap_allele(x)
+        x <- x[!is.na(x) & nzchar(x)]
+        if (length(x) == 0L) return("NA")
+        paste(x, collapse = ",")
+      }, character(1L))
     )]
     for (nm in setdiff(names(table_long), names(ref_alt))) {
       ref_alt[, (nm) := NA]
@@ -274,10 +282,24 @@ plot_hap_variant <- function(hap,
       height = 0.86
     ) +
     ggplot2::geom_text(
-      data = table_long,
+      data = table_genotype,
       ggplot2::aes(x = .data$variant_index, y = .data$hap_y, label = .data$genotype_label),
       size = genotype_text_size,
       color = "black"
+    ) +
+    ggplot2::geom_text(
+      data = table_reference,
+      ggplot2::aes(x = .data$variant_index, y = .data$hap_y + 0.18, label = .data$ref_label),
+      size = genotype_text_size * 0.95,
+      color = "black",
+      vjust = 0.5
+    ) +
+    ggplot2::geom_text(
+      data = table_reference,
+      ggplot2::aes(x = .data$variant_index, y = .data$hap_y - 0.18, label = .data$alt_label),
+      size = genotype_text_size * 0.95,
+      color = "black",
+      vjust = 0.5
     ) +
     ggplot2::scale_x_continuous(
       breaks = x_breaks,
