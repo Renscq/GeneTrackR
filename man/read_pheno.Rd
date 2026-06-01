@@ -8,7 +8,9 @@ read_pheno(
   file,
   sep = "auto",
   sample_col = NULL,
-  na_strings = c("NA", "NaN", "", ".", "null", "NULL")
+  na_strings = c("NA", "NaN", "", ".", "null", "NULL"),
+  verbose = TRUE,
+  progress = interactive() && isTRUE(verbose)
 )
 }
 \arguments{
@@ -19,6 +21,10 @@ read_pheno(
 \item{sample_col}{Optional sample column name. If NULL, the first column is used.}
 
 \item{na_strings}{Strings treated as missing values.}
+
+\item{verbose}{Logical. Whether to print reading messages.}
+
+\item{progress}{Logical. Reserved for future compact progress display.}
 }
 \value{
 A data.table with the first column standardized as \code{sample_id}.

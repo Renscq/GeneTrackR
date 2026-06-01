@@ -10,7 +10,7 @@
 #' @description
 #' `retrieve_bwg()` is the unified signal retrieval API in GeneTrackR. It
 #' retrieves signal intervals from bedGraph, wig, or bigWig tracks by genomic
-#' region. It replaces the older `query_bwg()` interface.
+#' region.
 #'
 #' @param object A BwgTrack object returned by `read_bwg()`.
 #' @param chrom Chromosome name.

@@ -62,7 +62,7 @@ A data.table, BwgTrack object, or GRanges object.
 \description{
 \code{retrieve_bwg()} is the unified signal retrieval API in GeneTrackR. It
 retrieves signal intervals from bedGraph, wig, or bigWig tracks by genomic
-region. It replaces the older \code{query_bwg()} interface.
+region.
 }
 \examples{
 \dontrun{

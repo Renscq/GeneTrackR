@@ -3,9 +3,10 @@ test_that("VCF reader loads genotype-rich example VCF", {
 
   expect_s3_class(vcf, "VariantTrack")
   expect_gte(nrow(vcf$data), 500L)
-  expect_gte(nrow(vcf$samples), 60L)
+  sample_names <- if (is.null(vcf$meta$sample_names)) character() else vcf$meta$sample_names
+  expect_gte(length(sample_names), 60L)
   expect_true(all(c("chrom", "pos", "variant_id", "ref", "alt") %in% names(vcf$data)))
-  expect_true("S01" %in% vcf$samples$sample_id)
+  expect_true("S01" %in% sample_names)
 })
 
 test_that("retrieve_vcf subsets in-memory VariantTrack by chromosome and range", {

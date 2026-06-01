@@ -15,6 +15,8 @@
 #' @param sep Field separator. Use `auto` for automatic detection by `fread()`.
 #' @param sample_col Optional sample column name. If NULL, the first column is used.
 #' @param na_strings Strings treated as missing values.
+#' @param verbose Logical. Whether to print reading messages.
+#' @param progress Logical. Reserved for future compact progress display.
 #' @return A data.table with the first column standardized as `sample_id`.
 #' @examples
 #' pheno_file <- system.file("extdata", "example_pheno.tsv", package = "GeneTrackR")
@@ -26,8 +28,16 @@
 read_pheno <- function(file,
                        sep = "auto",
                        sample_col = NULL,
-                       na_strings = c("NA", "NaN", "", ".", "null", "NULL")) {
+                       na_strings = c("NA", "NaN", "", ".", "null", "NULL"),
+                       verbose = TRUE,
+                       progress = interactive() && isTRUE(verbose)) {
   stop_if_not(file.exists(file), paste0("File does not exist: ", file))
+  verbose <- isTRUE(verbose)
+  if (verbose) {
+    file_size <- tryCatch(file.info(file)$size, error = function(e) NA_real_)
+    size_label <- if (is.na(file_size)) "unknown size" else format_file_size(file_size)
+    message("[GeneTrackR] Reading phenotype file: ", file, " (", size_label, ")")
+  }
   dt <- data.table::fread(
     file,
     sep = sep,
@@ -35,6 +45,9 @@ read_pheno <- function(file,
     data.table = TRUE,
     showProgress = FALSE
   )
+  if (verbose) {
+    message("[GeneTrackR] Loaded ", format(nrow(dt), big.mark = ","), " samples and ", max(0L, ncol(dt) - 1L), " trait columns.")
+  }
   stop_if_not(ncol(dt) >= 2L, "Phenotype file must contain a sample column and at least one trait column.")
   if (is.null(sample_col)) {
     sample_col <- names(dt)[1L]

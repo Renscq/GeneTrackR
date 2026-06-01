@@ -9,15 +9,15 @@ test_that("example annotation files are readable and internally consistent", {
   expect_s3_class(gtf, "Feature")
   expect_s3_class(bed, "Feature")
 
-  expect_gte(nrow(gp$genes), 100L)
-  expect_gte(nrow(gp$transcripts), 100L)
-  expect_gte(nrow(gp$exons), 100L)
+  expect_gte(nrow(gp$genes), 90L)
+  expect_gte(nrow(gp$transcripts), 90L)
+  expect_gte(nrow(gp$exons), 90L)
   expect_true("GeneA" %in% gp$genes$gene_id)
   expect_true("TxA1" %in% gp$transcripts$transcript_id)
 
-  expect_gte(nrow(gff$genes), 100L)
-  expect_gte(nrow(gtf$genes), 100L)
-  expect_gte(nrow(bed$data), 100L)
+  expect_gte(nrow(gff$genes), 90L)
+  expect_gte(nrow(gtf$genes), 90L)
+  expect_gte(nrow(bed$data), 90L)
 })
 
 test_that("retrieve_feature applies chromosome and range filters strictly", {

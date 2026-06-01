@@ -45,10 +45,23 @@ plot_feature_track <- function(track,
   label_by <- match.arg(label_by)
   border_color <- normalize_border_color(border_color)
 
-  ft <- retrieve_feature(track, chrom = chrom, start = start, end = end, mode = mode, level = "feature")
+  ft <- retrieve_feature(
+    track,
+    chrom = chrom,
+    start = start,
+    end = end,
+    mode = mode,
+    level = "feature",
+    as = "data.table"
+  )
+  if (is.null(ft)) {
+    ft <- data.table::data.table()
+  } else {
+    ft <- data.table::as.data.table(ft)
+  }
   x_label <- paste0("Chromosome ", as.character(chrom)[1L], " position (bp)")
 
-  if (nrow(ft) == 0L) {
+  if (NROW(ft) == 0L) {
     ft <- data.table::data.table(
       feature_id = "empty_feature_track",
       name = "",

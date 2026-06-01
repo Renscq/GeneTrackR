@@ -402,7 +402,8 @@ coerce_single_variant_input <- function(variant,
 
   dt <- data.table::as.data.table(vt$data)
   if (!is.null(variant_id)) {
-    dt <- dt[as.character(variant_id) %in% as.character(dt[["variant_id"]])]
+    query_variant_id <- as.character(variant_id)
+    dt <- dt[as.character(dt[["variant_id"]]) %in% query_variant_id]
   }
   if (!is.null(pos)) {
     start <- as.integer(pos)[1L]

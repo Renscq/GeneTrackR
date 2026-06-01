@@ -237,7 +237,6 @@ apply_discrete_fill_scale <- function(p, color_palette = "Paired", fill_colors =
 
   p + ggplot2::discrete_scale(
     aesthetics = "fill",
-    scale_name = "extended_brewer_fill",
     palette = function(n) normalize_discrete_fill_colors(
       n = n,
       color_palette = color_palette,

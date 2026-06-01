@@ -138,7 +138,7 @@
         verbose = FALSE,
         use_tabix = "no"
       )
-      query_bwg(
+      .query_bwg_internal(
         tmp,
         chrom_value,
         query_start,
