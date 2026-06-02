@@ -341,8 +341,13 @@ plot_hap_variant <- function(hap,
   }
 
   if (!is.null(p_gene)) {
-    p <- p_gene / p_connector / p_table +
-      patchwork::plot_layout(heights = c(gene_track_height, connector_height, table_height))
+    p <- patchwork::wrap_plots(
+      p_gene,
+      p_connector,
+      p_table,
+      ncol = 1,
+      heights = c(gene_track_height, connector_height, table_height)
+    )
   } else {
     p_variant <- ggplot2::ggplot(vars, ggplot2::aes(x = .data$gene_x, y = 1)) +
       ggplot2::geom_point(size = 2.4) +
@@ -362,8 +367,13 @@ plot_hap_variant <- function(hap,
         text = ggplot2::element_text(color = "black"),
         plot.margin = ggplot2::margin(8, 12, 0, 8)
       )
-    p <- p_variant / p_connector / p_table +
-      patchwork::plot_layout(heights = c(0.75, connector_height, table_height))
+    p <- patchwork::wrap_plots(
+      p_variant,
+      p_connector,
+      p_table,
+      ncol = 1,
+      heights = c(0.75, connector_height, table_height)
+    )
   }
 
   attr(p, "plot_data") <- table_long[]

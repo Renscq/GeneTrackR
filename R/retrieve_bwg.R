@@ -13,9 +13,15 @@
 #' region.
 #'
 #' @param object A BwgTrack object returned by `read_bwg()`.
-#' @param chrom Chromosome name.
-#' @param start Region start in 1-based closed coordinates.
-#' @param end Region end in 1-based closed coordinates.
+#' @param chrom Chromosome name. Required for direct region queries.
+#' @param start Region start in 1-based closed coordinates. Required for direct region queries.
+#' @param end Region end in 1-based closed coordinates. Required for direct region queries.
+#' @param annotation Optional GenePred/Feature annotation object used for gene/transcript-aware retrieval.
+#' @param gene_id Optional gene ID. When supplied, `annotation` is used to resolve the gene range.
+#' @param transcript_id Optional transcript ID. When supplied, `annotation` is used to resolve the transcript range.
+#' @param upstream Upstream flanking length in bp for gene/transcript queries.
+#' @param downstream Downstream flanking length in bp for gene/transcript queries.
+#' @param strand_aware Logical. Whether upstream/downstream should follow gene/transcript strand direction.
 #' @param samples Optional character vector of sample IDs to retrieve. If NULL,
 #' all samples are queried.
 #' @param strand Strand selector. Use `"ignore"` for unstranded retrieval,
@@ -57,13 +63,22 @@
 #'   end = 10000,
 #'   as = "BwgTrack"
 #' )
+#'
+#' anno <- read_genepred(system.file("extdata", "example.genePredExt", package = "GeneTrackR"), format = "genePredExt")
+#' gene_signal <- retrieve_bwg(bg, annotation = anno, gene_id = "GeneA", upstream = 500, downstream = 500)
 #' }
 #'
 #' @export
 retrieve_bwg <- function(object,
-                         chrom,
-                         start,
-                         end,
+                         chrom = NULL,
+                         start = NULL,
+                         end = NULL,
+                         annotation = NULL,
+                         gene_id = NULL,
+                         transcript_id = NULL,
+                         upstream = 0L,
+                         downstream = 0L,
+                         strand_aware = TRUE,
                          samples = NULL,
                          strand = c("ignore", "+", "-", "both", "auto"),
                          strand_policy = c("ignore_unstranded", "strict"),
@@ -75,6 +90,26 @@ retrieve_bwg <- function(object,
   as <- match.arg(as)
   strand <- match.arg(strand)
   strand_policy <- match.arg(strand_policy)
+
+  region <- resolve_retrieve_gene_region(
+    annotation = annotation,
+    gene_id = gene_id,
+    transcript_id = transcript_id,
+    chrom = chrom,
+    start = start,
+    end = end,
+    upstream = upstream,
+    downstream = downstream,
+    strand_aware = strand_aware
+  )
+
+  chrom <- region$chrom
+  start <- region$start
+  end <- region$end
+  if (identical(strand, "auto") && !is.null(region$strand) && !is.na(region$strand) && region$strand %in% c("+", "-")) {
+    strand <- region$strand
+  }
+
   dt <- .query_bwg_internal(
     object = object,
     chrom = chrom,
@@ -105,3 +140,46 @@ retrieve_bwg <- function(object,
   BwgTrack(samples = sample_tbl, data = dt, meta = modifyList(object$meta, list(mode = "memory")), validation = make_empty_validation())
 }
 
+
+resolve_retrieve_gene_region <- function(annotation = NULL,
+                                         gene_id = NULL,
+                                         transcript_id = NULL,
+                                         chrom = NULL,
+                                         start = NULL,
+                                         end = NULL,
+                                         upstream = 0L,
+                                         downstream = 0L,
+                                         strand_aware = TRUE) {
+  has_gene <- !is.null(gene_id)
+  has_tx <- !is.null(transcript_id)
+  has_direct_region <- !is.null(chrom) || !is.null(start) || !is.null(end)
+
+  if (has_gene || has_tx) {
+    stop_if_not(!has_direct_region, "Do not mix `gene_id`/`transcript_id` with direct `chrom`/`start`/`end` region arguments.")
+    return(resolve_haplotype_gene_region(
+      annotation = annotation,
+      gene_id = gene_id,
+      transcript_id = transcript_id,
+      upstream = upstream,
+      downstream = downstream,
+      strand_aware = strand_aware
+    ))
+  }
+
+  stop_if_not(!is.null(chrom) && !is.null(start) && !is.null(end), "Specify either `gene_id`/`transcript_id` with `annotation`, or direct `chrom`, `start`, and `end`.")
+  check_region(chrom, start, end)
+
+  list(
+    locator = "region",
+    id = paste0(as.character(chrom)[1L], ":", as.integer(start)[1L], "-", as.integer(end)[1L]),
+    chrom = as.character(chrom)[1L],
+    start = as.integer(start)[1L],
+    end = as.integer(end)[1L],
+    core_start = as.integer(start)[1L],
+    core_end = as.integer(end)[1L],
+    upstream = 0L,
+    downstream = 0L,
+    strand = NA_character_,
+    strand_aware = FALSE
+  )
+}

@@ -6,9 +6,15 @@
 \usage{
 retrieve_bwg(
   object,
-  chrom,
-  start,
-  end,
+  chrom = NULL,
+  start = NULL,
+  end = NULL,
+  annotation = NULL,
+  gene_id = NULL,
+  transcript_id = NULL,
+  upstream = 0L,
+  downstream = 0L,
+  strand_aware = TRUE,
   samples = NULL,
   strand = c("ignore", "+", "-", "both", "auto"),
   strand_policy = c("ignore_unstranded", "strict"),
@@ -22,11 +28,23 @@ retrieve_bwg(
 \arguments{
 \item{object}{A BwgTrack object returned by \code{read_bwg()}.}
 
-\item{chrom}{Chromosome name.}
+\item{chrom}{Chromosome name. Required for direct region queries.}
 
-\item{start}{Region start in 1-based closed coordinates.}
+\item{start}{Region start in 1-based closed coordinates. Required for direct region queries.}
 
-\item{end}{Region end in 1-based closed coordinates.}
+\item{end}{Region end in 1-based closed coordinates. Required for direct region queries.}
+
+\item{annotation}{Optional GenePred/Feature annotation object used for gene/transcript-aware retrieval.}
+
+\item{gene_id}{Optional gene ID. When supplied, \code{annotation} is used to resolve the gene range.}
+
+\item{transcript_id}{Optional transcript ID. When supplied, \code{annotation} is used to resolve the transcript range.}
+
+\item{upstream}{Upstream flanking length in bp for gene/transcript queries.}
+
+\item{downstream}{Downstream flanking length in bp for gene/transcript queries.}
+
+\item{strand_aware}{Logical. Whether upstream/downstream should follow gene/transcript strand direction.}
 
 \item{samples}{Optional character vector of sample IDs to retrieve. If NULL,
 all samples are queried.}
@@ -82,6 +100,9 @@ bg_sub <- retrieve_bwg(
   end = 10000,
   as = "BwgTrack"
 )
+
+anno <- read_genepred(system.file("extdata", "example.genePredExt", package = "GeneTrackR"), format = "genePredExt")
+gene_signal <- retrieve_bwg(bg, annotation = anno, gene_id = "GeneA", upstream = 500, downstream = 500)
 }
 
 }

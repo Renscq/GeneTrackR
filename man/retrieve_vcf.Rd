@@ -10,6 +10,12 @@ retrieve_vcf(
   chrom = NULL,
   start = NULL,
   end = NULL,
+  annotation = NULL,
+  gene_id = NULL,
+  transcript_id = NULL,
+  upstream = 0L,
+  downstream = 0L,
+  strand_aware = TRUE,
   variant_id = NULL,
   variant_type = NULL,
   keep_genotype = TRUE,
@@ -25,11 +31,23 @@ retrieve_vcf(
 
 \item{pattern}{Optional text pattern matched against variant ID, REF, ALT, INFO, and variant type.}
 
-\item{chrom}{Optional chromosome name. Required for indexed file region queries.}
+\item{chrom}{Optional chromosome name. Required for indexed file region queries unless \code{gene_id} or \code{transcript_id} is supplied.}
 
 \item{start}{Optional 1-based region start.}
 
 \item{end}{Optional 1-based region end.}
+
+\item{annotation}{Optional GenePred/Feature annotation object used for gene/transcript-aware retrieval.}
+
+\item{gene_id}{Optional gene ID. When supplied, \code{annotation} is used to resolve the gene range.}
+
+\item{transcript_id}{Optional transcript ID. When supplied, \code{annotation} is used to resolve the transcript range.}
+
+\item{upstream}{Upstream flanking length in bp for gene/transcript queries.}
+
+\item{downstream}{Downstream flanking length in bp for gene/transcript queries.}
+
+\item{strand_aware}{Logical. Whether upstream/downstream should follow gene/transcript strand direction.}
 
 \item{variant_id}{Optional variant ID vector.}
 

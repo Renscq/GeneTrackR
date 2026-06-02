@@ -11,7 +11,7 @@ writing, and plotting GenePred annotations and bedGraph, wig, or bigWig
 genomic signal tracks.
 }
 \author{
-\strong{Maintainer}: Rensc \email{rensc@example.com}
+\strong{Maintainer}: Rensc \email{rensc0718@163.com}
 
 }
 \keyword{internal}

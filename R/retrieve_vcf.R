@@ -15,9 +15,15 @@
 #'
 #' @param object A VariantTrack object or a path to a VCF/VCF.GZ file.
 #' @param pattern Optional text pattern matched against variant ID, REF, ALT, INFO, and variant type.
-#' @param chrom Optional chromosome name. Required for indexed file region queries.
+#' @param chrom Optional chromosome name. Required for indexed file region queries unless `gene_id` or `transcript_id` is supplied.
 #' @param start Optional 1-based region start.
 #' @param end Optional 1-based region end.
+#' @param annotation Optional GenePred/Feature annotation object used for gene/transcript-aware retrieval.
+#' @param gene_id Optional gene ID. When supplied, `annotation` is used to resolve the gene range.
+#' @param transcript_id Optional transcript ID. When supplied, `annotation` is used to resolve the transcript range.
+#' @param upstream Upstream flanking length in bp for gene/transcript queries.
+#' @param downstream Downstream flanking length in bp for gene/transcript queries.
+#' @param strand_aware Logical. Whether upstream/downstream should follow gene/transcript strand direction.
 #' @param variant_id Optional variant ID vector.
 #' @param variant_type Optional variant type vector, such as `SNP`, `INS`, `DEL`, or `MNV`.
 #' @param keep_genotype Logical. Whether to keep FORMAT and sample genotype columns when `object` is a VCF file path.
@@ -41,6 +47,12 @@ retrieve_vcf <- function(object,
                          chrom = NULL,
                          start = NULL,
                          end = NULL,
+                         annotation = NULL,
+                         gene_id = NULL,
+                         transcript_id = NULL,
+                         upstream = 0L,
+                         downstream = 0L,
+                         strand_aware = TRUE,
                          variant_id = NULL,
                          variant_type = NULL,
                          keep_genotype = TRUE,
@@ -51,6 +63,21 @@ retrieve_vcf <- function(object,
                          progress = interactive() && isTRUE(verbose)) {
   as <- match.arg(as)
   verbose <- isTRUE(verbose)
+
+  region <- resolve_retrieve_gene_region(
+    annotation = annotation,
+    gene_id = gene_id,
+    transcript_id = transcript_id,
+    chrom = chrom,
+    start = start,
+    end = end,
+    upstream = upstream,
+    downstream = downstream,
+    strand_aware = strand_aware
+  )
+  chrom <- region$chrom
+  start <- region$start
+  end <- region$end
 
   if (is.character(object) && length(object) == 1L && file.exists(object)) {
     vt <- retrieve_vcf_file(
