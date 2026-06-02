@@ -13,7 +13,7 @@ plot_signal_region(
   sample_groups = NULL,
   signal_color_by = c("sample", "group"),
   signal_summary = c("none", "mean", "median", "sum"),
-  plot_type = c("bar", "line", "area", "heatmap"),
+  plot_type = c("bar", "line", "area", "heatmap", "frame_bar"),
   strand = c("ignore", "+", "-", "both"),
   bin_size = NULL,
   highlight = NULL,
@@ -28,6 +28,9 @@ plot_signal_region(
   heatmap_bin_size = NULL,
   heatmap_max_bins = 800L,
   heatmap_summary = c("mean", "max", "sum", "median"),
+  frame_palette = "Set1",
+  frame_colors = NULL,
+  show_frame_legend = TRUE,
   cds_width = 0.5,
   utr_width = 0.25,
   show_direction = TRUE,
@@ -58,7 +61,7 @@ plot_signal_region(
 
 \item{signal_summary}{Replicate summary mode. Use \code{none} to plot individual samples, or \code{mean}, \code{median}, or \code{sum} to summarize samples within each group. Summary is performed on the current signal intervals, so using \code{bin_size} is recommended when raw interval boundaries differ among samples.}
 
-\item{plot_type}{Signal plot type: \code{bar}, \code{line}, \code{area}, or \code{heatmap}.}
+\item{plot_type}{Signal plot type: \code{bar}, \code{line}, \code{area}, \code{heatmap}, or \code{frame_bar}. \code{frame_bar} colors per-base CDS signal by CDS frame and is useful for Ribo-seq tracks.}
 
 \item{strand}{Strand selector.}
 

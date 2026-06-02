@@ -13,7 +13,7 @@ plot_signal_transcript(
   signal_color_by = c("sample", "group"),
   signal_summary = c("none", "mean", "median", "sum"),
   coordinate = c("transcript", "genomic"),
-  plot_type = c("bar", "line", "area", "heatmap"),
+  plot_type = c("bar", "line", "area", "heatmap", "frame_bar"),
   strand = c("auto", "+", "-", "both", "ignore"),
   bin_size = NULL,
   highlight = NULL,
@@ -27,6 +27,9 @@ plot_signal_transcript(
   heatmap_bin_size = NULL,
   heatmap_max_bins = 800L,
   heatmap_summary = c("mean", "max", "sum", "median"),
+  frame_palette = "Set1",
+  frame_colors = NULL,
+  show_frame_legend = TRUE,
   cds_width = 0.5,
   utr_width = 0.25,
   show_direction = TRUE,
@@ -57,7 +60,7 @@ plot_signal_transcript(
 
 \item{coordinate}{Coordinate mode. \code{transcript} removes introns and displays spliced transcript coordinates, while \code{genomic} keeps genomic coordinates.}
 
-\item{plot_type}{Signal plot type: \code{bar}, \code{line}, \code{area}, or \code{heatmap}.}
+\item{plot_type}{Signal plot type: \code{bar}, \code{line}, \code{area}, \code{heatmap}, or \code{frame_bar}. \code{frame_bar} colors per-base CDS signal by CDS frame and is useful for Ribo-seq tracks.}
 
 \item{strand}{Strand selector. Use \code{auto} to use the transcript strand.}
 
