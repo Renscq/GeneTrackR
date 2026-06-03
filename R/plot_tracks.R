@@ -28,6 +28,7 @@
 #' @param signal_summary Replicate summary mode. Use `none` to plot individual samples, or `mean`, `median`, or `sum` to summarize samples within each group.
 #' @param signal_type Signal plot type.
 #' @param signal_palette Signal color palette for signal tracks. Any palette name from `RColorBrewer::brewer.pal.info` can be used.
+#' @param signal_palette_direction Direction for the signal palette. Use `1` for the default order and `-1` to reverse the palette.
 #' @param signal_colors Optional named or unnamed vector of colors for signal samples.
 #' @param gene_color_palette RColorBrewer palette name used for gene model feature fills.
 #' @param gene_fill_colors Optional custom fill colors for gene model features. Use a named vector such as `c(CDS = "#33a02c", UTR = "#b2df8a", exon = "#fb9a99")`.
@@ -90,6 +91,7 @@ plot_tracks <- function(annotation,
                         signal_summary = c("none", "mean", "median", "sum"),
                         signal_type = c("bar", "line", "area", "heatmap"),
                         signal_palette = "Blues",
+                        signal_palette_direction = 1,
                         signal_colors = NULL,
                         gene_color_palette = "Paired",
                         gene_fill_colors = NULL,
@@ -134,6 +136,7 @@ plot_tracks <- function(annotation,
   label_position <- match.arg(label_position)
   label_by <- match.arg(label_by)
   label_side <- match.arg(label_side)
+  signal_palette_direction <- normalize_palette_direction(signal_palette_direction)
 
   gene_border_color <- normalize_border_color(gene_border_color)
 
@@ -253,6 +256,7 @@ plot_tracks <- function(annotation,
       annotation = NULL,
       show_gene_model = FALSE,
       signal_palette = signal_palette,
+      signal_palette_direction = signal_palette_direction,
       signal_colors = signal_colors,
       signal_transform = signal_transform,
       signal_y_scale = signal_y_scale,

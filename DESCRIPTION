@@ -1,14 +1,14 @@
 Package: GeneTrackR
 Type: Package
 Title: GenePred Gene Model and Genomic Signal Track Visualization
-Version: 0.3.14
+Version: 0.3.15
 Authors@R: person("Rensc", role = c("aut", "cre"), email = "rensc0718@163.com")
 Description: Provides lightweight tools to read, validate, summarize, slice, merge,
     write, and visualize GenePred annotations and genomic signal tracks from
     bedGraph, wig, and bigWig files. The package supports gene model plots,
     transcript plots, regional plots, signal coverage plots, and combined
     genome-browser-like track visualization.
-License: MIT + file LICENSE
+License: GPL + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)

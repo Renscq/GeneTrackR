@@ -20,6 +20,7 @@ plot_signal_region(
   annotation = NULL,
   show_gene_model = TRUE,
   signal_palette = "Blues",
+  signal_palette_direction = 1,
   signal_colors = NULL,
   signal_transform = c("none", "log2", "log10", "sqrt"),
   signal_y_scale = c("free", "fixed"),
@@ -71,6 +72,8 @@ plot_signal_region(
 \item{show_gene_model}{Whether to append a gene model track. Default TRUE.}
 
 \item{signal_palette}{Signal color palette. Any palette name from \code{RColorBrewer::brewer.pal.info} can be used, such as \code{Blues}, \code{Reds}, \code{RdBu}, \code{Paired}, \code{Set1}, \code{Dark2}, \code{YlGnBu}, or \code{Spectral}. If the number of samples or groups exceeds the palette maximum, colors are automatically interpolated.}
+
+\item{signal_palette_direction}{Direction for the signal palette. Use \code{1} for the default order and \code{-1} to reverse the palette, for example \code{RdBu} to \code{BuRd}.}
 
 \item{signal_colors}{Optional named or unnamed vector of colors for samples. If supplied, it overrides \code{signal_palette}.}
 

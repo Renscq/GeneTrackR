@@ -20,6 +20,7 @@ plot_tracks(
   signal_summary = c("none", "mean", "median", "sum"),
   signal_type = c("bar", "line", "area", "heatmap"),
   signal_palette = "Blues",
+  signal_palette_direction = 1,
   signal_colors = NULL,
   gene_color_palette = "Paired",
   gene_fill_colors = NULL,
@@ -80,6 +81,8 @@ plot_tracks(
 \item{signal_type}{Signal plot type.}
 
 \item{signal_palette}{Signal color palette for signal tracks. Any palette name from \code{RColorBrewer::brewer.pal.info} can be used.}
+
+\item{signal_palette_direction}{Direction for the signal palette. Use \code{1} for the default order and \code{-1} to reverse the palette.}
 
 \item{signal_colors}{Optional named or unnamed vector of colors for signal samples.}
 

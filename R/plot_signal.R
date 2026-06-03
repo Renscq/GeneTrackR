@@ -67,7 +67,7 @@
 #' )
 #' }
 #' @export
-plot_signal_transcript <- function(signal, annotation, transcript_id, samples = NULL, sample_groups = NULL, signal_color_by = c("sample", "group"), signal_summary = c("none", "mean", "median", "sum"), coordinate = c("transcript", "genomic"), plot_type = c("bar", "line", "area", "heatmap", "frame"), strand = c("auto", "+", "-", "both", "ignore"), bin_size = NULL, highlight = NULL, show_gene_model = TRUE, signal_palette = "Blues", signal_colors = NULL, frame_palette = "Set1", frame_colors = NULL, signal_transform = c("none", "log2", "log10", "sqrt"), signal_y_scale = c("free", "fixed"), signal_y_ticks = c("range", "pretty"), grid_linewidth = 0.25, heatmap_bin_size = NULL, heatmap_max_bins = 800L, heatmap_summary = c("mean", "max", "sum", "median"), cds_width = 0.50, utr_width = 0.25, show_direction = TRUE, direction_mode = c("transcript", "gene", "end"), label_position = c("axis", "feature", "none"), label_by = c("gene", "transcript"), label_side = c("above", "below", "center"), label_offset = 0.45, text_color = "black", text_size = 14, label_size = 12) {
+plot_signal_transcript <- function(signal, annotation, transcript_id, samples = NULL, sample_groups = NULL, signal_color_by = c("sample", "group"), signal_summary = c("none", "mean", "median", "sum"), coordinate = c("transcript", "genomic"), plot_type = c("bar", "line", "area", "heatmap", "frame"), strand = c("auto", "+", "-", "both", "ignore"), bin_size = NULL, highlight = NULL, show_gene_model = TRUE, signal_palette = "Blues", signal_palette_direction = 1, signal_colors = NULL, frame_palette = "Set1", frame_colors = NULL, signal_transform = c("none", "log2", "log10", "sqrt"), signal_y_scale = c("free", "fixed"), signal_y_ticks = c("range", "pretty"), grid_linewidth = 0.25, heatmap_bin_size = NULL, heatmap_max_bins = 800L, heatmap_summary = c("mean", "max", "sum", "median"), cds_width = 0.50, utr_width = 0.25, show_direction = TRUE, direction_mode = c("transcript", "gene", "end"), label_position = c("axis", "feature", "none"), label_by = c("gene", "transcript"), label_side = c("above", "below", "center"), label_offset = 0.45, text_color = "black", text_size = 14, label_size = 12) {
   stop_if_not(inherits(signal, "BwgTrack"), "`signal` must be a BwgTrack object.")
   stop_if_not(inherits(annotation, "GenePred"), "`annotation` must be a GenePred object.")
   coordinate <- match.arg(coordinate)
@@ -82,6 +82,7 @@ plot_signal_transcript <- function(signal, annotation, transcript_id, samples = 
   label_position <- match.arg(label_position)
   label_by <- match.arg(label_by)
   label_side <- match.arg(label_side)
+  signal_palette_direction <- normalize_palette_direction(signal_palette_direction)
 
   transcript_id_value <- as.character(transcript_id)
   tx_all <- annotation$transcripts
@@ -156,6 +157,7 @@ plot_signal_transcript <- function(signal, annotation, transcript_id, samples = 
         paste0("Chromosome ", as.character(tx$chrom[1]), " position (bp)")
       ),
       signal_palette = signal_palette,
+      signal_palette_direction = signal_palette_direction,
       signal_colors = signal_colors,
       sample_groups = sample_groups,
       signal_color_by = signal_color_by,
@@ -218,6 +220,7 @@ plot_signal_transcript <- function(signal, annotation, transcript_id, samples = 
 #' @param highlight Optional data frame used to shade intervals on the signal and gene model tracks. It must contain `start` and `end` columns in genomic coordinates.
 #' @param show_gene_model Whether to append the gene model track.
 #' @param signal_palette Signal color palette. Any palette name from `RColorBrewer::brewer.pal.info` can be used, such as `Blues`, `Reds`, `RdBu`, `Paired`, `Set1`, `Dark2`, `YlGnBu`, or `Spectral`. If the number of samples or groups exceeds the palette maximum, colors are automatically interpolated.
+#' @param signal_palette_direction Direction for the signal palette. Use `1` for the default order and `-1` to reverse the palette, for example `RdBu` to `BuRd`.
 #' @param signal_colors Optional named or unnamed vector of colors for samples. If supplied, it overrides `signal_palette`.
 #' @param signal_transform Signal-axis transformation. Use `none`, `log2`, `log10`, or `sqrt`. Log transforms use signed log1p-style transformation to tolerate zero values.
 #' @param signal_y_scale Signal y-axis scale mode. Use `free` for each sample to have its own y-axis range, or `fixed` to force all samples to share the same y-axis range.
@@ -261,7 +264,7 @@ plot_signal_transcript <- function(signal, annotation, transcript_id, samples = 
 #' )
 #' }
 #' @export
-plot_signal_gene <- function(signal, annotation, gene_id, samples = NULL, sample_groups = NULL, signal_color_by = c("sample", "group"), signal_summary = c("none", "mean", "median", "sum"), plot_type = c("bar", "line", "area", "heatmap"), strand = c("auto", "+", "-", "both", "ignore"), bin_size = NULL, highlight = NULL, show_gene_model = TRUE, signal_palette = "Blues", signal_colors = NULL, signal_transform = c("none", "log2", "log10", "sqrt"), signal_y_scale = c("free", "fixed"), signal_y_ticks = c("range", "pretty"), grid_linewidth = 0.25, heatmap_bin_size = NULL, heatmap_max_bins = 800L, heatmap_summary = c("mean", "max", "sum", "median"), cds_width = 0.50, utr_width = 0.25, show_direction = TRUE, direction_mode = c("transcript", "gene", "end"), label_position = c("axis", "feature", "none"), label_by = c("gene", "transcript"), label_side = c("above", "below", "center"), label_offset = 0.45, text_color = "black", text_size = 14, label_size = 12) {
+plot_signal_gene <- function(signal, annotation, gene_id, samples = NULL, sample_groups = NULL, signal_color_by = c("sample", "group"), signal_summary = c("none", "mean", "median", "sum"), plot_type = c("bar", "line", "area", "heatmap"), strand = c("auto", "+", "-", "both", "ignore"), bin_size = NULL, highlight = NULL, show_gene_model = TRUE, signal_palette = "Blues", signal_palette_direction = 1, signal_colors = NULL, signal_transform = c("none", "log2", "log10", "sqrt"), signal_y_scale = c("free", "fixed"), signal_y_ticks = c("range", "pretty"), grid_linewidth = 0.25, heatmap_bin_size = NULL, heatmap_max_bins = 800L, heatmap_summary = c("mean", "max", "sum", "median"), cds_width = 0.50, utr_width = 0.25, show_direction = TRUE, direction_mode = c("transcript", "gene", "end"), label_position = c("axis", "feature", "none"), label_by = c("gene", "transcript"), label_side = c("above", "below", "center"), label_offset = 0.45, text_color = "black", text_size = 14, label_size = 12) {
   stop_if_not(inherits(signal, "BwgTrack"), "`signal` must be a BwgTrack object.")
   stop_if_not(inherits(annotation, "GenePred"), "`annotation` must be a GenePred object.")
   plot_type <- match.arg(plot_type)
@@ -275,6 +278,7 @@ plot_signal_gene <- function(signal, annotation, gene_id, samples = NULL, sample
   label_position <- match.arg(label_position)
   label_by <- match.arg(label_by)
   label_side <- match.arg(label_side)
+  signal_palette_direction <- normalize_palette_direction(signal_palette_direction)
 
   gene_id_value <- as.character(gene_id)
   tx_all <- annotation$transcripts
@@ -300,6 +304,7 @@ plot_signal_gene <- function(signal, annotation, gene_id, samples = NULL, sample
     highlight = highlight,
     x_label = paste0("Chromosome ", as.character(gene$chrom[1]), " position (bp)"),
     signal_palette = signal_palette,
+    signal_palette_direction = signal_palette_direction,
     signal_colors = signal_colors,
     sample_groups = sample_groups,
     signal_color_by = signal_color_by,
@@ -360,6 +365,7 @@ plot_signal_gene <- function(signal, annotation, gene_id, samples = NULL, sample
 #' @param annotation Optional GenePred object.
 #' @param show_gene_model Whether to append a gene model track. Default TRUE.
 #' @param signal_palette Signal color palette. Any palette name from `RColorBrewer::brewer.pal.info` can be used, such as `Blues`, `Reds`, `RdBu`, `Paired`, `Set1`, `Dark2`, `YlGnBu`, or `Spectral`. If the number of samples or groups exceeds the palette maximum, colors are automatically interpolated.
+#' @param signal_palette_direction Direction for the signal palette. Use `1` for the default order and `-1` to reverse the palette, for example `RdBu` to `BuRd`.
 #' @param signal_colors Optional named or unnamed vector of colors for samples. If supplied, it overrides `signal_palette`.
 #' @param signal_transform Signal-axis transformation. Use `none`, `log2`, `log10`, or `sqrt`. Log transforms use signed log1p-style transformation to tolerate zero values.
 #' @param signal_y_scale Signal y-axis scale mode. Use `free` for each sample to have its own y-axis range, or `fixed` to force all samples to share the same y-axis range.
@@ -401,7 +407,7 @@ plot_signal_gene <- function(signal, annotation, gene_id, samples = NULL, sample
 #' )
 #' }
 #' @export
-plot_signal_region <- function(signal, chrom, start, end, samples = NULL, sample_groups = NULL, signal_color_by = c("sample", "group"), signal_summary = c("none", "mean", "median", "sum"), plot_type = c("bar", "line", "area", "heatmap"), strand = c("ignore", "+", "-", "both"), bin_size = NULL, highlight = NULL, annotation = NULL, show_gene_model = TRUE, signal_palette = "Blues", signal_colors = NULL, signal_transform = c("none", "log2", "log10", "sqrt"), signal_y_scale = c("free", "fixed"), signal_y_ticks = c("range", "pretty"), grid_linewidth = 0.25, heatmap_bin_size = NULL, heatmap_max_bins = 800L, heatmap_summary = c("mean", "max", "sum", "median"), cds_width = 0.50, utr_width = 0.25, show_direction = TRUE, direction_mode = c("transcript", "gene", "end"), label_position = c("axis", "feature", "none"), label_by = c("gene", "transcript"), label_side = c("above", "below", "center"), label_offset = 0.45, text_color = "black", text_size = 14, label_size = 12) {
+plot_signal_region <- function(signal, chrom, start, end, samples = NULL, sample_groups = NULL, signal_color_by = c("sample", "group"), signal_summary = c("none", "mean", "median", "sum"), plot_type = c("bar", "line", "area", "heatmap"), strand = c("ignore", "+", "-", "both"), bin_size = NULL, highlight = NULL, annotation = NULL, show_gene_model = TRUE, signal_palette = "Blues", signal_palette_direction = 1, signal_colors = NULL, signal_transform = c("none", "log2", "log10", "sqrt"), signal_y_scale = c("free", "fixed"), signal_y_ticks = c("range", "pretty"), grid_linewidth = 0.25, heatmap_bin_size = NULL, heatmap_max_bins = 800L, heatmap_summary = c("mean", "max", "sum", "median"), cds_width = 0.50, utr_width = 0.25, show_direction = TRUE, direction_mode = c("transcript", "gene", "end"), label_position = c("axis", "feature", "none"), label_by = c("gene", "transcript"), label_side = c("above", "below", "center"), label_offset = 0.45, text_color = "black", text_size = 14, label_size = 12) {
   stop_if_not(inherits(signal, "BwgTrack"), "`signal` must be a BwgTrack object.")
   plot_type <- match.arg(plot_type)
   strand <- match.arg(strand)
@@ -414,6 +420,7 @@ plot_signal_region <- function(signal, chrom, start, end, samples = NULL, sample
   label_position <- match.arg(label_position)
   label_by <- match.arg(label_by)
   label_side <- match.arg(label_side)
+  signal_palette_direction <- normalize_palette_direction(signal_palette_direction)
 
   expected_samples <- get_expected_signal_samples(signal, samples = samples, strand = strand)
   dt <- retrieve_bwg(signal, chrom, start, end, samples = samples, strand = strand)
@@ -432,6 +439,7 @@ plot_signal_region <- function(signal, chrom, start, end, samples = NULL, sample
     highlight = highlight,
     x_label = paste0("Chromosome ", as.character(chrom), " position (bp)"),
     signal_palette = signal_palette,
+    signal_palette_direction = signal_palette_direction,
     signal_colors = signal_colors,
     sample_groups = sample_groups,
     signal_color_by = signal_color_by,
@@ -663,6 +671,9 @@ build_transcript_frame_annotation <- function(annotation,
     ex_order <- ex[order(as.integer(exon_start), as.integer(exon_end))]
   }
 
+  # Build biological transcript order for CDS frame assignment. For negative
+  # strand transcripts, the CDS frame must be counted from high genomic
+  # coordinates to low genomic coordinates.
   pieces <- vector("list", nrow(ex_order))
   tx_offset <- 0L
   for (i in seq_len(nrow(ex_order))) {
@@ -677,7 +688,7 @@ build_transcript_frame_annotation <- function(annotation,
     pieces[[i]] <- data.table::data.table(
       chrom = as.character(ex_order[["chrom"]][i]),
       genomic_pos = as.integer(gpos),
-      transcript_pos = as.integer(tx_offset + seq_len(n_pos))
+      biological_transcript_pos = as.integer(tx_offset + seq_len(n_pos))
     )
     tx_offset <- tx_offset + n_pos
   }
@@ -694,6 +705,30 @@ build_transcript_frame_annotation <- function(annotation,
       anno[cds_idx, "frame" := paste0("frame", (seq_along(cds_idx) - 1L) %% 3L)]
     }
   }
+
+  # Build plotting transcript coordinates with the same convention as
+  # plot_transcript(coordinate = "transcript"). The existing gene model track
+  # maps exons from low genomic coordinates to high genomic coordinates for the
+  # x-axis, regardless of strand. Keeping this separate from the biological CDS
+  # frame direction prevents negative-strand signal tracks from being reversed
+  # relative to the gene model track.
+  ex_plot <- data.table::copy(ex)
+  data.table::setorderv(ex_plot, c("exon_start", "exon_end"))
+  ex_plot[, "exon_width" := as.integer(exon_end - exon_start + 1L)]
+  ex_plot[, "plot_offset" := as.integer(cumsum(data.table::shift(exon_width, fill = 0L)))]
+
+  plot_pieces <- vector("list", nrow(ex_plot))
+  for (i in seq_len(nrow(ex_plot))) {
+    exon_start <- as.integer(ex_plot[["exon_start"]][i])
+    exon_end <- as.integer(ex_plot[["exon_end"]][i])
+    gpos <- seq.int(exon_start, exon_end)
+    plot_pieces[[i]] <- data.table::data.table(
+      genomic_pos = as.integer(gpos),
+      transcript_pos = as.integer(ex_plot[["plot_offset"]][i] + seq_along(gpos))
+    )
+  }
+  plot_map <- data.table::rbindlist(plot_pieces, use.names = TRUE)
+  anno <- merge(anno, plot_map, by = "genomic_pos", all.x = TRUE, sort = FALSE)
 
   if (coordinate == "transcript") {
     anno[, `:=`(plot_pos = as.integer(transcript_pos), start = as.integer(transcript_pos), end = as.integer(transcript_pos))]
@@ -843,8 +878,8 @@ plot_signal_frame_core <- function(dt,
       strip.text = ggplot2::element_text(color = text_color, size = text_size),
       strip.text.y = ggplot2::element_text(color = text_color, size = text_size, angle = 0),
       strip.background = ggplot2::element_blank(),
-      panel.grid.major = ggplot2::element_line(linewidth = grid_linewidth),
-      panel.grid.minor = ggplot2::element_line(linewidth = grid_linewidth)
+      panel.grid.major = ggplot2::element_blank(),
+      panel.grid.minor = ggplot2::element_blank()
     )
 
   utr_dt <- dt[is.na(frame) | as.character(region) != "CDS"]
@@ -890,7 +925,7 @@ plot_signal_frame_core <- function(dt,
   add_highlight_layer(p, highlight)
 }
 
-plot_signal_core <- function(dt, plot_type = c("bar", "line", "area", "heatmap"), highlight = NULL, x_label = "Genomic coordinate", signal_palette = "Blues", signal_colors = NULL, sample_groups = NULL, signal_color_by = c("sample", "group"), signal_summary = c("none", "mean", "median", "sum"), signal_transform = c("none", "log2", "log10", "sqrt"), signal_y_scale = c("free", "fixed"), signal_y_ticks = c("range", "pretty"), text_color = "black", text_size = 14, grid_linewidth = 0.25, heatmap_bin_size = NULL, heatmap_max_bins = 800L, heatmap_summary = c("mean", "max", "sum", "median")) {
+plot_signal_core <- function(dt, plot_type = c("bar", "line", "area", "heatmap"), highlight = NULL, x_label = "Genomic coordinate", signal_palette = "Blues", signal_palette_direction = 1, signal_colors = NULL, sample_groups = NULL, signal_color_by = c("sample", "group"), signal_summary = c("none", "mean", "median", "sum"), signal_transform = c("none", "log2", "log10", "sqrt"), signal_y_scale = c("free", "fixed"), signal_y_ticks = c("range", "pretty"), text_color = "black", text_size = 14, grid_linewidth = 0.25, heatmap_bin_size = NULL, heatmap_max_bins = 800L, heatmap_summary = c("mean", "max", "sum", "median")) {
   plot_type <- match.arg(plot_type)
   signal_color_by <- match.arg(signal_color_by)
   signal_summary <- match.arg(signal_summary)
@@ -922,6 +957,7 @@ plot_signal_core <- function(dt, plot_type = c("bar", "line", "area", "heatmap")
   discrete_signal_colors <- normalize_signal_colors(
     sample_ids = color_ids,
     signal_palette = signal_palette,
+    signal_palette_direction = signal_palette_direction,
     signal_colors = signal_colors
   )
   color_aes <- if (signal_color_by == "group" && "sample_group" %in% names(dt)) "sample_group" else "sample_id"
@@ -953,8 +989,8 @@ plot_signal_core <- function(dt, plot_type = c("bar", "line", "area", "heatmap")
       strip.text = ggplot2::element_text(color = text_color, size = text_size),
       strip.text.y = ggplot2::element_text(color = text_color, size = text_size, angle = 0),
       strip.background = ggplot2::element_blank(),
-      panel.grid.major = ggplot2::element_line(linewidth = grid_linewidth),
-      panel.grid.minor = ggplot2::element_line(linewidth = grid_linewidth)
+      panel.grid.major = ggplot2::element_blank(),
+      panel.grid.minor = ggplot2::element_blank()
     )
 
   if (plot_type == "heatmap") {
@@ -966,10 +1002,28 @@ plot_signal_core <- function(dt, plot_type = c("bar", "line", "area", "heatmap")
     )
     p <- ggplot2::ggplot(dt, ggplot2::aes(x = mid, y = sample_id, fill = plot_value, width = pmax(end - start + 1L, 1L))) +
       ggplot2::geom_tile(height = 0.90) +
+      ggplot2::scale_y_discrete(position = "right") +
       ggplot2::labs(x = x_label, y = NULL, fill = y_label) +
-      apply_signal_continuous_fill_scale(signal_palette = signal_palette, signal_colors = signal_colors) +
+      apply_signal_continuous_fill_scale(signal_palette = signal_palette, signal_palette_direction = signal_palette_direction, signal_colors = signal_colors) +
       base_theme +
-      ggplot2::theme(panel.grid = ggplot2::element_blank())
+      ggplot2::guides(
+        fill = ggplot2::guide_colorbar(
+          title.position = "top",
+          barwidth = grid::unit(4.5, "cm"),
+          barheight = grid::unit(0.35, "cm")
+        )
+      ) +
+      ggplot2::theme(
+        legend.position = "top",
+        legend.direction = "horizontal",
+        legend.box = "horizontal",
+        legend.title = ggplot2::element_text(color = text_color, size = text_size),
+        legend.text = ggplot2::element_text(color = text_color, size = text_size),
+        axis.text.y.right = ggplot2::element_text(color = text_color, size = text_size),
+        axis.text.y.left = ggplot2::element_blank(),
+        axis.ticks.y.left = ggplot2::element_blank(),
+        panel.grid = ggplot2::element_blank()
+      )
     return(add_highlight_layer(p, highlight))
   }
 
@@ -1157,8 +1211,9 @@ transform_signal_value <- function(value, signal_transform = c("none", "log2", "
   sign(value) * sqrt(abs(value))
 }
 
-make_signal_palette <- function(n, signal_palette = "Blues") {
+make_signal_palette <- function(n, signal_palette = "Blues", signal_palette_direction = 1) {
   n <- max(1L, as.integer(n))
+  signal_palette_direction <- normalize_palette_direction(signal_palette_direction)
   signal_palette <- as.character(signal_palette)[1L]
   if (is.na(signal_palette) || !nzchar(signal_palette)) {
     signal_palette <- "Blues"
@@ -1171,8 +1226,9 @@ make_signal_palette <- function(n, signal_palette = "Blues") {
     base_n <- max(3L, min(max_colors, max(3L, n)))
     base <- RColorBrewer::brewer.pal(base_n, signal_palette)
     if (n > max_colors) {
-      base <- grDevices::colorRampPalette(base)(n)
-      return(base)
+      cols <- grDevices::colorRampPalette(base)(n)
+      if (signal_palette_direction == -1L) cols <- rev(cols)
+      return(cols)
     }
   } else {
     predefined <- list(
@@ -1189,14 +1245,27 @@ make_signal_palette <- function(n, signal_palette = "Blues") {
       base <- predefined[["Blues"]]
     }
   }
-  grDevices::colorRampPalette(base)(n)
+  cols <- grDevices::colorRampPalette(base)(n)
+  if (signal_palette_direction == -1L) cols <- rev(cols)
+  cols
 }
 
-normalize_signal_colors <- function(sample_ids, signal_palette = "Blues", signal_colors = NULL) {
+normalize_palette_direction <- function(direction = 1) {
+  direction <- suppressWarnings(as.integer(direction[1L]))
+  if (is.na(direction) || !direction %in% c(1L, -1L)) {
+    warning("`signal_palette_direction` must be 1 or -1. Falling back to 1.", call. = FALSE)
+    direction <- 1L
+  }
+  direction
+}
+
+normalize_signal_colors <- function(sample_ids, signal_palette = "Blues", signal_palette_direction = 1, signal_colors = NULL) {
   sample_ids <- unique(as.character(sample_ids))
   n <- length(sample_ids)
+  signal_palette_direction <- normalize_palette_direction(signal_palette_direction)
   if (!is.null(signal_colors)) {
     cols <- as.character(signal_colors)
+    if (signal_palette_direction == -1L) cols <- rev(cols)
     if (!is.null(names(cols)) && all(sample_ids %in% names(cols))) {
       return(cols[sample_ids])
     }
@@ -1206,30 +1275,31 @@ normalize_signal_colors <- function(sample_ids, signal_palette = "Blues", signal
     names(cols) <- sample_ids
     return(cols)
   }
-  cols <- make_signal_palette(n, signal_palette)
+  cols <- make_signal_palette(n, signal_palette, signal_palette_direction = signal_palette_direction)
   names(cols) <- sample_ids
   cols
 }
 
-apply_signal_discrete_fill_scale <- function(sample_ids, signal_palette = "Blues", signal_colors = NULL) {
-  cols <- normalize_signal_colors(sample_ids, signal_palette = signal_palette, signal_colors = signal_colors)
+apply_signal_discrete_fill_scale <- function(sample_ids, signal_palette = "Blues", signal_palette_direction = 1, signal_colors = NULL) {
+  cols <- normalize_signal_colors(sample_ids, signal_palette = signal_palette, signal_palette_direction = signal_palette_direction, signal_colors = signal_colors)
   ggplot2::scale_fill_manual(values = cols)
 }
 
-apply_signal_discrete_color_scale <- function(sample_ids, signal_palette = "Blues", signal_colors = NULL) {
-  cols <- normalize_signal_colors(sample_ids, signal_palette = signal_palette, signal_colors = signal_colors)
+apply_signal_discrete_color_scale <- function(sample_ids, signal_palette = "Blues", signal_palette_direction = 1, signal_colors = NULL) {
+  cols <- normalize_signal_colors(sample_ids, signal_palette = signal_palette, signal_palette_direction = signal_palette_direction, signal_colors = signal_colors)
   ggplot2::scale_color_manual(values = cols)
 }
 
-apply_signal_continuous_fill_scale <- function(signal_palette = "Blues", signal_colors = NULL) {
+apply_signal_continuous_fill_scale <- function(signal_palette = "Blues", signal_palette_direction = 1, signal_colors = NULL) {
+  signal_palette_direction <- normalize_palette_direction(signal_palette_direction)
   if (!is.null(signal_colors)) {
     cols <- as.character(signal_colors)
+    if (signal_palette_direction == -1L) cols <- rev(cols)
   } else {
-    cols <- make_signal_palette(256L, signal_palette = signal_palette)
+    cols <- make_signal_palette(256L, signal_palette = signal_palette, signal_palette_direction = signal_palette_direction)
   }
   ggplot2::scale_fill_gradientn(colors = cols)
 }
-
 get_ordered_signal_ids <- function(dt, column = "sample_id") {
   x <- dt[[column]]
   x_chr <- as.character(x)

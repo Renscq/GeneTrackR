@@ -19,6 +19,7 @@ plot_signal_transcript(
   highlight = NULL,
   show_gene_model = TRUE,
   signal_palette = "Blues",
+  signal_palette_direction = 1,
   signal_colors = NULL,
   frame_palette = "Set1",
   frame_colors = NULL,
