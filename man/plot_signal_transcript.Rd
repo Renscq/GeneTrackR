@@ -13,13 +13,15 @@ plot_signal_transcript(
   signal_color_by = c("sample", "group"),
   signal_summary = c("none", "mean", "median", "sum"),
   coordinate = c("transcript", "genomic"),
-  plot_type = c("bar", "line", "area", "heatmap", "frame_bar"),
+  plot_type = c("bar", "line", "area", "heatmap", "frame"),
   strand = c("auto", "+", "-", "both", "ignore"),
   bin_size = NULL,
   highlight = NULL,
   show_gene_model = TRUE,
   signal_palette = "Blues",
   signal_colors = NULL,
+  frame_palette = "Set1",
+  frame_colors = NULL,
   signal_transform = c("none", "log2", "log10", "sqrt"),
   signal_y_scale = c("free", "fixed"),
   signal_y_ticks = c("range", "pretty"),
@@ -27,9 +29,6 @@ plot_signal_transcript(
   heatmap_bin_size = NULL,
   heatmap_max_bins = 800L,
   heatmap_summary = c("mean", "max", "sum", "median"),
-  frame_palette = "Set1",
-  frame_colors = NULL,
-  show_frame_legend = TRUE,
   cds_width = 0.5,
   utr_width = 0.25,
   show_direction = TRUE,
@@ -60,7 +59,7 @@ plot_signal_transcript(
 
 \item{coordinate}{Coordinate mode. \code{transcript} removes introns and displays spliced transcript coordinates, while \code{genomic} keeps genomic coordinates.}
 
-\item{plot_type}{Signal plot type: \code{bar}, \code{line}, \code{area}, \code{heatmap}, or \code{frame_bar}. \code{frame_bar} colors per-base CDS signal by CDS frame and is useful for Ribo-seq tracks.}
+\item{plot_type}{Signal plot type: \code{bar}, \code{line}, \code{area}, \code{heatmap}, or \code{frame}. \code{frame} is designed for Ribo-seq style transcript plots and colors CDS positions by frame0/frame1/frame2.}
 
 \item{strand}{Strand selector. Use \code{auto} to use the transcript strand.}
 
@@ -73,6 +72,10 @@ plot_signal_transcript(
 \item{signal_palette}{Signal color palette. Any palette name from \code{RColorBrewer::brewer.pal.info} can be used, such as \code{Blues}, \code{Reds}, \code{RdBu}, \code{Paired}, \code{Set1}, \code{Dark2}, \code{YlGnBu}, or \code{Spectral}. If the number of samples or groups exceeds the palette maximum, colors are automatically interpolated.}
 
 \item{signal_colors}{Optional named or unnamed vector of colors for samples. If supplied, it overrides \code{signal_palette}.}
+
+\item{frame_palette}{RColorBrewer palette for CDS frame colors when \code{plot_type = "frame"}. Default is \code{Set1}.}
+
+\item{frame_colors}{Optional named colors for \code{frame0}, \code{frame1}, and \code{frame2}.}
 
 \item{signal_transform}{Signal-axis transformation. Use \code{none}, \code{log2}, \code{log10}, or \code{sqrt}. Log transforms use signed log1p-style transformation to tolerate zero values.}
 

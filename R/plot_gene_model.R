@@ -434,9 +434,13 @@ plot_gene_model_core <- function(tx, exons, coordinate = c("genomic", "transcrip
       axis.title.x = ggplot2::element_text(color = text_color, size = text_size),
       panel.grid.major.y = ggplot2::element_blank(),
       panel.grid.minor = ggplot2::element_blank(),
+      legend.position = "bottom",
+      legend.direction = "horizontal",
+      legend.box = "horizontal",
       legend.title = ggplot2::element_blank(),
       legend.text = ggplot2::element_text(color = text_color, size = text_size)
-    )
+    ) +
+    ggplot2::guides(fill = ggplot2::guide_legend(nrow = 1, byrow = TRUE))
 
   if (label_position == "feature") {
     p <- p + ggplot2::theme(
