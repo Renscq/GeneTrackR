@@ -30,7 +30,6 @@ plot_hap_pheno(
   strip_label_width = 24,
   strip_fill = "white",
   strip_border_color = NULL,
-  strip_text_lineheight = 0.9,
   text_size = 14
 )
 }

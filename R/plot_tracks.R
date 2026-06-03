@@ -30,29 +30,24 @@
 #' @param signal_palette Signal color palette for signal tracks. Any palette name from `RColorBrewer::brewer.pal.info` can be used.
 #' @param signal_palette_direction Direction for the signal palette. Use `1` for the default order and `-1` to reverse the palette.
 #' @param signal_colors Optional named or unnamed vector of colors for signal samples.
-#' @param gene_color_palette RColorBrewer palette name used for gene model feature fills.
-#' @param gene_fill_colors Optional custom fill colors for gene model features. Use a named vector such as `c(CDS = "#33a02c", UTR = "#b2df8a", exon = "#fb9a99")`.
+#' @param gene_palette RColorBrewer palette name used for gene model feature fills.
+#' @param gene_colors Optional custom fill colors for gene model features. Use a named vector such as `c(CDS = "#33a02c", UTR = "#b2df8a", exon = "#fb9a99")`.
 #' @param gene_border_color Optional rectangle border color for gene model features. Use `NA` to hide borders.
 #' @param signal_transform Signal-axis transformation. Use `none`, `log2`, `log10`, or `sqrt`.
 #' @param signal_y_scale Signal y-axis scale mode. Use `free` for independent sample-specific y-axis ranges or `fixed` for a shared y-axis range across samples.
 #' @param signal_y_ticks Signal y-axis tick mode. Use `range` to show only integer minimum and maximum limits or `pretty` for default-style breaks.
-#' @param grid_linewidth Grid line width in the signal panel.
 #' @param collapse Gene model collapse mode for region-level plotting.
 #' @param strand Signal strand selector.
 #' @param bin_size Optional signal bin size.
 #' @param highlight Optional data frame used to shade intervals on signal and gene model tracks. It must contain `start` and `end` columns in genomic coordinates. Optional columns are allowed but ignored by the default renderer.
 #' @param layout Track layout. Use `signal_top` to place signal above gene model, or `gene_top` to place gene model above signal.
 #' @param heights Relative panel heights. Must contain at least `signal`, `gene`, `feature`, and `variant` names when those tracks are used.
-#' @param cds_width Vertical thickness of CDS rectangles in the gene model track.
-#' @param utr_width Vertical thickness of UTR/non-coding exon rectangles in the gene model track.
-#' @param show_direction Whether to draw direction arrows in the gene model track.
-#' @param direction_mode Direction-arrow style for the gene model track. `transcript` draws one arrow per transcript, `gene` draws one arrow per gene, and `end` draws one short arrow at the directional end of each gene.
-#' @param label_position Where to draw gene model labels. `axis` draws labels on the y axis, `feature` draws labels near the feature, and `none` hides labels.
+#' @param cds_height Vertical thickness of CDS rectangles in the gene model track.
+#' @param utr_height Vertical thickness of UTR/non-coding exon rectangles in the gene model track.
+#' @param direction_mode Direction-arrow style for the gene model track. `transcript` draws one arrow per transcript, `gene` draws one arrow per gene, `end` draws one short arrow at the directional end of each gene, and `none` hides direction arrows.
+#' @param label_position Where to draw gene model labels. `axis` draws labels on the y axis and `feature` draws labels near the feature.
 #' @param label_by Which identifier to use for gene model labels. Use `gene` for gene IDs or `transcript` for transcript IDs.
-#' @param label_side Label placement when `label_position = "feature"`. Use `above`, `below`, or `center`.
-#' @param label_offset Vertical offset used for feature labels when `label_side` is `above` or `below`.
 #' @param text_size Text size in points for axis text, axis titles, legends, and facet labels.
-#' @param label_size Text size in points for gene model labels drawn when `label_position = "feature"`.
 #'
 #' @return A patchwork object or ggplot object.
 #'
@@ -89,17 +84,16 @@ plot_tracks <- function(annotation,
                         sample_groups = NULL,
                         signal_color_by = c("sample", "group"),
                         signal_summary = c("none", "mean", "median", "sum"),
-                        signal_type = c("bar", "line", "area", "heatmap"),
+                        signal_type = c("bar", "line", "heatmap"),
                         signal_palette = "Blues",
                         signal_palette_direction = 1,
                         signal_colors = NULL,
-                        gene_color_palette = "Paired",
-                        gene_fill_colors = NULL,
+                        gene_palette = "Paired",
+                        gene_colors = NULL,
                         gene_border_color = NA,
                         signal_transform = c("none", "log2", "log10", "sqrt"),
                         signal_y_scale = c("free", "fixed"),
                         signal_y_ticks = c("range", "pretty"),
-                        grid_linewidth = 0.25,
                         heatmap_bin_size = NULL,
                         heatmap_max_bins = 800L,
                         heatmap_summary = c("mean", "max", "sum", "median"),
@@ -109,17 +103,12 @@ plot_tracks <- function(annotation,
                         highlight = NULL,
                         layout = c("signal_top", "gene_top"),
                         heights = c(signal = 3, gene = 1, feature = 0.8, variant = 0.7),
-                        cds_width = 0.50,
-                        utr_width = 0.25,
-                        show_direction = TRUE,
-                        direction_mode = c("transcript", "gene", "end"),
-                        label_position = c("axis", "feature", "none"),
+                        cds_height = 0.50,
+                        utr_height = 0.25,
+                        direction_mode = c("transcript", "gene", "end", "none"),
+                        label_position = c("axis", "feature"),
                         label_by = c("gene", "transcript"),
-                        label_side = c("above", "below", "center"),
-                        label_offset = 0.45,
-                        text_color = "black",
-                        text_size = 14,
-                        label_size = 12) {
+                        text_size = 14) {
   stop_if_not(is_gene_model_feature(annotation), "`annotation` must be a GenePred object or a Feature object with transcript/exon records.")
   annotation <- as_genepred(annotation)
   signal_type <- match.arg(signal_type)
@@ -135,8 +124,9 @@ plot_tracks <- function(annotation,
   direction_mode <- match.arg(direction_mode)
   label_position <- match.arg(label_position)
   label_by <- match.arg(label_by)
-  label_side <- match.arg(label_side)
   signal_palette_direction <- normalize_palette_direction(signal_palette_direction)
+  text_color <- "black"
+  grid_linewidth <- NULL
 
   gene_border_color <- normalize_border_color(gene_border_color)
 
@@ -162,20 +152,15 @@ plot_tracks <- function(annotation,
       collapse = collapse,
       coordinate = "genomic",
       highlight = highlight,
-      cds_width = cds_width,
-      utr_width = utr_width,
-      show_direction = show_direction,
+      cds_height = cds_height,
+      utr_height = utr_height,
       direction_mode = direction_mode,
-      color_palette = gene_color_palette,
-      fill_colors = gene_fill_colors,
-      border_color = gene_border_color,
+      gene_palette = gene_palette,
+      gene_colors = gene_colors,
+      gene_border_color = gene_border_color,
       label_position = label_position,
       label_by = label_by,
-      label_side = label_side,
-      label_offset = label_offset,
-      text_color = text_color,
-      text_size = text_size,
-      label_size = label_size
+      text_size = text_size
     )
   } else if (has_transcript_id) {
     transcript_id_value <- as.character(transcript_id)[1L]
@@ -189,20 +174,15 @@ plot_tracks <- function(annotation,
       transcript_id = transcript_id_value,
       coordinate = "genomic",
       highlight = highlight,
-      cds_width = cds_width,
-      utr_width = utr_width,
-      show_direction = show_direction,
+      cds_height = cds_height,
+      utr_height = utr_height,
       direction_mode = direction_mode,
-      color_palette = gene_color_palette,
-      fill_colors = gene_fill_colors,
-      border_color = gene_border_color,
+      gene_palette = gene_palette,
+      gene_colors = gene_colors,
+      gene_border_color = gene_border_color,
       label_position = label_position,
       label_by = label_by,
-      label_side = label_side,
-      label_offset = label_offset,
-      text_color = text_color,
-      text_size = text_size,
-      label_size = label_size
+      text_size = text_size
     )
   } else {
     stop_if_not(!is.null(chrom) && !is.null(start) && !is.null(end), "`chrom`, `start`, and `end` are required for region-level plotting.")
@@ -218,20 +198,15 @@ plot_tracks <- function(annotation,
       mode = "overlap",
       collapse = collapse,
       highlight = highlight,
-      cds_width = cds_width,
-      utr_width = utr_width,
-      show_direction = show_direction,
+      cds_height = cds_height,
+      utr_height = utr_height,
       direction_mode = direction_mode,
-      color_palette = gene_color_palette,
-      fill_colors = gene_fill_colors,
-      border_color = gene_border_color,
+      gene_palette = gene_palette,
+      gene_colors = gene_colors,
+      gene_border_color = gene_border_color,
       label_position = label_position,
       label_by = label_by,
-      label_side = label_side,
-      label_offset = label_offset,
-      text_color = text_color,
-      text_size = text_size,
-      label_size = label_size
+      text_size = text_size
     )
   }
 
@@ -261,11 +236,9 @@ plot_tracks <- function(annotation,
       signal_transform = signal_transform,
       signal_y_scale = signal_y_scale,
       signal_y_ticks = signal_y_ticks,
-      grid_linewidth = grid_linewidth,
       heatmap_bin_size = heatmap_bin_size,
       heatmap_max_bins = heatmap_max_bins,
       heatmap_summary = heatmap_summary,
-      text_color = text_color,
       text_size = text_size
     )
     plot_list$signal <- p_signal
@@ -277,7 +250,6 @@ plot_tracks <- function(annotation,
     chrom = chrom_value,
     start = start_value,
     end = end_value,
-    text_color = text_color,
     text_size = text_size
   )
   if (length(feature_plots) > 0L) {
@@ -292,7 +264,6 @@ plot_tracks <- function(annotation,
     chrom = chrom_value,
     start = start_value,
     end = end_value,
-    text_color = text_color,
     text_size = text_size
   )
   if (length(variant_plots) > 0L) {
@@ -316,7 +287,7 @@ plot_tracks <- function(annotation,
   patchwork::wrap_plots(plot_list, ncol = 1) + patchwork::plot_layout(heights = unname(height_list))
 }
 
-make_feature_track_plots <- function(features, chrom, start, end, text_color = "black", text_size = 14) {
+make_feature_track_plots <- function(features, chrom, start, end, text_size = 14) {
   if (is.null(features)) return(list())
   if (inherits(features, "FeatureTrack")) features <- list(Feature = features)
   stop_if_not(is.list(features), "`features` must be a FeatureTrack object or a list of FeatureTrack objects.")
@@ -331,15 +302,13 @@ make_feature_track_plots <- function(features, chrom, start, end, text_color = "
       end = end,
       mode = "trim",
       label_by = "none",
-      text_color = text_color,
-      text_size = text_size,
-      track_name = nm
+      text_size = text_size
     )
   }
   out
 }
 
-make_variant_track_plots <- function(variants, chrom, start, end, text_color = "black", text_size = 14) {
+make_variant_track_plots <- function(variants, chrom, start, end, text_size = 14) {
   if (is.null(variants)) return(list())
   if (inherits(variants, "VariantTrack")) variants <- list(Variant = variants)
   stop_if_not(is.list(variants), "`variants` must be a VariantTrack object or a list of VariantTrack objects.")
@@ -353,9 +322,7 @@ make_variant_track_plots <- function(variants, chrom, start, end, text_color = "
       start = start,
       end = end,
       label_by = "none",
-      text_color = text_color,
-      text_size = text_size,
-      track_name = nm
+      text_size = text_size
     )
   }
   out

@@ -20,7 +20,7 @@ plot_gene_length_distribution(
   bins = 60L,
   facet = TRUE,
   keep_zero = FALSE,
-  color_palette = "Paired",
+  fill_palette = "Paired",
   fill_colors = NULL,
   border_color = NA,
   return_data = FALSE
@@ -62,7 +62,7 @@ requested.}
 
 \item{keep_zero}{Logical. Whether to keep zero-length CDS/UTR records.}
 
-\item{color_palette}{RColorBrewer palette name used for grouped fills. Default is \code{Paired}.}
+\item{fill_palette}{RColorBrewer palette name used for grouped fills. Default is \code{Paired}.}
 
 \item{fill_colors}{Optional custom fill colors. Named vectors are matched to the
 values of \code{group_by}, for example \verb{c(coding = "#1f78b4", }non-coding\verb{ = "#a6cee3")}. Unnamed colors are matched in plotting order and are automatically extended when needed.}

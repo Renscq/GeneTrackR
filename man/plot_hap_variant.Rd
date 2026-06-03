@@ -24,12 +24,12 @@ plot_hap_variant(
   table_height = NULL,
   exon_height = 0.22,
   cds_height = 0.44,
-  color_palette = "Paired",
-  fill_colors = NULL,
-  border_color = NA,
-  table_fill_palette = "RdBu",
-  table_fill_colors = NULL,
-  table_fill_alpha = 0.6,
+  gene_palette = "Paired",
+  gene_colors = NULL,
+  gene_border_color = NA,
+  table_palette = "RdBu",
+  table_colors = NULL,
+  table_alpha = 0.6,
   reference_fill = "white",
   variant_palette = "Set2",
   variant_colors = NULL
@@ -76,17 +76,17 @@ a compact gene track is drawn above the haplotype table.}
 
 \item{cds_height}{Height of CDS boxes in the compact gene track.}
 
-\item{color_palette}{RColorBrewer palette name used for gene model feature fills.}
+\item{gene_palette}{RColorBrewer palette name used for gene model feature fills.}
 
-\item{fill_colors}{Optional custom fill colors for gene model features.}
+\item{gene_colors}{Optional custom fill colors for gene model features.}
 
-\item{border_color}{Border color for gene model feature boxes.}
+\item{gene_border_color}{Border color for gene model feature boxes.}
 
-\item{table_fill_palette}{RColorBrewer palette name used for haplotype table fills.}
+\item{table_palette}{RColorBrewer palette name used for haplotype table fills.}
 
-\item{table_fill_colors}{Optional custom fill colors for haplotype table genotypes.}
+\item{table_colors}{Optional custom fill colors for haplotype table genotypes.}
 
-\item{table_fill_alpha}{Alpha value for haplotype table fill colors.}
+\item{table_alpha}{Alpha value for haplotype table fill colors.}
 
 \item{reference_fill}{Background fill color for the REF/ALT reference row.}
 
@@ -115,6 +115,6 @@ plot_hap_variant(
   annotation = anno,
   min_hap_samples = 1,
   table_x_angle = 90,
-  table_fill_palette = "RdBu"
+  table_palette = "RdBu"
 )
 }

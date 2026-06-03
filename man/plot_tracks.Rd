@@ -18,17 +18,16 @@ plot_tracks(
   sample_groups = NULL,
   signal_color_by = c("sample", "group"),
   signal_summary = c("none", "mean", "median", "sum"),
-  signal_type = c("bar", "line", "area", "heatmap"),
+  signal_type = c("bar", "line", "heatmap"),
   signal_palette = "Blues",
   signal_palette_direction = 1,
   signal_colors = NULL,
-  gene_color_palette = "Paired",
-  gene_fill_colors = NULL,
+  gene_palette = "Paired",
+  gene_colors = NULL,
   gene_border_color = NA,
   signal_transform = c("none", "log2", "log10", "sqrt"),
   signal_y_scale = c("free", "fixed"),
   signal_y_ticks = c("range", "pretty"),
-  grid_linewidth = 0.25,
   heatmap_bin_size = NULL,
   heatmap_max_bins = 800L,
   heatmap_summary = c("mean", "max", "sum", "median"),
@@ -38,17 +37,12 @@ plot_tracks(
   highlight = NULL,
   layout = c("signal_top", "gene_top"),
   heights = c(signal = 3, gene = 1, feature = 0.8, variant = 0.7),
-  cds_width = 0.5,
-  utr_width = 0.25,
-  show_direction = TRUE,
-  direction_mode = c("transcript", "gene", "end"),
-  label_position = c("axis", "feature", "none"),
+  cds_height = 0.5,
+  utr_height = 0.25,
+  direction_mode = c("transcript", "gene", "end", "none"),
+  label_position = c("axis", "feature"),
   label_by = c("gene", "transcript"),
-  label_side = c("above", "below", "center"),
-  label_offset = 0.45,
-  text_color = "black",
-  text_size = 14,
-  label_size = 12
+  text_size = 14
 )
 }
 \arguments{
@@ -86,9 +80,9 @@ plot_tracks(
 
 \item{signal_colors}{Optional named or unnamed vector of colors for signal samples.}
 
-\item{gene_color_palette}{RColorBrewer palette name used for gene model feature fills.}
+\item{gene_palette}{RColorBrewer palette name used for gene model feature fills.}
 
-\item{gene_fill_colors}{Optional custom fill colors for gene model features. Use a named vector such as \code{c(CDS = "#33a02c", UTR = "#b2df8a", exon = "#fb9a99")}.}
+\item{gene_colors}{Optional custom fill colors for gene model features. Use a named vector such as \code{c(CDS = "#33a02c", UTR = "#b2df8a", exon = "#fb9a99")}.}
 
 \item{gene_border_color}{Optional rectangle border color for gene model features. Use \code{NA} to hide borders.}
 
@@ -97,8 +91,6 @@ plot_tracks(
 \item{signal_y_scale}{Signal y-axis scale mode. Use \code{free} for independent sample-specific y-axis ranges or \code{fixed} for a shared y-axis range across samples.}
 
 \item{signal_y_ticks}{Signal y-axis tick mode. Use \code{range} to show only integer minimum and maximum limits or \code{pretty} for default-style breaks.}
-
-\item{grid_linewidth}{Grid line width in the signal panel.}
 
 \item{collapse}{Gene model collapse mode for region-level plotting.}
 
@@ -112,25 +104,17 @@ plot_tracks(
 
 \item{heights}{Relative panel heights. Must contain at least \code{signal}, \code{gene}, \code{feature}, and \code{variant} names when those tracks are used.}
 
-\item{cds_width}{Vertical thickness of CDS rectangles in the gene model track.}
+\item{cds_height}{Vertical thickness of CDS rectangles in the gene model track.}
 
-\item{utr_width}{Vertical thickness of UTR/non-coding exon rectangles in the gene model track.}
+\item{utr_height}{Vertical thickness of UTR/non-coding exon rectangles in the gene model track.}
 
-\item{show_direction}{Whether to draw direction arrows in the gene model track.}
+\item{direction_mode}{Direction-arrow style for the gene model track. \code{transcript} draws one arrow per transcript, \code{gene} draws one arrow per gene, \code{end} draws one short arrow at the directional end of each gene, and \code{none} hides direction arrows.}
 
-\item{direction_mode}{Direction-arrow style for the gene model track. \code{transcript} draws one arrow per transcript, \code{gene} draws one arrow per gene, and \code{end} draws one short arrow at the directional end of each gene.}
-
-\item{label_position}{Where to draw gene model labels. \code{axis} draws labels on the y axis, \code{feature} draws labels near the feature, and \code{none} hides labels.}
+\item{label_position}{Where to draw gene model labels. \code{axis} draws labels on the y axis and \code{feature} draws labels near the feature.}
 
 \item{label_by}{Which identifier to use for gene model labels. Use \code{gene} for gene IDs or \code{transcript} for transcript IDs.}
 
-\item{label_side}{Label placement when \code{label_position = "feature"}. Use \code{above}, \code{below}, or \code{center}.}
-
-\item{label_offset}{Vertical offset used for feature labels when \code{label_side} is \code{above} or \code{below}.}
-
 \item{text_size}{Text size in points for axis text, axis titles, legends, and facet labels.}
-
-\item{label_size}{Text size in points for gene model labels drawn when \code{label_position = "feature"}.}
 }
 \value{
 A patchwork object or ggplot object.

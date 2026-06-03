@@ -12,12 +12,10 @@ plot_feature_track(
   mode = c("overlap", "within", "trim"),
   color_by = c("type", "source", "name"),
   label_by = c("none", "name", "feature_id", "type"),
-  color_palette = "Set2",
-  fill_colors = NULL,
-  border_color = NA,
-  text_size = 14,
-  text_color = "black",
-  track_name = NULL
+  feature_palette = "Set2",
+  feature_colors = NULL,
+  feature_border_color = NA,
+  text_size = 14
 )
 }
 \arguments{
@@ -35,17 +33,13 @@ plot_feature_track(
 
 \item{label_by}{Column used for labels. Use \code{none} to hide labels.}
 
-\item{color_palette}{RColorBrewer palette name.}
+\item{feature_palette}{RColorBrewer palette name for feature fills.}
 
-\item{fill_colors}{Optional named or unnamed color vector.}
+\item{feature_colors}{Optional named or unnamed feature fill color vector.}
 
-\item{border_color}{Rectangle border color. Use NA to hide borders.}
+\item{feature_border_color}{Rectangle border color. Use NA to hide borders.}
 
 \item{text_size}{Text size.}
-
-\item{text_color}{Text color.}
-
-\item{track_name}{Optional y-axis label.}
 }
 \value{
 A ggplot object.

@@ -11,11 +11,9 @@ plot_variant_track(
   end,
   color_by = c("variant_type", "filter", "none"),
   label_by = c("none", "variant_id", "variant_type", "ref", "alt"),
-  color_palette = "Set1",
-  fill_colors = NULL,
-  text_size = 14,
-  text_color = "black",
-  track_name = NULL
+  variant_palette = "Set1",
+  variant_colors = NULL,
+  text_size = 14
 )
 }
 \arguments{
@@ -29,13 +27,11 @@ plot_variant_track(
 
 \item{label_by}{Column used for labels. Use \code{none} to hide labels.}
 
-\item{color_palette}{RColorBrewer palette name.}
+\item{variant_palette}{RColorBrewer palette name for variant colors.}
+
+\item{variant_colors}{Optional named or unnamed variant color vector.}
 
 \item{text_size}{Text size.}
-
-\item{text_color}{Text color.}
-
-\item{track_name}{Optional y-axis label.}
 }
 \value{
 A ggplot object.

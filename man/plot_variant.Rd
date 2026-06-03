@@ -13,13 +13,11 @@ plot_variant(
   color_by = c("variant_type", "filter", "none"),
   label_by = c("none", "variant_id", "variant_type", "ref", "alt"),
   variant_shape = c("lollipop", "point", "rug"),
-  color_palette = "Set1",
-  colors = NULL,
+  variant_palette = "Set1",
+  variant_colors = NULL,
   point_size = 2,
   line_width = 0.35,
-  text_size = 14,
-  text_color = "black",
-  track_name = NULL
+  text_size = 14
 )
 }
 \arguments{
@@ -40,19 +38,15 @@ plot_variant(
 \item{variant_shape}{Plot geometry. \code{lollipop} draws vertical stems and points,
 \code{point} draws points only, and \code{rug} draws bottom ticks.}
 
-\item{color_palette}{RColorBrewer palette name.}
+\item{variant_palette}{RColorBrewer palette name for variant colors.}
 
-\item{colors}{Optional named or unnamed color vector.}
+\item{variant_colors}{Optional named or unnamed variant color vector.}
 
 \item{point_size}{Point size.}
 
 \item{line_width}{Line width for lollipop/rug stems.}
 
 \item{text_size}{Text size.}
-
-\item{text_color}{Text color.}
-
-\item{track_name}{Optional y-axis label.}
 }
 \value{
 A ggplot object.

@@ -15,16 +15,16 @@
 #'
 #' @section Gene model colors:
 #' Gene model functions such as [plot_gene()], [plot_transcript()], and
-#' [plot_region()] use `color_palette` and `fill_colors` for exon/CDS/UTR fills.
-#' `color_palette` accepts any palette from `RColorBrewer::brewer.pal.info`. If
+#' [plot_region()] use `gene_palette` and `gene_colors` for exon/CDS/UTR fills.
+#' `gene_palette` accepts any palette from `RColorBrewer::brewer.pal.info`. If
 #' the number of discrete groups exceeds the palette limit, colors are
 #' interpolated automatically.
 #'
-#' `fill_colors` can be either unnamed or named. For gene models, the most stable
+#' `gene_colors` can be either unnamed or named. For gene models, the most stable
 #' named form is:
 #'
 #' ```r
-#' fill_colors = c(
+#' gene_colors = c(
 #'   CDS = "#33a02c",
 #'   UTR = "#b2df8a",
 #'   exon = "#fb9a99"
@@ -44,11 +44,12 @@
 #' coordinate plots, they are spliced transcript coordinates.
 #'
 #' @section Signal colors:
-#' Signal plotting functions use `signal_palette`, `signal_colors`,
+#' Signal plotting functions use `signal_palette`, `signal_palette_direction`, `signal_colors`,
 #' `sample_groups`, and `signal_color_by`.
 #'
 #' ```r
 #' signal_palette = "YlGnBu"
+#' signal_palette_direction = -1
 #' signal_colors = c(sampleA = "#2166AC", sampleB = "#B2182B")
 #' ```
 #'

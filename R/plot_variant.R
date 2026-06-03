@@ -21,13 +21,11 @@
 #' @param label_by Column used for labels. Use `none` to hide labels.
 #' @param variant_shape Plot geometry. `lollipop` draws vertical stems and points,
 #'   `point` draws points only, and `rug` draws bottom ticks.
-#' @param color_palette RColorBrewer palette name.
-#' @param colors Optional named or unnamed color vector.
+#' @param variant_palette RColorBrewer palette name for variant colors.
+#' @param variant_colors Optional named or unnamed variant color vector.
 #' @param point_size Point size.
 #' @param line_width Line width for lollipop/rug stems.
 #' @param text_size Text size.
-#' @param text_color Text color.
-#' @param track_name Optional y-axis label.
 #' @return A ggplot object.
 #' @export
 plot_variant <- function(variant,
@@ -38,18 +36,18 @@ plot_variant <- function(variant,
                          color_by = c("variant_type", "filter", "none"),
                          label_by = c("none", "variant_id", "variant_type", "ref", "alt"),
                          variant_shape = c("lollipop", "point", "rug"),
-                         color_palette = "Set1",
-                         colors = NULL,
+                         variant_palette = "Set1",
+                         variant_colors = NULL,
                          point_size = 2,
                          line_width = 0.35,
-                         text_size = 14,
-                         text_color = "black",
-                         track_name = NULL) {
+                         text_size = 14) {
   stop_if_not(inherits(variant, "VariantTrack"), "`variant` must be a VariantTrack object.")
 
   color_by <- match.arg(color_by)
   label_by <- match.arg(label_by)
   variant_shape <- match.arg(variant_shape)
+  text_color <- "black"
+  track_name <- NULL
 
   vt <- retrieve_vcf(
     variant,
@@ -144,7 +142,7 @@ plot_variant <- function(variant,
       panel.grid.major.y = ggplot2::element_blank()
     )
 
-  color_values <- make_variant_palette(unique(vt[["color_group"]]), palette = color_palette, colors = colors)
+  color_values <- make_variant_palette(unique(vt[["color_group"]]), palette = variant_palette, colors = variant_colors)
   p <- p + ggplot2::scale_color_manual(values = color_values)
 
   if (color_by == "none") {
@@ -178,11 +176,9 @@ plot_variant_track <- function(track,
                                end,
                                color_by = c("variant_type", "filter", "none"),
                                label_by = c("none", "variant_id", "variant_type", "ref", "alt"),
-                               color_palette = "Set1",
-                               fill_colors = NULL,
-                               text_size = 14,
-                               text_color = "black",
-                               track_name = NULL) {
+                               variant_palette = "Set1",
+                               variant_colors = NULL,
+                               text_size = 14) {
   plot_variant(
     variant = track,
     chrom = chrom,
@@ -190,11 +186,9 @@ plot_variant_track <- function(track,
     end = end,
     color_by = color_by,
     label_by = label_by,
-    color_palette = color_palette,
-    colors = fill_colors,
-    text_size = text_size,
-    text_color = text_color,
-    track_name = track_name
+    variant_palette = variant_palette,
+    variant_colors = variant_colors,
+    text_size = text_size
   )
 }
 

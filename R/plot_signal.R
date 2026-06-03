@@ -15,7 +15,7 @@
 #' @param signal_color_by Color signal tracks by `sample` or `group`.
 #' @param signal_summary Replicate summary mode. Use `none` to plot individual samples, or `mean`, `median`, or `sum` to summarize samples within each group. Summary is performed on the current signal intervals, so using `bin_size` is recommended when raw interval boundaries differ among samples.
 #' @param coordinate Coordinate mode. `transcript` removes introns and displays spliced transcript coordinates, while `genomic` keeps genomic coordinates.
-#' @param plot_type Signal plot type: `bar`, `line`, `area`, `heatmap`, or `frame`. `frame` is designed for Ribo-seq style transcript plots and colors CDS positions by frame0/frame1/frame2.
+#' @param plot_type Signal plot type: `bar`, `line`, `heatmap`, or `frame`. `frame` is designed for Ribo-seq style transcript plots and colors CDS positions by frame0/frame1/frame2.
 #' @param strand Strand selector. Use `auto` to use the transcript strand.
 #' @param bin_size Optional bin size for signal aggregation.
 #' @param highlight Optional data frame used to shade intervals on the signal and gene model tracks. It must contain `start` and `end` columns. For `coordinate = "genomic"`, these are genomic coordinates; for `coordinate = "transcript"`, these are spliced transcript coordinates.
@@ -27,18 +27,12 @@
 #' @param signal_transform Signal-axis transformation. Use `none`, `log2`, `log10`, or `sqrt`. Log transforms use signed log1p-style transformation to tolerate zero values.
 #' @param signal_y_scale Signal y-axis scale mode. Use `free` for each sample to have its own y-axis range, or `fixed` to force all samples to share the same y-axis range.
 #' @param signal_y_ticks Signal y-axis tick mode. Use `range` to show only integer axis limits as the minimum and maximum ticks, or `pretty` to use ggplot2 default-style breaks.
-#' @param grid_linewidth Grid line width in the signal panel.
-#' @param cds_width Vertical thickness of CDS rectangles in the gene model track.
-#' @param utr_width Vertical thickness of UTR/non-coding exon rectangles in the gene model track.
-#' @param show_direction Whether to draw direction arrows in the gene model track.
-#' @param direction_mode Direction-arrow style for the gene model track. `transcript` draws one arrow per transcript, `gene` draws one arrow per gene, and `end` draws one short arrow at the directional end of each gene.
-#' @param label_position Where to draw gene model labels. `axis` draws labels on the y axis, `feature` draws labels on the model, and `none` hides labels.
+#' @param cds_height Vertical thickness of CDS rectangles in the gene model track.
+#' @param utr_height Vertical thickness of UTR/non-coding exon rectangles in the gene model track.
+#' @param direction_mode Direction-arrow style for the gene model track. `transcript` draws one arrow per transcript, `gene` draws one arrow per gene, `end` draws one short arrow at the directional end of each gene, and `none` hides direction arrows.
+#' @param label_position Where to draw gene model labels. `axis` draws labels on the y axis and `feature` draws labels on the model.
 #' @param label_by Which identifier to use for gene model labels.
-#' @param label_side Label placement when `label_position = "feature"`. Use `above`, `below`, or `center`.
-#' @param label_offset Vertical offset used for feature labels when `label_side` is `above` or `below`.
-#' @param text_color Text color for signal and gene model text.
 #' @param text_size Text size in points for signal and gene model axis text, axis titles, facet strips, and legends.
-#' @param label_size Text size in points for labels drawn in the gene model track.
 #' @details
 #' `samples` selects the samples to draw. `sample_groups` can be a named vector
 #' or a data frame with `sample_id` and `group`. Use `signal_color_by = "group"`
@@ -67,7 +61,7 @@
 #' )
 #' }
 #' @export
-plot_signal_transcript <- function(signal, annotation, transcript_id, samples = NULL, sample_groups = NULL, signal_color_by = c("sample", "group"), signal_summary = c("none", "mean", "median", "sum"), coordinate = c("transcript", "genomic"), plot_type = c("bar", "line", "area", "heatmap", "frame"), strand = c("auto", "+", "-", "both", "ignore"), bin_size = NULL, highlight = NULL, show_gene_model = TRUE, signal_palette = "Blues", signal_palette_direction = 1, signal_colors = NULL, frame_palette = "Set1", frame_colors = NULL, signal_transform = c("none", "log2", "log10", "sqrt"), signal_y_scale = c("free", "fixed"), signal_y_ticks = c("range", "pretty"), grid_linewidth = 0.25, heatmap_bin_size = NULL, heatmap_max_bins = 800L, heatmap_summary = c("mean", "max", "sum", "median"), cds_width = 0.50, utr_width = 0.25, show_direction = TRUE, direction_mode = c("transcript", "gene", "end"), label_position = c("axis", "feature", "none"), label_by = c("gene", "transcript"), label_side = c("above", "below", "center"), label_offset = 0.45, text_color = "black", text_size = 14, label_size = 12) {
+plot_signal_transcript <- function(signal, annotation, transcript_id, samples = NULL, sample_groups = NULL, signal_color_by = c("sample", "group"), signal_summary = c("none", "mean", "median", "sum"), coordinate = c("transcript", "genomic"), plot_type = c("bar", "line", "heatmap", "frame"), strand = c("auto", "+", "-", "both", "ignore"), bin_size = NULL, highlight = NULL, show_gene_model = TRUE, signal_palette = "Blues", signal_palette_direction = 1, signal_colors = NULL, frame_palette = "Set1", frame_colors = NULL, signal_transform = c("none", "log2", "log10", "sqrt"), signal_y_scale = c("free", "fixed"), signal_y_ticks = c("range", "pretty"), heatmap_bin_size = NULL, heatmap_max_bins = 800L, heatmap_summary = c("mean", "max", "sum", "median"), cds_height = 0.50, utr_height = 0.25, direction_mode = c("transcript", "gene", "end", "none"), label_position = c("axis", "feature"), label_by = c("gene", "transcript"), text_size = 14) {
   stop_if_not(inherits(signal, "BwgTrack"), "`signal` must be a BwgTrack object.")
   stop_if_not(inherits(annotation, "GenePred"), "`annotation` must be a GenePred object.")
   coordinate <- match.arg(coordinate)
@@ -81,8 +75,9 @@ plot_signal_transcript <- function(signal, annotation, transcript_id, samples = 
   direction_mode <- match.arg(direction_mode)
   label_position <- match.arg(label_position)
   label_by <- match.arg(label_by)
-  label_side <- match.arg(label_side)
   signal_palette_direction <- normalize_palette_direction(signal_palette_direction)
+  text_color <- "black"
+  grid_linewidth <- NULL
 
   transcript_id_value <- as.character(transcript_id)
   tx_all <- annotation$transcripts
@@ -129,7 +124,6 @@ plot_signal_transcript <- function(signal, annotation, transcript_id, samples = 
         "Transcript coordinate",
         paste0("Chromosome ", as.character(tx$chrom[1]), " position (bp)")
       ),
-      text_color = text_color,
       text_size = text_size,
       grid_linewidth = grid_linewidth,
       highlight = highlight
@@ -165,9 +159,7 @@ plot_signal_transcript <- function(signal, annotation, transcript_id, samples = 
       signal_transform = signal_transform,
       signal_y_scale = signal_y_scale,
       signal_y_ticks = signal_y_ticks,
-      text_color = text_color,
       text_size = text_size,
-      grid_linewidth = grid_linewidth,
       heatmap_bin_size = heatmap_bin_size,
       heatmap_max_bins = heatmap_max_bins,
       heatmap_summary = heatmap_summary
@@ -189,18 +181,13 @@ plot_signal_transcript <- function(signal, annotation, transcript_id, samples = 
     transcript_id = transcript_id,
     coordinate = coordinate,
     show_cds = TRUE,
-    cds_width = cds_width,
-    utr_width = utr_width,
-    show_direction = show_direction,
+    cds_height = cds_height,
+    utr_height = utr_height,
     direction_mode = direction_mode,
     highlight = highlight,
     label_position = label_position,
     label_by = label_by,
-    label_side = label_side,
-    label_offset = label_offset,
-    text_color = text_color,
-    text_size = text_size,
-    label_size = label_size
+    text_size = text_size
   )
   patchwork::wrap_plots(p_signal, p_model, ncol = 1, heights = c(3, 1))
 }
@@ -214,7 +201,7 @@ plot_signal_transcript <- function(signal, annotation, transcript_id, samples = 
 #' @param sample_groups Optional sample group mapping for group-level coloring or replicate summaries. Use a named character vector, a data frame with `sample_id` and `group`, or an unnamed vector with one group per selected sample.
 #' @param signal_color_by Color signal tracks by `sample` or `group`.
 #' @param signal_summary Replicate summary mode. Use `none` to plot individual samples, or `mean`, `median`, or `sum` to summarize samples within each group. Summary is performed on the current signal intervals, so using `bin_size` is recommended when raw interval boundaries differ among samples.
-#' @param plot_type Signal plot type: `bar`, `line`, `area`, or `heatmap`.
+#' @param plot_type Signal plot type: `bar`, `line`, or `heatmap`.
 #' @param strand Strand selector. Use `auto` to use the gene strand.
 #' @param bin_size Optional bin size for signal aggregation.
 #' @param highlight Optional data frame used to shade intervals on the signal and gene model tracks. It must contain `start` and `end` columns in genomic coordinates.
@@ -225,18 +212,12 @@ plot_signal_transcript <- function(signal, annotation, transcript_id, samples = 
 #' @param signal_transform Signal-axis transformation. Use `none`, `log2`, `log10`, or `sqrt`. Log transforms use signed log1p-style transformation to tolerate zero values.
 #' @param signal_y_scale Signal y-axis scale mode. Use `free` for each sample to have its own y-axis range, or `fixed` to force all samples to share the same y-axis range.
 #' @param signal_y_ticks Signal y-axis tick mode. Use `range` to show only integer axis limits as the minimum and maximum ticks, or `pretty` to use ggplot2 default-style breaks.
-#' @param grid_linewidth Grid line width in the signal panel.
-#' @param cds_width Vertical thickness of CDS rectangles in the gene model track.
-#' @param utr_width Vertical thickness of UTR/non-coding exon rectangles in the gene model track.
-#' @param show_direction Whether to draw direction arrows in the gene model track.
-#' @param label_position Where to draw gene model labels. `axis` draws labels on the y axis, `feature` draws labels at the center of each gene/transcript structure, and `none` hides labels.
+#' @param cds_height Vertical thickness of CDS rectangles in the gene model track.
+#' @param utr_height Vertical thickness of UTR/non-coding exon rectangles in the gene model track.
+#' @param label_position Where to draw gene model labels. `axis` draws labels on the y axis and `feature` draws labels at the center of each gene/transcript structure.
 #' @param label_by Which identifier to use for gene model labels. Use `gene` for gene IDs or `transcript` for transcript IDs.
-#' @param text_color Text color for signal and gene model text.
 #' @param text_size Text size in points for signal and gene model axis text, axis titles, facet strips, and legends.
-#' @param label_size Text size in points for gene model labels drawn when `label_position = "feature"`.
-#' @param label_side Label placement when `label_position = "feature"`. Use `above`, `below`, or `center`.
-#' @param label_offset Vertical offset used for feature labels when `label_side` is `above` or `below`.
-#' @param direction_mode Direction-arrow style for the gene model track. `transcript` draws one arrow per transcript, `gene` draws one arrow per gene, and `end` draws one short arrow at the directional end of each gene.
+#' @param direction_mode Direction-arrow style for the gene model track. `transcript` draws one arrow per transcript, `gene` draws one arrow per gene, `end` draws one short arrow at the directional end of each gene, and `none` hides direction arrows.
 #' @details
 #' `samples` selects the samples to draw. `sample_groups` can be used for
 #' group-level coloring and replicate summaries. When raw intervals differ among
@@ -264,7 +245,7 @@ plot_signal_transcript <- function(signal, annotation, transcript_id, samples = 
 #' )
 #' }
 #' @export
-plot_signal_gene <- function(signal, annotation, gene_id, samples = NULL, sample_groups = NULL, signal_color_by = c("sample", "group"), signal_summary = c("none", "mean", "median", "sum"), plot_type = c("bar", "line", "area", "heatmap"), strand = c("auto", "+", "-", "both", "ignore"), bin_size = NULL, highlight = NULL, show_gene_model = TRUE, signal_palette = "Blues", signal_palette_direction = 1, signal_colors = NULL, signal_transform = c("none", "log2", "log10", "sqrt"), signal_y_scale = c("free", "fixed"), signal_y_ticks = c("range", "pretty"), grid_linewidth = 0.25, heatmap_bin_size = NULL, heatmap_max_bins = 800L, heatmap_summary = c("mean", "max", "sum", "median"), cds_width = 0.50, utr_width = 0.25, show_direction = TRUE, direction_mode = c("transcript", "gene", "end"), label_position = c("axis", "feature", "none"), label_by = c("gene", "transcript"), label_side = c("above", "below", "center"), label_offset = 0.45, text_color = "black", text_size = 14, label_size = 12) {
+plot_signal_gene <- function(signal, annotation, gene_id, samples = NULL, sample_groups = NULL, signal_color_by = c("sample", "group"), signal_summary = c("none", "mean", "median", "sum"), plot_type = c("bar", "line", "heatmap"), strand = c("auto", "+", "-", "both", "ignore"), bin_size = NULL, highlight = NULL, show_gene_model = TRUE, signal_palette = "Blues", signal_palette_direction = 1, signal_colors = NULL, signal_transform = c("none", "log2", "log10", "sqrt"), signal_y_scale = c("free", "fixed"), signal_y_ticks = c("range", "pretty"), heatmap_bin_size = NULL, heatmap_max_bins = 800L, heatmap_summary = c("mean", "max", "sum", "median"), cds_height = 0.50, utr_height = 0.25, direction_mode = c("transcript", "gene", "end", "none"), label_position = c("axis", "feature"), label_by = c("gene", "transcript"), text_size = 14) {
   stop_if_not(inherits(signal, "BwgTrack"), "`signal` must be a BwgTrack object.")
   stop_if_not(inherits(annotation, "GenePred"), "`annotation` must be a GenePred object.")
   plot_type <- match.arg(plot_type)
@@ -277,8 +258,9 @@ plot_signal_gene <- function(signal, annotation, gene_id, samples = NULL, sample
   direction_mode <- match.arg(direction_mode)
   label_position <- match.arg(label_position)
   label_by <- match.arg(label_by)
-  label_side <- match.arg(label_side)
   signal_palette_direction <- normalize_palette_direction(signal_palette_direction)
+  text_color <- "black"
+  grid_linewidth <- NULL
 
   gene_id_value <- as.character(gene_id)
   tx_all <- annotation$transcripts
@@ -312,9 +294,7 @@ plot_signal_gene <- function(signal, annotation, gene_id, samples = NULL, sample
     signal_transform = signal_transform,
     signal_y_scale = signal_y_scale,
     signal_y_ticks = signal_y_ticks,
-    text_color = text_color,
     text_size = text_size,
-    grid_linewidth = grid_linewidth,
     heatmap_bin_size = heatmap_bin_size,
     heatmap_max_bins = heatmap_max_bins,
     heatmap_summary = heatmap_summary
@@ -333,17 +313,12 @@ plot_signal_gene <- function(signal, annotation, gene_id, samples = NULL, sample
     collapse = "none",
     coordinate = "genomic",
     highlight = highlight,
-    cds_width = cds_width,
-    utr_width = utr_width,
-    show_direction = show_direction,
+    cds_height = cds_height,
+    utr_height = utr_height,
     direction_mode = direction_mode,
     label_position = label_position,
     label_by = label_by,
-    label_side = label_side,
-    label_offset = label_offset,
-    text_color = text_color,
-    text_size = text_size,
-    label_size = label_size
+    text_size = text_size
   )
   patchwork::wrap_plots(p_signal, p_model, ncol = 1, heights = c(3, 1))
 }
@@ -358,7 +333,7 @@ plot_signal_gene <- function(signal, annotation, gene_id, samples = NULL, sample
 #' @param sample_groups Optional sample group mapping for group-level coloring or replicate summaries. Use a named character vector, a data frame with `sample_id` and `group`, or an unnamed vector with one group per selected sample.
 #' @param signal_color_by Color signal tracks by `sample` or `group`.
 #' @param signal_summary Replicate summary mode. Use `none` to plot individual samples, or `mean`, `median`, or `sum` to summarize samples within each group. Summary is performed on the current signal intervals, so using `bin_size` is recommended when raw interval boundaries differ among samples.
-#' @param plot_type Signal plot type: `bar`, `line`, `area`, or `heatmap`.
+#' @param plot_type Signal plot type: `bar`, `line`, or `heatmap`.
 #' @param strand Strand selector.
 #' @param bin_size Optional bin size for signal aggregation.
 #' @param highlight Optional data frame used to shade intervals on the signal and gene model tracks. It must contain `start` and `end` columns in genomic coordinates.
@@ -370,18 +345,12 @@ plot_signal_gene <- function(signal, annotation, gene_id, samples = NULL, sample
 #' @param signal_transform Signal-axis transformation. Use `none`, `log2`, `log10`, or `sqrt`. Log transforms use signed log1p-style transformation to tolerate zero values.
 #' @param signal_y_scale Signal y-axis scale mode. Use `free` for each sample to have its own y-axis range, or `fixed` to force all samples to share the same y-axis range.
 #' @param signal_y_ticks Signal y-axis tick mode. Use `range` to show only integer axis limits as the minimum and maximum ticks, or `pretty` to use ggplot2 default-style breaks.
-#' @param grid_linewidth Grid line width in the signal panel.
-#' @param cds_width Vertical thickness of CDS rectangles in the gene model track.
-#' @param utr_width Vertical thickness of UTR/non-coding exon rectangles in the gene model track.
-#' @param show_direction Whether to draw direction arrows in the gene model track.
-#' @param label_position Where to draw gene model labels. `axis` draws labels on the y axis, `feature` draws labels at the center of each gene/transcript structure, and `none` hides labels.
+#' @param cds_height Vertical thickness of CDS rectangles in the gene model track.
+#' @param utr_height Vertical thickness of UTR/non-coding exon rectangles in the gene model track.
+#' @param label_position Where to draw gene model labels. `axis` draws labels on the y axis and `feature` draws labels at the center of each gene/transcript structure.
 #' @param label_by Which identifier to use for gene model labels. Use `gene` for gene IDs or `transcript` for transcript IDs.
-#' @param text_color Text color for signal and gene model text.
 #' @param text_size Text size in points for signal and gene model axis text, axis titles, facet strips, and legends.
-#' @param label_size Text size in points for gene model labels drawn when `label_position = "feature"`.
-#' @param label_side Label placement when `label_position = "feature"`. Use `above`, `below`, or `center`.
-#' @param label_offset Vertical offset used for feature labels when `label_side` is `above` or `below`.
-#' @param direction_mode Direction-arrow style for the gene model track. `transcript` draws one arrow per transcript, `gene` draws one arrow per gene, and `end` draws one short arrow at the directional end of each gene.
+#' @param direction_mode Direction-arrow style for the gene model track. `transcript` draws one arrow per transcript, `gene` draws one arrow per gene, `end` draws one short arrow at the directional end of each gene, and `none` hides direction arrows.
 #' @details
 #' If `annotation` is supplied and `show_gene_model = TRUE`, a gene model track
 #' is appended below the signal panel. `signal_colors` can be an unnamed vector
@@ -407,7 +376,7 @@ plot_signal_gene <- function(signal, annotation, gene_id, samples = NULL, sample
 #' )
 #' }
 #' @export
-plot_signal_region <- function(signal, chrom, start, end, samples = NULL, sample_groups = NULL, signal_color_by = c("sample", "group"), signal_summary = c("none", "mean", "median", "sum"), plot_type = c("bar", "line", "area", "heatmap"), strand = c("ignore", "+", "-", "both"), bin_size = NULL, highlight = NULL, annotation = NULL, show_gene_model = TRUE, signal_palette = "Blues", signal_palette_direction = 1, signal_colors = NULL, signal_transform = c("none", "log2", "log10", "sqrt"), signal_y_scale = c("free", "fixed"), signal_y_ticks = c("range", "pretty"), grid_linewidth = 0.25, heatmap_bin_size = NULL, heatmap_max_bins = 800L, heatmap_summary = c("mean", "max", "sum", "median"), cds_width = 0.50, utr_width = 0.25, show_direction = TRUE, direction_mode = c("transcript", "gene", "end"), label_position = c("axis", "feature", "none"), label_by = c("gene", "transcript"), label_side = c("above", "below", "center"), label_offset = 0.45, text_color = "black", text_size = 14, label_size = 12) {
+plot_signal_region <- function(signal, chrom, start, end, samples = NULL, sample_groups = NULL, signal_color_by = c("sample", "group"), signal_summary = c("none", "mean", "median", "sum"), plot_type = c("bar", "line", "heatmap"), strand = c("ignore", "+", "-", "both"), bin_size = NULL, highlight = NULL, annotation = NULL, show_gene_model = TRUE, signal_palette = "Blues", signal_palette_direction = 1, signal_colors = NULL, signal_transform = c("none", "log2", "log10", "sqrt"), signal_y_scale = c("free", "fixed"), signal_y_ticks = c("range", "pretty"), heatmap_bin_size = NULL, heatmap_max_bins = 800L, heatmap_summary = c("mean", "max", "sum", "median"), cds_height = 0.50, utr_height = 0.25, direction_mode = c("transcript", "gene", "end", "none"), label_position = c("axis", "feature"), label_by = c("gene", "transcript"), text_size = 14) {
   stop_if_not(inherits(signal, "BwgTrack"), "`signal` must be a BwgTrack object.")
   plot_type <- match.arg(plot_type)
   strand <- match.arg(strand)
@@ -419,8 +388,9 @@ plot_signal_region <- function(signal, chrom, start, end, samples = NULL, sample
   direction_mode <- match.arg(direction_mode)
   label_position <- match.arg(label_position)
   label_by <- match.arg(label_by)
-  label_side <- match.arg(label_side)
   signal_palette_direction <- normalize_palette_direction(signal_palette_direction)
+  text_color <- "black"
+  grid_linewidth <- NULL
 
   expected_samples <- get_expected_signal_samples(signal, samples = samples, strand = strand)
   dt <- retrieve_bwg(signal, chrom, start, end, samples = samples, strand = strand)
@@ -447,9 +417,7 @@ plot_signal_region <- function(signal, chrom, start, end, samples = NULL, sample
     signal_transform = signal_transform,
     signal_y_scale = signal_y_scale,
     signal_y_ticks = signal_y_ticks,
-    text_color = text_color,
     text_size = text_size,
-    grid_linewidth = grid_linewidth,
     heatmap_bin_size = heatmap_bin_size,
     heatmap_max_bins = heatmap_max_bins,
     heatmap_summary = heatmap_summary
@@ -465,19 +433,14 @@ plot_signal_region <- function(signal, chrom, start, end, samples = NULL, sample
     mode = "overlap",
     collapse = "none",
     highlight = highlight,
-    cds_width = cds_width,
-    utr_width = utr_width,
-    show_direction = show_direction,
+    cds_height = cds_height,
+    utr_height = utr_height,
     direction_mode = direction_mode,
     label_position = label_position,
     label_by = label_by,
-    label_side = label_side,
-    label_offset = label_offset,
-    text_color = text_color,
-    text_size = text_size,
-    label_size = label_size
+    text_size = text_size
   )
-  p_signal / p_model + patchwork::plot_layout(heights = c(3, 1))
+  patchwork::wrap_plots(p_signal, p_model, ncol = 1, heights = c(3, 1))
 }
 
 
@@ -555,6 +518,7 @@ complete_empty_signal_tracks <- function(dt, sample_ids, chrom, start, end, stra
 
 aggregate_signal_for_heatmap <- function(dt, heatmap_bin_size = NULL, heatmap_max_bins = 800L, heatmap_summary = c("mean", "max", "sum", "median")) {
   heatmap_summary <- match.arg(heatmap_summary)
+  text_color <- "black"
   dt <- data.table::as.data.table(dt)
   if (nrow(dt) == 0L) return(dt[])
 
@@ -768,7 +732,7 @@ plot_signal_frame_core <- function(dt,
                                    x_label = "Transcript coordinate",
                                    text_color = "black",
                                    text_size = 14,
-                                   grid_linewidth = 0.25,
+                                   grid_linewidth = NULL,
                                    highlight = NULL) {
   signal_summary <- match.arg(signal_summary)
   signal_transform <- match.arg(signal_transform)
@@ -925,7 +889,7 @@ plot_signal_frame_core <- function(dt,
   add_highlight_layer(p, highlight)
 }
 
-plot_signal_core <- function(dt, plot_type = c("bar", "line", "area", "heatmap"), highlight = NULL, x_label = "Genomic coordinate", signal_palette = "Blues", signal_palette_direction = 1, signal_colors = NULL, sample_groups = NULL, signal_color_by = c("sample", "group"), signal_summary = c("none", "mean", "median", "sum"), signal_transform = c("none", "log2", "log10", "sqrt"), signal_y_scale = c("free", "fixed"), signal_y_ticks = c("range", "pretty"), text_color = "black", text_size = 14, grid_linewidth = 0.25, heatmap_bin_size = NULL, heatmap_max_bins = 800L, heatmap_summary = c("mean", "max", "sum", "median")) {
+plot_signal_core <- function(dt, plot_type = c("bar", "line", "heatmap"), highlight = NULL, x_label = "Genomic coordinate", signal_palette = "Blues", signal_palette_direction = 1, signal_colors = NULL, sample_groups = NULL, signal_color_by = c("sample", "group"), signal_summary = c("none", "mean", "median", "sum"), signal_transform = c("none", "log2", "log10", "sqrt"), signal_y_scale = c("free", "fixed"), signal_y_ticks = c("range", "pretty"), text_size = 14, heatmap_bin_size = NULL, heatmap_max_bins = 800L, heatmap_summary = c("mean", "max", "sum", "median")) {
   plot_type <- match.arg(plot_type)
   signal_color_by <- match.arg(signal_color_by)
   signal_summary <- match.arg(signal_summary)
@@ -933,6 +897,7 @@ plot_signal_core <- function(dt, plot_type = c("bar", "line", "area", "heatmap")
   signal_y_scale <- match.arg(signal_y_scale)
   signal_y_ticks <- match.arg(signal_y_ticks)
   heatmap_summary <- match.arg(heatmap_summary)
+  text_color <- "black"
   dt <- data.table::as.data.table(dt)
   stop_if_not(nrow(dt) > 0L, "No signal records were found in the specified region.")
   dt[, mid := (start + end) / 2]
@@ -1028,7 +993,8 @@ plot_signal_core <- function(dt, plot_type = c("bar", "line", "area", "heatmap")
   }
 
   if (plot_type == "line") {
-    p <- ggplot2::ggplot(dt, ggplot2::aes(x = mid, y = plot_value, color = .data[[color_aes]], group = sample_id)) +
+    dt <- fill_signal_line_gaps_with_zero(dt, color_aes = color_aes)
+    p <- ggplot2::ggplot(dt, ggplot2::aes(x = mid, y = plot_value, color = .data[[color_aes]], group = .data$line_group)) +
       ggplot2::facet_grid(sample_id ~ ., scales = facet_scales) +
       ggplot2::labs(x = x_label, y = y_label, color = "Sample") +
       ggplot2::scale_color_manual(values = discrete_signal_colors) +
@@ -1041,9 +1007,11 @@ plot_signal_core <- function(dt, plot_type = c("bar", "line", "area", "heatmap")
         inherit.aes = FALSE
       )
     }
-    p <- p + ggplot2::geom_line(linewidth = 0.4)
+    p <- p + ggplot2::geom_line(linewidth = 0.4, na.rm = TRUE)
   } else if (plot_type == "bar") {
-    p <- ggplot2::ggplot(dt, ggplot2::aes(x = mid, y = plot_value, fill = .data[[color_aes]])) +
+    dt[, "bar_ymin" := data.table::fifelse(plot_value >= 0, 0, plot_value)]
+    dt[, "bar_ymax" := data.table::fifelse(plot_value >= 0, plot_value, 0)]
+    p <- ggplot2::ggplot(dt, ggplot2::aes(fill = .data[[color_aes]])) +
       ggplot2::facet_grid(sample_id ~ ., scales = facet_scales) +
       ggplot2::labs(x = x_label, y = y_label, fill = "Sample") +
       ggplot2::scale_fill_manual(values = discrete_signal_colors) +
@@ -1056,25 +1024,91 @@ plot_signal_core <- function(dt, plot_type = c("bar", "line", "area", "heatmap")
         inherit.aes = FALSE
       )
     }
-    p <- p + ggplot2::geom_col(width = pmax(dt$end - dt$start + 1L, 1), alpha = 0.85)
-  } else if (plot_type == "area") {
-    p <- ggplot2::ggplot(dt, ggplot2::aes(x = mid, y = plot_value, fill = .data[[color_aes]], group = sample_id)) +
-      ggplot2::facet_grid(sample_id ~ ., scales = facet_scales) +
-      ggplot2::labs(x = x_label, y = y_label, fill = "Sample") +
-      ggplot2::scale_fill_manual(values = discrete_signal_colors) +
-      y_scale +
-      base_theme
-    if (!is.null(y_anchor_dt)) {
-      p <- p + ggplot2::geom_blank(
-        data = y_anchor_dt,
-        ggplot2::aes(x = .data$mid, y = .data$plot_value),
-        inherit.aes = FALSE
-      )
-    }
-    p <- p + ggplot2::geom_area(alpha = 0.75)
+    p <- p + ggplot2::geom_rect(
+      ggplot2::aes(
+        xmin = .data$start - 0.5,
+        xmax = .data$end + 0.5,
+        ymin = .data$bar_ymin,
+        ymax = .data$bar_ymax
+      ),
+      color = NA,
+      alpha = 0.85
+    )
   }
 
   add_highlight_layer(p, highlight)
+}
+
+
+
+fill_signal_line_gaps_with_zero <- function(dt, color_aes = "sample_id") {
+  dt <- data.table::copy(data.table::as.data.table(dt))
+  if (nrow(dt) == 0L) {
+    dt[, "line_group" := character()]
+    return(dt)
+  }
+
+  if (!"sample_id" %in% names(dt)) {
+    dt[, "sample_id" := "sample"]
+  }
+  if (!color_aes %in% names(dt)) {
+    color_aes <- "sample_id"
+  }
+
+  # Line tracks should not connect two non-adjacent covered intervals directly.
+  # Instead of splitting the line into disconnected segments, add zero-valued
+  # anchors at both sides of each uncovered gap. This makes the curve return to
+  # the baseline across no-coverage regions, which is closer to genome-browser
+  # coverage behavior and visually less abrupt than broken line segments.
+  split_cols <- unique(c("sample_id", color_aes))
+  data.table::setorderv(dt, c(split_cols, "start", "end"))
+
+  expanded <- dt[, {
+    d <- data.table::copy(.SD)
+    s <- suppressWarnings(as.integer(d[["start"]]))
+    e <- suppressWarnings(as.integer(d[["end"]]))
+    prev_end <- data.table::shift(e, type = "lag")
+    has_gap <- !is.na(prev_end) & !is.na(s) & s > (prev_end + 1L)
+    gap_idx <- which(has_gap)
+
+    if (length(gap_idx) == 0L) {
+      d[, "line_group" := paste0(as.character(sample_id[1L]), "_", as.character(.GRP))]
+      d
+    } else {
+      zero_rows <- vector("list", length(gap_idx) * 2L)
+      k <- 1L
+      for (idx in gap_idx) {
+        prev_row <- data.table::copy(d[idx - 1L])
+        next_row <- data.table::copy(d[idx])
+
+        # The two zero anchors are placed at the uncovered interval boundaries.
+        # They use half-base positions so the line drops after the previous
+        # covered interval and rises immediately before the next covered interval.
+        prev_row[, "start" := as.integer(prev_end[idx] + 1L)]
+        prev_row[, "end" := as.integer(prev_end[idx] + 1L)]
+        prev_row[, "mid" := as.numeric(prev_end[idx]) + 0.5]
+        prev_row[, "value" := 0]
+        prev_row[, "plot_value" := 0]
+
+        next_row[, "start" := as.integer(s[idx] - 1L)]
+        next_row[, "end" := as.integer(s[idx] - 1L)]
+        next_row[, "mid" := as.numeric(s[idx]) - 0.5]
+        next_row[, "value" := 0]
+        next_row[, "plot_value" := 0]
+
+        zero_rows[[k]] <- prev_row
+        zero_rows[[k + 1L]] <- next_row
+        k <- k + 2L
+      }
+
+      out <- data.table::rbindlist(c(list(d), zero_rows), fill = TRUE, use.names = TRUE)
+      data.table::setorderv(out, c("mid", "start", "end"))
+      out[, "line_group" := paste0(as.character(sample_id[1L]), "_", as.character(.GRP))]
+      out
+    }
+  }, by = split_cols]
+
+  expanded[]
 }
 
 make_signal_y_scale <- function(values = NULL,
@@ -1082,84 +1116,104 @@ make_signal_y_scale <- function(values = NULL,
                                 signal_y_ticks = c("range", "pretty")) {
   signal_y_scale <- match.arg(signal_y_scale)
   signal_y_ticks <- match.arg(signal_y_ticks)
-  if (signal_y_ticks == "pretty") {
-    return(ggplot2::scale_y_continuous())
-  }
 
-  make_integer_limits <- function(x) {
+  make_numeric_limits <- function(x, force_zero_baseline = TRUE, add_padding = TRUE) {
     x <- as.numeric(x)
     x <- x[is.finite(x)]
     if (length(x) == 0L) {
       return(NULL)
     }
-    lim <- c(floor(min(x, na.rm = TRUE)), ceiling(max(x, na.rm = TRUE)))
-    if (identical(lim[1L], lim[2L])) {
-      if (lim[1L] == 0) {
-        lim <- c(0, 1)
-      } else if (lim[1L] > 0) {
-        lim <- c(0, lim[2L])
+
+    lower <- min(x, na.rm = TRUE)
+    upper <- max(x, na.rm = TRUE)
+
+    if (isTRUE(force_zero_baseline)) {
+      if (lower >= 0) lower <- 0
+      if (upper <= 0) upper <- 0
+    }
+
+    if (!is.finite(lower) || !is.finite(upper)) {
+      return(NULL)
+    }
+
+    if (identical(lower, upper)) {
+      if (lower == 0) {
+        upper <- 1
+      } else if (lower > 0) {
+        lower <- 0
       } else {
-        lim <- c(lim[1L], 0)
+        upper <- 0
       }
     }
-    lim
+
+    if (isTRUE(add_padding)) {
+      pad <- (upper - lower) * 0.03
+      if (!is.finite(pad) || pad <= 0) pad <- max(abs(upper), abs(lower), 1) * 0.03
+      if (upper >= 0) {
+        upper <- upper + pad
+      } else {
+        lower <- lower - pad
+      }
+    }
+
+    c(lower, upper)
   }
 
-  integer_label <- function(x) {
-    formatC(as.integer(round(x)), format = "d", big.mark = ",")
+  make_range_breaks <- function(lim) {
+    lim <- as.numeric(lim)
+    lim <- lim[is.finite(lim)]
+    if (length(lim) == 0L) return(NULL)
+    lower <- min(lim, na.rm = TRUE)
+    upper <- max(lim, na.rm = TRUE)
+    if (!is.finite(lower) || !is.finite(upper)) return(NULL)
+    if (identical(lower, upper)) {
+      if (lower == 0) {
+        upper <- 1
+      } else if (lower > 0) {
+        lower <- 0
+      } else {
+        upper <- 0
+      }
+    }
+    unique(c(lower, upper))
+  }
+
+  signal_label <- function(x) {
+    x <- as.numeric(x)
+    vapply(x, function(v) {
+      if (!is.finite(v)) return(NA_character_)
+      if (abs(v) < .Machine$double.eps^0.5) return("0")
+      if (abs(v) >= 1000) {
+        return(formatC(v, format = "fg", digits = 4, big.mark = ","))
+      }
+      if (abs(v) < 0.001) {
+        return(formatC(v, format = "e", digits = 2))
+      }
+      formatC(v, format = "fg", digits = 4, big.mark = ",")
+    }, character(1L))
   }
 
   if (signal_y_scale == "fixed") {
-    lim <- make_integer_limits(values)
+    lim <- make_numeric_limits(values, force_zero_baseline = TRUE, add_padding = TRUE)
     if (is.null(lim)) {
       return(ggplot2::scale_y_continuous())
     }
-    return(
-      ggplot2::scale_y_continuous(
-        limits = lim,
-        breaks = lim,
-        labels = integer_label,
-        expand = ggplot2::expansion(mult = c(0, 0.03))
-      )
-    )
+    if (signal_y_ticks == "range") {
+      brks <- make_range_breaks(lim)
+      return(ggplot2::scale_y_continuous(limits = lim, breaks = brks, labels = signal_label, expand = c(0, 0)))
+    }
+    return(ggplot2::scale_y_continuous(limits = lim, labels = signal_label, expand = c(0, 0)))
+  }
+
+  if (signal_y_ticks == "pretty") {
+    return(ggplot2::scale_y_continuous(labels = signal_label, expand = ggplot2::expansion(mult = c(0, 0.03))))
   }
 
   ggplot2::scale_y_continuous(
-    breaks = function(x) {
-      lim <- make_integer_breaks_from_panel_limits(x)
-      if (is.null(lim)) {
-        return(NULL)
-      }
-      lim
-    },
-    labels = integer_label,
-    expand = ggplot2::expansion(mult = c(0, 0.03))
+    breaks = function(x) make_range_breaks(x),
+    labels = signal_label,
+    expand = c(0, 0)
   )
-}
-
-make_integer_breaks_from_panel_limits <- function(x) {
-  x <- as.numeric(x)
-  x <- x[is.finite(x)]
-  if (length(x) == 0L) {
-    return(NULL)
-  }
-  lower_raw <- min(x, na.rm = TRUE)
-  upper_raw <- max(x, na.rm = TRUE)
-  lower <- if (lower_raw < 0) ceiling(lower_raw) else floor(lower_raw)
-  upper <- if (upper_raw < 0) ceiling(upper_raw) else floor(upper_raw)
-  if (!is.finite(lower) || !is.finite(upper)) {
-    return(NULL)
-  }
-  if (lower == upper) {
-    if (lower == 0) {
-      upper <- 1
-    } else if (lower > 0) {
-      lower <- 0
-    } else {
-      upper <- 0
-    }
-  }
-  unique(c(lower, upper))
 }
 
 make_signal_y_anchor <- function(dt, signal_y_scale = c("free", "fixed"), signal_y_ticks = c("range", "pretty")) {
@@ -1168,26 +1222,45 @@ make_signal_y_anchor <- function(dt, signal_y_scale = c("free", "fixed"), signal
   if (signal_y_scale != "free" || signal_y_ticks != "range") {
     return(NULL)
   }
+
   dt <- data.table::as.data.table(dt)
-  if (nrow(dt) == 0L) {
+  if (nrow(dt) == 0L || !"plot_value" %in% names(dt)) {
     return(NULL)
   }
+
   anchor <- dt[
     , {
-      lim <- c(floor(min(as.numeric(plot_value), na.rm = TRUE)), ceiling(max(as.numeric(plot_value), na.rm = TRUE)))
-      if (identical(lim[1L], lim[2L])) {
-        if (lim[1L] == 0) {
-          lim <- c(0, 1)
-        } else if (lim[1L] > 0) {
-          lim <- c(0, lim[2L])
-        } else {
-          lim <- c(lim[1L], 0)
+      values <- as.numeric(plot_value)
+      values <- values[is.finite(values)]
+      if (length(values) == 0L) {
+        .(plot_value = numeric())
+      } else {
+        lower <- min(values, na.rm = TRUE)
+        upper <- max(values, na.rm = TRUE)
+        if (lower >= 0) lower <- 0
+        if (upper <= 0) upper <- 0
+        if (identical(lower, upper)) {
+          if (lower == 0) {
+            upper <- 1
+          } else if (lower > 0) {
+            lower <- 0
+          } else {
+            upper <- 0
+          }
         }
+        pad <- (upper - lower) * 0.03
+        if (!is.finite(pad) || pad <= 0) pad <- max(abs(upper), abs(lower), 1) * 0.03
+        if (upper >= 0) upper <- upper + pad else lower <- lower - pad
+        .(plot_value = c(lower, upper))
       }
-      .(plot_value = as.numeric(lim))
     },
     by = "sample_id"
   ]
+
+  if (nrow(anchor) == 0L) {
+    return(NULL)
+  }
+
   mid_value <- stats::median(as.numeric(dt[["mid"]]), na.rm = TRUE)
   if (!is.finite(mid_value)) {
     mid_value <- 0

@@ -12,7 +12,7 @@ plot_signal_gene(
   sample_groups = NULL,
   signal_color_by = c("sample", "group"),
   signal_summary = c("none", "mean", "median", "sum"),
-  plot_type = c("bar", "line", "area", "heatmap"),
+  plot_type = c("bar", "line", "heatmap"),
   strand = c("auto", "+", "-", "both", "ignore"),
   bin_size = NULL,
   highlight = NULL,
@@ -23,21 +23,15 @@ plot_signal_gene(
   signal_transform = c("none", "log2", "log10", "sqrt"),
   signal_y_scale = c("free", "fixed"),
   signal_y_ticks = c("range", "pretty"),
-  grid_linewidth = 0.25,
   heatmap_bin_size = NULL,
   heatmap_max_bins = 800L,
   heatmap_summary = c("mean", "max", "sum", "median"),
-  cds_width = 0.5,
-  utr_width = 0.25,
-  show_direction = TRUE,
-  direction_mode = c("transcript", "gene", "end"),
-  label_position = c("axis", "feature", "none"),
+  cds_height = 0.5,
+  utr_height = 0.25,
+  direction_mode = c("transcript", "gene", "end", "none"),
+  label_position = c("axis", "feature"),
   label_by = c("gene", "transcript"),
-  label_side = c("above", "below", "center"),
-  label_offset = 0.45,
-  text_color = "black",
-  text_size = 14,
-  label_size = 12
+  text_size = 14
 )
 }
 \arguments{
@@ -55,7 +49,7 @@ plot_signal_gene(
 
 \item{signal_summary}{Replicate summary mode. Use \code{none} to plot individual samples, or \code{mean}, \code{median}, or \code{sum} to summarize samples within each group. Summary is performed on the current signal intervals, so using \code{bin_size} is recommended when raw interval boundaries differ among samples.}
 
-\item{plot_type}{Signal plot type: \code{bar}, \code{line}, \code{area}, or \code{heatmap}.}
+\item{plot_type}{Signal plot type: \code{bar}, \code{line}, or \code{heatmap}.}
 
 \item{strand}{Strand selector. Use \code{auto} to use the gene strand.}
 
@@ -77,29 +71,17 @@ plot_signal_gene(
 
 \item{signal_y_ticks}{Signal y-axis tick mode. Use \code{range} to show only integer axis limits as the minimum and maximum ticks, or \code{pretty} to use ggplot2 default-style breaks.}
 
-\item{grid_linewidth}{Grid line width in the signal panel.}
+\item{cds_height}{Vertical thickness of CDS rectangles in the gene model track.}
 
-\item{cds_width}{Vertical thickness of CDS rectangles in the gene model track.}
+\item{utr_height}{Vertical thickness of UTR/non-coding exon rectangles in the gene model track.}
 
-\item{utr_width}{Vertical thickness of UTR/non-coding exon rectangles in the gene model track.}
+\item{direction_mode}{Direction-arrow style for the gene model track. \code{transcript} draws one arrow per transcript, \code{gene} draws one arrow per gene, \code{end} draws one short arrow at the directional end of each gene, and \code{none} hides direction arrows.}
 
-\item{show_direction}{Whether to draw direction arrows in the gene model track.}
-
-\item{direction_mode}{Direction-arrow style for the gene model track. \code{transcript} draws one arrow per transcript, \code{gene} draws one arrow per gene, and \code{end} draws one short arrow at the directional end of each gene.}
-
-\item{label_position}{Where to draw gene model labels. \code{axis} draws labels on the y axis, \code{feature} draws labels at the center of each gene/transcript structure, and \code{none} hides labels.}
+\item{label_position}{Where to draw gene model labels. \code{axis} draws labels on the y axis and \code{feature} draws labels at the center of each gene/transcript structure.}
 
 \item{label_by}{Which identifier to use for gene model labels. Use \code{gene} for gene IDs or \code{transcript} for transcript IDs.}
 
-\item{label_side}{Label placement when \code{label_position = "feature"}. Use \code{above}, \code{below}, or \code{center}.}
-
-\item{label_offset}{Vertical offset used for feature labels when \code{label_side} is \code{above} or \code{below}.}
-
-\item{text_color}{Text color for signal and gene model text.}
-
 \item{text_size}{Text size in points for signal and gene model axis text, axis titles, facet strips, and legends.}
-
-\item{label_size}{Text size in points for gene model labels drawn when \code{label_position = "feature"}.}
 }
 \value{
 A ggplot or patchwork object.

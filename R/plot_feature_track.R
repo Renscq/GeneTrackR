@@ -18,12 +18,10 @@
 #' @param mode `overlap`, `within`, or `trim`.
 #' @param color_by Column used for fill colors. Usually `type`, `source`, or `name`.
 #' @param label_by Column used for labels. Use `none` to hide labels.
-#' @param color_palette RColorBrewer palette name.
-#' @param fill_colors Optional named or unnamed color vector.
-#' @param border_color Rectangle border color. Use NA to hide borders.
+#' @param feature_palette RColorBrewer palette name for feature fills.
+#' @param feature_colors Optional named or unnamed feature fill color vector.
+#' @param feature_border_color Rectangle border color. Use NA to hide borders.
 #' @param text_size Text size.
-#' @param text_color Text color.
-#' @param track_name Optional y-axis label.
 #' @return A ggplot object.
 #' @export
 plot_feature_track <- function(track,
@@ -33,17 +31,17 @@ plot_feature_track <- function(track,
                                mode = c("overlap", "within", "trim"),
                                color_by = c("type", "source", "name"),
                                label_by = c("none", "name", "feature_id", "type"),
-                               color_palette = "Set2",
-                               fill_colors = NULL,
-                               border_color = NA,
-                               text_size = 14,
-                               text_color = "black",
-                               track_name = NULL) {
+                               feature_palette = "Set2",
+                               feature_colors = NULL,
+                               feature_border_color = NA,
+                               text_size = 14) {
   stop_if_not(inherits(track, "FeatureTrack"), "`track` must be a FeatureTrack object.")
   mode <- match.arg(mode)
   color_by <- match.arg(color_by)
   label_by <- match.arg(label_by)
-  border_color <- normalize_border_color(border_color)
+  text_color <- "black"
+  track_name <- NULL
+  feature_border_color <- normalize_border_color(feature_border_color)
 
   ft <- retrieve_feature(
     track,
@@ -108,7 +106,7 @@ plot_feature_track <- function(track,
         ymax = .data$ymax,
         fill = .data$fill_group
       ),
-      color = border_color,
+      color = feature_border_color,
       linewidth = 0.2
     ) +
     ggplot2::coord_cartesian(xlim = c(start, end)) +
@@ -124,7 +122,7 @@ plot_feature_track <- function(track,
       panel.grid.minor = ggplot2::element_blank(),
       panel.grid.major.y = ggplot2::element_blank()
     )
-  p <- apply_discrete_fill_scale(p, color_palette = color_palette, fill_colors = fill_colors)
+  p <- apply_discrete_fill_scale(p, color_palette = feature_palette, fill_colors = feature_colors)
 
   if (label_by != "none") {
     ft[, "label_x" := (as.numeric(ft[["start"]]) + as.numeric(ft[["end"]])) / 2]

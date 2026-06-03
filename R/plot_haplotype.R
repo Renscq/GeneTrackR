@@ -34,12 +34,12 @@
 #' @param table_height Relative height of the haplotype table panel.
 #' @param exon_height Height of exon boxes in the compact gene track.
 #' @param cds_height Height of CDS boxes in the compact gene track.
-#' @param color_palette RColorBrewer palette name used for gene model feature fills.
-#' @param fill_colors Optional custom fill colors for gene model features.
-#' @param border_color Border color for gene model feature boxes.
-#' @param table_fill_palette RColorBrewer palette name used for haplotype table fills.
-#' @param table_fill_colors Optional custom fill colors for haplotype table genotypes.
-#' @param table_fill_alpha Alpha value for haplotype table fill colors.
+#' @param gene_palette RColorBrewer palette name used for gene model feature fills.
+#' @param gene_colors Optional custom fill colors for gene model features.
+#' @param gene_border_color Border color for gene model feature boxes.
+#' @param table_palette RColorBrewer palette name used for haplotype table fills.
+#' @param table_colors Optional custom fill colors for haplotype table genotypes.
+#' @param table_alpha Alpha value for haplotype table fill colors.
 #' @param reference_fill Background fill color for the REF/ALT reference row.
 #' @param variant_palette RColorBrewer palette name used for variant-type marker fills.
 #' @param variant_colors Optional custom fill colors for variant-type markers.
@@ -56,7 +56,7 @@
 #'   annotation = anno,
 #'   min_hap_samples = 1,
 #'   table_x_angle = 90,
-#'   table_fill_palette = "RdBu"
+#'   table_palette = "RdBu"
 #' )
 #' @export
 plot_hap_variant <- function(hap,
@@ -78,12 +78,12 @@ plot_hap_variant <- function(hap,
                              table_height = NULL,
                              exon_height = 0.22,
                              cds_height = 0.44,
-                             color_palette = "Paired",
-                             fill_colors = NULL,
-                             border_color = NA,
-                             table_fill_palette = "RdBu",
-                             table_fill_colors = NULL,
-                             table_fill_alpha = 0.6,
+                             gene_palette = "Paired",
+                             gene_colors = NULL,
+                             gene_border_color = NA,
+                             table_palette = "RdBu",
+                             table_colors = NULL,
+                             table_alpha = 0.6,
                              reference_fill = "white",
                              variant_palette = "Set2",
                              variant_colors = NULL) {
@@ -97,10 +97,10 @@ plot_hap_variant <- function(hap,
   min_hap_samples <- as.integer(min_hap_samples)[1L]
   stop_if_not(!is.na(min_hap_samples) && min_hap_samples >= 1L, "`min_hap_samples` must be a positive integer.")
   show_reference_row <- isTRUE(show_reference_row)
-  border_color <- normalize_border_color(border_color)
-  table_fill_alpha <- as.numeric(table_fill_alpha)[1L]
-  if (is.na(table_fill_alpha)) table_fill_alpha <- 0.6
-  table_fill_alpha <- max(0, min(1, table_fill_alpha))
+  gene_border_color <- normalize_border_color(gene_border_color)
+  table_alpha <- as.numeric(table_alpha)[1L]
+  if (is.na(table_alpha)) table_alpha <- 0.6
+  table_alpha <- max(0, min(1, table_alpha))
   genotype_text_size <- as.numeric(genotype_text_size)[1L]
   if (is.na(genotype_text_size) || genotype_text_size <= 0) {
     genotype_text_size <- 3.2
@@ -229,9 +229,9 @@ plot_hap_variant <- function(hap,
         gene_text_size = text_size,
         exon_height = exon_height,
         cds_height = cds_height,
-        color_palette = color_palette,
-        fill_colors = fill_colors,
-        border_color = border_color,
+        gene_palette = gene_palette,
+        gene_colors = gene_colors,
+        gene_border_color = gene_border_color,
         variant_palette = variant_palette,
         variant_colors = variant_colors,
         gene_track_legend_position = gene_track_legend_position,
@@ -331,9 +331,9 @@ plot_hap_variant <- function(hap,
   p_table <- apply_hap_table_fill_scale(
     p_table,
     values = table_genotype$genotype_label,
-    table_fill_palette = table_fill_palette,
-    table_fill_colors = table_fill_colors,
-    table_fill_alpha = table_fill_alpha
+    table_palette = table_palette,
+    table_colors = table_colors,
+    table_alpha = table_alpha
   )
 
   if (is.null(table_height)) {
@@ -542,9 +542,9 @@ draw_hap_gene_track <- function(gene_data,
                                 gene_text_size = NULL,
                                 exon_height = 0.22,
                                 cds_height = 0.44,
-                                color_palette = "Paired",
-                                fill_colors = NULL,
-                                border_color = NA,
+                                gene_palette = "Paired",
+                                gene_colors = NULL,
+                                gene_border_color = NA,
                                 variant_palette = "Set2",
                                 variant_colors = NULL,
                                 gene_track_legend_position = c("right", "top", "none"),
@@ -631,8 +631,8 @@ draw_hap_gene_track <- function(gene_data,
   fill_scale <- make_hap_variant_fill_scale(
     gene_features = unique(as.character(seg$feature)),
     variant_types = unique(as.character(vars$variant_type_label)),
-    color_palette = color_palette,
-    fill_colors = fill_colors,
+    gene_palette = gene_palette,
+    gene_colors = gene_colors,
     variant_palette = variant_palette,
     variant_colors = variant_colors
   )
@@ -653,7 +653,7 @@ draw_hap_gene_track <- function(gene_data,
         ymax = .data$ymax,
         fill = .data$feature
       ),
-      color = border_color,
+      color = gene_border_color,
       linewidth = 0.2
     ) +
     ggplot2::geom_segment(
@@ -713,35 +713,35 @@ draw_hap_gene_track <- function(gene_data,
 
 apply_hap_table_fill_scale <- function(p,
                                        values,
-                                       table_fill_palette = "RdBu",
-                                       table_fill_colors = NULL,
-                                       table_fill_alpha = 0.6) {
+                                       table_palette = "RdBu",
+                                       table_colors = NULL,
+                                       table_alpha = 0.6) {
   values <- unique(as.character(values))
   values <- values[!is.na(values)]
   if (length(values) == 0L) {
     return(p)
   }
 
-  if (!is.null(table_fill_colors)) {
-    table_fill_colors <- as.character(table_fill_colors)
-    if (is.null(names(table_fill_colors)) || !any(nzchar(names(table_fill_colors)))) {
-      if (length(table_fill_colors) < length(values)) {
-        table_fill_colors <- grDevices::colorRampPalette(table_fill_colors)(length(values))
+  if (!is.null(table_colors)) {
+    table_colors <- as.character(table_colors)
+    if (is.null(names(table_colors)) || !any(nzchar(names(table_colors)))) {
+      if (length(table_colors) < length(values)) {
+        table_colors <- grDevices::colorRampPalette(table_colors)(length(values))
       }
-      names(table_fill_colors) <- values
+      names(table_colors) <- values
     }
-    colors <- table_fill_colors
+    colors <- table_colors
   } else {
     colors <- normalize_discrete_fill_colors(
       n = length(values),
-      color_palette = table_fill_palette,
+      color_palette = table_palette,
       fill_colors = NULL
     )
     names(colors) <- values
   }
 
-  colors <- grDevices::adjustcolor(colors, alpha.f = table_fill_alpha)
-  p + ggplot2::scale_fill_manual(values = colors, na.value = grDevices::adjustcolor("grey85", alpha.f = table_fill_alpha))
+  colors <- grDevices::adjustcolor(colors, alpha.f = table_alpha)
+  p + ggplot2::scale_fill_manual(values = colors, na.value = grDevices::adjustcolor("grey85", alpha.f = table_alpha))
 }
 
 assign_variant_gene_track_y <- function(vars,
@@ -838,8 +838,8 @@ format_hap_table_genotype_label <- function(genotype,
 
 make_hap_variant_fill_scale <- function(gene_features,
                                         variant_types,
-                                        color_palette = "Paired",
-                                        fill_colors = NULL,
+                                        gene_palette = "Paired",
+                                        gene_colors = NULL,
                                         variant_palette = "Set2",
                                         variant_colors = NULL) {
   gene_features <- unique(as.character(gene_features))
@@ -849,8 +849,8 @@ make_hap_variant_fill_scale <- function(gene_features,
 
   gene_cols <- normalize_discrete_fill_colors(
     n = length(gene_features),
-    color_palette = color_palette,
-    fill_colors = fill_colors
+    color_palette = gene_palette,
+    fill_colors = gene_colors
   )
   names(gene_cols) <- gene_features
 
@@ -948,7 +948,6 @@ plot_hap_pheno <- function(hap,
                            strip_label_width = 24,
                            strip_fill = "white",
                            strip_border_color = NULL,
-                           strip_text_lineheight = 0.9,
                            text_size = 14) {
   stop_if_not(inherits(hap, "HapVariant"), "`hap` must be a HapVariant object.")
   plot_type <- match.arg(plot_type)
@@ -971,6 +970,7 @@ plot_hap_pheno <- function(hap,
   if (is.na(strip_label_width) || strip_label_width < 1L) strip_label_width <- 24L
   strip_text_lineheight <- as.numeric(strip_text_lineheight)[1L]
   if (is.na(strip_text_lineheight) || strip_text_lineheight <= 0) strip_text_lineheight <- 0.9
+  strip_text_lineheight <- 0.9
   strip_fill <- as.character(strip_fill)[1L]
   if (is.na(strip_fill) || strip_fill == "") strip_fill <- "white"
   if (is.null(strip_border_color) || length(strip_border_color) == 0L || is.na(strip_border_color[1L]) || strip_border_color[1L] == "") {

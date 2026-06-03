@@ -9,21 +9,16 @@ plot_transcript(
   transcript_id,
   coordinate = c("transcript", "genomic"),
   show_cds = TRUE,
-  cds_width = 0.5,
-  utr_width = 0.25,
-  show_direction = TRUE,
-  direction_mode = c("transcript", "gene", "end"),
+  cds_height = 0.5,
+  utr_height = 0.25,
+  direction_mode = c("transcript", "gene", "end", "none"),
   highlight = NULL,
-  color_palette = "Paired",
-  fill_colors = NULL,
-  border_color = NA,
-  label_position = c("axis", "feature", "none"),
+  gene_palette = "Paired",
+  gene_colors = NULL,
+  gene_border_color = NA,
+  label_position = c("axis", "feature"),
   label_by = c("gene", "transcript"),
-  label_side = c("above", "below", "center"),
-  label_offset = 0.45,
-  text_color = "black",
-  text_size = 14,
-  label_size = 12
+  text_size = 14
 )
 }
 \arguments{
@@ -35,35 +30,25 @@ plot_transcript(
 
 \item{show_cds}{Whether to distinguish CDS and UTR segments.}
 
-\item{cds_width}{Vertical thickness of CDS rectangles.}
+\item{cds_height}{Vertical thickness of CDS rectangles.}
 
-\item{utr_width}{Vertical thickness of UTR/non-coding exon rectangles.}
+\item{utr_height}{Vertical thickness of UTR/non-coding exon rectangles.}
 
-\item{show_direction}{Whether to draw transcript direction arrows.}
-
-\item{direction_mode}{Direction-arrow style. \code{transcript} draws one arrow per transcript, \code{gene} draws one arrow per gene, and \code{end} draws one short arrow at the directional end of each gene.}
+\item{direction_mode}{Direction-arrow style. \code{transcript} draws one arrow per transcript, \code{gene} draws one arrow per gene, \code{end} draws one short arrow at the directional end of each gene, and \code{none} hides direction arrows.}
 
 \item{highlight}{Optional data frame used to shade genomic or transcript intervals. It must contain \code{start} and \code{end} columns. Optional columns such as \code{label} or \code{group} are allowed but are not required. In \code{coordinate = "genomic"}, \code{start} and \code{end} are genomic positions; in \code{coordinate = "transcript"}, they are spliced transcript coordinates.}
 
-\item{color_palette}{RColorBrewer palette name used for discrete fills. If the number of discrete groups exceeds the palette maximum, colors are automatically interpolated.}
+\item{gene_palette}{RColorBrewer palette name used for discrete fills. If the number of discrete groups exceeds the palette maximum, colors are automatically interpolated.}
 
-\item{fill_colors}{Optional custom fill colors for gene model features. Use a named vector such as \code{c(CDS = "#33a02c", UTR = "#b2df8a", exon = "#fb9a99")} to map colors explicitly. Unnamed colors are matched to the observed feature levels in plotting order and are automatically extended when needed.}
+\item{gene_colors}{Optional custom fill colors for gene model features. Use a named vector such as \code{c(CDS = "#33a02c", UTR = "#b2df8a", exon = "#fb9a99")} to map colors explicitly. Unnamed colors are matched to the observed feature levels in plotting order and are automatically extended when needed.}
 
-\item{border_color}{Optional rectangle border color. Use \code{NA} to hide borders, or a color such as \code{"black"} or \code{"grey30"} to draw feature outlines.}
+\item{gene_border_color}{Optional rectangle border color. Use \code{NA} to hide borders, or a color such as \code{"black"} or \code{"grey30"} to draw feature outlines.}
 
-\item{label_position}{Where to draw feature labels. \code{axis} draws labels on the y axis, \code{feature} draws labels at the center of each gene/transcript structure, and \code{none} hides labels.}
+\item{label_position}{Where to draw feature labels. \code{axis} draws labels on the y axis and \code{feature} draws labels at the center of each gene/transcript structure.}
 
 \item{label_by}{Which identifier to use for feature labels. Use \code{gene} for gene IDs or \code{transcript} for transcript IDs.}
 
-\item{label_side}{Label placement when \code{label_position = "feature"}. Use \code{above} to place labels above each gene model, \code{below} to place labels below each gene model, or \code{center} to place labels on the gene model.}
-
-\item{label_offset}{Vertical offset used for feature labels when \code{label_side} is \code{above} or \code{below}.}
-
-\item{text_color}{Text color for axis text, axis titles, legends, and in-plot labels.}
-
 \item{text_size}{Text size in points for axis text, axis titles, and legends.}
-
-\item{label_size}{Text size in points for labels drawn when \code{label_position = "feature"}.}
 }
 \value{
 A ggplot object.
@@ -72,7 +57,7 @@ A ggplot object.
 Plot a transcript structure
 }
 \details{
-Common feature names used by \code{fill_colors} are \code{CDS}, \code{UTR}, and \code{exon}.
+Common feature names used by \code{gene_colors} are \code{CDS}, \code{UTR}, and \code{exon}.
 \code{highlight} must contain \code{start} and \code{end} columns. In genomic coordinate
 plots these are genomic positions; in transcript coordinate plots they are
 spliced transcript positions. See also \link{GeneTrackR-advanced-parameters}.
@@ -85,12 +70,10 @@ plot_transcript(
   gp,
   transcript_id = "EAA28783",
   coordinate = "transcript",
-  fill_colors = c(CDS = "#33a02c", UTR = "#b2df8a", exon = "#fb9a99"),
-  border_color = "black",
+  gene_colors = c(CDS = "#33a02c", UTR = "#b2df8a", exon = "#fb9a99"),
+  gene_border_color = "black",
   highlight = data.frame(start = 100, end = 250),
   label_position = "feature",
-  label_side = "above",
-  label_size = 12
 )
 }
 }

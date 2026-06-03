@@ -11,23 +11,18 @@
 #' @param transcript_id Transcript ID.
 #' @param coordinate transcript removes introns, genomic keeps genomic scale.
 #' @param show_cds Whether to distinguish CDS and UTR segments.
-#' @param cds_width Vertical thickness of CDS rectangles.
-#' @param utr_width Vertical thickness of UTR/non-coding exon rectangles.
-#' @param show_direction Whether to draw transcript direction arrows.
+#' @param cds_height Vertical thickness of CDS rectangles.
+#' @param utr_height Vertical thickness of UTR/non-coding exon rectangles.
 #' @param highlight Optional data frame used to shade genomic or transcript intervals. It must contain `start` and `end` columns. Optional columns such as `label` or `group` are allowed but are not required. In `coordinate = "genomic"`, `start` and `end` are genomic positions; in `coordinate = "transcript"`, they are spliced transcript coordinates.
-#' @param color_palette RColorBrewer palette name used for discrete fills. If the number of discrete groups exceeds the palette maximum, colors are automatically interpolated.
-#' @param fill_colors Optional custom fill colors for gene model features. Use a named vector such as `c(CDS = "#33a02c", UTR = "#b2df8a", exon = "#fb9a99")` to map colors explicitly. Unnamed colors are matched to the observed feature levels in plotting order and are automatically extended when needed.
-#' @param border_color Optional rectangle border color. Use `NA` to hide borders, or a color such as `"black"` or `"grey30"` to draw feature outlines.
-#' @param label_position Where to draw feature labels. `axis` draws labels on the y axis, `feature` draws labels at the center of each gene/transcript structure, and `none` hides labels.
+#' @param gene_palette RColorBrewer palette name used for discrete fills. If the number of discrete groups exceeds the palette maximum, colors are automatically interpolated.
+#' @param gene_colors Optional custom fill colors for gene model features. Use a named vector such as `c(CDS = "#33a02c", UTR = "#b2df8a", exon = "#fb9a99")` to map colors explicitly. Unnamed colors are matched to the observed feature levels in plotting order and are automatically extended when needed.
+#' @param gene_border_color Optional rectangle border color. Use `NA` to hide borders, or a color such as `"black"` or `"grey30"` to draw feature outlines.
+#' @param label_position Where to draw feature labels. `axis` draws labels on the y axis and `feature` draws labels at the center of each gene/transcript structure.
 #' @param label_by Which identifier to use for feature labels. Use `gene` for gene IDs or `transcript` for transcript IDs.
-#' @param text_color Text color for axis text, axis titles, legends, and in-plot labels.
 #' @param text_size Text size in points for axis text, axis titles, and legends.
-#' @param label_size Text size in points for labels drawn when `label_position = "feature"`.
-#' @param label_side Label placement when `label_position = "feature"`. Use `above` to place labels above each gene model, `below` to place labels below each gene model, or `center` to place labels on the gene model.
-#' @param label_offset Vertical offset used for feature labels when `label_side` is `above` or `below`.
-#' @param direction_mode Direction-arrow style. `transcript` draws one arrow per transcript, `gene` draws one arrow per gene, and `end` draws one short arrow at the directional end of each gene.
+#' @param direction_mode Direction-arrow style. `transcript` draws one arrow per transcript, `gene` draws one arrow per gene, `end` draws one short arrow at the directional end of each gene, and `none` hides direction arrows.
 #' @details
-#' Common feature names used by `fill_colors` are `CDS`, `UTR`, and `exon`.
+#' Common feature names used by `gene_colors` are `CDS`, `UTR`, and `exon`.
 #' `highlight` must contain `start` and `end` columns. In genomic coordinate
 #' plots these are genomic positions; in transcript coordinate plots they are
 #' spliced transcript positions. See also [GeneTrackR-advanced-parameters].
@@ -40,23 +35,20 @@
 #'   gp,
 #'   transcript_id = "EAA28783",
 #'   coordinate = "transcript",
-#'   fill_colors = c(CDS = "#33a02c", UTR = "#b2df8a", exon = "#fb9a99"),
-#'   border_color = "black",
+#'   gene_colors = c(CDS = "#33a02c", UTR = "#b2df8a", exon = "#fb9a99"),
+#'   gene_border_color = "black",
 #'   highlight = data.frame(start = 100, end = 250),
 #'   label_position = "feature",
-#'   label_side = "above",
-#'   label_size = 12
 #' )
 #' }
 #' @export
-plot_transcript <- function(object, transcript_id, coordinate = c("transcript", "genomic"), show_cds = TRUE, cds_width = 0.50, utr_width = 0.25, show_direction = TRUE, direction_mode = c("transcript", "gene", "end"), highlight = NULL, color_palette = "Paired", fill_colors = NULL, border_color = NA, label_position = c("axis", "feature", "none"), label_by = c("gene", "transcript"), label_side = c("above", "below", "center"), label_offset = 0.45, text_color = "black", text_size = 14, label_size = 12) {
+plot_transcript <- function(object, transcript_id, coordinate = c("transcript", "genomic"), show_cds = TRUE, cds_height = 0.50, utr_height = 0.25, direction_mode = c("transcript", "gene", "end", "none"), highlight = NULL, gene_palette = "Paired", gene_colors = NULL, gene_border_color = NA, label_position = c("axis", "feature"), label_by = c("gene", "transcript"), text_size = 14) {
   stop_if_not(is_gene_model_feature(object), "`object` must be a GenePred object or a Feature object with transcript/exon records.")
   object <- as_genepred(object)
   coordinate <- match.arg(coordinate)
   direction_mode <- match.arg(direction_mode)
   label_position <- match.arg(label_position)
   label_by <- match.arg(label_by)
-  label_side <- match.arg(label_side)
   transcript_id_value <- as.character(transcript_id)
 
   tx_all <- data.table::as.data.table(object$transcripts)
@@ -71,21 +63,16 @@ plot_transcript <- function(object, transcript_id, coordinate = c("transcript", 
     coordinate = coordinate,
     collapse = "none",
     show_cds = show_cds,
-    cds_width = cds_width,
-    utr_width = utr_width,
-    show_direction = show_direction,
+    cds_height = cds_height,
+    utr_height = utr_height,
     direction_mode = direction_mode,
     highlight = highlight,
-    color_palette = color_palette,
-    fill_colors = fill_colors,
-    border_color = border_color,
+    gene_palette = gene_palette,
+    gene_colors = gene_colors,
+    gene_border_color = gene_border_color,
     label_position = label_position,
     label_by = label_by,
-    label_side = label_side,
-    label_offset = label_offset,
-    text_color = text_color,
-    text_size = text_size,
-    label_size = label_size
+    text_size = text_size
   )
 }
 
@@ -96,23 +83,18 @@ plot_transcript <- function(object, transcript_id, coordinate = c("transcript", 
 #' @param collapse Transcript collapse mode.
 #' @param coordinate genomic or transcript.
 #' @param show_cds Whether to distinguish CDS and UTR segments.
-#' @param cds_width Vertical thickness of CDS rectangles.
-#' @param utr_width Vertical thickness of UTR/non-coding exon rectangles.
-#' @param show_direction Whether to draw direction arrows.
+#' @param cds_height Vertical thickness of CDS rectangles.
+#' @param utr_height Vertical thickness of UTR/non-coding exon rectangles.
 #' @param highlight Optional data frame used to shade genomic or transcript intervals. It must contain `start` and `end` columns. Optional columns such as `label` or `group` are allowed but are not required. In `coordinate = "genomic"`, `start` and `end` are genomic positions; in `coordinate = "transcript"`, they are spliced transcript coordinates.
-#' @param color_palette RColorBrewer palette name used for discrete fills. If the number of discrete groups exceeds the palette maximum, colors are automatically interpolated.
-#' @param fill_colors Optional custom fill colors for gene model features. Use a named vector such as `c(CDS = "#33a02c", UTR = "#b2df8a", exon = "#fb9a99")` to map colors explicitly. Unnamed colors are matched to the observed feature levels in plotting order and are automatically extended when needed.
-#' @param border_color Optional rectangle border color. Use `NA` to hide borders, or a color such as `"black"` or `"grey30"` to draw feature outlines.
-#' @param label_position Where to draw feature labels. `axis` draws labels on the y axis, `feature` draws labels at the center of each gene/transcript structure, and `none` hides labels.
+#' @param gene_palette RColorBrewer palette name used for discrete fills. If the number of discrete groups exceeds the palette maximum, colors are automatically interpolated.
+#' @param gene_colors Optional custom fill colors for gene model features. Use a named vector such as `c(CDS = "#33a02c", UTR = "#b2df8a", exon = "#fb9a99")` to map colors explicitly. Unnamed colors are matched to the observed feature levels in plotting order and are automatically extended when needed.
+#' @param gene_border_color Optional rectangle border color. Use `NA` to hide borders, or a color such as `"black"` or `"grey30"` to draw feature outlines.
+#' @param label_position Where to draw feature labels. `axis` draws labels on the y axis and `feature` draws labels at the center of each gene/transcript structure.
 #' @param label_by Which identifier to use for feature labels. Use `gene` for gene IDs or `transcript` for transcript IDs.
-#' @param text_color Text color for axis text, axis titles, legends, and in-plot labels.
 #' @param text_size Text size in points for axis text, axis titles, and legends.
-#' @param label_size Text size in points for labels drawn when `label_position = "feature"`.
-#' @param label_side Label placement when `label_position = "feature"`. Use `above` to place labels above each gene model, `below` to place labels below each gene model, or `center` to place labels on the gene model.
-#' @param label_offset Vertical offset used for feature labels when `label_side` is `above` or `below`.
-#' @param direction_mode Direction-arrow style. `transcript` draws one arrow per transcript, `gene` draws one arrow per gene, and `end` draws one short arrow at the directional end of each gene.
+#' @param direction_mode Direction-arrow style. `transcript` draws one arrow per transcript, `gene` draws one arrow per gene, `end` draws one short arrow at the directional end of each gene, and `none` hides direction arrows.
 #' @details
-#' Common feature names used by `fill_colors` are `CDS`, `UTR`, and `exon`.
+#' Common feature names used by `gene_colors` are `CDS`, `UTR`, and `exon`.
 #' `highlight` must contain `start` and `end` columns. In genomic coordinate
 #' plots these are genomic positions; in transcript coordinate plots they are
 #' spliced transcript positions. See also [GeneTrackR-advanced-parameters].
@@ -125,25 +107,22 @@ plot_transcript <- function(object, transcript_id, coordinate = c("transcript", 
 #'   gp,
 #'   gene_id = "NCU01404",
 #'   collapse = "none",
-#'   fill_colors = c(CDS = "#33a02c", UTR = "#b2df8a", exon = "#fb9a99"),
-#'   border_color = NA,
+#'   gene_colors = c(CDS = "#33a02c", UTR = "#b2df8a", exon = "#fb9a99"),
+#'   gene_border_color = NA,
 #'   label_position = "feature",
-#'   label_side = "above",
 #'   direction_mode = "end",
 #'   highlight = data.frame(start = 100000, end = 101000),
-#'   text_size = 14,
-#'   label_size = 12
+#'   text_size = 14
 #' )
 #' }
 #' @export
-plot_gene <- function(object, gene_id, collapse = c("none", "union_exon", "longest"), coordinate = c("genomic", "transcript"), show_cds = TRUE, cds_width = 0.50, utr_width = 0.25, show_direction = TRUE, direction_mode = c("transcript", "gene", "end"), highlight = NULL, color_palette = "Paired", fill_colors = NULL, border_color = NA, label_position = c("axis", "feature", "none"), label_by = c("gene", "transcript"), label_side = c("above", "below", "center"), label_offset = 0.45, text_color = "black", text_size = 14, label_size = 12) {
+plot_gene <- function(object, gene_id, collapse = c("none", "union_exon", "longest"), coordinate = c("genomic", "transcript"), show_cds = TRUE, cds_height = 0.50, utr_height = 0.25, direction_mode = c("transcript", "gene", "end", "none"), highlight = NULL, gene_palette = "Paired", gene_colors = NULL, gene_border_color = NA, label_position = c("axis", "feature"), label_by = c("gene", "transcript"), text_size = 14) {
   stop_if_not(is_gene_model_feature(object), "`object` must be a GenePred object or a Feature object with transcript/exon records.")
   object <- as_genepred(object)
   collapse <- match.arg(collapse)
   coordinate <- match.arg(coordinate)
   label_position <- match.arg(label_position)
   label_by <- match.arg(label_by)
-  label_side <- match.arg(label_side)
   direction_mode <- match.arg(direction_mode)
   gene_id_value <- as.character(gene_id)
 
@@ -160,21 +139,16 @@ plot_gene <- function(object, gene_id, collapse = c("none", "union_exon", "longe
     coordinate = coordinate,
     collapse = collapse,
     show_cds = show_cds,
-    cds_width = cds_width,
-    utr_width = utr_width,
-    show_direction = show_direction,
+    cds_height = cds_height,
+    utr_height = utr_height,
     direction_mode = direction_mode,
     highlight = highlight,
-    color_palette = color_palette,
-    fill_colors = fill_colors,
-    border_color = border_color,
+    gene_palette = gene_palette,
+    gene_colors = gene_colors,
+    gene_border_color = gene_border_color,
     label_position = label_position,
     label_by = label_by,
-    label_side = label_side,
-    label_offset = label_offset,
-    text_color = text_color,
-    text_size = text_size,
-    label_size = label_size
+    text_size = text_size
   )
 }
 
@@ -187,23 +161,18 @@ plot_gene <- function(object, gene_id, collapse = c("none", "union_exon", "longe
 #' @param mode within, overlap, or trim.
 #' @param collapse Transcript collapse mode.
 #' @param show_cds Whether to distinguish CDS and UTR segments.
-#' @param cds_width Vertical thickness of CDS rectangles.
-#' @param utr_width Vertical thickness of UTR/non-coding exon rectangles.
-#' @param show_direction Whether to draw direction arrows.
+#' @param cds_height Vertical thickness of CDS rectangles.
+#' @param utr_height Vertical thickness of UTR/non-coding exon rectangles.
 #' @param highlight Optional data frame used to shade genomic or transcript intervals. It must contain `start` and `end` columns. Optional columns such as `label` or `group` are allowed but are not required. In `coordinate = "genomic"`, `start` and `end` are genomic positions; in `coordinate = "transcript"`, they are spliced transcript coordinates.
-#' @param color_palette RColorBrewer palette name used for discrete fills. If the number of discrete groups exceeds the palette maximum, colors are automatically interpolated.
-#' @param fill_colors Optional custom fill colors for gene model features. Use a named vector such as `c(CDS = "#33a02c", UTR = "#b2df8a", exon = "#fb9a99")` to map colors explicitly. Unnamed colors are matched to the observed feature levels in plotting order and are automatically extended when needed.
-#' @param border_color Optional rectangle border color. Use `NA` to hide borders, or a color such as `"black"` or `"grey30"` to draw feature outlines.
-#' @param label_position Where to draw feature labels. `axis` draws labels on the y axis, `feature` draws labels at the center of each gene/transcript structure, and `none` hides labels.
+#' @param gene_palette RColorBrewer palette name used for discrete fills. If the number of discrete groups exceeds the palette maximum, colors are automatically interpolated.
+#' @param gene_colors Optional custom fill colors for gene model features. Use a named vector such as `c(CDS = "#33a02c", UTR = "#b2df8a", exon = "#fb9a99")` to map colors explicitly. Unnamed colors are matched to the observed feature levels in plotting order and are automatically extended when needed.
+#' @param gene_border_color Optional rectangle border color. Use `NA` to hide borders, or a color such as `"black"` or `"grey30"` to draw feature outlines.
+#' @param label_position Where to draw feature labels. `axis` draws labels on the y axis and `feature` draws labels at the center of each gene/transcript structure.
 #' @param label_by Which identifier to use for feature labels. Use `gene` for gene IDs or `transcript` for transcript IDs.
-#' @param text_color Text color for axis text, axis titles, legends, and in-plot labels.
 #' @param text_size Text size in points for axis text, axis titles, and legends.
-#' @param label_size Text size in points for labels drawn when `label_position = "feature"`.
-#' @param label_side Label placement when `label_position = "feature"`. Use `above` to place labels above each gene model, `below` to place labels below each gene model, or `center` to place labels on the gene model.
-#' @param label_offset Vertical offset used for feature labels when `label_side` is `above` or `below`.
-#' @param direction_mode Direction-arrow style. `transcript` draws one arrow per transcript, `gene` draws one arrow per gene, and `end` draws one short arrow at the directional end of each gene.
+#' @param direction_mode Direction-arrow style. `transcript` draws one arrow per transcript, `gene` draws one arrow per gene, `end` draws one short arrow at the directional end of each gene, and `none` hides direction arrows.
 #' @details
-#' Common feature names used by `fill_colors` are `CDS`, `UTR`, and `exon`.
+#' Common feature names used by `gene_colors` are `CDS`, `UTR`, and `exon`.
 #' `highlight` must contain `start` and `end` columns. In genomic coordinate
 #' plots these are genomic positions; in transcript coordinate plots they are
 #' spliced transcript positions. See also [GeneTrackR-advanced-parameters].
@@ -223,14 +192,13 @@ plot_gene <- function(object, gene_id, collapse = c("none", "union_exon", "longe
 #' )
 #' }
 #' @export
-plot_region <- function(object, chrom, start, end, mode = c("within", "overlap", "trim"), collapse = c("none", "union_exon", "longest"), show_cds = TRUE, cds_width = 0.50, utr_width = 0.25, show_direction = TRUE, direction_mode = c("transcript", "gene", "end"), highlight = NULL, color_palette = "Paired", fill_colors = NULL, border_color = NA, label_position = c("axis", "feature", "none"), label_by = c("gene", "transcript"), label_side = c("above", "below", "center"), label_offset = 0.45, text_color = "black", text_size = 14, label_size = 12) {
+plot_region <- function(object, chrom, start, end, mode = c("within", "overlap", "trim"), collapse = c("none", "union_exon", "longest"), show_cds = TRUE, cds_height = 0.50, utr_height = 0.25, direction_mode = c("transcript", "gene", "end", "none"), highlight = NULL, gene_palette = "Paired", gene_colors = NULL, gene_border_color = NA, label_position = c("axis", "feature"), label_by = c("gene", "transcript"), text_size = 14) {
   stop_if_not(is_gene_model_feature(object), "`object` must be a GenePred object or a Feature object with transcript/exon records.")
   object <- as_genepred(object)
   mode <- match.arg(mode)
   collapse <- match.arg(collapse)
   label_position <- match.arg(label_position)
   label_by <- match.arg(label_by)
-  label_side <- match.arg(label_side)
   direction_mode <- match.arg(direction_mode)
   chrom_value <- as.character(chrom)
   start_value <- as.integer(start)
@@ -255,56 +223,47 @@ plot_region <- function(object, chrom, start, end, mode = c("within", "overlap",
     coordinate = "genomic",
     collapse = collapse,
     show_cds = show_cds,
-    cds_width = cds_width,
-    utr_width = utr_width,
-    show_direction = show_direction,
+    cds_height = cds_height,
+    utr_height = utr_height,
     direction_mode = direction_mode,
     highlight = highlight,
-    color_palette = color_palette,
-    fill_colors = fill_colors,
-    border_color = border_color,
+    gene_palette = gene_palette,
+    gene_colors = gene_colors,
+    gene_border_color = gene_border_color,
     label_position = label_position,
     label_by = label_by,
-    label_side = label_side,
-    label_offset = label_offset,
-    text_color = text_color,
-    text_size = text_size,
-    label_size = label_size
+    text_size = text_size
   ) +
     ggplot2::coord_cartesian(xlim = c(start_value, end_value))
 }
 
-plot_gene_model_core <- function(tx, exons, coordinate = c("genomic", "transcript"), collapse = "none", show_cds = TRUE, cds_width = 0.50, utr_width = 0.25, show_direction = TRUE, direction_mode = c("transcript", "gene", "end"), highlight = NULL, color_palette = "Paired", fill_colors = NULL, border_color = NA, label_position = c("axis", "feature", "none"), label_by = c("gene", "transcript"), label_side = c("above", "below", "center"), label_offset = 0.45, text_color = "black", text_size = 14, label_size = 12) {
+plot_gene_model_core <- function(tx, exons, coordinate = c("genomic", "transcript"), collapse = "none", show_cds = TRUE, cds_height = 0.50, utr_height = 0.25, direction_mode = c("transcript", "gene", "end", "none"), highlight = NULL, gene_palette = "Paired", gene_colors = NULL, gene_border_color = NA, label_position = c("axis", "feature"), label_by = c("gene", "transcript"), text_size = 14) {
   coordinate <- match.arg(coordinate)
   direction_mode <- match.arg(direction_mode)
   label_position <- match.arg(label_position)
   label_by <- match.arg(label_by)
-  label_side <- match.arg(label_side)
-  text_color <- as.character(text_color)[1L]
+  label_side <- "center"
+  label_offset <- 0.45
+  text_color <- "black"
   text_size <- as.numeric(text_size)[1L]
-  label_size <- as.numeric(label_size)[1L]
-  if (is.na(text_color) || !nzchar(text_color)) {
-    text_color <- "black"
-  }
   if (!is.finite(text_size) || text_size <= 0) {
     stop("`text_size` must be a positive numeric value.", call. = FALSE)
   }
-  if (!is.finite(label_size) || label_size <= 0) {
-    stop("`label_size` must be a positive numeric value.", call. = FALSE)
-  }
+  label_size <- text_size * 0.85
+  show_direction <- !identical(direction_mode, "none")
   label_offset <- as.numeric(label_offset)[1L]
   if (!is.finite(label_offset) || label_offset < 0) {
     stop("`label_offset` must be a non-negative numeric value.", call. = FALSE)
   }
-  cds_width <- as.numeric(cds_width)[1L]
-  utr_width <- as.numeric(utr_width)[1L]
-  if (!is.finite(cds_width) || cds_width <= 0) {
-    stop("`cds_width` must be a positive numeric value.", call. = FALSE)
+  cds_height <- as.numeric(cds_height)[1L]
+  utr_height <- as.numeric(utr_height)[1L]
+  if (!is.finite(cds_height) || cds_height <= 0) {
+    stop("`cds_height` must be a positive numeric value.", call. = FALSE)
   }
-  if (!is.finite(utr_width) || utr_width <= 0) {
-    stop("`utr_width` must be a positive numeric value.", call. = FALSE)
+  if (!is.finite(utr_height) || utr_height <= 0) {
+    stop("`utr_height` must be a positive numeric value.", call. = FALSE)
   }
-  border_color <- normalize_border_color(border_color)
+  gene_border_color <- normalize_border_color(gene_border_color)
 
   tx <- data.table::copy(data.table::as.data.table(tx))
   ex <- data.table::copy(data.table::as.data.table(exons))
@@ -368,9 +327,9 @@ plot_gene_model_core <- function(tx, exons, coordinate = c("genomic", "transcrip
     )
   }
 
-  seg[, "feature_width" := ifelse(as.character(seg[["feature"]]) == "CDS", cds_width, utr_width)]
+  seg[, "feature_width" := ifelse(as.character(seg[["feature"]]) == "CDS", cds_height, utr_height)]
   if (!show_cds) {
-    seg[, "feature_width" := cds_width]
+    seg[, "feature_width" := cds_height]
   }
   seg[, "ymin" := as.numeric(seg[["y"]]) - as.numeric(seg[["feature_width"]]) / 2]
   seg[, "ymax" := as.numeric(seg[["y"]]) + as.numeric(seg[["feature_width"]]) / 2]
@@ -390,7 +349,7 @@ plot_gene_model_core <- function(tx, exons, coordinate = c("genomic", "transcrip
         ymax = .data$ymax,
         fill = .data$feature
       ),
-      color = border_color,
+      color = gene_border_color,
       linewidth = 0.2
     )
 
@@ -417,7 +376,7 @@ plot_gene_model_core <- function(tx, exons, coordinate = c("genomic", "transcrip
     "Genomic coordinate (bp)"
   }
 
-  p <- apply_discrete_fill_scale(p, color_palette = color_palette, fill_colors = fill_colors) +
+  p <- apply_discrete_fill_scale(p, color_palette = gene_palette, fill_colors = gene_colors) +
     ggplot2::scale_y_continuous(
       breaks = y_breaks,
       labels = y_labels,

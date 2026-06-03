@@ -136,7 +136,7 @@ get_gene_length_distribution_table <- function(object,
 #' @param facet Logical. Whether to facet by feature when multiple features are
 #' requested.
 #' @param keep_zero Logical. Whether to keep zero-length CDS/UTR records.
-#' @param color_palette RColorBrewer palette name used for grouped fills. Default is `Paired`.
+#' @param fill_palette RColorBrewer palette name used for grouped fills. Default is `Paired`.
 #' @param fill_colors Optional custom fill colors. Named vectors are matched to the
 #' values of `group_by`, for example `c(coding = "#1f78b4", `non-coding` = "#a6cee3")`. Unnamed colors are matched in plotting order and are automatically extended when needed.
 #' @param border_color Optional border color for histograms, boxplots, and violin plots.
@@ -195,7 +195,7 @@ plot_gene_length_distribution <- function(object,
                                               bins = 60L,
                                               facet = TRUE,
                                               keep_zero = FALSE,
-                                              color_palette = "Paired",
+                                              fill_palette = "Paired",
                                               fill_colors = NULL,
                                               border_color = NA,
                                               return_data = FALSE) {
@@ -244,7 +244,7 @@ plot_gene_length_distribution <- function(object,
     plot_type = plot_type,
     bins = bins,
     x_label = x_label,
-    color_palette = color_palette,
+    fill_palette = fill_palette,
     fill_colors = fill_colors,
     border_color = border_color
   )
@@ -558,33 +558,33 @@ empty_gene_length_distribution_table <- function() {
   )
 }
 
-build_gene_length_distribution_plot <- function(dt, group_col, plot_type, bins, x_label, color_palette = "Paired", fill_colors = NULL, border_color = NA) {
+build_gene_length_distribution_plot <- function(dt, group_col, plot_type, bins, x_label, fill_palette = "Paired", fill_colors = NULL, border_color = NA) {
   border_color <- normalize_border_color(border_color)
 
   if (plot_type == "density") {
     p <- ggplot2::ggplot(dt, ggplot2::aes(x = .data$length_plot, fill = .data[[group_col]])) +
       ggplot2::geom_density(alpha = 0.35, color = border_color, linewidth = 0.6, na.rm = TRUE) +
       ggplot2::labs(x = x_label, y = "Density")
-    return(apply_discrete_fill_scale(p, color_palette = color_palette, fill_colors = fill_colors))
+    return(apply_discrete_fill_scale(p, color_palette = fill_palette, fill_colors = fill_colors))
   }
 
   if (plot_type == "histogram") {
     p <- ggplot2::ggplot(dt, ggplot2::aes(x = .data$length_plot, fill = .data[[group_col]])) +
       ggplot2::geom_histogram(bins = bins, alpha = 0.7, position = "identity", color = border_color, na.rm = TRUE) +
       ggplot2::labs(x = x_label, y = "Count")
-    return(apply_discrete_fill_scale(p, color_palette = color_palette, fill_colors = fill_colors))
+    return(apply_discrete_fill_scale(p, color_palette = fill_palette, fill_colors = fill_colors))
   }
 
   if (plot_type == "boxplot") {
     p <- ggplot2::ggplot(dt, ggplot2::aes(x = .data[[group_col]], y = .data$length_plot, fill = .data[[group_col]])) +
       ggplot2::geom_boxplot(color = border_color, outlier.alpha = 0.25, na.rm = TRUE) +
       ggplot2::labs(x = group_col, y = x_label)
-    return(apply_discrete_fill_scale(p, color_palette = color_palette, fill_colors = fill_colors))
+    return(apply_discrete_fill_scale(p, color_palette = fill_palette, fill_colors = fill_colors))
   }
 
   p <- ggplot2::ggplot(dt, ggplot2::aes(x = .data[[group_col]], y = .data$length_plot, fill = .data[[group_col]])) +
     ggplot2::geom_violin(trim = FALSE, alpha = 0.7, color = border_color, na.rm = TRUE) +
     ggplot2::geom_boxplot(width = 0.12, color = border_color, outlier.alpha = 0.15, na.rm = TRUE) +
     ggplot2::labs(x = group_col, y = x_label)
-  apply_discrete_fill_scale(p, color_palette = color_palette, fill_colors = fill_colors)
+  apply_discrete_fill_scale(p, color_palette = fill_palette, fill_colors = fill_colors)
 }
