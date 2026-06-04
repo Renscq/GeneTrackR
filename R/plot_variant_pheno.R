@@ -122,7 +122,6 @@ plot_variant_pheno <- function(variant,
   if (is.na(strip_label_width) || strip_label_width < 1L) strip_label_width <- 24L
   strip_text_lineheight <- as.numeric(strip_text_lineheight)[1L]
   if (is.na(strip_text_lineheight) || strip_text_lineheight <= 0) strip_text_lineheight <- 0.9
-  strip_text_lineheight <- 0.9
   strip_fill <- as.character(strip_fill)[1L]
   if (is.na(strip_fill) || strip_fill == "") strip_fill <- "white"
   if (is.null(strip_border_color) || length(strip_border_color) == 0L || is.na(strip_border_color[1L]) || strip_border_color[1L] == "") {

@@ -46,7 +46,7 @@ a compact gene track is drawn above the haplotype table.}
 
 \item{min_hap_samples}{Minimum sample number required for a haplotype group to be displayed.}
 
-\item{show_reference_row}{Logical. Whether to add the first table row showing REF/ALT allele strings for each variant.}
+\item{show_reference_row}{Logical. Whether to add two reference rows showing REF and ALT alleles for each variant.}
 
 \item{variant_label}{Column used for variant labels. One of \code{variant_id}, \code{pos}, or an existing column in \code{hap$variants}.}
 
@@ -88,7 +88,7 @@ a compact gene track is drawn above the haplotype table.}
 
 \item{table_alpha}{Alpha value for haplotype table fill colors.}
 
-\item{reference_fill}{Background fill color for the REF/ALT reference row.}
+\item{reference_fill}{Background fill color for the REF and ALT reference rows.}
 
 \item{variant_palette}{RColorBrewer palette name used for variant-type marker fills.}
 

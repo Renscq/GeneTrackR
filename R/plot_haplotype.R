@@ -19,7 +19,7 @@
 #' @param show_gene_model Logical. Whether to draw the gene track when
 #' `annotation` is supplied.
 #' @param min_hap_samples Minimum sample number required for a haplotype group to be displayed.
-#' @param show_reference_row Logical. Whether to add the first table row showing REF/ALT allele strings for each variant.
+#' @param show_reference_row Logical. Whether to add two reference rows showing REF and ALT alleles for each variant.
 #' @param variant_label Column used for variant labels. One of `variant_id`, `pos`, or an existing column in `hap$variants`.
 #' @param show_gene_pos_axis Logical. Whether to show genomic coordinate labels above the gene track.
 #' @param gene_pos_axis_n Approximate number of genomic coordinate ticks above the gene track.
@@ -40,7 +40,7 @@
 #' @param table_palette RColorBrewer palette name used for haplotype table fills.
 #' @param table_colors Optional custom fill colors for haplotype table genotypes.
 #' @param table_alpha Alpha value for haplotype table fill colors.
-#' @param reference_fill Background fill color for the REF/ALT reference row.
+#' @param reference_fill Background fill color for the REF and ALT reference rows.
 #' @param variant_palette RColorBrewer palette name used for variant-type marker fills.
 #' @param variant_colors Optional custom fill colors for variant-type markers.
 #' @return A patchwork object with attributes `plot_data`, `variant_data`, and `gene_data`.
@@ -178,16 +178,37 @@ plot_hap_variant <- function(hap,
   table_long[is.na(genotype_label), "genotype_label" := "NA"]
 
   if (show_reference_row) {
-    ref_row_label <- "REF/ALT"
-    ref_alt <- vars[, .(
+    ref_row_label <- "REF"
+    alt_row_label <- "ALT"
+    ref_row <- vars[, .(
       variant_id,
       variant_index,
       variant_label,
       row_label = ref_row_label,
-      genotype = format_hap_ref_alt(ref, alt),
-      genotype_label = format_hap_ref_alt(ref, alt),
-      ref_label = format_hap_allele(ref),
-      alt_label = vapply(strsplit(as.character(alt), ",", fixed = TRUE), function(x) {
+      genotype = format_hap_allele(ref),
+      genotype_label = format_hap_allele(ref),
+      allele_label = format_hap_allele(ref)
+    )]
+    alt_row <- vars[, .(
+      variant_id,
+      variant_index,
+      variant_label,
+      row_label = alt_row_label,
+      genotype = vapply(strsplit(as.character(alt), ",", fixed = TRUE), function(x) {
+        x <- x[!is.na(x) & nzchar(x)]
+        x <- format_hap_allele(x)
+        x <- x[!is.na(x) & nzchar(x)]
+        if (length(x) == 0L) return("NA")
+        paste(x, collapse = ",")
+      }, character(1L)),
+      genotype_label = vapply(strsplit(as.character(alt), ",", fixed = TRUE), function(x) {
+        x <- x[!is.na(x) & nzchar(x)]
+        x <- format_hap_allele(x)
+        x <- x[!is.na(x) & nzchar(x)]
+        if (length(x) == 0L) return("NA")
+        paste(x, collapse = ",")
+      }, character(1L)),
+      allele_label = vapply(strsplit(as.character(alt), ",", fixed = TRUE), function(x) {
         x <- x[!is.na(x) & nzchar(x)]
         x <- format_hap_allele(x)
         x <- x[!is.na(x) & nzchar(x)]
@@ -195,12 +216,13 @@ plot_hap_variant <- function(hap,
         paste(x, collapse = ",")
       }, character(1L))
     )]
+    ref_alt <- data.table::rbindlist(list(alt_row, ref_row), fill = TRUE)
     for (nm in setdiff(names(table_long), names(ref_alt))) {
       ref_alt[, (nm) := NA]
     }
     data.table::setcolorder(ref_alt, names(table_long))
     table_long <- data.table::rbindlist(list(table_long, ref_alt), fill = TRUE)
-    row_levels <- c(row_levels, ref_row_label)
+    row_levels <- c(row_levels, alt_row_label, ref_row_label)
   }
 
   table_long[, "hap_y" := match(row_label, row_levels)]
@@ -259,8 +281,11 @@ plot_hap_variant <- function(hap,
   table_genotype <- table_long
   table_reference <- table_long[0]
   if (isTRUE(show_reference_row)) {
-    table_reference <- table_long[row_label == "REF/ALT"]
-    table_genotype <- table_long[row_label != "REF/ALT"]
+    table_reference <- table_long[row_label %in% c("REF", "ALT")]
+    table_genotype <- table_long[!row_label %in% c("REF", "ALT")]
+  }
+  if (!"allele_label" %in% names(table_reference)) {
+    table_reference[, "allele_label" := character()]
   }
 
   p_table <- ggplot2::ggplot() +
@@ -289,14 +314,7 @@ plot_hap_variant <- function(hap,
     ) +
     ggplot2::geom_text(
       data = table_reference,
-      ggplot2::aes(x = .data$variant_index, y = .data$hap_y + 0.18, label = .data$ref_label),
-      size = genotype_text_size * 0.95,
-      color = "black",
-      vjust = 0.5
-    ) +
-    ggplot2::geom_text(
-      data = table_reference,
-      ggplot2::aes(x = .data$variant_index, y = .data$hap_y - 0.18, label = .data$alt_label),
+      ggplot2::aes(x = .data$variant_index, y = .data$hap_y, label = .data$allele_label),
       size = genotype_text_size * 0.95,
       color = "black",
       vjust = 0.5
@@ -901,6 +919,7 @@ make_hap_variant_fill_scale <- function(gene_features,
 #' @param show_points Logical. Whether to show sample points.
 #' @param x_text_angle Rotation angle for haplotype labels on the x-axis.
 #' @param strip_label_width Maximum character width for wrapping long facet strip labels.
+#' @param strip_text_lineheight Line height for wrapped facet strip labels.
 #' @param show_outliers Logical. Whether to show boxplot outliers.
 #' @param fill_palette RColorBrewer palette name used for median-based haplotype fills.
 #' @param fill_colors Optional custom fill colors for haplotypes.
@@ -946,6 +965,7 @@ plot_hap_pheno <- function(hap,
                            bracket_tip_fraction = 0.12,
                            x_text_angle = 90,
                            strip_label_width = 24,
+                           strip_text_lineheight = 0.9,
                            strip_fill = "white",
                            strip_border_color = NULL,
                            text_size = 14) {
@@ -970,7 +990,6 @@ plot_hap_pheno <- function(hap,
   if (is.na(strip_label_width) || strip_label_width < 1L) strip_label_width <- 24L
   strip_text_lineheight <- as.numeric(strip_text_lineheight)[1L]
   if (is.na(strip_text_lineheight) || strip_text_lineheight <= 0) strip_text_lineheight <- 0.9
-  strip_text_lineheight <- 0.9
   strip_fill <- as.character(strip_fill)[1L]
   if (is.na(strip_fill) || strip_fill == "") strip_fill <- "white"
   if (is.null(strip_border_color) || length(strip_border_color) == 0L || is.na(strip_border_color[1L]) || strip_border_color[1L] == "") {
