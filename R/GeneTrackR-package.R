@@ -41,6 +41,7 @@ utils::globalVariables(c(
   "bed_start", "bed_end", "attribute", "phase", "pos", "variant_id",
   "variant_type", "ref", "alt", "qual", "filter", "info", "fill_group",
   "track_source", "label", "ymin", "ymax", "gene_name", "Parent", "Name", "ID",
+  "variant_index", "variant_label", "pair_id", "index_i", "index_j", "variant_i", "variant_j", "distance_bp", "n_samples", "D", "Dprime", "Dprime_signed", "p_i", "p_j", "center_x", "center_y", "region_x", "genotype_raw", "dosage", "xend", "xmin", "xmax",
   "level", "parent_id", "source", "gene_biotype", "transcript_biotype",
   "transcript_type", "fill_group", "rank_pos", "exon_row_key", "strand_key", "phase_int", "cds_start", "cds_end", "tabix_empty_fallback", "tabix_backend", "use_tabix", "has_tabix"
 ))

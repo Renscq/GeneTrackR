@@ -604,6 +604,7 @@ draw_hap_gene_track <- function(gene_data,
     )
   }
 
+  seg[, "feature" := normalize_gene_model_feature(seg[["feature"]])]
   seg[, "feature_width" := ifelse(as.character(feature) == "CDS", cds_height, exon_height)]
   seg[, "ymin" := as.numeric(track_y) - as.numeric(feature_width) / 2]
   seg[, "ymax" := as.numeric(track_y) + as.numeric(feature_width) / 2]
@@ -860,17 +861,17 @@ make_hap_variant_fill_scale <- function(gene_features,
                                         gene_colors = NULL,
                                         variant_palette = "Set2",
                                         variant_colors = NULL) {
-  gene_features <- unique(as.character(gene_features))
+  gene_features <- unique(normalize_gene_model_feature(gene_features))
   gene_features <- gene_features[!is.na(gene_features) & gene_features != ""]
   variant_types <- unique(as.character(variant_types))
   variant_types <- variant_types[!is.na(variant_types) & variant_types != ""]
 
-  gene_cols <- normalize_discrete_fill_colors(
-    n = length(gene_features),
+  gene_cols <- make_gene_model_fill_colors(
     color_palette = gene_palette,
-    fill_colors = gene_colors
+    gene_colors = gene_colors,
+    features = gene_features
   )
-  names(gene_cols) <- gene_features
+  gene_cols <- gene_cols[intersect(names(gene_cols), unique(c(gene_model_feature_levels(), gene_features)))]
 
   if (!is.null(variant_colors)) {
     variant_colors <- as.character(variant_colors)

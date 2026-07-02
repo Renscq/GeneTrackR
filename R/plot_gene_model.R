@@ -15,7 +15,7 @@
 #' @param utr_height Vertical thickness of UTR/non-coding exon rectangles.
 #' @param highlight Optional data frame used to shade genomic or transcript intervals. It must contain `start` and `end` columns. Optional columns such as `label` or `group` are allowed but are not required. In `coordinate = "genomic"`, `start` and `end` are genomic positions; in `coordinate = "transcript"`, they are spliced transcript coordinates.
 #' @param gene_palette RColorBrewer palette name used for discrete fills. If the number of discrete groups exceeds the palette maximum, colors are automatically interpolated.
-#' @param gene_colors Optional custom fill colors for gene model features. Use a named vector such as `c(CDS = "#33a02c", UTR = "#b2df8a", exon = "#fb9a99")` to map colors explicitly. Unnamed colors are matched to the observed feature levels in plotting order and are automatically extended when needed.
+#' @param gene_colors Optional custom fill colors for gene model features. Use a named vector such as `c(CDS = "#33a02c", UTR = "#b2df8a", exon = "#fb9a99")` to map colors explicitly. Unnamed colors are matched to the fixed gene-model levels `CDS`, `UTR`, and `exon`, so colors remain stable even when only one feature type is present.
 #' @param gene_border_color Optional rectangle border color. Use `NA` to hide borders, or a color such as `"black"` or `"grey30"` to draw feature outlines.
 #' @param label_position Where to draw feature labels. `axis` draws labels on the y axis and `feature` draws labels at the center of each gene/transcript structure.
 #' @param label_by Which identifier to use for feature labels. Use `gene` for gene IDs or `transcript` for transcript IDs.
@@ -87,7 +87,7 @@ plot_transcript <- function(object, transcript_id, coordinate = c("transcript", 
 #' @param utr_height Vertical thickness of UTR/non-coding exon rectangles.
 #' @param highlight Optional data frame used to shade genomic or transcript intervals. It must contain `start` and `end` columns. Optional columns such as `label` or `group` are allowed but are not required. In `coordinate = "genomic"`, `start` and `end` are genomic positions; in `coordinate = "transcript"`, they are spliced transcript coordinates.
 #' @param gene_palette RColorBrewer palette name used for discrete fills. If the number of discrete groups exceeds the palette maximum, colors are automatically interpolated.
-#' @param gene_colors Optional custom fill colors for gene model features. Use a named vector such as `c(CDS = "#33a02c", UTR = "#b2df8a", exon = "#fb9a99")` to map colors explicitly. Unnamed colors are matched to the observed feature levels in plotting order and are automatically extended when needed.
+#' @param gene_colors Optional custom fill colors for gene model features. Use a named vector such as `c(CDS = "#33a02c", UTR = "#b2df8a", exon = "#fb9a99")` to map colors explicitly. Unnamed colors are matched to the fixed gene-model levels `CDS`, `UTR`, and `exon`, so colors remain stable even when only one feature type is present.
 #' @param gene_border_color Optional rectangle border color. Use `NA` to hide borders, or a color such as `"black"` or `"grey30"` to draw feature outlines.
 #' @param label_position Where to draw feature labels. `axis` draws labels on the y axis and `feature` draws labels at the center of each gene/transcript structure.
 #' @param label_by Which identifier to use for feature labels. Use `gene` for gene IDs or `transcript` for transcript IDs.
@@ -165,7 +165,7 @@ plot_gene <- function(object, gene_id, collapse = c("none", "union_exon", "longe
 #' @param utr_height Vertical thickness of UTR/non-coding exon rectangles.
 #' @param highlight Optional data frame used to shade genomic or transcript intervals. It must contain `start` and `end` columns. Optional columns such as `label` or `group` are allowed but are not required. In `coordinate = "genomic"`, `start` and `end` are genomic positions; in `coordinate = "transcript"`, they are spliced transcript coordinates.
 #' @param gene_palette RColorBrewer palette name used for discrete fills. If the number of discrete groups exceeds the palette maximum, colors are automatically interpolated.
-#' @param gene_colors Optional custom fill colors for gene model features. Use a named vector such as `c(CDS = "#33a02c", UTR = "#b2df8a", exon = "#fb9a99")` to map colors explicitly. Unnamed colors are matched to the observed feature levels in plotting order and are automatically extended when needed.
+#' @param gene_colors Optional custom fill colors for gene model features. Use a named vector such as `c(CDS = "#33a02c", UTR = "#b2df8a", exon = "#fb9a99")` to map colors explicitly. Unnamed colors are matched to the fixed gene-model levels `CDS`, `UTR`, and `exon`, so colors remain stable even when only one feature type is present.
 #' @param gene_border_color Optional rectangle border color. Use `NA` to hide borders, or a color such as `"black"` or `"grey30"` to draw feature outlines.
 #' @param label_position Where to draw feature labels. `axis` draws labels on the y axis and `feature` draws labels at the center of each gene/transcript structure.
 #' @param label_by Which identifier to use for feature labels. Use `gene` for gene IDs or `transcript` for transcript IDs.
@@ -327,6 +327,14 @@ plot_gene_model_core <- function(tx, exons, coordinate = c("genomic", "transcrip
     )
   }
 
+  seg[, "feature" := normalize_gene_model_feature(seg[["feature"]])]
+  gene_feature_levels <- names(make_gene_model_fill_colors(
+    color_palette = gene_palette,
+    gene_colors = gene_colors,
+    features = seg[["feature"]]
+  ))
+  seg[, "feature" := factor(as.character(seg[["feature"]]), levels = gene_feature_levels)]
+
   seg[, "feature_width" := ifelse(as.character(seg[["feature"]]) == "CDS", cds_height, utr_height)]
   if (!show_cds) {
     seg[, "feature_width" := cds_height]
@@ -376,7 +384,12 @@ plot_gene_model_core <- function(tx, exons, coordinate = c("genomic", "transcrip
     "Genomic coordinate (bp)"
   }
 
-  p <- apply_discrete_fill_scale(p, color_palette = gene_palette, fill_colors = gene_colors) +
+  p <- apply_gene_model_fill_scale(
+    p,
+    color_palette = gene_palette,
+    gene_colors = gene_colors,
+    features = seg[["feature"]]
+  ) +
     ggplot2::scale_y_continuous(
       breaks = y_breaks,
       labels = y_labels,

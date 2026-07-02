@@ -226,6 +226,120 @@ normalize_discrete_fill_colors <- function(n, color_palette = "Paired", fill_col
   grDevices::colorRampPalette(fill_colors)(n)
 }
 
+
+# Stable gene-model feature levels used by plot_gene(), plot_transcript(),
+# plot_region(), and haplotype/LD gene tracks. Keeping these levels fixed avoids
+# color shifts when a plot contains only CDS, only UTR, or only exon segments.
+gene_model_feature_levels <- function() {
+  c("CDS", "UTR", "exon")
+}
+
+normalize_gene_model_feature <- function(feature) {
+  x <- as.character(feature)
+  xl <- tolower(x)
+  out <- x
+  out[xl %in% c("cds")] <- "CDS"
+  out[xl %in% c(
+    "utr", "five_prime_utr", "three_prime_utr", "5utr", "3utr",
+    "five_utr", "three_utr", "5'utr", "3'utr", "five prime utr",
+    "three prime utr", "five-prime-utr", "three-prime-utr"
+  )] <- "UTR"
+  out[xl %in% c("exon")] <- "exon"
+  out
+}
+
+make_gene_model_fill_colors <- function(color_palette = "Paired", gene_colors = NULL, features = NULL) {
+  canonical <- gene_model_feature_levels()
+  feature_values <- normalize_gene_model_feature(features %||% canonical)
+  feature_values <- unique(as.character(feature_values))
+  feature_values <- feature_values[!is.na(feature_values) & nzchar(feature_values)]
+  all_levels <- unique(c(canonical, feature_values))
+
+  default_cols <- normalize_discrete_fill_colors(
+    n = length(canonical),
+    color_palette = color_palette,
+    fill_colors = NULL
+  )
+  names(default_cols) <- canonical
+
+  if (length(all_levels) > length(canonical)) {
+    extra_levels <- setdiff(all_levels, canonical)
+    full_cols <- normalize_discrete_fill_colors(
+      n = length(all_levels),
+      color_palette = color_palette,
+      fill_colors = NULL
+    )
+    extra_cols <- full_cols[(length(canonical) + 1L):length(all_levels)]
+    names(extra_cols) <- extra_levels
+    default_cols <- c(default_cols, extra_cols)
+  }
+
+  if (is.null(gene_colors)) {
+    return(default_cols[all_levels])
+  }
+
+  gene_colors <- as.character(gene_colors)
+  gene_colors <- gene_colors[!is.na(gene_colors) & nzchar(gene_colors)]
+  if (length(gene_colors) == 0L) {
+    return(default_cols[all_levels])
+  }
+
+  color_names <- names(gene_colors)
+  if (!is.null(color_names) && any(nzchar(color_names))) {
+    color_names <- normalize_gene_model_feature(color_names)
+    names(gene_colors) <- color_names
+    named_colors <- gene_colors[nzchar(names(gene_colors))]
+    # If aliases such as five_prime_UTR and three_prime_UTR are both supplied,
+    # keep the first explicit color after normalization to the shared UTR level.
+    named_colors <- named_colors[!duplicated(names(named_colors))]
+    out <- default_cols
+    common <- intersect(names(named_colors), names(out))
+    out[common] <- named_colors[common]
+    extra_named <- named_colors[setdiff(names(named_colors), names(out))]
+    if (length(extra_named) > 0L) {
+      out <- c(out, extra_named)
+    }
+    return(out[unique(c(all_levels, intersect(names(out), names(named_colors))))])
+  }
+
+  unnamed_cols <- normalize_discrete_fill_colors(
+    n = length(canonical),
+    color_palette = color_palette,
+    fill_colors = gene_colors
+  )
+  names(unnamed_cols) <- canonical
+  out <- default_cols
+  out[canonical] <- unnamed_cols[canonical]
+  out[all_levels]
+}
+
+apply_gene_model_fill_scale <- function(p,
+                                        color_palette = "Paired",
+                                        gene_colors = NULL,
+                                        features = NULL,
+                                        drop = TRUE) {
+  colors <- make_gene_model_fill_colors(
+    color_palette = color_palette,
+    gene_colors = gene_colors,
+    features = features
+  )
+  observed <- normalize_gene_model_feature(features %||% names(colors))
+  observed <- unique(as.character(observed))
+  observed <- observed[!is.na(observed) & nzchar(observed)]
+  breaks <- intersect(names(colors), observed)
+  if (length(breaks) == 0L) {
+    breaks <- intersect(names(colors), gene_model_feature_levels())
+  }
+
+  p + ggplot2::scale_fill_manual(
+    values = colors,
+    limits = names(colors),
+    breaks = breaks,
+    drop = drop,
+    na.value = "grey80"
+  )
+}
+
 apply_discrete_fill_scale <- function(p, color_palette = "Paired", fill_colors = NULL) {
   if (!is.null(fill_colors)) {
     fill_colors <- as.character(fill_colors)
