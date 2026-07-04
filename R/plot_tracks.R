@@ -31,7 +31,7 @@
 #' @param signal_palette_direction Direction for the signal palette. Use `1` for the default order and `-1` to reverse the palette.
 #' @param signal_colors Optional named or unnamed vector of colors for signal samples.
 #' @param gene_palette RColorBrewer palette name used for gene model feature fills.
-#' @param gene_colors Optional custom fill colors for gene model features. Use a named vector such as `c(CDS = "#33a02c", UTR = "#b2df8a", exon = "#fb9a99")`.
+#' @param gene_colors Optional custom fill colors for gene model features. Use a named vector such as `c(UTR = "#b2df8a", CDS = "#33a02c", exon = "#fb9a99")`.
 #' @param gene_border_color Optional rectangle border color for gene model features. Use `NA` to hide borders.
 #' @param signal_transform Signal-axis transformation. Use `none`, `log2`, `log10`, or `sqrt`.
 #' @param signal_y_scale Signal y-axis scale mode. Use `free` for independent sample-specific y-axis ranges or `fixed` for a shared y-axis range across samples.

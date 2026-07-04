@@ -385,8 +385,8 @@ plot_refined_hap_pheno <- function(refined_hap,
 #' @param table_colors Optional custom fill colors for haplotype table genotypes.
 #' @param table_alpha Alpha value for haplotype table fill colors.
 #' @param reference_fill Background fill color for the REF and ALT reference rows.
-#' @param variant_palette RColorBrewer palette name used for variant-type marker fills.
-#' @param variant_colors Optional custom fill colors for variant-type markers.
+#' @param variant_palette RColorBrewer palette name used for solid variant-type triangle marker colors.
+#' @param variant_colors Optional custom colors for solid variant-type triangle markers.
 #' @return A patchwork object with attributes `plot_data`, `variant_data`,
 #' `gene_data`, `refined_haplotype_map`, and `refined_haplotypes` when available.
 #' @examples
@@ -433,7 +433,7 @@ plot_refined_hap_variant <- function(refined_hap,
                                      table_colors = NULL,
                                      table_alpha = 0.6,
                                      reference_fill = "white",
-                                     variant_palette = "Set2",
+                                     variant_palette = "Set1",
                                      variant_colors = NULL) {
   if (!inherits(refined_hap, "HapRefined") || isTRUE(collapse_refined)) {
     hap_obj <- get_refined_hap_variant(refined_hap)

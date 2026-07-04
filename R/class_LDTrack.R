@@ -10,7 +10,7 @@
 #' @description
 #' `LDTrack()` stores pairwise linkage disequilibrium results, retained variant
 #' metadata, the selected genomic region, and optionally the dosage matrix and
-#' the generated plot. It follows the same lightweight S3 list-class style used
+#' the generated figure. It follows the same lightweight S3 list-class style used
 #' by `VariantTrack` and `HapVariant`.
 #'
 #' @param data A data.frame/data.table of pairwise LD statistics.
@@ -18,8 +18,10 @@
 #' @param variants Variant metadata used in the calculation.
 #' @param region A list with `chrom`, `start`, and `end`.
 #' @param genotype Optional numeric genotype dosage matrix.
-#' @param plot Optional plot object produced by `plot_ld_block()`.
+#' @param figure Optional figure object produced by `plot_ld_block()`.
 #' @param meta A metadata list.
+#' @param plot Deprecated alias for `figure`, kept only for compatibility with
+#' older development versions.
 #' @return An LDTrack object.
 #' @export
 LDTrack <- function(data = NULL,
@@ -27,8 +29,13 @@ LDTrack <- function(data = NULL,
                     variants = NULL,
                     region = list(),
                     genotype = NULL,
-                    plot = NULL,
-                    meta = list()) {
+                    figure = NULL,
+                    meta = list(),
+                    plot = NULL) {
+  if (!is.null(plot) && is.null(figure)) {
+    figure <- plot
+  }
+
   ld_data <- if (is.null(data)) data.table::data.table() else data.table::as.data.table(data)
   var_data <- if (is.null(variants)) data.table::data.table() else data.table::as.data.table(variants)
 
@@ -49,7 +56,7 @@ LDTrack <- function(data = NULL,
       variants = var_data[],
       region = region,
       genotype = genotype,
-      plot = plot,
+      figure = figure,
       meta = meta
     ),
     class = "LDTrack"
@@ -67,5 +74,6 @@ print.LDTrack <- function(x, ...) {
   cat("  variants  : ", format(nrow(x$variants), big.mark = ","), "\n", sep = "")
   cat("  pairs     : ", format(nrow(x$data), big.mark = ","), "\n", sep = "")
   cat("  samples   : ", format(x$meta$sample_n %||% 0L, big.mark = ","), "\n", sep = "")
+  cat("  figure    : ", if (!is.null(x$figure)) "yes" else "no", "\n", sep = "")
   invisible(x)
 }

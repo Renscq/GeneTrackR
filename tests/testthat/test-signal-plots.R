@@ -55,3 +55,26 @@ test_that("signal plotting supports sample groups and summaries", {
   )
   expect_true(inherits(p, "patchwork"))
 })
+
+test_that("gene model feature colors are stable across observed feature subsets", {
+  utr_only <- make_gene_model_fill_colors(features = "UTR")
+  cds_utr <- make_gene_model_fill_colors(features = c("CDS", "UTR"))
+  exon_only <- make_gene_model_fill_colors(features = "exon")
+
+  expect_identical(gene_model_feature_levels(), c("UTR", "CDS", "exon"))
+  expect_true(all(c("UTR", "CDS", "exon") %in% names(utr_only)))
+  expect_identical(names(utr_only)[seq_along(gene_model_feature_levels())], gene_model_feature_levels())
+  expect_identical(unname(utr_only["UTR"]), unname(cds_utr["UTR"]))
+  expect_identical(unname(exon_only["exon"]), unname(cds_utr["exon"]))
+
+  alias_cols <- make_gene_model_fill_colors(features = c("five_prime_UTR", "three_prime_UTR"))
+  expect_true("UTR" %in% names(alias_cols))
+})
+
+
+test_that("variant marker colors are stable and ordered", {
+  cols <- make_variant_marker_fill_colors(variant_types = c("DEL", "SNP"))
+  expect_identical(variant_marker_levels(), c("SNP", "Ind", "..."))
+  expect_true(all(c("SNP", "Ind", "...") %in% names(cols)))
+  expect_identical(normalize_variant_marker_type(c("SNP", "INS", "unknown")), c("SNP", "Ind", "..."))
+})

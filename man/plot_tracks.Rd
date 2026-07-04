@@ -82,7 +82,7 @@ plot_tracks(
 
 \item{gene_palette}{RColorBrewer palette name used for gene model feature fills.}
 
-\item{gene_colors}{Optional custom fill colors for gene model features. Use a named vector such as \code{c(CDS = "#33a02c", UTR = "#b2df8a", exon = "#fb9a99")}.}
+\item{gene_colors}{Optional custom fill colors for gene model features. Use a named vector such as \code{c(UTR = "#b2df8a", CDS = "#33a02c", exon = "#fb9a99")}.}
 
 \item{gene_border_color}{Optional rectangle border color for gene model features. Use \code{NA} to hide borders.}
 

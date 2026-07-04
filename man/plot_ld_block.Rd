@@ -17,6 +17,8 @@ plot_ld_block(
   label_by = c("pos", "variant_id"),
   show_variant_labels = TRUE,
   show_region = FALSE,
+  show_variant_marker = TRUE,
+  variant_marker_size = 2.8,
   annotation = NULL,
   connect_region = TRUE,
   region_height = 1.25,
@@ -26,7 +28,7 @@ plot_ld_block(
   min_pair_samples = 3L,
   ploidy = 2L,
   verbose = TRUE,
-  return_object = FALSE
+  return_object = TRUE
 )
 }
 \arguments{
@@ -52,6 +54,10 @@ column in \code{LDTrack$variants}.}
 \item{show_region}{Logical. Whether to add a compact region/variant track
 above the LD heatmap.}
 
+\item{show_variant_marker}{Logical. Whether to draw natural-variant triangle markers in the region track.}
+
+\item{variant_marker_size}{Size of natural-variant triangle markers. Set to 0 to hide markers.}
+
 \item{annotation}{Optional gene annotation used by the compact region track.}
 
 \item{connect_region}{Logical. Whether to connect region-track variant
@@ -67,17 +73,22 @@ from the number of variants.}
 \item{samples, min_pair_samples, ploidy, verbose}{Passed to \code{compute_ld_block()}
 when \code{object} is not already an \code{LDTrack}.}
 
-\item{return_object}{Logical. If TRUE, return an updated \code{LDTrack} containing
-the plot in \verb{$plot}; otherwise return the plot.}
+\item{return_object}{Logical. Default TRUE. If TRUE, return an updated
+\code{LDTrack} containing the figure in \verb{$figure}; if FALSE, return the figure
+directly for compatibility with older scripts.}
 }
 \value{
-A ggplot/patchwork plot, or an updated \code{LDTrack} when \code{return_object = TRUE}.
+By default, an updated \code{LDTrack} object with the generated figure
+stored in \verb{$figure}. If \code{return_object = FALSE}, the ggplot/patchwork figure
+is returned directly.
 }
 \description{
 Draws an inverted triangular LD heatmap using ggplot2. Interior grid lines are
 suppressed; only the outside triangular frame is drawn. The function accepts
 either an \code{LDTrack} object or a \code{VariantTrack}/VCF path, in which case LD is
-computed first by \code{compute_ld_block()}. When \code{show_region = TRUE}, the region
+computed first by \code{compute_ld_block()}. The default return value is an
+updated \code{LDTrack} object: LD calculation results remain in the object and the
+generated plot is stored in \code{LDTrack$figure}. When \code{show_region = TRUE}, the region
 track follows the compact gene-model style used by \code{plot_hap_variant()} in
 GeneTrackR 0.3.15 and connects genomic variant markers to LD heatmap columns
 with a shared x scale, so line endpoints remain aligned after resizing.

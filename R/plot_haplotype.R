@@ -41,8 +41,11 @@
 #' @param table_colors Optional custom fill colors for haplotype table genotypes.
 #' @param table_alpha Alpha value for haplotype table fill colors.
 #' @param reference_fill Background fill color for the REF and ALT reference rows.
-#' @param variant_palette RColorBrewer palette name used for variant-type marker fills.
-#' @param variant_colors Optional custom fill colors for variant-type markers.
+#' @param variant_palette RColorBrewer palette name used for solid variant-type triangle marker colors.
+#' @param variant_colors Optional custom colors for solid variant-type triangle markers.
+#' @param variant_alpha Alpha value for solid variant-type triangle marker colors.
+#' @param show_variant_marker Logical. Whether to draw natural-variant triangle markers.
+#' @param variant_marker_size Size of natural-variant triangle markers. Set to 0 to hide markers.
 #' @return A patchwork object with attributes `plot_data`, `variant_data`, and `gene_data`.
 #' @examples
 #' vcf_file <- system.file("extdata", "example_haplotype.vcf", package = "GeneTrackR")
@@ -85,8 +88,11 @@ plot_hap_variant <- function(hap,
                              table_colors = NULL,
                              table_alpha = 0.6,
                              reference_fill = "white",
-                             variant_palette = "Set2",
-                             variant_colors = NULL) {
+                             variant_palette = "Set1",
+                             variant_colors = NULL,
+                             variant_alpha = 0.6,
+                             show_variant_marker = TRUE,
+                             variant_marker_size = 2.8) {
   stop_if_not(inherits(hap, "HapVariant"), "`hap` must be a HapVariant object.")
 
   vars <- data.table::as.data.table(hap$variants)
@@ -114,6 +120,21 @@ plot_hap_variant <- function(hap,
   reference_fill <- as.character(reference_fill)[1L]
   if (is.na(reference_fill) || reference_fill == "") {
     reference_fill <- "white"
+  }
+  variant_alpha <- as.numeric(variant_alpha)[1L]
+  if (is.na(variant_alpha)) variant_alpha <- 0.6
+  variant_alpha <- max(0, min(1, variant_alpha))
+  show_variant_marker <- isTRUE(show_variant_marker)
+  variant_marker_size <- as.numeric(variant_marker_size)[1L]
+  if (is.na(variant_marker_size)) variant_marker_size <- 2.8
+  if (variant_marker_size <= 0) {
+    show_variant_marker <- FALSE
+    variant_marker_size <- 0
+  }
+  if (!"variant_type" %in% names(vars)) {
+    vars[, "variant_type_label" := "..."]
+  } else {
+    vars[, "variant_type_label" := normalize_variant_marker_type(variant_type)]
   }
 
   haps <- haps[sample_n >= min_hap_samples]
@@ -256,6 +277,9 @@ plot_hap_variant <- function(hap,
         gene_border_color = gene_border_color,
         variant_palette = variant_palette,
         variant_colors = variant_colors,
+        variant_alpha = variant_alpha,
+        show_variant_marker = show_variant_marker,
+        variant_marker_size = variant_marker_size,
         gene_track_legend_position = gene_track_legend_position,
         show_gene_pos_axis = show_gene_pos_axis,
         gene_pos_axis_n = gene_pos_axis_n,
@@ -367,8 +391,25 @@ plot_hap_variant <- function(hap,
       heights = c(gene_track_height, connector_height, table_height)
     )
   } else {
-    p_variant <- ggplot2::ggplot(vars, ggplot2::aes(x = .data$gene_x, y = 1)) +
-      ggplot2::geom_point(size = 2.4) +
+    p_variant <- ggplot2::ggplot(vars, ggplot2::aes(x = .data$gene_x, y = 1))
+    if (isTRUE(show_variant_marker)) {
+      p_variant <- p_variant +
+        ggplot2::geom_point(
+          ggplot2::aes(color = .data$variant_type_label),
+          size = variant_marker_size,
+          shape = 17
+        )
+      p_variant <- apply_variant_marker_color_scale(
+        p_variant,
+        variant_types = vars$variant_type_label,
+        variant_palette = variant_palette,
+        variant_colors = variant_colors,
+        alpha = variant_alpha,
+        name = "Variant type",
+        drop = FALSE
+      )
+    }
+    p_variant <- p_variant +
       ggplot2::geom_text(
         ggplot2::aes(label = .data$variant_label),
         angle = 45,
@@ -379,10 +420,11 @@ plot_hap_variant <- function(hap,
       ) +
       ggplot2::scale_x_continuous(breaks = x_breaks, labels = x_labels, limits = x_limits, expand = c(0, 0)) +
       ggplot2::scale_y_continuous(limits = c(0.7, 1.45), expand = c(0, 0)) +
-      ggplot2::labs(x = x_axis_title, y = NULL) +
+      ggplot2::labs(x = NULL, y = NULL) +
       ggplot2::theme_void() +
       ggplot2::theme(
         text = ggplot2::element_text(color = "black"),
+        legend.position = "none",
         plot.margin = ggplot2::margin(8, 12, 0, 8)
       )
     p <- patchwork::wrap_plots(
@@ -481,8 +523,9 @@ prepare_hap_gene_track <- function(annotation, hap, vars, mapper) {
     return(NULL)
   }
 
-  data.table::setorderv(tx, c("gene_id", "tx_start", "tx_end", "transcript_id"))
-  tx[, "track_y" := seq_len(.N)]
+  tx[, ".tx_span" := pmax(1L, as.integer(tx[["tx_end"]]) - as.integer(tx[["tx_start"]]) + 1L)]
+  data.table::setorderv(tx, c("gene_id", ".tx_span", "tx_start", "tx_end", "transcript_id"))
+  tx[, "track_y" := rev(seq_len(.N))]
   tx[, "tx_xstart" := mapper(pmax(as.integer(tx_start), query_start))]
   tx[, "tx_xend" := mapper(pmin(as.integer(tx_end), query_end))]
 
@@ -563,8 +606,11 @@ draw_hap_gene_track <- function(gene_data,
                                 gene_palette = "Paired",
                                 gene_colors = NULL,
                                 gene_border_color = NA,
-                                variant_palette = "Set2",
+                                variant_palette = "Set1",
                                 variant_colors = NULL,
+                                variant_alpha = 0.6,
+                                show_variant_marker = TRUE,
+                                variant_marker_size = 2.8,
                                 gene_track_legend_position = c("right", "top", "none"),
                                 show_gene_pos_axis = TRUE,
                                 gene_pos_axis_n = 5L,
@@ -585,6 +631,13 @@ draw_hap_gene_track <- function(gene_data,
   if (is.na(gene_pos_x_angle)) gene_pos_x_angle <- 0
   gene_pos_x_angle <- max(0, min(180, gene_pos_x_angle))
   gene_track_legend_position <- match.arg(gene_track_legend_position)
+  show_variant_marker <- isTRUE(show_variant_marker)
+  variant_marker_size <- as.numeric(variant_marker_size)[1L]
+  if (is.na(variant_marker_size)) variant_marker_size <- 2.8
+  if (variant_marker_size <= 0) {
+    show_variant_marker <- FALSE
+    variant_marker_size <- 0
+  }
   axis_breaks <- gene_data$axis_breaks
   if (isTRUE(show_gene_pos_axis) && !is.null(gene_data$region)) {
     axis_breaks <- make_hap_gene_position_breaks(
@@ -653,9 +706,9 @@ draw_hap_gene_track <- function(gene_data,
     gene_palette = gene_palette,
     gene_colors = gene_colors,
     variant_palette = variant_palette,
-    variant_colors = variant_colors
+    variant_colors = variant_colors,
+    variant_alpha = variant_alpha
   )
-
   p <- ggplot2::ggplot() +
     ggplot2::geom_segment(
       data = tx,
@@ -681,19 +734,42 @@ draw_hap_gene_track <- function(gene_data,
       linewidth = 0.35,
       color = "grey35",
       lineend = "butt"
-    ) +
-    ggplot2::geom_point(
-      data = vars,
-      ggplot2::aes(x = .data$gene_x, y = .data$marker_y, fill = .data$variant_type_label),
-      size = 2.8,
-      shape = 24,
-      color = "black"
-    ) +
+    )
+  if (isTRUE(show_variant_marker)) {
+    p <- p +
+      ggplot2::geom_point(
+        data = vars,
+        ggplot2::aes(
+          x = .data$gene_x,
+          y = .data$marker_y,
+          color = .data$variant_type_label
+        ),
+        size = variant_marker_size,
+        shape = 17
+      )
+  }
+  p <- p +
     ggplot2::scale_fill_manual(
       values = fill_scale$colors,
       breaks = fill_scale$variant_breaks,
       name = "Variant type",
       drop = FALSE
+    ) +
+    ggplot2::scale_color_manual(
+      values = fill_scale$variant_colors,
+      breaks = fill_scale$variant_breaks,
+      name = "Variant type",
+      drop = FALSE
+    ) +
+    ggplot2::guides(
+      fill = "none",
+      color = ggplot2::guide_legend(
+        override.aes = list(
+          shape = 17,
+          color = unname(fill_scale$variant_colors[fill_scale$variant_breaks]),
+          alpha = 1
+        )
+      )
     ) +
     ggplot2::scale_x_continuous(
       breaks = x_axis_breaks,
@@ -768,36 +844,23 @@ assign_variant_gene_track_y <- function(vars,
                                         cds_height = 0.44,
                                         marker_offset = 0.12) {
   if (!"variant_type" %in% names(vars)) {
-    vars[, "variant_type_label" := "variant"]
+    vars[, "variant_type_label" := "..."]
   } else {
-    vars[, "variant_type_label" := as.character(variant_type)]
-    vars[is.na(variant_type_label) | variant_type_label == "", "variant_type_label" := "variant"]
+    vars[, "variant_type_label" := normalize_variant_marker_type(variant_type)]
   }
 
-  vars[, "marker_track_y" := NA_real_]
-  vars[, "gene_model_top_y" := NA_real_]
-  vars[, "gene_model_bottom_y" := NA_real_]
+  # Variant markers should be aligned on one baseline. Earlier versions attached
+  # each marker to the transcript that covered that variant, which made marker
+  # and connector positions jump up and down when a gene had multiple isoforms.
+  # Use the bottom-most transcript track as the common anchor for all variants.
+  bottom_track_y <- suppressWarnings(min(as.numeric(tx[["track_y"]]), na.rm = TRUE))
+  if (!is.finite(bottom_track_y)) bottom_track_y <- 1
+  bottom_model_y <- bottom_track_y - cds_height / 2
 
-  tx_start_col <- if ("tx_start" %in% names(tx)) "tx_start" else "start"
-  tx_end_col <- if ("tx_end" %in% names(tx)) "tx_end" else "end"
-
-  for (i in seq_len(nrow(vars))) {
-    pos_i <- suppressWarnings(as.integer(vars[["pos"]][i]))
-    hit <- tx[as.integer(get(tx_start_col)) <= pos_i & as.integer(get(tx_end_col)) >= pos_i]
-    if (nrow(hit) == 0L) {
-      dist <- pmin(
-        abs(pos_i - as.integer(tx[[tx_start_col]])),
-        abs(pos_i - as.integer(tx[[tx_end_col]]))
-      )
-      hit <- tx[which.min(dist)]
-    }
-    y_i <- as.numeric(hit[["track_y"]][1L])
-    data.table::set(vars, i = i, j = "marker_track_y", value = y_i)
-    data.table::set(vars, i = i, j = "gene_model_top_y", value = y_i + cds_height / 2)
-    data.table::set(vars, i = i, j = "gene_model_bottom_y", value = y_i - cds_height / 2)
-  }
-
-  vars[, "marker_y" := gene_model_bottom_y - marker_offset]
+  vars[, "marker_track_y" := bottom_track_y]
+  vars[, "gene_model_top_y" := bottom_track_y + cds_height / 2]
+  vars[, "gene_model_bottom_y" := bottom_model_y]
+  vars[, "marker_y" := bottom_model_y - marker_offset]
   vars[]
 }
 
@@ -859,11 +922,12 @@ make_hap_variant_fill_scale <- function(gene_features,
                                         variant_types,
                                         gene_palette = "Paired",
                                         gene_colors = NULL,
-                                        variant_palette = "Set2",
-                                        variant_colors = NULL) {
+                                        variant_palette = "Set1",
+                                        variant_colors = NULL,
+                                        variant_alpha = 0.6) {
   gene_features <- unique(normalize_gene_model_feature(gene_features))
   gene_features <- gene_features[!is.na(gene_features) & gene_features != ""]
-  variant_types <- unique(as.character(variant_types))
+  variant_types <- unique(normalize_variant_marker_type(variant_types))
   variant_types <- variant_types[!is.na(variant_types) & variant_types != ""]
 
   gene_cols <- make_gene_model_fill_colors(
@@ -873,27 +937,21 @@ make_hap_variant_fill_scale <- function(gene_features,
   )
   gene_cols <- gene_cols[intersect(names(gene_cols), unique(c(gene_model_feature_levels(), gene_features)))]
 
-  if (!is.null(variant_colors)) {
-    variant_colors <- as.character(variant_colors)
-    if (is.null(names(variant_colors)) || !any(nzchar(names(variant_colors)))) {
-      if (length(variant_colors) < length(variant_types)) {
-        variant_colors <- grDevices::colorRampPalette(variant_colors)(length(variant_types))
-      }
-      names(variant_colors) <- variant_types
-    }
-    var_cols <- variant_colors
-  } else {
-    var_cols <- normalize_discrete_fill_colors(
-      n = length(variant_types),
-      color_palette = variant_palette,
-      fill_colors = NULL
-    )
-    names(var_cols) <- variant_types
+  var_cols <- make_variant_marker_fill_colors(
+    variant_palette = variant_palette,
+    variant_colors = variant_colors,
+    variant_types = variant_types,
+    alpha = variant_alpha
+  )
+  variant_breaks <- intersect(variant_marker_levels(), variant_types)
+  if (length(variant_breaks) == 0L) {
+    variant_breaks <- variant_marker_levels()
   }
 
   list(
     colors = c(gene_cols, var_cols),
-    variant_breaks = variant_types
+    variant_colors = var_cols,
+    variant_breaks = variant_breaks
   )
 }
 

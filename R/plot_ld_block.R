@@ -3,7 +3,7 @@
 # Version: 0.2.0
 # Function: Plot LD block triangular heatmaps
 # Input: LDTrack objects, VariantTrack objects, or VCF paths
-# Output: ggplot/patchwork figures
+# Output: LDTrack objects with stored figures
 
 #' Plot a triangular LD heatmap
 #'
@@ -11,7 +11,9 @@
 #' Draws an inverted triangular LD heatmap using ggplot2. Interior grid lines are
 #' suppressed; only the outside triangular frame is drawn. The function accepts
 #' either an `LDTrack` object or a `VariantTrack`/VCF path, in which case LD is
-#' computed first by `compute_ld_block()`. When `show_region = TRUE`, the region
+#' computed first by `compute_ld_block()`. The default return value is an
+#' updated `LDTrack` object: LD calculation results remain in the object and the
+#' generated plot is stored in `LDTrack$figure`. When `show_region = TRUE`, the region
 #' track follows the compact gene-model style used by `plot_hap_variant()` in
 #' GeneTrackR 0.3.15 and connects genomic variant markers to LD heatmap columns
 #' with a shared x scale, so line endpoints remain aligned after resizing.
@@ -28,6 +30,8 @@
 #' @param show_variant_labels Logical. Whether to show labels above the heatmap.
 #' @param show_region Logical. Whether to add a compact region/variant track
 #' above the LD heatmap.
+#' @param show_variant_marker Logical. Whether to draw natural-variant triangle markers in the region track.
+#' @param variant_marker_size Size of natural-variant triangle markers. Set to 0 to hide markers.
 #' @param annotation Optional gene annotation used by the compact region track.
 #' @param connect_region Logical. Whether to connect region-track variant
 #' positions to heatmap columns.
@@ -37,9 +41,12 @@
 #' from the number of variants.
 #' @param samples,min_pair_samples,ploidy,verbose Passed to `compute_ld_block()`
 #' when `object` is not already an `LDTrack`.
-#' @param return_object Logical. If TRUE, return an updated `LDTrack` containing
-#' the plot in `$plot`; otherwise return the plot.
-#' @return A ggplot/patchwork plot, or an updated `LDTrack` when `return_object = TRUE`.
+#' @param return_object Logical. Default TRUE. If TRUE, return an updated
+#' `LDTrack` containing the figure in `$figure`; if FALSE, return the figure
+#' directly for compatibility with older scripts.
+#' @return By default, an updated `LDTrack` object with the generated figure
+#' stored in `$figure`. If `return_object = FALSE`, the ggplot/patchwork figure
+#' is returned directly.
 #' @export
 plot_ld_block <- function(object,
                           chrom = NULL,
@@ -53,6 +60,8 @@ plot_ld_block <- function(object,
                           label_by = c("pos", "variant_id"),
                           show_variant_labels = TRUE,
                           show_region = FALSE,
+                          show_variant_marker = TRUE,
+                          variant_marker_size = 2.8,
                           annotation = NULL,
                           connect_region = TRUE,
                           region_height = 1.25,
@@ -62,9 +71,16 @@ plot_ld_block <- function(object,
                           min_pair_samples = 3L,
                           ploidy = 2L,
                           verbose = TRUE,
-                          return_object = FALSE) {
+                          return_object = TRUE) {
   method <- match.arg(method)
   variant_type <- match.arg(variant_type)
+  show_variant_marker <- isTRUE(show_variant_marker)
+  variant_marker_size <- as.numeric(variant_marker_size)[1L]
+  if (is.na(variant_marker_size)) variant_marker_size <- 2.8
+  if (variant_marker_size <= 0) {
+    show_variant_marker <- FALSE
+    variant_marker_size <- 0
+  }
 
   if (inherits(object, "LDTrack")) {
     ld <- object
@@ -138,7 +154,9 @@ plot_ld_block <- function(object,
       variants = variants,
       annotation = annotation,
       x_limits = x_limits,
-      font = font
+      font = font,
+      show_variant_marker = show_variant_marker,
+      variant_marker_size = variant_marker_size
     )
     gene_data <- attr(p_region, "gene_data")
 
@@ -166,7 +184,7 @@ plot_ld_block <- function(object,
   attr(p, "ld_data") <- pair_dt[]
   attr(p, "variant_data") <- variants[]
   attr(p, "gene_data") <- gene_data
-  ld$plot <- p
+  ld$figure <- p
   if (isTRUE(return_object)) return(ld)
   p
 }
@@ -285,9 +303,18 @@ draw_ld_region_track <- function(ld,
                                  variants,
                                  annotation = NULL,
                                  x_limits = NULL,
-                                 font = 14) {
+                                 font = 14,
+                                 show_variant_marker = TRUE,
+                                 variant_marker_size = 2.8) {
   vars <- data.table::copy(data.table::as.data.table(variants))
   if (is.null(x_limits)) x_limits <- c(0.5, nrow(vars) + 0.5)
+  show_variant_marker <- isTRUE(show_variant_marker)
+  variant_marker_size <- as.numeric(variant_marker_size)[1L]
+  if (is.na(variant_marker_size)) variant_marker_size <- 2.8
+  if (variant_marker_size <= 0) {
+    show_variant_marker <- FALSE
+    variant_marker_size <- 0
+  }
   if (!"region_x" %in% names(vars)) vars[, "region_x" := as.numeric(variant_index)]
   if (!"gene_x" %in% names(vars)) vars[, "gene_x" := region_x]
 
@@ -318,8 +345,11 @@ draw_ld_region_track <- function(ld,
       gene_palette = "Paired",
       gene_colors = NULL,
       gene_border_color = NA,
-      variant_palette = "Set2",
+      variant_palette = "Set1",
       variant_colors = NULL,
+      variant_alpha = 0.6,
+      show_variant_marker = show_variant_marker,
+      variant_marker_size = variant_marker_size,
       gene_track_legend_position = "right",
       show_gene_pos_axis = TRUE,
       gene_pos_axis_n = 5L,
@@ -331,19 +361,30 @@ draw_ld_region_track <- function(ld,
   }
 
   if (!"variant_type" %in% names(vars)) {
-    vars[, "variant_type_label" := "variant"]
+    vars[, "variant_type_label" := "..."]
   } else {
-    vars[, "variant_type_label" := as.character(variant_type)]
-    vars[is.na(variant_type_label) | variant_type_label == "", "variant_type_label" := "variant"]
+    vars[, "variant_type_label" := normalize_variant_marker_type(variant_type)]
   }
 
-  p <- ggplot2::ggplot(vars, ggplot2::aes(x = .data$gene_x, y = 1)) +
-    ggplot2::geom_point(
-      ggplot2::aes(fill = .data$variant_type_label),
-      size = 2.6,
-      shape = 24,
-      color = "black"
-    ) +
+  p <- ggplot2::ggplot(vars, ggplot2::aes(x = .data$gene_x, y = 1))
+  if (isTRUE(show_variant_marker)) {
+    p <- p +
+      ggplot2::geom_point(
+        ggplot2::aes(color = .data$variant_type_label),
+        size = variant_marker_size,
+        shape = 17
+      )
+    p <- apply_variant_marker_color_scale(
+      p,
+      variant_types = vars$variant_type_label,
+      variant_palette = "Set1",
+      variant_colors = NULL,
+      alpha = 0.6,
+      name = "Variant type",
+      drop = FALSE
+    )
+  }
+  p <- p +
     ggplot2::scale_x_continuous(limits = x_limits, expand = c(0, 0), position = "top") +
     ggplot2::scale_y_continuous(limits = c(0.7, 1.35), expand = c(0, 0)) +
     ggplot2::labs(x = NULL, y = NULL) +

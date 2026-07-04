@@ -40,7 +40,7 @@ plot_transcript(
 
 \item{gene_palette}{RColorBrewer palette name used for discrete fills. If the number of discrete groups exceeds the palette maximum, colors are automatically interpolated.}
 
-\item{gene_colors}{Optional custom fill colors for gene model features. Use a named vector such as \code{c(CDS = "#33a02c", UTR = "#b2df8a", exon = "#fb9a99")} to map colors explicitly. Unnamed colors are matched to the observed feature levels in plotting order and are automatically extended when needed.}
+\item{gene_colors}{Optional custom fill colors for gene model features. Use a named vector such as \code{c(UTR = "#b2df8a", CDS = "#33a02c", exon = "#fb9a99")} to map colors explicitly. Unnamed colors are matched to the fixed gene-model levels \code{UTR}, \code{CDS}, and \code{exon}, so colors remain stable even when only one feature type is present.}
 
 \item{gene_border_color}{Optional rectangle border color. Use \code{NA} to hide borders, or a color such as \code{"black"} or \code{"grey30"} to draw feature outlines.}
 
@@ -57,7 +57,7 @@ A ggplot object.
 Plot a transcript structure
 }
 \details{
-Common feature names used by \code{gene_colors} are \code{CDS}, \code{UTR}, and \code{exon}.
+Common feature names used by \code{gene_colors} are \code{UTR}, \code{CDS}, and \code{exon}.
 \code{highlight} must contain \code{start} and \code{end} columns. In genomic coordinate
 plots these are genomic positions; in transcript coordinate plots they are
 spliced transcript positions. See also \link{GeneTrackR-advanced-parameters}.
@@ -70,7 +70,7 @@ plot_transcript(
   gp,
   transcript_id = "EAA28783",
   coordinate = "transcript",
-  gene_colors = c(CDS = "#33a02c", UTR = "#b2df8a", exon = "#fb9a99"),
+  gene_colors = c(UTR = "#b2df8a", CDS = "#33a02c", exon = "#fb9a99"),
   gene_border_color = "black",
   highlight = data.frame(start = 100, end = 250),
   label_position = "feature",

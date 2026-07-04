@@ -27,7 +27,7 @@ named form is:
 )
 }\if{html}{\out{</div>}}
 
-Unnamed colors are matched to the observed discrete groups in plotting order.
+Unnamed colors are matched to the fixed gene-model levels UTR, CDS, and exon, so colors remain stable even when a plot contains only one feature type.
 }
 
 \section{Highlight intervals}{

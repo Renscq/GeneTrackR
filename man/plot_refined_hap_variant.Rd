@@ -38,7 +38,7 @@ plot_refined_hap_variant(
   table_colors = NULL,
   table_alpha = 0.6,
   reference_fill = "white",
-  variant_palette = "Set2",
+  variant_palette = "Set1",
   variant_colors = NULL
 )
 }
@@ -116,9 +116,9 @@ are shown. Increase this value when group labels are clipped.}
 
 \item{reference_fill}{Background fill color for the REF and ALT reference rows.}
 
-\item{variant_palette}{RColorBrewer palette name used for variant-type marker fills.}
+\item{variant_palette}{RColorBrewer palette name used for solid variant-type triangle marker colors.}
 
-\item{variant_colors}{Optional custom fill colors for variant-type markers.}
+\item{variant_colors}{Optional custom colors for solid variant-type triangle markers.}
 }
 \value{
 A patchwork object with attributes \code{plot_data}, \code{variant_data},

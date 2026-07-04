@@ -31,8 +31,11 @@ plot_hap_variant(
   table_colors = NULL,
   table_alpha = 0.6,
   reference_fill = "white",
-  variant_palette = "Set2",
-  variant_colors = NULL
+  variant_palette = "Set1",
+  variant_colors = NULL,
+  variant_alpha = 0.6,
+  show_variant_marker = TRUE,
+  variant_marker_size = 2.8
 )
 }
 \arguments{
@@ -90,9 +93,15 @@ a compact gene track is drawn above the haplotype table.}
 
 \item{reference_fill}{Background fill color for the REF and ALT reference rows.}
 
-\item{variant_palette}{RColorBrewer palette name used for variant-type marker fills.}
+\item{variant_palette}{RColorBrewer palette name used for solid variant-type triangle marker colors.}
 
-\item{variant_colors}{Optional custom fill colors for variant-type markers.}
+\item{variant_colors}{Optional custom colors for solid variant-type triangle markers.}
+
+\item{variant_alpha}{Alpha value for solid variant-type triangle marker colors.}
+
+\item{show_variant_marker}{Logical. Whether to draw natural-variant triangle markers.}
+
+\item{variant_marker_size}{Size of natural-variant triangle markers. Set to 0 to hide markers.}
 }
 \value{
 A patchwork object with attributes \code{plot_data}, \code{variant_data}, and \code{gene_data}.

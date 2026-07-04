@@ -231,7 +231,7 @@ normalize_discrete_fill_colors <- function(n, color_palette = "Paired", fill_col
 # plot_region(), and haplotype/LD gene tracks. Keeping these levels fixed avoids
 # color shifts when a plot contains only CDS, only UTR, or only exon segments.
 gene_model_feature_levels <- function() {
-  c("CDS", "UTR", "exon")
+  c("UTR", "CDS", "exon")
 }
 
 normalize_gene_model_feature <- function(feature) {
@@ -338,6 +338,195 @@ apply_gene_model_fill_scale <- function(p,
     drop = drop,
     na.value = "grey80"
   )
+}
+
+
+# Stable variant marker levels used by plot_hap_variant() and plot_ld_block().
+# They keep marker colors fixed across figures even when a region contains only
+# SNPs, only indels, or additional/unknown variant classes.
+variant_marker_levels <- function() {
+  c("SNP", "Ind", "...")
+}
+
+normalize_variant_marker_type <- function(variant_type) {
+  x <- as.character(variant_type)
+  xl <- tolower(x)
+  out <- rep("...", length(x))
+  out[xl %in% c("snp", "snv")] <- "SNP"
+  out[xl %in% c(
+    "ind", "indel", "ins", "del", "mnv", "insertion", "deletion",
+    "insert", "delete"
+  )] <- "Ind"
+  out[is.na(x) | !nzchar(x)] <- "..."
+  out
+}
+
+make_variant_marker_fill_colors <- function(variant_palette = "Set1",
+                                            variant_colors = NULL,
+                                            variant_types = NULL,
+                                            alpha = 0.6) {
+  canonical <- variant_marker_levels()
+  alpha <- suppressWarnings(as.numeric(alpha)[1L])
+  if (!is.finite(alpha)) alpha <- 0.6
+  alpha <- max(0, min(1, alpha))
+
+  observed <- normalize_variant_marker_type(variant_types %||% canonical)
+  observed <- unique(as.character(observed))
+  observed <- observed[!is.na(observed) & nzchar(observed)]
+  all_levels <- unique(c(canonical, observed))
+
+  default_cols <- normalize_discrete_fill_colors(
+    n = length(canonical),
+    color_palette = variant_palette,
+    fill_colors = NULL
+  )
+  names(default_cols) <- canonical
+
+  if (length(all_levels) > length(canonical)) {
+    extra_levels <- setdiff(all_levels, canonical)
+    full_cols <- normalize_discrete_fill_colors(
+      n = length(all_levels),
+      color_palette = variant_palette,
+      fill_colors = NULL
+    )
+    extra_cols <- full_cols[(length(canonical) + 1L):length(all_levels)]
+    names(extra_cols) <- extra_levels
+    default_cols <- c(default_cols, extra_cols)
+  }
+
+  if (!is.null(variant_colors)) {
+    variant_colors <- as.character(variant_colors)
+    variant_colors <- variant_colors[!is.na(variant_colors) & nzchar(variant_colors)]
+    if (length(variant_colors) > 0L) {
+      color_names <- names(variant_colors)
+      if (!is.null(color_names) && any(nzchar(color_names))) {
+        color_names <- normalize_variant_marker_type(color_names)
+        names(variant_colors) <- color_names
+        named_colors <- variant_colors[nzchar(names(variant_colors))]
+        named_colors <- named_colors[!duplicated(names(named_colors))]
+        common <- intersect(names(named_colors), names(default_cols))
+        default_cols[common] <- named_colors[common]
+        extra_named <- named_colors[setdiff(names(named_colors), names(default_cols))]
+        if (length(extra_named) > 0L) {
+          default_cols <- c(default_cols, extra_named)
+        }
+      } else {
+        unnamed_cols <- normalize_discrete_fill_colors(
+          n = length(canonical),
+          color_palette = variant_palette,
+          fill_colors = variant_colors
+        )
+        names(unnamed_cols) <- canonical
+        default_cols[canonical] <- unnamed_cols[canonical]
+      }
+    }
+  }
+
+  out <- default_cols[unique(c(all_levels, intersect(names(default_cols), canonical)))]
+  grDevices::adjustcolor(out, alpha.f = alpha)
+}
+
+
+resolve_variant_marker_colors <- function(variant_types,
+                                          variant_palette = "Set1",
+                                          variant_colors = NULL,
+                                          alpha = 0.6) {
+  labels <- normalize_variant_marker_type(variant_types)
+  colors <- make_variant_marker_fill_colors(
+    variant_palette = variant_palette,
+    variant_colors = variant_colors,
+    variant_types = labels,
+    alpha = alpha
+  )
+  out <- colors[labels]
+  missing <- is.na(out) | !nzchar(out)
+  if (any(missing)) {
+    out[missing] <- grDevices::adjustcolor("grey85", alpha.f = alpha)
+  }
+  unname(out)
+}
+
+apply_variant_marker_color_scale <- function(p,
+                                             variant_types,
+                                             variant_palette = "Set1",
+                                             variant_colors = NULL,
+                                             alpha = 0.6,
+                                             name = "Variant type",
+                                             drop = FALSE) {
+  colors <- make_variant_marker_fill_colors(
+    variant_palette = variant_palette,
+    variant_colors = variant_colors,
+    variant_types = variant_types,
+    alpha = alpha
+  )
+  observed <- normalize_variant_marker_type(variant_types %||% names(colors))
+  observed <- unique(as.character(observed))
+  observed <- observed[!is.na(observed) & nzchar(observed)]
+  breaks <- intersect(variant_marker_levels(), observed)
+  if (length(breaks) == 0L) {
+    breaks <- variant_marker_levels()
+  }
+  legend_cols <- colors[breaks]
+  legend_cols <- legend_cols[!is.na(legend_cols)]
+
+  p +
+    ggplot2::scale_color_manual(
+      values = colors,
+      limits = names(colors),
+      breaks = breaks,
+      name = name,
+      drop = drop,
+      na.value = grDevices::adjustcolor("grey85", alpha.f = alpha)
+    ) +
+    ggplot2::guides(
+      color = ggplot2::guide_legend(
+        override.aes = list(
+          shape = 17,
+          color = unname(legend_cols),
+          alpha = 1
+        )
+      )
+    )
+}
+
+apply_variant_marker_fill_scale <- function(p,
+                                            variant_types,
+                                            variant_palette = "Set1",
+                                            variant_colors = NULL,
+                                            alpha = 0.6,
+                                            name = "Variant type",
+                                            drop = FALSE) {
+  colors <- make_variant_marker_fill_colors(
+    variant_palette = variant_palette,
+    variant_colors = variant_colors,
+    variant_types = variant_types,
+    alpha = alpha
+  )
+  observed <- normalize_variant_marker_type(variant_types %||% names(colors))
+  observed <- unique(as.character(observed))
+  observed <- observed[!is.na(observed) & nzchar(observed)]
+  breaks <- intersect(variant_marker_levels(), observed)
+  if (length(breaks) == 0L) {
+    breaks <- variant_marker_levels()
+  }
+
+  p +
+    ggplot2::scale_fill_manual(
+      values = colors,
+      limits = names(colors),
+      breaks = breaks,
+      name = name,
+      drop = drop,
+      na.value = grDevices::adjustcolor("grey85", alpha.f = alpha)
+    ) +
+    ggplot2::scale_color_manual(
+      values = colors,
+      limits = names(colors),
+      breaks = breaks,
+      name = name,
+      drop = drop,
+      na.value = grDevices::adjustcolor("grey85", alpha.f = alpha)
+    )
 }
 
 apply_discrete_fill_scale <- function(p, color_palette = "Paired", fill_colors = NULL) {

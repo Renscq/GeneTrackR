@@ -493,7 +493,7 @@ plot_hap_variant(
   min_hap_samples = 3,
   table_fill_palette = "RdBu",
   table_fill_alpha = 0.6,
-  variant_palette = "Set2",
+  variant_palette = "Set1",
   genotype_text_size = 3
 )
 ```

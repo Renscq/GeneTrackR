@@ -31,7 +31,7 @@
 #' )
 #' ```
 #'
-#' Unnamed colors are matched to the fixed gene-model levels CDS, UTR, and exon, so colors remain stable even when a plot contains only one feature type.
+#' Unnamed colors are matched to the fixed gene-model levels UTR, CDS, and exon, so colors remain stable even when a plot contains only one feature type.
 #'
 #' @section Highlight intervals:
 #' `highlight` must be a data frame with at least `start` and `end` columns:

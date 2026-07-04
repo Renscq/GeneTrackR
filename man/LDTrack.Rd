@@ -10,8 +10,9 @@ LDTrack(
   variants = NULL,
   region = list(),
   genotype = NULL,
-  plot = NULL,
-  meta = list()
+  figure = NULL,
+  meta = list(),
+  plot = NULL
 )
 }
 \arguments{
@@ -25,9 +26,12 @@ LDTrack(
 
 \item{genotype}{Optional numeric genotype dosage matrix.}
 
-\item{plot}{Optional plot object produced by \code{plot_ld_block()}.}
+\item{figure}{Optional figure object produced by \code{plot_ld_block()}.}
 
 \item{meta}{A metadata list.}
+
+\item{plot}{Deprecated alias for \code{figure}, kept only for compatibility with
+older development versions.}
 }
 \value{
 An LDTrack object.
@@ -35,6 +39,6 @@ An LDTrack object.
 \description{
 \code{LDTrack()} stores pairwise linkage disequilibrium results, retained variant
 metadata, the selected genomic region, and optionally the dosage matrix and
-the generated plot. It follows the same lightweight S3 list-class style used
+the generated figure. It follows the same lightweight S3 list-class style used
 by \code{VariantTrack} and \code{HapVariant}.
 }
