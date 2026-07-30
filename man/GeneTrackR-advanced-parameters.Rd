@@ -65,11 +65,30 @@ Signal plots support transformed values and per-sample or shared y-axis
 ranges:
 
 \if{html}{\out{<div class="sourceCode r">}}\preformatted{signal_transform = "sqrt"  # none, log2, log10, or sqrt
-signal_y_scale = "free"   # free or fixed
-signal_y_ticks = "range"  # range or pretty
+signal_y_scale = "fixed"   # free or fixed
+signal_y_ticks = "range"   # range or pretty
+signal_y_limits = c(0, 20) # limits after signal_transform
 }\if{html}{\out{</div>}}
 
 \code{signal_y_ticks = "range"} displays integer y-axis limits only.
+Supplying \code{signal_y_limits} changes \code{signal_y_scale} to \code{"fixed"}.
+}
+
+\section{Plot appearance}{
+
+Standard track panels use \code{plot_theme}, \code{show_panel_border}, and black text.
+Signal geometry can be adjusted with \code{signal_alpha} and
+\code{signal_bar_width}:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{plot_theme = "classic"      # bw, classic, light, or minimal
+show_panel_border = FALSE
+signal_alpha = 0.80
+signal_bar_width = 0.85
+}\if{html}{\out{</div>}}
+
+\code{signal_bar_width} is relative to each BedGraph interval. It changes the
+visual bar width around the interval center without changing genomic
+positions.
 }
 
 \section{Strand handling}{

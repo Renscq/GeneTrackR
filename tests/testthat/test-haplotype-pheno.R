@@ -29,6 +29,111 @@ test_that("plot_hap_variant returns a browser-like haplotype figure", {
   expect_true(inherits(p, "patchwork") || inherits(p, "ggplot"))
 })
 
+test_that("compact indel labels remain aligned with REF and ALT rows", {
+  expect_equal(
+    format_hap_allele(c("A", "AT", "GTTACA", "i2", "i6", "i10")),
+    c("A", "i2", "i6", "i2", "i6", "i10")
+  )
+
+  labels <- format_hap_table_genotype_label(
+    genotype = c("i2", "i6", "i10"),
+    ref = c("AT", "A", "A"),
+    alt = c("A", "GTTACA", "AAAAAAAAAA"),
+    genotype_mode = "string"
+  )
+  expect_equal(labels, c("i2", "i6", "i10"))
+})
+
+test_that("haplotype allele fill classes use a stable five-color mapping", {
+  expect_identical(
+    normalize_hap_table_fill_class(
+      c("A", "T", "C", "G", "i2", "i5", "i10", "NA"),
+      genotype_mode = "string"
+    ),
+    c("A", "T", "C", "G", "indel", "indel", "indel", NA_character_)
+  )
+
+  colors <- make_hap_table_fill_colors(
+    table_palette = "Paired",
+    table_alpha = 1
+  )
+  expect_identical(names(colors), c("A", "T", "C", "G", "indel"))
+  expect_length(unique(unname(colors)), 5L)
+
+  custom_colors <- make_hap_table_fill_colors(
+    table_colors = c(
+      A = "#111111",
+      T = "#222222",
+      C = "#333333",
+      G = "#444444",
+      indel = "#555555"
+    ),
+    table_alpha = 1
+  )
+  expect_identical(
+    unname(custom_colors),
+    c("#111111FF", "#222222FF", "#333333FF", "#444444FF", "#555555FF")
+  )
+})
+
+test_that("haplotype gene-track variant legend uses an independent color guide", {
+  gene_data <- list(
+    transcripts = data.table::data.table(
+      transcript_id = "Tx1",
+      track_y = 1,
+      tx_xstart = 0.5,
+      tx_xend = 2.5
+    ),
+    segments = data.table::data.table(
+      transcript_id = "Tx1",
+      track_y = 1,
+      feature = "CDS",
+      plot_start = 0.5,
+      plot_end = 2.5
+    ),
+    region = list(chrom = "chr1", start = 100, end = 200),
+    axis_breaks = data.table::data.table(
+      x = c(0.5, 2.5),
+      pos = c(100, 200),
+      label = c("100", "200")
+    )
+  )
+  vars <- data.table::data.table(
+    pos = c(125, 175),
+    gene_x = c(1, 2),
+    variant_type = c("snp", "indel"),
+    variant_type_label = c("SNP", "Ind")
+  )
+  p <- draw_hap_gene_track(
+    gene_data = gene_data,
+    vars = vars,
+    x_limits = c(0.5, 2.5),
+    x_breaks = c(1, 2),
+    x_labels = c("125", "175"),
+    gene_track_legend_position = "top"
+  )
+
+  expect_identical(p$scales$get_scales("fill")$guide, "none")
+  color_guide <- p$scales$get_scales("colour")$guide
+  expect_false(is.null(color_guide))
+  expect_false(identical(color_guide, "none"))
+  expect_identical(
+    p$scales$get_scales("colour")$limits,
+    c("SNP", "Ind")
+  )
+  point_layers <- vapply(
+    p$layers,
+    function(layer) inherits(layer$geom, "GeomPoint"),
+    logical(1L)
+  )
+  expect_true(any(point_layers))
+  expect_true(any(vapply(
+    p$layers[point_layers],
+    function(layer) isTRUE(layer$show.legend),
+    logical(1L)
+  )))
+})
+
 test_that("phenotype readers and haplotype phenotype plots are stable", {
   gp <- read_genepred(gtr_extdata("example.genePredExt"), format = "genePredExt", verbose = FALSE)
   vcf <- read_vcf(gtr_extdata("example_haplotype.vcf"), mode = "memory", verbose = FALSE)

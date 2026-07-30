@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-28
-# Version: 0.2.0
+# Version: 0.3.21
 # Function: Plot generic feature and variant tracks
 # Input: FeatureTrack or VariantTrack objects
 # Output: ggplot track panels
@@ -21,6 +21,8 @@
 #' @param feature_palette RColorBrewer palette name for feature fills.
 #' @param feature_colors Optional named or unnamed feature fill color vector.
 #' @param feature_border_color Rectangle border color. Use NA to hide borders.
+#' @param plot_theme Base ggplot2 theme. Use `bw`, `classic`, `light`, or `minimal`.
+#' @param show_panel_border Whether to draw the panel border. `NULL` preserves the selected theme default.
 #' @param text_size Text size.
 #' @return A ggplot object.
 #' @export
@@ -34,11 +36,15 @@ plot_feature_track <- function(track,
                                feature_palette = "Set2",
                                feature_colors = NULL,
                                feature_border_color = NA,
-                               text_size = 14) {
+                               text_size = 14,
+                               plot_theme = c("bw", "classic", "light", "minimal"),
+                               show_panel_border = NULL) {
   stop_if_not(inherits(track, "FeatureTrack"), "`track` must be a FeatureTrack object.")
   mode <- match.arg(mode)
   color_by <- match.arg(color_by)
   label_by <- match.arg(label_by)
+  plot_theme <- normalize_plot_theme(plot_theme)
+  show_panel_border <- normalize_show_panel_border(show_panel_border)
   text_color <- "black"
   track_name <- NULL
   feature_border_color <- normalize_border_color(feature_border_color)
@@ -79,7 +85,10 @@ plot_feature_track <- function(track,
       ggplot2::coord_cartesian(xlim = c(start, end)) +
       ggplot2::scale_y_continuous(breaks = NULL) +
       ggplot2::labs(x = x_label, y = track_name %||% "Feature") +
-      ggplot2::theme_bw() +
+      make_track_theme(
+        plot_theme = plot_theme,
+        show_panel_border = show_panel_border
+      ) +
       ggplot2::theme(
         axis.text.x = ggplot2::element_text(color = text_color, size = text_size),
         axis.title.x = ggplot2::element_text(color = text_color, size = text_size),
@@ -112,7 +121,10 @@ plot_feature_track <- function(track,
     ggplot2::coord_cartesian(xlim = c(start, end)) +
     ggplot2::scale_y_continuous(breaks = NULL, expand = ggplot2::expansion(mult = c(0.2, 0.2), add = c(0.2, 0.2))) +
     ggplot2::labs(x = x_label, y = track_name %||% "Feature") +
-    ggplot2::theme_bw() +
+    make_track_theme(
+      plot_theme = plot_theme,
+      show_panel_border = show_panel_border
+    ) +
     ggplot2::theme(
       axis.text.x = ggplot2::element_text(color = text_color, size = text_size),
       axis.title.x = ggplot2::element_text(color = text_color, size = text_size),
@@ -137,4 +149,3 @@ plot_feature_track <- function(track,
   }
   p
 }
-

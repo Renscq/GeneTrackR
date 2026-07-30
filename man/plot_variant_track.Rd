@@ -13,7 +13,9 @@ plot_variant_track(
   label_by = c("none", "variant_id", "variant_type", "ref", "alt"),
   variant_palette = "Set1",
   variant_colors = NULL,
-  text_size = 14
+  text_size = 14,
+  plot_theme = c("bw", "classic", "light", "minimal"),
+  show_panel_border = NULL
 )
 }
 \arguments{
@@ -30,6 +32,10 @@ plot_variant_track(
 \item{variant_palette}{RColorBrewer palette name for variant colors.}
 
 \item{variant_colors}{Optional named or unnamed variant color vector.}
+
+\item{plot_theme}{Base ggplot2 theme. Use \code{bw}, \code{classic}, \code{light}, or \code{minimal}.}
+
+\item{show_panel_border}{Whether to draw the panel border. \code{NULL} preserves the selected theme default.}
 
 \item{text_size}{Text size.}
 }

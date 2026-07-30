@@ -17,7 +17,9 @@ plot_variant(
   variant_colors = NULL,
   point_size = 2,
   line_width = 0.35,
-  text_size = 14
+  text_size = 14,
+  plot_theme = c("bw", "classic", "light", "minimal"),
+  show_panel_border = NULL
 )
 }
 \arguments{
@@ -45,6 +47,10 @@ plot_variant(
 \item{point_size}{Point size.}
 
 \item{line_width}{Line width for lollipop/rug stems.}
+
+\item{plot_theme}{Base ggplot2 theme. Use \code{bw}, \code{classic}, \code{light}, or \code{minimal}.}
+
+\item{show_panel_border}{Whether to draw the panel border. \code{NULL} preserves the selected theme default.}
 
 \item{text_size}{Text size.}
 }

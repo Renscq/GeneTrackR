@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-05-29
-# Version: 0.1.0
+# Date: 2026-07-30
+# Version: 0.3.23
 # Function: Plot haplotype-variant and haplotype-phenotype figures
 # Input: HapVariant and phenotype objects
 # Output: ggplot or patchwork figures
@@ -38,7 +38,11 @@
 #' @param gene_colors Optional custom fill colors for gene model features.
 #' @param gene_border_color Border color for gene model feature boxes.
 #' @param table_palette RColorBrewer palette name used for haplotype table fills.
+#' For allele-string haplotypes, the first five colors are always assigned in
+#' the fixed order A, T, C, G, and indel.
 #' @param table_colors Optional custom fill colors for haplotype table genotypes.
+#' For allele-string haplotypes, use a vector named `A`, `T`, `C`, `G`, and
+#' `indel`, or supply five unnamed colors in that order.
 #' @param table_alpha Alpha value for haplotype table fill colors.
 #' @param reference_fill Background fill color for the REF and ALT reference rows.
 #' @param variant_palette RColorBrewer palette name used for solid variant-type triangle marker colors.
@@ -197,6 +201,10 @@ plot_hap_variant <- function(hap,
     genotype_mode = hap$meta$genotype_mode %||% NA_character_
   )]
   table_long[is.na(genotype_label), "genotype_label" := "NA"]
+  table_long[, "genotype_fill_class" := normalize_hap_table_fill_class(
+    genotype_label,
+    genotype_mode = hap$meta$genotype_mode %||% NA_character_
+  )]
 
   if (show_reference_row) {
     ref_row_label <- "REF"
@@ -315,7 +323,7 @@ plot_hap_variant <- function(hap,
   p_table <- ggplot2::ggplot() +
     ggplot2::geom_tile(
       data = table_genotype,
-      ggplot2::aes(x = .data$variant_index, y = .data$hap_y, fill = .data$genotype_label),
+      ggplot2::aes(x = .data$variant_index, y = .data$hap_y, fill = .data$genotype_fill_class),
       color = "grey80",
       linewidth = 0.28,
       width = 0.96,
@@ -375,7 +383,11 @@ plot_hap_variant <- function(hap,
     values = table_genotype$genotype_label,
     table_palette = table_palette,
     table_colors = table_colors,
-    table_alpha = table_alpha
+    table_alpha = table_alpha,
+    fixed_allele_classes = identical(
+      as.character(hap$meta$genotype_mode %||% NA_character_)[1L],
+      "string"
+    )
   )
 
   if (is.null(table_height)) {
@@ -709,6 +721,12 @@ draw_hap_gene_track <- function(gene_data,
     variant_colors = variant_colors,
     variant_alpha = variant_alpha
   )
+  opaque_variant_colors <- make_variant_marker_fill_colors(
+    variant_palette = variant_palette,
+    variant_colors = variant_colors,
+    variant_types = fill_scale$variant_breaks,
+    alpha = 1
+  )
   p <- ggplot2::ggplot() +
     ggplot2::geom_segment(
       data = tx,
@@ -745,29 +763,31 @@ draw_hap_gene_track <- function(gene_data,
           color = .data$variant_type_label
         ),
         size = variant_marker_size,
-        shape = 17
+        shape = 17,
+        alpha = variant_alpha,
+        show.legend = TRUE,
+        key_glyph = "point"
       )
   }
   p <- p +
     ggplot2::scale_fill_manual(
       values = fill_scale$colors,
-      breaks = fill_scale$variant_breaks,
-      name = "Variant type",
+      guide = "none",
       drop = FALSE
     ) +
     ggplot2::scale_color_manual(
-      values = fill_scale$variant_colors,
+      values = opaque_variant_colors,
+      limits = fill_scale$variant_breaks,
       breaks = fill_scale$variant_breaks,
       name = "Variant type",
-      drop = FALSE
-    ) +
-    ggplot2::guides(
-      fill = "none",
-      color = ggplot2::guide_legend(
+      drop = FALSE,
+      guide = ggplot2::guide_legend(
+        order = 1,
         override.aes = list(
           shape = 17,
-          color = unname(fill_scale$variant_colors[fill_scale$variant_breaks]),
-          alpha = 1
+          size = max(3, variant_marker_size),
+          alpha = 1,
+          stroke = 0.5
         )
       )
     ) +
@@ -810,11 +830,30 @@ apply_hap_table_fill_scale <- function(p,
                                        values,
                                        table_palette = "RdBu",
                                        table_colors = NULL,
-                                       table_alpha = 0.6) {
+                                       table_alpha = 0.6,
+                                       fixed_allele_classes = FALSE) {
   values <- unique(as.character(values))
   values <- values[!is.na(values)]
   if (length(values) == 0L) {
     return(p)
+  }
+
+  if (isTRUE(fixed_allele_classes)) {
+    levels <- hap_table_fill_levels()
+    colors <- make_hap_table_fill_colors(
+      table_palette = table_palette,
+      table_colors = table_colors,
+      table_alpha = table_alpha
+    )
+    return(
+      p + ggplot2::scale_fill_manual(
+        values = colors,
+        limits = levels,
+        breaks = levels,
+        drop = FALSE,
+        na.value = grDevices::adjustcolor("grey85", alpha.f = table_alpha)
+      )
+    )
   }
 
   if (!is.null(table_colors)) {
@@ -837,6 +876,72 @@ apply_hap_table_fill_scale <- function(p,
 
   colors <- grDevices::adjustcolor(colors, alpha.f = table_alpha)
   p + ggplot2::scale_fill_manual(values = colors, na.value = grDevices::adjustcolor("grey85", alpha.f = table_alpha))
+}
+
+hap_table_fill_levels <- function() {
+  c("A", "T", "C", "G", "indel")
+}
+
+normalize_hap_table_fill_class <- function(genotype_label,
+                                           genotype_mode = NA_character_) {
+  labels <- as.character(genotype_label)
+  if (!identical(as.character(genotype_mode)[1L], "string")) {
+    return(labels)
+  }
+
+  normalized <- toupper(trimws(labels))
+  out <- rep(NA_character_, length(labels))
+  is_base <- normalized %in% c("A", "T", "C", "G")
+  out[is_base] <- normalized[is_base]
+  is_indel <- grepl("^I[0-9]+$", normalized)
+  out[is_indel] <- "indel"
+  out
+}
+
+make_hap_table_fill_colors <- function(table_palette = "RdBu",
+                                       table_colors = NULL,
+                                       table_alpha = 0.6) {
+  levels <- hap_table_fill_levels()
+  table_alpha <- suppressWarnings(as.numeric(table_alpha)[1L])
+  if (!is.finite(table_alpha)) table_alpha <- 0.6
+  table_alpha <- max(0, min(1, table_alpha))
+
+  default_colors <- normalize_discrete_fill_colors(
+    n = length(levels),
+    color_palette = table_palette,
+    fill_colors = NULL
+  )
+  names(default_colors) <- levels
+
+  if (!is.null(table_colors)) {
+    supplied <- as.character(table_colors)
+    supplied <- supplied[!is.na(supplied) & nzchar(supplied)]
+    if (length(supplied) > 0L) {
+      supplied_names <- names(supplied)
+      if (!is.null(supplied_names) && any(nzchar(supplied_names))) {
+        normalized_names <- tolower(trimws(supplied_names))
+        normalized_names[normalized_names == "a"] <- "A"
+        normalized_names[normalized_names == "t"] <- "T"
+        normalized_names[normalized_names == "c"] <- "C"
+        normalized_names[normalized_names == "g"] <- "G"
+        normalized_names[normalized_names %in% c("ind", "indel")] <- "indel"
+        names(supplied) <- normalized_names
+        supplied <- supplied[names(supplied) %in% levels]
+        supplied <- supplied[!duplicated(names(supplied))]
+        default_colors[names(supplied)] <- supplied
+      } else {
+        supplied <- normalize_discrete_fill_colors(
+          n = length(levels),
+          color_palette = table_palette,
+          fill_colors = supplied
+        )
+        names(supplied) <- levels
+        default_colors <- supplied
+      }
+    }
+  }
+
+  grDevices::adjustcolor(default_colors[levels], alpha.f = table_alpha)
 }
 
 assign_variant_gene_track_y <- function(vars,

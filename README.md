@@ -377,7 +377,7 @@ plot_tracks(
   signal = bg,
   gene_id = "GeneA",
   signal_type = "bar",
-  gene_color_palette = "Set2",
+  gene_palette = "Set2",
   gene_border_color = "black"
 )
 
@@ -385,11 +385,29 @@ plot_tracks(
   annotation = gp,
   signal = bg,
   gene_id = "GeneA",
-  gene_fill_colors = c(
+  gene_colors = c(
     CDS = "#1b9e77",
     UTR = "#a6d854",
     exon = "#7570b3"
   )
+)
+```
+
+Control the complete track style with standardized parameters:
+
+```r
+plot_tracks(
+  annotation = gp,
+  signal = bg,
+  gene_id = "GeneA",
+  signal_type = "bar",
+  signal_transform = "sqrt",
+  signal_y_scale = "fixed",
+  signal_y_limits = c(0, 20),
+  signal_alpha = 0.80,
+  signal_bar_width = 0.85,
+  plot_theme = "classic",
+  show_panel_border = FALSE
 )
 ```
 

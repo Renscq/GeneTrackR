@@ -21,7 +21,9 @@ plot_region(
   gene_border_color = NA,
   label_position = c("axis", "feature"),
   label_by = c("gene", "transcript"),
-  text_size = 14
+  text_size = 14,
+  plot_theme = c("bw", "classic", "light", "minimal"),
+  show_panel_border = NULL
 )
 }
 \arguments{
@@ -52,6 +54,10 @@ plot_region(
 \item{gene_colors}{Optional custom fill colors for gene model features. Use a named vector such as \code{c(UTR = "#b2df8a", CDS = "#33a02c", exon = "#fb9a99")} to map colors explicitly. Unnamed colors are matched to the fixed gene-model levels \code{UTR}, \code{CDS}, and \code{exon}, so colors remain stable even when only one feature type is present.}
 
 \item{gene_border_color}{Optional rectangle border color. Use \code{NA} to hide borders, or a color such as \code{"black"} or \code{"grey30"} to draw feature outlines.}
+
+\item{plot_theme}{Base ggplot2 theme. Use \code{bw}, \code{classic}, \code{light}, or \code{minimal}.}
+
+\item{show_panel_border}{Whether to draw the panel border. \code{NULL} preserves the selected theme default.}
 
 \item{label_position}{Where to draw feature labels. \code{axis} draws labels on the y axis and \code{feature} draws labels at the center of each gene/transcript structure.}
 

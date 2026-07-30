@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-27
-# Version: 0.2.1
+# Version: 0.3.21
 # Function: Combined genome-browser-like track plotting
 # Input: GenePred and BwgTrack objects
 # Output: Combined patchwork track figure
@@ -36,6 +36,9 @@
 #' @param signal_transform Signal-axis transformation. Use `none`, `log2`, `log10`, or `sqrt`.
 #' @param signal_y_scale Signal y-axis scale mode. Use `free` for independent sample-specific y-axis ranges or `fixed` for a shared y-axis range across samples.
 #' @param signal_y_ticks Signal y-axis tick mode. Use `range` to show only integer minimum and maximum limits or `pretty` for default-style breaks.
+#' @param signal_y_limits Optional two-element numeric vector giving the plotted y-axis limits after `signal_transform`. Supplying limits changes `signal_y_scale` to `fixed`.
+#' @param signal_alpha Signal geometry transparency from 0 to 1.
+#' @param signal_bar_width Relative width of bar intervals from greater than 0 to 1. A value below 1 creates proportional gaps without changing interval centers.
 #' @param collapse Gene model collapse mode for region-level plotting.
 #' @param strand Signal strand selector.
 #' @param bin_size Optional signal bin size.
@@ -47,6 +50,8 @@
 #' @param direction_mode Direction-arrow style for the gene model track. `transcript` draws one arrow per transcript, `gene` draws one arrow per gene, `end` draws one short arrow at the directional end of each gene, and `none` hides direction arrows.
 #' @param label_position Where to draw gene model labels. `axis` draws labels on the y axis and `feature` draws labels near the feature.
 #' @param label_by Which identifier to use for gene model labels. Use `gene` for gene IDs or `transcript` for transcript IDs.
+#' @param plot_theme Base ggplot2 theme used by all standard track panels. Use `bw`, `classic`, `light`, or `minimal`.
+#' @param show_panel_border Whether to draw panel borders. `NULL` preserves the selected theme default.
 #' @param text_size Text size in points for axis text, axis titles, legends, and facet labels.
 #'
 #' @return A patchwork object or ggplot object.
@@ -108,7 +113,12 @@ plot_tracks <- function(annotation,
                         direction_mode = c("transcript", "gene", "end", "none"),
                         label_position = c("axis", "feature"),
                         label_by = c("gene", "transcript"),
-                        text_size = 14) {
+                        text_size = 14,
+                        signal_y_limits = NULL,
+                        signal_alpha = 0.85,
+                        signal_bar_width = 1,
+                        plot_theme = c("bw", "classic", "light", "minimal"),
+                        show_panel_border = NULL) {
   stop_if_not(is_gene_model_feature(annotation), "`annotation` must be a GenePred object or a Feature object with transcript/exon records.")
   annotation <- as_genepred(annotation)
   signal_type <- match.arg(signal_type)
@@ -118,8 +128,13 @@ plot_tracks <- function(annotation,
   strand <- match.arg(strand)
   layout <- match.arg(layout)
   signal_transform <- match.arg(signal_transform)
-  signal_y_scale <- match.arg(signal_y_scale)
   signal_y_ticks <- match.arg(signal_y_ticks)
+  signal_y_limits <- normalize_signal_y_limits(signal_y_limits)
+  signal_y_scale <- resolve_signal_y_scale(signal_y_scale, signal_y_limits)
+  signal_alpha <- normalize_signal_alpha(signal_alpha)
+  signal_bar_width <- normalize_signal_bar_width(signal_bar_width)
+  plot_theme <- normalize_plot_theme(plot_theme)
+  show_panel_border <- normalize_show_panel_border(show_panel_border)
   heatmap_summary <- match.arg(heatmap_summary)
   direction_mode <- match.arg(direction_mode)
   label_position <- match.arg(label_position)
@@ -158,6 +173,8 @@ plot_tracks <- function(annotation,
       gene_palette = gene_palette,
       gene_colors = gene_colors,
       gene_border_color = gene_border_color,
+      plot_theme = plot_theme,
+      show_panel_border = show_panel_border,
       label_position = label_position,
       label_by = label_by,
       text_size = text_size
@@ -180,6 +197,8 @@ plot_tracks <- function(annotation,
       gene_palette = gene_palette,
       gene_colors = gene_colors,
       gene_border_color = gene_border_color,
+      plot_theme = plot_theme,
+      show_panel_border = show_panel_border,
       label_position = label_position,
       label_by = label_by,
       text_size = text_size
@@ -204,6 +223,8 @@ plot_tracks <- function(annotation,
       gene_palette = gene_palette,
       gene_colors = gene_colors,
       gene_border_color = gene_border_color,
+      plot_theme = plot_theme,
+      show_panel_border = show_panel_border,
       label_position = label_position,
       label_by = label_by,
       text_size = text_size
@@ -236,6 +257,11 @@ plot_tracks <- function(annotation,
       signal_transform = signal_transform,
       signal_y_scale = signal_y_scale,
       signal_y_ticks = signal_y_ticks,
+      signal_y_limits = signal_y_limits,
+      signal_alpha = signal_alpha,
+      signal_bar_width = signal_bar_width,
+      plot_theme = plot_theme,
+      show_panel_border = show_panel_border,
       heatmap_bin_size = heatmap_bin_size,
       heatmap_max_bins = heatmap_max_bins,
       heatmap_summary = heatmap_summary,
@@ -250,6 +276,8 @@ plot_tracks <- function(annotation,
     chrom = chrom_value,
     start = start_value,
     end = end_value,
+    plot_theme = plot_theme,
+    show_panel_border = show_panel_border,
     text_size = text_size
   )
   if (length(feature_plots) > 0L) {
@@ -264,6 +292,8 @@ plot_tracks <- function(annotation,
     chrom = chrom_value,
     start = start_value,
     end = end_value,
+    plot_theme = plot_theme,
+    show_panel_border = show_panel_border,
     text_size = text_size
   )
   if (length(variant_plots) > 0L) {
@@ -287,7 +317,7 @@ plot_tracks <- function(annotation,
   patchwork::wrap_plots(plot_list, ncol = 1) + patchwork::plot_layout(heights = unname(height_list))
 }
 
-make_feature_track_plots <- function(features, chrom, start, end, text_size = 14) {
+make_feature_track_plots <- function(features, chrom, start, end, plot_theme = "bw", show_panel_border = NULL, text_size = 14) {
   if (is.null(features)) return(list())
   if (inherits(features, "FeatureTrack")) features <- list(Feature = features)
   stop_if_not(is.list(features), "`features` must be a FeatureTrack object or a list of FeatureTrack objects.")
@@ -302,13 +332,15 @@ make_feature_track_plots <- function(features, chrom, start, end, text_size = 14
       end = end,
       mode = "trim",
       label_by = "none",
+      plot_theme = plot_theme,
+      show_panel_border = show_panel_border,
       text_size = text_size
     )
   }
   out
 }
 
-make_variant_track_plots <- function(variants, chrom, start, end, text_size = 14) {
+make_variant_track_plots <- function(variants, chrom, start, end, plot_theme = "bw", show_panel_border = NULL, text_size = 14) {
   if (is.null(variants)) return(list())
   if (inherits(variants, "VariantTrack")) variants <- list(Variant = variants)
   stop_if_not(is.list(variants), "`variants` must be a VariantTrack object or a list of VariantTrack objects.")
@@ -322,6 +354,8 @@ make_variant_track_plots <- function(variants, chrom, start, end, text_size = 14
       start = start,
       end = end,
       label_by = "none",
+      plot_theme = plot_theme,
+      show_panel_border = show_panel_border,
       text_size = text_size
     )
   }

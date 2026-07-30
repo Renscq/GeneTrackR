@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-29
-# Version: 0.3.0
+# Version: 0.3.21
 # Function: Plot variant records from VariantTrack objects
 # Input: VariantTrack objects and genomic regions
 # Output: ggplot variant figures
@@ -25,6 +25,8 @@
 #' @param variant_colors Optional named or unnamed variant color vector.
 #' @param point_size Point size.
 #' @param line_width Line width for lollipop/rug stems.
+#' @param plot_theme Base ggplot2 theme. Use `bw`, `classic`, `light`, or `minimal`.
+#' @param show_panel_border Whether to draw the panel border. `NULL` preserves the selected theme default.
 #' @param text_size Text size.
 #' @return A ggplot object.
 #' @export
@@ -40,12 +42,16 @@ plot_variant <- function(variant,
                          variant_colors = NULL,
                          point_size = 2,
                          line_width = 0.35,
-                         text_size = 14) {
+                         text_size = 14,
+                         plot_theme = c("bw", "classic", "light", "minimal"),
+                         show_panel_border = NULL) {
   stop_if_not(inherits(variant, "VariantTrack"), "`variant` must be a VariantTrack object.")
 
   color_by <- match.arg(color_by)
   label_by <- match.arg(label_by)
   variant_shape <- match.arg(variant_shape)
+  plot_theme <- normalize_plot_theme(plot_theme)
+  show_panel_border <- normalize_show_panel_border(show_panel_border)
   text_color <- "black"
   track_name <- NULL
 
@@ -86,7 +92,10 @@ plot_variant <- function(variant,
         ggplot2::coord_cartesian(xlim = c(start, end)) +
         ggplot2::scale_y_continuous(breaks = NULL) +
         ggplot2::labs(x = x_label, y = track_name %||% "Variant") +
-        ggplot2::theme_bw() +
+        make_track_theme(
+          plot_theme = plot_theme,
+          show_panel_border = show_panel_border
+        ) +
         ggplot2::theme(
           axis.text.x = ggplot2::element_text(color = text_color, size = text_size),
           axis.title.x = ggplot2::element_text(color = text_color, size = text_size),
@@ -131,7 +140,10 @@ plot_variant <- function(variant,
       expand = ggplot2::expansion(mult = c(0.20, 0.20), add = c(0.20, 0.20))
     ) +
     ggplot2::labs(x = x_label, y = track_name %||% "Variant") +
-    ggplot2::theme_bw() +
+    make_track_theme(
+      plot_theme = plot_theme,
+      show_panel_border = show_panel_border
+    ) +
     ggplot2::theme(
       axis.text.x = ggplot2::element_text(color = text_color, size = text_size),
       axis.title.x = ggplot2::element_text(color = text_color, size = text_size),
@@ -178,7 +190,9 @@ plot_variant_track <- function(track,
                                label_by = c("none", "variant_id", "variant_type", "ref", "alt"),
                                variant_palette = "Set1",
                                variant_colors = NULL,
-                               text_size = 14) {
+                               text_size = 14,
+                               plot_theme = c("bw", "classic", "light", "minimal"),
+                               show_panel_border = NULL) {
   plot_variant(
     variant = track,
     chrom = chrom,
@@ -188,6 +202,8 @@ plot_variant_track <- function(track,
     label_by = label_by,
     variant_palette = variant_palette,
     variant_colors = variant_colors,
+    plot_theme = plot_theme,
+    show_panel_border = show_panel_border,
     text_size = text_size
   )
 }

@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-27
-# Version: 0.1.29
+# Version: 0.3.21
 # Function: Shared documentation for advanced plotting and query parameters
 # Input: None
 # Output: R documentation topic
@@ -67,11 +67,29 @@
 #'
 #' ```r
 #' signal_transform = "sqrt"  # none, log2, log10, or sqrt
-#' signal_y_scale = "free"   # free or fixed
-#' signal_y_ticks = "range"  # range or pretty
+#' signal_y_scale = "fixed"   # free or fixed
+#' signal_y_ticks = "range"   # range or pretty
+#' signal_y_limits = c(0, 20) # limits after signal_transform
 #' ```
 #'
 #' `signal_y_ticks = "range"` displays integer y-axis limits only.
+#' Supplying `signal_y_limits` changes `signal_y_scale` to `"fixed"`.
+#'
+#' @section Plot appearance:
+#' Standard track panels use `plot_theme`, `show_panel_border`, and black text.
+#' Signal geometry can be adjusted with `signal_alpha` and
+#' `signal_bar_width`:
+#'
+#' ```r
+#' plot_theme = "classic"      # bw, classic, light, or minimal
+#' show_panel_border = FALSE
+#' signal_alpha = 0.80
+#' signal_bar_width = 0.85
+#' ```
+#'
+#' `signal_bar_width` is relative to each BedGraph interval. It changes the
+#' visual bar width around the interval center without changing genomic
+#' positions.
 #'
 #' @section Strand handling:
 #' Standard bigWig and wig tracks are unstranded. For such tracks,

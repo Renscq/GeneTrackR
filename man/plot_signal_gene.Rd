@@ -31,7 +31,12 @@ plot_signal_gene(
   direction_mode = c("transcript", "gene", "end", "none"),
   label_position = c("axis", "feature"),
   label_by = c("gene", "transcript"),
-  text_size = 14
+  text_size = 14,
+  signal_y_limits = NULL,
+  signal_alpha = 0.85,
+  signal_bar_width = 1,
+  plot_theme = c("bw", "classic", "light", "minimal"),
+  show_panel_border = NULL
 )
 }
 \arguments{
@@ -71,6 +76,12 @@ plot_signal_gene(
 
 \item{signal_y_ticks}{Signal y-axis tick mode. Use \code{range} to show only integer axis limits as the minimum and maximum ticks, or \code{pretty} to use ggplot2 default-style breaks.}
 
+\item{signal_y_limits}{Optional two-element numeric vector giving the plotted y-axis limits after \code{signal_transform}. Supplying limits changes \code{signal_y_scale} to \code{fixed}.}
+
+\item{signal_alpha}{Signal geometry transparency from 0 to 1.}
+
+\item{signal_bar_width}{Relative width of bar intervals from greater than 0 to 1. A value below 1 creates proportional gaps without changing interval centers.}
+
 \item{cds_height}{Vertical thickness of CDS rectangles in the gene model track.}
 
 \item{utr_height}{Vertical thickness of UTR/non-coding exon rectangles in the gene model track.}
@@ -80,6 +91,10 @@ plot_signal_gene(
 \item{label_position}{Where to draw gene model labels. \code{axis} draws labels on the y axis and \code{feature} draws labels at the center of each gene/transcript structure.}
 
 \item{label_by}{Which identifier to use for gene model labels. Use \code{gene} for gene IDs or \code{transcript} for transcript IDs.}
+
+\item{plot_theme}{Base ggplot2 theme. Use \code{bw}, \code{classic}, \code{light}, or \code{minimal}.}
+
+\item{show_panel_border}{Whether to draw panel borders. \code{NULL} preserves the selected theme default.}
 
 \item{text_size}{Text size in points for signal and gene model axis text, axis titles, facet strips, and legends.}
 }

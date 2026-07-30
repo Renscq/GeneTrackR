@@ -1,9 +1,112 @@
 # Author: Rensc
 # Date: 2026-05-27
-# Version: 0.1.28
+# Version: 0.3.21
 # Function: Internal plotting utilities for gene models and signal tracks
 # Input: Annotation and signal tables
 # Output: ggplot objects and transformed plotting tables
+
+normalize_plot_theme <- function(plot_theme = c("bw", "classic", "light", "minimal")) {
+  match.arg(plot_theme)
+}
+
+normalize_show_panel_border <- function(show_panel_border = NULL) {
+  if (is.null(show_panel_border)) {
+    return(NULL)
+  }
+  if (!is.logical(show_panel_border) ||
+      length(show_panel_border) != 1L ||
+      is.na(show_panel_border)) {
+    stop("`show_panel_border` must be NULL, TRUE, or FALSE.", call. = FALSE)
+  }
+  show_panel_border
+}
+
+make_track_theme <- function(
+  plot_theme = c("bw", "classic", "light", "minimal"),
+  show_panel_border = NULL
+) {
+  plot_theme <- normalize_plot_theme(plot_theme)
+  show_panel_border <- normalize_show_panel_border(show_panel_border)
+
+  out <- switch(
+    plot_theme,
+    bw = ggplot2::theme_bw(),
+    classic = ggplot2::theme_classic(),
+    light = ggplot2::theme_light(),
+    minimal = ggplot2::theme_minimal()
+  ) +
+    ggplot2::theme(
+      text = ggplot2::element_text(color = "black"),
+      axis.text = ggplot2::element_text(color = "black"),
+      axis.title = ggplot2::element_text(color = "black"),
+      legend.text = ggplot2::element_text(color = "black"),
+      legend.title = ggplot2::element_text(color = "black"),
+      strip.text = ggplot2::element_text(color = "black")
+    )
+
+  if (isTRUE(show_panel_border)) {
+    out <- out + ggplot2::theme(
+      panel.border = ggplot2::element_rect(
+        color = "black",
+        fill = NA,
+        linewidth = 0.5
+      )
+    )
+  } else if (identical(show_panel_border, FALSE)) {
+    out <- out + ggplot2::theme(panel.border = ggplot2::element_blank())
+  }
+
+  out
+}
+
+normalize_signal_alpha <- function(signal_alpha = 0.85) {
+  signal_alpha <- suppressWarnings(as.numeric(signal_alpha)[1L])
+  if (!is.finite(signal_alpha) || signal_alpha < 0 || signal_alpha > 1) {
+    stop("`signal_alpha` must be a numeric value between 0 and 1.", call. = FALSE)
+  }
+  signal_alpha
+}
+
+normalize_signal_bar_width <- function(signal_bar_width = 1) {
+  signal_bar_width <- suppressWarnings(as.numeric(signal_bar_width)[1L])
+  if (!is.finite(signal_bar_width) ||
+      signal_bar_width <= 0 ||
+      signal_bar_width > 1) {
+    stop(
+      "`signal_bar_width` must be a numeric value greater than 0 and no greater than 1.",
+      call. = FALSE
+    )
+  }
+  signal_bar_width
+}
+
+normalize_signal_y_limits <- function(signal_y_limits = NULL) {
+  if (is.null(signal_y_limits)) {
+    return(NULL)
+  }
+  signal_y_limits <- suppressWarnings(as.numeric(signal_y_limits))
+  if (length(signal_y_limits) != 2L ||
+      any(!is.finite(signal_y_limits)) ||
+      signal_y_limits[1L] >= signal_y_limits[2L]) {
+    stop(
+      "`signal_y_limits` must contain two finite increasing numeric values.",
+      call. = FALSE
+    )
+  }
+  signal_y_limits
+}
+
+resolve_signal_y_scale <- function(signal_y_scale, signal_y_limits = NULL) {
+  signal_y_scale <- match.arg(signal_y_scale, c("free", "fixed"))
+  if (!is.null(signal_y_limits) && signal_y_scale == "free") {
+    warning(
+      "`signal_y_limits` requires a shared y-axis; `signal_y_scale` was changed to 'fixed'.",
+      call. = FALSE
+    )
+    signal_y_scale <- "fixed"
+  }
+  signal_y_scale
+}
 
 make_feature_segments <- function(tx, exons) {
   if (nrow(tx) == 0L || nrow(exons) == 0L) {

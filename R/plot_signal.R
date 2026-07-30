@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-27
-# Version: 0.1.32
+# Version: 0.3.21
 # Function: Plot signal tracks for transcripts, genes, and genomic regions
 # Input: BwgTrack and optional GenePred objects
 # Output: ggplot signal figures
@@ -27,11 +27,16 @@
 #' @param signal_transform Signal-axis transformation. Use `none`, `log2`, `log10`, or `sqrt`. Log transforms use signed log1p-style transformation to tolerate zero values.
 #' @param signal_y_scale Signal y-axis scale mode. Use `free` for each sample to have its own y-axis range, or `fixed` to force all samples to share the same y-axis range.
 #' @param signal_y_ticks Signal y-axis tick mode. Use `range` to show only integer axis limits as the minimum and maximum ticks, or `pretty` to use ggplot2 default-style breaks.
+#' @param signal_y_limits Optional two-element numeric vector giving the plotted y-axis limits after `signal_transform`. Supplying limits changes `signal_y_scale` to `fixed`.
+#' @param signal_alpha Signal geometry transparency from 0 to 1.
+#' @param signal_bar_width Relative width of bar intervals from greater than 0 to 1. A value below 1 creates proportional gaps without changing interval centers.
 #' @param cds_height Vertical thickness of CDS rectangles in the gene model track.
 #' @param utr_height Vertical thickness of UTR/non-coding exon rectangles in the gene model track.
 #' @param direction_mode Direction-arrow style for the gene model track. `transcript` draws one arrow per transcript, `gene` draws one arrow per gene, `end` draws one short arrow at the directional end of each gene, and `none` hides direction arrows.
 #' @param label_position Where to draw gene model labels. `axis` draws labels on the y axis and `feature` draws labels on the model.
 #' @param label_by Which identifier to use for gene model labels.
+#' @param plot_theme Base ggplot2 theme. Use `bw`, `classic`, `light`, or `minimal`.
+#' @param show_panel_border Whether to draw panel borders. `NULL` preserves the selected theme default.
 #' @param text_size Text size in points for signal and gene model axis text, axis titles, facet strips, and legends.
 #' @details
 #' `samples` selects the samples to draw. `sample_groups` can be a named vector
@@ -91,7 +96,12 @@ plot_signal_transcript <- function(
   direction_mode = c("transcript", "gene", "end", "none"),
   label_position = c("axis", "feature"),
   label_by = c("gene", "transcript"),
-  text_size = 14
+  text_size = 14,
+  signal_y_limits = NULL,
+  signal_alpha = 0.85,
+  signal_bar_width = 1,
+  plot_theme = c("bw", "classic", "light", "minimal"),
+  show_panel_border = NULL
 ) {
   stop_if_not(
     inherits(signal, "BwgTrack"),
@@ -107,8 +117,13 @@ plot_signal_transcript <- function(
   signal_color_by <- match.arg(signal_color_by)
   signal_summary <- match.arg(signal_summary)
   signal_transform <- match.arg(signal_transform)
-  signal_y_scale <- match.arg(signal_y_scale)
   signal_y_ticks <- match.arg(signal_y_ticks)
+  signal_y_limits <- normalize_signal_y_limits(signal_y_limits)
+  signal_y_scale <- resolve_signal_y_scale(signal_y_scale, signal_y_limits)
+  signal_alpha <- normalize_signal_alpha(signal_alpha)
+  signal_bar_width <- normalize_signal_bar_width(signal_bar_width)
+  plot_theme <- normalize_plot_theme(plot_theme)
+  show_panel_border <- normalize_show_panel_border(show_panel_border)
   direction_mode <- match.arg(direction_mode)
   label_position <- match.arg(label_position)
   label_by <- match.arg(label_by)
@@ -173,6 +188,9 @@ plot_signal_transcript <- function(
       signal_transform = signal_transform,
       signal_y_scale = signal_y_scale,
       signal_y_ticks = signal_y_ticks,
+      signal_y_limits = signal_y_limits,
+      signal_alpha = signal_alpha,
+      signal_bar_width = signal_bar_width,
       frame_palette = frame_palette,
       frame_colors = frame_colors,
       x_label = ifelse(
@@ -182,6 +200,8 @@ plot_signal_transcript <- function(
       ),
       text_size = text_size,
       grid_linewidth = grid_linewidth,
+      plot_theme = plot_theme,
+      show_panel_border = show_panel_border,
       highlight = highlight
     )
   } else {
@@ -215,6 +235,11 @@ plot_signal_transcript <- function(
       signal_transform = signal_transform,
       signal_y_scale = signal_y_scale,
       signal_y_ticks = signal_y_ticks,
+      signal_y_limits = signal_y_limits,
+      signal_alpha = signal_alpha,
+      signal_bar_width = signal_bar_width,
+      plot_theme = plot_theme,
+      show_panel_border = show_panel_border,
       text_size = text_size,
       heatmap_bin_size = heatmap_bin_size,
       heatmap_max_bins = heatmap_max_bins,
@@ -243,6 +268,8 @@ plot_signal_transcript <- function(
     utr_height = utr_height,
     direction_mode = direction_mode,
     highlight = highlight,
+    plot_theme = plot_theme,
+    show_panel_border = show_panel_border,
     label_position = label_position,
     label_by = label_by,
     text_size = text_size
@@ -270,12 +297,17 @@ plot_signal_transcript <- function(
 #' @param signal_transform Signal-axis transformation. Use `none`, `log2`, `log10`, or `sqrt`. Log transforms use signed log1p-style transformation to tolerate zero values.
 #' @param signal_y_scale Signal y-axis scale mode. Use `free` for each sample to have its own y-axis range, or `fixed` to force all samples to share the same y-axis range.
 #' @param signal_y_ticks Signal y-axis tick mode. Use `range` to show only integer axis limits as the minimum and maximum ticks, or `pretty` to use ggplot2 default-style breaks.
+#' @param signal_y_limits Optional two-element numeric vector giving the plotted y-axis limits after `signal_transform`. Supplying limits changes `signal_y_scale` to `fixed`.
+#' @param signal_alpha Signal geometry transparency from 0 to 1.
+#' @param signal_bar_width Relative width of bar intervals from greater than 0 to 1. A value below 1 creates proportional gaps without changing interval centers.
 #' @param cds_height Vertical thickness of CDS rectangles in the gene model track.
 #' @param utr_height Vertical thickness of UTR/non-coding exon rectangles in the gene model track.
 #' @param label_position Where to draw gene model labels. `axis` draws labels on the y axis and `feature` draws labels at the center of each gene/transcript structure.
 #' @param label_by Which identifier to use for gene model labels. Use `gene` for gene IDs or `transcript` for transcript IDs.
 #' @param text_size Text size in points for signal and gene model axis text, axis titles, facet strips, and legends.
 #' @param direction_mode Direction-arrow style for the gene model track. `transcript` draws one arrow per transcript, `gene` draws one arrow per gene, `end` draws one short arrow at the directional end of each gene, and `none` hides direction arrows.
+#' @param plot_theme Base ggplot2 theme. Use `bw`, `classic`, `light`, or `minimal`.
+#' @param show_panel_border Whether to draw panel borders. `NULL` preserves the selected theme default.
 #' @details
 #' `samples` selects the samples to draw. `sample_groups` can be used for
 #' group-level coloring and replicate summaries. When raw intervals differ among
@@ -330,7 +362,12 @@ plot_signal_gene <- function(
   direction_mode = c("transcript", "gene", "end", "none"),
   label_position = c("axis", "feature"),
   label_by = c("gene", "transcript"),
-  text_size = 14
+  text_size = 14,
+  signal_y_limits = NULL,
+  signal_alpha = 0.85,
+  signal_bar_width = 1,
+  plot_theme = c("bw", "classic", "light", "minimal"),
+  show_panel_border = NULL
 ) {
   stop_if_not(
     inherits(signal, "BwgTrack"),
@@ -345,8 +382,13 @@ plot_signal_gene <- function(
   signal_color_by <- match.arg(signal_color_by)
   signal_summary <- match.arg(signal_summary)
   signal_transform <- match.arg(signal_transform)
-  signal_y_scale <- match.arg(signal_y_scale)
   signal_y_ticks <- match.arg(signal_y_ticks)
+  signal_y_limits <- normalize_signal_y_limits(signal_y_limits)
+  signal_y_scale <- resolve_signal_y_scale(signal_y_scale, signal_y_limits)
+  signal_alpha <- normalize_signal_alpha(signal_alpha)
+  signal_bar_width <- normalize_signal_bar_width(signal_bar_width)
+  plot_theme <- normalize_plot_theme(plot_theme)
+  show_panel_border <- normalize_show_panel_border(show_panel_border)
   direction_mode <- match.arg(direction_mode)
   label_position <- match.arg(label_position)
   label_by <- match.arg(label_by)
@@ -405,6 +447,11 @@ plot_signal_gene <- function(
     signal_transform = signal_transform,
     signal_y_scale = signal_y_scale,
     signal_y_ticks = signal_y_ticks,
+    signal_y_limits = signal_y_limits,
+    signal_alpha = signal_alpha,
+    signal_bar_width = signal_bar_width,
+    plot_theme = plot_theme,
+    show_panel_border = show_panel_border,
     text_size = text_size,
     heatmap_bin_size = heatmap_bin_size,
     heatmap_max_bins = heatmap_max_bins,
@@ -433,6 +480,8 @@ plot_signal_gene <- function(
     cds_height = cds_height,
     utr_height = utr_height,
     direction_mode = direction_mode,
+    plot_theme = plot_theme,
+    show_panel_border = show_panel_border,
     label_position = label_position,
     label_by = label_by,
     text_size = text_size
@@ -462,12 +511,17 @@ plot_signal_gene <- function(
 #' @param signal_transform Signal-axis transformation. Use `none`, `log2`, `log10`, or `sqrt`. Log transforms use signed log1p-style transformation to tolerate zero values.
 #' @param signal_y_scale Signal y-axis scale mode. Use `free` for each sample to have its own y-axis range, or `fixed` to force all samples to share the same y-axis range.
 #' @param signal_y_ticks Signal y-axis tick mode. Use `range` to show only integer axis limits as the minimum and maximum ticks, or `pretty` to use ggplot2 default-style breaks.
+#' @param signal_y_limits Optional two-element numeric vector giving the plotted y-axis limits after `signal_transform`. Supplying limits changes `signal_y_scale` to `fixed`.
+#' @param signal_alpha Signal geometry transparency from 0 to 1.
+#' @param signal_bar_width Relative width of bar intervals from greater than 0 to 1. A value below 1 creates proportional gaps without changing interval centers.
 #' @param cds_height Vertical thickness of CDS rectangles in the gene model track.
 #' @param utr_height Vertical thickness of UTR/non-coding exon rectangles in the gene model track.
 #' @param label_position Where to draw gene model labels. `axis` draws labels on the y axis and `feature` draws labels at the center of each gene/transcript structure.
 #' @param label_by Which identifier to use for gene model labels. Use `gene` for gene IDs or `transcript` for transcript IDs.
 #' @param text_size Text size in points for signal and gene model axis text, axis titles, facet strips, and legends.
 #' @param direction_mode Direction-arrow style for the gene model track. `transcript` draws one arrow per transcript, `gene` draws one arrow per gene, `end` draws one short arrow at the directional end of each gene, and `none` hides direction arrows.
+#' @param plot_theme Base ggplot2 theme. Use `bw`, `classic`, `light`, or `minimal`.
+#' @param show_panel_border Whether to draw panel borders. `NULL` preserves the selected theme default.
 #' @details
 #' If `annotation` is supplied and `show_gene_model = TRUE`, a gene model track
 #' is appended below the signal panel. `signal_colors` can be an unnamed vector
@@ -522,7 +576,12 @@ plot_signal_region <- function(
   direction_mode = c("transcript", "gene", "end", "none"),
   label_position = c("axis", "feature"),
   label_by = c("gene", "transcript"),
-  text_size = 14
+  text_size = 14,
+  signal_y_limits = NULL,
+  signal_alpha = 0.85,
+  signal_bar_width = 1,
+  plot_theme = c("bw", "classic", "light", "minimal"),
+  show_panel_border = NULL
 ) {
   stop_if_not(
     inherits(signal, "BwgTrack"),
@@ -533,8 +592,13 @@ plot_signal_region <- function(
   signal_color_by <- match.arg(signal_color_by)
   signal_summary <- match.arg(signal_summary)
   signal_transform <- match.arg(signal_transform)
-  signal_y_scale <- match.arg(signal_y_scale)
   signal_y_ticks <- match.arg(signal_y_ticks)
+  signal_y_limits <- normalize_signal_y_limits(signal_y_limits)
+  signal_y_scale <- resolve_signal_y_scale(signal_y_scale, signal_y_limits)
+  signal_alpha <- normalize_signal_alpha(signal_alpha)
+  signal_bar_width <- normalize_signal_bar_width(signal_bar_width)
+  plot_theme <- normalize_plot_theme(plot_theme)
+  show_panel_border <- normalize_show_panel_border(show_panel_border)
   direction_mode <- match.arg(direction_mode)
   label_position <- match.arg(label_position)
   label_by <- match.arg(label_by)
@@ -582,6 +646,11 @@ plot_signal_region <- function(
     signal_transform = signal_transform,
     signal_y_scale = signal_y_scale,
     signal_y_ticks = signal_y_ticks,
+    signal_y_limits = signal_y_limits,
+    signal_alpha = signal_alpha,
+    signal_bar_width = signal_bar_width,
+    plot_theme = plot_theme,
+    show_panel_border = show_panel_border,
     text_size = text_size,
     heatmap_bin_size = heatmap_bin_size,
     heatmap_max_bins = heatmap_max_bins,
@@ -603,6 +672,8 @@ plot_signal_region <- function(
     cds_height = cds_height,
     utr_height = utr_height,
     direction_mode = direction_mode,
+    plot_theme = plot_theme,
+    show_panel_border = show_panel_border,
     label_position = label_position,
     label_by = label_by,
     text_size = text_size
@@ -986,18 +1057,28 @@ plot_signal_frame_core <- function(
   signal_transform = c("none", "log2", "log10", "sqrt"),
   signal_y_scale = c("free", "fixed"),
   signal_y_ticks = c("range", "pretty"),
+  signal_y_limits = NULL,
+  signal_alpha = 0.85,
+  signal_bar_width = 1,
   frame_palette = "Set1",
   frame_colors = NULL,
   x_label = "Transcript coordinate",
   text_color = "black",
   text_size = 14,
   grid_linewidth = NULL,
+  plot_theme = c("bw", "classic", "light", "minimal"),
+  show_panel_border = NULL,
   highlight = NULL
 ) {
   signal_summary <- match.arg(signal_summary)
   signal_transform <- match.arg(signal_transform)
-  signal_y_scale <- match.arg(signal_y_scale)
   signal_y_ticks <- match.arg(signal_y_ticks)
+  signal_y_limits <- normalize_signal_y_limits(signal_y_limits)
+  signal_y_scale <- resolve_signal_y_scale(signal_y_scale, signal_y_limits)
+  signal_alpha <- normalize_signal_alpha(signal_alpha)
+  signal_bar_width <- normalize_signal_bar_width(signal_bar_width)
+  plot_theme <- normalize_plot_theme(plot_theme)
+  show_panel_border <- normalize_show_panel_border(show_panel_border)
 
   dt <- expand_bwg_to_positions(dt)
   frame_annotation <- data.table::as.data.table(frame_annotation)
@@ -1103,7 +1184,8 @@ plot_signal_frame_core <- function(
   y_scale <- make_signal_y_scale(
     values = dt[["plot_value"]],
     signal_y_scale = signal_y_scale,
-    signal_y_ticks = signal_y_ticks
+    signal_y_ticks = signal_y_ticks,
+    signal_y_limits = signal_y_limits
   )
   y_anchor_dt <- make_signal_y_anchor(
     dt,
@@ -1123,7 +1205,10 @@ plot_signal_frame_core <- function(
     sqrt = "Signal (signed sqrt)"
   )
 
-  base_theme <- ggplot2::theme_bw() +
+  base_theme <- make_track_theme(
+    plot_theme = plot_theme,
+    show_panel_border = show_panel_border
+  ) +
     ggplot2::theme(
       axis.text.x = ggplot2::element_text(color = text_color, size = text_size),
       axis.text.y = ggplot2::element_text(color = text_color, size = text_size),
@@ -1173,8 +1258,8 @@ plot_signal_frame_core <- function(
         ggplot2::aes(x = .data$mid, y = .data$plot_value),
         fill = "grey80",
         color = NA,
-        width = 1,
-        alpha = 0.65
+        width = signal_bar_width,
+        alpha = signal_alpha
       )
   }
   if (nrow(cds_dt) > 0L) {
@@ -1182,8 +1267,8 @@ plot_signal_frame_core <- function(
       ggplot2::geom_col(
         data = cds_dt,
         ggplot2::aes(x = .data$mid, y = .data$plot_value, fill = .data$frame),
-        width = 1,
-        alpha = 0.90
+        width = signal_bar_width,
+        alpha = signal_alpha
       ) +
       ggplot2::scale_fill_manual(
         values = frame_cols,
@@ -1211,6 +1296,11 @@ plot_signal_core <- function(
   signal_transform = c("none", "log2", "log10", "sqrt"),
   signal_y_scale = c("free", "fixed"),
   signal_y_ticks = c("range", "pretty"),
+  signal_y_limits = NULL,
+  signal_alpha = 0.85,
+  signal_bar_width = 1,
+  plot_theme = c("bw", "classic", "light", "minimal"),
+  show_panel_border = NULL,
   text_size = 14,
   heatmap_bin_size = NULL,
   heatmap_max_bins = 800L,
@@ -1220,8 +1310,13 @@ plot_signal_core <- function(
   signal_color_by <- match.arg(signal_color_by)
   signal_summary <- match.arg(signal_summary)
   signal_transform <- match.arg(signal_transform)
-  signal_y_scale <- match.arg(signal_y_scale)
   signal_y_ticks <- match.arg(signal_y_ticks)
+  signal_y_limits <- normalize_signal_y_limits(signal_y_limits)
+  signal_y_scale <- resolve_signal_y_scale(signal_y_scale, signal_y_limits)
+  signal_alpha <- normalize_signal_alpha(signal_alpha)
+  signal_bar_width <- normalize_signal_bar_width(signal_bar_width)
+  plot_theme <- normalize_plot_theme(plot_theme)
+  show_panel_border <- normalize_show_panel_border(show_panel_border)
   heatmap_summary <- match.arg(heatmap_summary)
   text_color <- "black"
   dt <- data.table::as.data.table(dt)
@@ -1282,7 +1377,8 @@ plot_signal_core <- function(
   y_scale <- make_signal_y_scale(
     values = dt[["plot_value"]],
     signal_y_scale = signal_y_scale,
-    signal_y_ticks = signal_y_ticks
+    signal_y_ticks = signal_y_ticks,
+    signal_y_limits = signal_y_limits
   )
   y_anchor_dt <- make_signal_y_anchor(
     dt,
@@ -1290,7 +1386,10 @@ plot_signal_core <- function(
     signal_y_ticks = signal_y_ticks
   )
 
-  base_theme <- ggplot2::theme_bw() +
+  base_theme <- make_track_theme(
+    plot_theme = plot_theme,
+    show_panel_border = show_panel_border
+  ) +
     ggplot2::theme(
       axis.text.x = ggplot2::element_text(color = text_color, size = text_size),
       axis.text.y = ggplot2::element_text(color = text_color, size = text_size),
@@ -1335,7 +1434,7 @@ plot_signal_core <- function(
         width = pmax(end - start + 1L, 1L)
       )
     ) +
-      ggplot2::geom_tile(height = 0.90) +
+      ggplot2::geom_tile(height = 0.90, alpha = signal_alpha) +
       ggplot2::scale_y_discrete(position = "right") +
       ggplot2::labs(x = x_label, y = NULL, fill = y_label) +
       apply_signal_continuous_fill_scale(
@@ -1398,10 +1497,18 @@ plot_signal_core <- function(
           inherit.aes = FALSE
         )
     }
-    p <- p + ggplot2::geom_line(linewidth = 0.4, na.rm = TRUE)
+    p <- p + ggplot2::geom_line(
+      linewidth = 0.4,
+      alpha = signal_alpha,
+      na.rm = TRUE
+    )
   } else if (plot_type == "bar") {
     dt[, "bar_ymin" := data.table::fifelse(plot_value >= 0, 0, plot_value)]
     dt[, "bar_ymax" := data.table::fifelse(plot_value >= 0, plot_value, 0)]
+    dt[, "bar_width" := pmax(as.numeric(end) - as.numeric(start) + 1, 1)]
+    dt[, "bar_xmid" := (as.numeric(start) + as.numeric(end)) / 2]
+    dt[, "bar_xmin" := bar_xmid - bar_width * signal_bar_width / 2]
+    dt[, "bar_xmax" := bar_xmid + bar_width * signal_bar_width / 2]
     p <- ggplot2::ggplot(dt, ggplot2::aes(fill = .data[[color_aes]])) +
       ggplot2::facet_grid(sample_id ~ ., scales = facet_scales) +
       ggplot2::labs(x = x_label, y = y_label, fill = "Sample") +
@@ -1419,13 +1526,13 @@ plot_signal_core <- function(
     p <- p +
       ggplot2::geom_rect(
         ggplot2::aes(
-          xmin = .data$start - 0.5,
-          xmax = .data$end + 0.5,
+          xmin = .data$bar_xmin,
+          xmax = .data$bar_xmax,
           ymin = .data$bar_ymin,
           ymax = .data$bar_ymax
         ),
         color = NA,
-        alpha = 0.85
+        alpha = signal_alpha
       )
   }
 
@@ -1525,10 +1632,12 @@ fill_signal_line_gaps_with_zero <- function(dt, color_aes = "sample_id") {
 make_signal_y_scale <- function(
   values = NULL,
   signal_y_scale = c("free", "fixed"),
-  signal_y_ticks = c("range", "pretty")
+  signal_y_ticks = c("range", "pretty"),
+  signal_y_limits = NULL
 ) {
-  signal_y_scale <- match.arg(signal_y_scale)
   signal_y_ticks <- match.arg(signal_y_ticks)
+  signal_y_limits <- normalize_signal_y_limits(signal_y_limits)
+  signal_y_scale <- resolve_signal_y_scale(signal_y_scale, signal_y_limits)
 
   make_numeric_limits <- function(
     x,
@@ -1626,14 +1735,43 @@ make_signal_y_scale <- function(
     )
   }
 
+  squish_to_limits <- function(x, range) {
+    x <- as.numeric(x)
+    x[x < range[1L]] <- range[1L]
+    x[x > range[2L]] <- range[2L]
+    x
+  }
+
   if (signal_y_scale == "fixed") {
-    lim <- make_numeric_limits(
-      values,
-      force_zero_baseline = TRUE,
-      add_padding = TRUE
-    )
+    lim <- if (is.null(signal_y_limits)) {
+      make_numeric_limits(
+        values,
+        force_zero_baseline = TRUE,
+        add_padding = TRUE
+      )
+    } else {
+      signal_y_limits
+    }
     if (is.null(lim)) {
       return(ggplot2::scale_y_continuous())
+    }
+    if (!is.null(signal_y_limits)) {
+      if (signal_y_ticks == "range") {
+        brks <- make_range_breaks(lim)
+        return(ggplot2::scale_y_continuous(
+          limits = lim,
+          breaks = brks,
+          labels = signal_label,
+          expand = c(0, 0),
+          oob = squish_to_limits
+        ))
+      }
+      return(ggplot2::scale_y_continuous(
+        limits = lim,
+        labels = signal_label,
+        expand = c(0, 0),
+        oob = squish_to_limits
+      ))
     }
     if (signal_y_ticks == "range") {
       brks <- make_range_breaks(lim)

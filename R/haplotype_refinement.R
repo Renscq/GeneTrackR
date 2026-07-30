@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-06-04
-# Version: 0.1.0
+# Date: 2026-07-30
+# Version: 0.3.23
 # Function: Refine haplotypes and prioritize phenotype-associated variant effects
 # Input: HapVariant objects and phenotype tables
 # Output: Refined haplotype objects, variant-effect tables, and ggplot figures
@@ -382,7 +382,11 @@ plot_refined_hap_pheno <- function(refined_hap,
 #' @param gene_colors Optional custom fill colors for gene model features.
 #' @param gene_border_color Border color for gene model feature boxes.
 #' @param table_palette RColorBrewer palette name used for haplotype table fills.
+#' For allele-string haplotypes, the first five colors are always assigned in
+#' the fixed order A, T, C, G, and indel.
 #' @param table_colors Optional custom fill colors for haplotype table genotypes.
+#' For allele-string haplotypes, use a vector named `A`, `T`, `C`, `G`, and
+#' `indel`, or supply five unnamed colors in that order.
 #' @param table_alpha Alpha value for haplotype table fill colors.
 #' @param reference_fill Background fill color for the REF and ALT reference rows.
 #' @param variant_palette RColorBrewer palette name used for solid variant-type triangle marker colors.
@@ -596,6 +600,10 @@ plot_refined_hap_variant <- function(refined_hap,
     genotype_mode = original_hap$meta$genotype_mode %||% NA_character_
   )]
   table_long[is.na(genotype_label), "genotype_label" := "NA"]
+  table_long[, "genotype_fill_class" := normalize_hap_table_fill_class(
+    genotype_label,
+    genotype_mode = original_hap$meta$genotype_mode %||% NA_character_
+  )]
 
   y_breaks <- display_rows$hap_y
   y_labels <- display_rows$row_label
@@ -719,7 +727,7 @@ plot_refined_hap_variant <- function(refined_hap,
   p_table <- ggplot2::ggplot() +
     ggplot2::geom_tile(
       data = table_genotype,
-      ggplot2::aes(x = .data$variant_index, y = .data$hap_y, fill = .data$genotype_label),
+      ggplot2::aes(x = .data$variant_index, y = .data$hap_y, fill = .data$genotype_fill_class),
       color = "grey80",
       linewidth = 0.28,
       width = 0.96,
@@ -801,7 +809,11 @@ plot_refined_hap_variant <- function(refined_hap,
     values = table_genotype$genotype_label,
     table_palette = table_palette,
     table_colors = table_colors,
-    table_alpha = table_alpha
+    table_alpha = table_alpha,
+    fixed_allele_classes = identical(
+      as.character(original_hap$meta$genotype_mode %||% NA_character_)[1L],
+      "string"
+    )
   )
 
   if (is.null(table_height)) {

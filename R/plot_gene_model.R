@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-27
-# Version: 0.1.29
+# Version: 0.3.21
 # Function: Plot transcript, gene, and genomic region structures
 # Input: GenePred objects and feature identifiers or regions
 # Output: ggplot gene model figures
@@ -17,6 +17,8 @@
 #' @param gene_palette RColorBrewer palette name used for discrete fills. If the number of discrete groups exceeds the palette maximum, colors are automatically interpolated.
 #' @param gene_colors Optional custom fill colors for gene model features. Use a named vector such as `c(UTR = "#b2df8a", CDS = "#33a02c", exon = "#fb9a99")` to map colors explicitly. Unnamed colors are matched to the fixed gene-model levels `UTR`, `CDS`, and `exon`, so colors remain stable even when only one feature type is present.
 #' @param gene_border_color Optional rectangle border color. Use `NA` to hide borders, or a color such as `"black"` or `"grey30"` to draw feature outlines.
+#' @param plot_theme Base ggplot2 theme. Use `bw`, `classic`, `light`, or `minimal`.
+#' @param show_panel_border Whether to draw the panel border. `NULL` preserves the selected theme default.
 #' @param label_position Where to draw feature labels. `axis` draws labels on the y axis and `feature` draws labels at the center of each gene/transcript structure.
 #' @param label_by Which identifier to use for feature labels. Use `gene` for gene IDs or `transcript` for transcript IDs.
 #' @param text_size Text size in points for axis text, axis titles, and legends.
@@ -42,10 +44,12 @@
 #' )
 #' }
 #' @export
-plot_transcript <- function(object, transcript_id, coordinate = c("transcript", "genomic"), show_cds = TRUE, cds_height = 0.50, utr_height = 0.25, direction_mode = c("transcript", "gene", "end", "none"), highlight = NULL, gene_palette = "Paired", gene_colors = NULL, gene_border_color = NA, label_position = c("axis", "feature"), label_by = c("gene", "transcript"), text_size = 14) {
+plot_transcript <- function(object, transcript_id, coordinate = c("transcript", "genomic"), show_cds = TRUE, cds_height = 0.50, utr_height = 0.25, direction_mode = c("transcript", "gene", "end", "none"), highlight = NULL, gene_palette = "Paired", gene_colors = NULL, gene_border_color = NA, label_position = c("axis", "feature"), label_by = c("gene", "transcript"), text_size = 14, plot_theme = c("bw", "classic", "light", "minimal"), show_panel_border = NULL) {
   stop_if_not(is_gene_model_feature(object), "`object` must be a GenePred object or a Feature object with transcript/exon records.")
   object <- as_genepred(object)
   coordinate <- match.arg(coordinate)
+  plot_theme <- normalize_plot_theme(plot_theme)
+  show_panel_border <- normalize_show_panel_border(show_panel_border)
   direction_mode <- match.arg(direction_mode)
   label_position <- match.arg(label_position)
   label_by <- match.arg(label_by)
@@ -70,6 +74,8 @@ plot_transcript <- function(object, transcript_id, coordinate = c("transcript", 
     gene_palette = gene_palette,
     gene_colors = gene_colors,
     gene_border_color = gene_border_color,
+    plot_theme = plot_theme,
+    show_panel_border = show_panel_border,
     label_position = label_position,
     label_by = label_by,
     text_size = text_size
@@ -89,6 +95,8 @@ plot_transcript <- function(object, transcript_id, coordinate = c("transcript", 
 #' @param gene_palette RColorBrewer palette name used for discrete fills. If the number of discrete groups exceeds the palette maximum, colors are automatically interpolated.
 #' @param gene_colors Optional custom fill colors for gene model features. Use a named vector such as `c(UTR = "#b2df8a", CDS = "#33a02c", exon = "#fb9a99")` to map colors explicitly. Unnamed colors are matched to the fixed gene-model levels `UTR`, `CDS`, and `exon`, so colors remain stable even when only one feature type is present.
 #' @param gene_border_color Optional rectangle border color. Use `NA` to hide borders, or a color such as `"black"` or `"grey30"` to draw feature outlines.
+#' @param plot_theme Base ggplot2 theme. Use `bw`, `classic`, `light`, or `minimal`.
+#' @param show_panel_border Whether to draw the panel border. `NULL` preserves the selected theme default.
 #' @param label_position Where to draw feature labels. `axis` draws labels on the y axis and `feature` draws labels at the center of each gene/transcript structure.
 #' @param label_by Which identifier to use for feature labels. Use `gene` for gene IDs or `transcript` for transcript IDs.
 #' @param text_size Text size in points for axis text, axis titles, and legends.
@@ -116,11 +124,13 @@ plot_transcript <- function(object, transcript_id, coordinate = c("transcript", 
 #' )
 #' }
 #' @export
-plot_gene <- function(object, gene_id, collapse = c("none", "union_exon", "longest"), coordinate = c("genomic", "transcript"), show_cds = TRUE, cds_height = 0.50, utr_height = 0.25, direction_mode = c("transcript", "gene", "end", "none"), highlight = NULL, gene_palette = "Paired", gene_colors = NULL, gene_border_color = NA, label_position = c("axis", "feature"), label_by = c("gene", "transcript"), text_size = 14) {
+plot_gene <- function(object, gene_id, collapse = c("none", "union_exon", "longest"), coordinate = c("genomic", "transcript"), show_cds = TRUE, cds_height = 0.50, utr_height = 0.25, direction_mode = c("transcript", "gene", "end", "none"), highlight = NULL, gene_palette = "Paired", gene_colors = NULL, gene_border_color = NA, label_position = c("axis", "feature"), label_by = c("gene", "transcript"), text_size = 14, plot_theme = c("bw", "classic", "light", "minimal"), show_panel_border = NULL) {
   stop_if_not(is_gene_model_feature(object), "`object` must be a GenePred object or a Feature object with transcript/exon records.")
   object <- as_genepred(object)
   collapse <- match.arg(collapse)
   coordinate <- match.arg(coordinate)
+  plot_theme <- normalize_plot_theme(plot_theme)
+  show_panel_border <- normalize_show_panel_border(show_panel_border)
   label_position <- match.arg(label_position)
   label_by <- match.arg(label_by)
   direction_mode <- match.arg(direction_mode)
@@ -146,6 +156,8 @@ plot_gene <- function(object, gene_id, collapse = c("none", "union_exon", "longe
     gene_palette = gene_palette,
     gene_colors = gene_colors,
     gene_border_color = gene_border_color,
+    plot_theme = plot_theme,
+    show_panel_border = show_panel_border,
     label_position = label_position,
     label_by = label_by,
     text_size = text_size
@@ -167,6 +179,8 @@ plot_gene <- function(object, gene_id, collapse = c("none", "union_exon", "longe
 #' @param gene_palette RColorBrewer palette name used for discrete fills. If the number of discrete groups exceeds the palette maximum, colors are automatically interpolated.
 #' @param gene_colors Optional custom fill colors for gene model features. Use a named vector such as `c(UTR = "#b2df8a", CDS = "#33a02c", exon = "#fb9a99")` to map colors explicitly. Unnamed colors are matched to the fixed gene-model levels `UTR`, `CDS`, and `exon`, so colors remain stable even when only one feature type is present.
 #' @param gene_border_color Optional rectangle border color. Use `NA` to hide borders, or a color such as `"black"` or `"grey30"` to draw feature outlines.
+#' @param plot_theme Base ggplot2 theme. Use `bw`, `classic`, `light`, or `minimal`.
+#' @param show_panel_border Whether to draw the panel border. `NULL` preserves the selected theme default.
 #' @param label_position Where to draw feature labels. `axis` draws labels on the y axis and `feature` draws labels at the center of each gene/transcript structure.
 #' @param label_by Which identifier to use for feature labels. Use `gene` for gene IDs or `transcript` for transcript IDs.
 #' @param text_size Text size in points for axis text, axis titles, and legends.
@@ -192,11 +206,13 @@ plot_gene <- function(object, gene_id, collapse = c("none", "union_exon", "longe
 #' )
 #' }
 #' @export
-plot_region <- function(object, chrom, start, end, mode = c("within", "overlap", "trim"), collapse = c("none", "union_exon", "longest"), show_cds = TRUE, cds_height = 0.50, utr_height = 0.25, direction_mode = c("transcript", "gene", "end", "none"), highlight = NULL, gene_palette = "Paired", gene_colors = NULL, gene_border_color = NA, label_position = c("axis", "feature"), label_by = c("gene", "transcript"), text_size = 14) {
+plot_region <- function(object, chrom, start, end, mode = c("within", "overlap", "trim"), collapse = c("none", "union_exon", "longest"), show_cds = TRUE, cds_height = 0.50, utr_height = 0.25, direction_mode = c("transcript", "gene", "end", "none"), highlight = NULL, gene_palette = "Paired", gene_colors = NULL, gene_border_color = NA, label_position = c("axis", "feature"), label_by = c("gene", "transcript"), text_size = 14, plot_theme = c("bw", "classic", "light", "minimal"), show_panel_border = NULL) {
   stop_if_not(is_gene_model_feature(object), "`object` must be a GenePred object or a Feature object with transcript/exon records.")
   object <- as_genepred(object)
   mode <- match.arg(mode)
   collapse <- match.arg(collapse)
+  plot_theme <- normalize_plot_theme(plot_theme)
+  show_panel_border <- normalize_show_panel_border(show_panel_border)
   label_position <- match.arg(label_position)
   label_by <- match.arg(label_by)
   direction_mode <- match.arg(direction_mode)
@@ -230,6 +246,8 @@ plot_region <- function(object, chrom, start, end, mode = c("within", "overlap",
     gene_palette = gene_palette,
     gene_colors = gene_colors,
     gene_border_color = gene_border_color,
+    plot_theme = plot_theme,
+    show_panel_border = show_panel_border,
     label_position = label_position,
     label_by = label_by,
     text_size = text_size
@@ -237,8 +255,10 @@ plot_region <- function(object, chrom, start, end, mode = c("within", "overlap",
     ggplot2::coord_cartesian(xlim = c(start_value, end_value))
 }
 
-plot_gene_model_core <- function(tx, exons, coordinate = c("genomic", "transcript"), collapse = "none", show_cds = TRUE, cds_height = 0.50, utr_height = 0.25, direction_mode = c("transcript", "gene", "end", "none"), highlight = NULL, gene_palette = "Paired", gene_colors = NULL, gene_border_color = NA, label_position = c("axis", "feature"), label_by = c("gene", "transcript"), text_size = 14) {
+plot_gene_model_core <- function(tx, exons, coordinate = c("genomic", "transcript"), collapse = "none", show_cds = TRUE, cds_height = 0.50, utr_height = 0.25, direction_mode = c("transcript", "gene", "end", "none"), highlight = NULL, gene_palette = "Paired", gene_colors = NULL, gene_border_color = NA, plot_theme = c("bw", "classic", "light", "minimal"), show_panel_border = NULL, label_position = c("axis", "feature"), label_by = c("gene", "transcript"), text_size = 14) {
   coordinate <- match.arg(coordinate)
+  plot_theme <- normalize_plot_theme(plot_theme)
+  show_panel_border <- normalize_show_panel_border(show_panel_border)
   direction_mode <- match.arg(direction_mode)
   label_position <- match.arg(label_position)
   label_by <- match.arg(label_by)
@@ -400,7 +420,10 @@ plot_gene_model_core <- function(tx, exons, coordinate = c("genomic", "transcrip
       x = x_label,
       y = NULL
     ) +
-    ggplot2::theme_bw() +
+    make_track_theme(
+      plot_theme = plot_theme,
+      show_panel_border = show_panel_border
+    ) +
     ggplot2::theme(
       axis.text.x = ggplot2::element_text(color = text_color, size = text_size),
       axis.text.y = ggplot2::element_text(color = text_color, size = text_size),

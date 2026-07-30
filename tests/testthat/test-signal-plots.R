@@ -32,7 +32,7 @@ test_that("gene model, signal, and combined track plots are generated", {
     chrom = "chr1",
     start = 1,
     end = 1200,
-    gene_color_palette = "Set2"
+    gene_palette = "Set2"
   )
   expect_true(inherits(p, "patchwork") || inherits(p, "ggplot"))
 })
@@ -54,6 +54,55 @@ test_that("signal plotting supports sample groups and summaries", {
     bin_size = 100
   )
   expect_true(inherits(p, "patchwork"))
+})
+
+test_that("track themes and signal style parameters are applied consistently", {
+  dt <- data.table::data.table(
+    sample_id = "sampleA",
+    chrom = "chr1",
+    start = c(1L, 3L),
+    end = c(2L, 4L),
+    value = c(4, 25),
+    strand = "*"
+  )
+
+  p <- plot_signal_core(
+    dt,
+    plot_type = "bar",
+    signal_transform = "sqrt",
+    signal_y_scale = "fixed",
+    signal_y_limits = c(0, 4),
+    signal_alpha = 0.60,
+    signal_bar_width = 0.50,
+    plot_theme = "classic",
+    show_panel_border = FALSE
+  )
+  built <- ggplot2::ggplot_build(p)
+  bar_layer <- built$data[[1L]]
+
+  expect_s3_class(p, "ggplot")
+  expect_equal(nrow(bar_layer), 2L)
+  expect_equal(bar_layer$xmax - bar_layer$xmin, rep(1, 2))
+  expect_equal(unique(bar_layer$alpha), 0.60)
+  expect_s3_class(p$theme$panel.border, "element_blank")
+  expect_equal(p$scales$get_scales("y")$limits, c(0, 4))
+
+  expect_warning(
+    plot_signal_core(
+      dt,
+      signal_y_scale = "free",
+      signal_y_limits = c(0, 10)
+    ),
+    "changed to 'fixed'"
+  )
+})
+
+test_that("new plotting parameter validation is strict", {
+  expect_error(normalize_signal_alpha(1.1), "between 0 and 1")
+  expect_error(normalize_signal_bar_width(0), "greater than 0")
+  expect_error(normalize_signal_y_limits(c(2, 1)), "increasing")
+  expect_error(normalize_show_panel_border(1), "NULL, TRUE, or FALSE")
+  expect_error(normalize_plot_theme("dark"), "arg")
 })
 
 test_that("gene model feature colors are stable across observed feature subsets", {

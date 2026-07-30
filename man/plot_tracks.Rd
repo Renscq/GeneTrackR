@@ -42,7 +42,12 @@ plot_tracks(
   direction_mode = c("transcript", "gene", "end", "none"),
   label_position = c("axis", "feature"),
   label_by = c("gene", "transcript"),
-  text_size = 14
+  text_size = 14,
+  signal_y_limits = NULL,
+  signal_alpha = 0.85,
+  signal_bar_width = 1,
+  plot_theme = c("bw", "classic", "light", "minimal"),
+  show_panel_border = NULL
 )
 }
 \arguments{
@@ -92,6 +97,12 @@ plot_tracks(
 
 \item{signal_y_ticks}{Signal y-axis tick mode. Use \code{range} to show only integer minimum and maximum limits or \code{pretty} for default-style breaks.}
 
+\item{signal_y_limits}{Optional two-element numeric vector giving the plotted y-axis limits after \code{signal_transform}. Supplying limits changes \code{signal_y_scale} to \code{fixed}.}
+
+\item{signal_alpha}{Signal geometry transparency from 0 to 1.}
+
+\item{signal_bar_width}{Relative width of bar intervals from greater than 0 to 1. A value below 1 creates proportional gaps without changing interval centers.}
+
 \item{collapse}{Gene model collapse mode for region-level plotting.}
 
 \item{strand}{Signal strand selector.}
@@ -113,6 +124,10 @@ plot_tracks(
 \item{label_position}{Where to draw gene model labels. \code{axis} draws labels on the y axis and \code{feature} draws labels near the feature.}
 
 \item{label_by}{Which identifier to use for gene model labels. Use \code{gene} for gene IDs or \code{transcript} for transcript IDs.}
+
+\item{plot_theme}{Base ggplot2 theme used by all standard track panels. Use \code{bw}, \code{classic}, \code{light}, or \code{minimal}.}
+
+\item{show_panel_border}{Whether to draw panel borders. \code{NULL} preserves the selected theme default.}
 
 \item{text_size}{Text size in points for axis text, axis titles, legends, and facet labels.}
 }

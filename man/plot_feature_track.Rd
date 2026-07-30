@@ -15,7 +15,9 @@ plot_feature_track(
   feature_palette = "Set2",
   feature_colors = NULL,
   feature_border_color = NA,
-  text_size = 14
+  text_size = 14,
+  plot_theme = c("bw", "classic", "light", "minimal"),
+  show_panel_border = NULL
 )
 }
 \arguments{
@@ -38,6 +40,10 @@ plot_feature_track(
 \item{feature_colors}{Optional named or unnamed feature fill color vector.}
 
 \item{feature_border_color}{Rectangle border color. Use NA to hide borders.}
+
+\item{plot_theme}{Base ggplot2 theme. Use \code{bw}, \code{classic}, \code{light}, or \code{minimal}.}
+
+\item{show_panel_border}{Whether to draw the panel border. \code{NULL} preserves the selected theme default.}
 
 \item{text_size}{Text size.}
 }
