@@ -49,15 +49,15 @@ plot_gene(
 
 \item{gene_border_color}{Optional rectangle border color. Use \code{NA} to hide borders, or a color such as \code{"black"} or \code{"grey30"} to draw feature outlines.}
 
-\item{plot_theme}{Base ggplot2 theme. Use \code{bw}, \code{classic}, \code{light}, or \code{minimal}.}
-
-\item{show_panel_border}{Whether to draw the panel border. \code{NULL} preserves the selected theme default.}
-
 \item{label_position}{Where to draw feature labels. \code{axis} draws labels on the y axis and \code{feature} draws labels at the center of each gene/transcript structure.}
 
 \item{label_by}{Which identifier to use for feature labels. Use \code{gene} for gene IDs or \code{transcript} for transcript IDs.}
 
 \item{text_size}{Text size in points for axis text, axis titles, and legends.}
+
+\item{plot_theme}{Base ggplot2 theme. Use \code{bw}, \code{classic}, \code{light}, or \code{minimal}.}
+
+\item{show_panel_border}{Whether to draw the panel border. \code{NULL} preserves the selected theme default.}
 }
 \value{
 A ggplot object.

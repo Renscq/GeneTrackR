@@ -13,10 +13,5 @@ genomic signal tracks.
 \author{
 \strong{Maintainer}: Rensc \email{rensc0718@163.com}
 
-Authors:
-\itemize{
-  \item Rensc \email{rensc0718@163.com}
-}
-
 }
 \keyword{internal}

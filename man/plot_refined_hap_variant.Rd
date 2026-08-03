@@ -113,8 +113,8 @@ For allele-string haplotypes, the first five colors are always assigned in
 the fixed order A, T, C, G, and indel.}
 
 \item{table_colors}{Optional custom fill colors for haplotype table genotypes.
-For allele-string haplotypes, use a vector named \code{A}, \code{T}, \code{C},
-\code{G}, and \code{indel}, or supply five unnamed colors in that order.}
+For allele-string haplotypes, use a vector named \code{A}, \code{T}, \code{C}, \code{G}, and
+\code{indel}, or supply five unnamed colors in that order.}
 
 \item{table_alpha}{Alpha value for haplotype table fill colors.}
 

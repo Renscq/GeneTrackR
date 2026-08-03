@@ -33,11 +33,11 @@ plot_variant_track(
 
 \item{variant_colors}{Optional named or unnamed variant color vector.}
 
+\item{text_size}{Text size.}
+
 \item{plot_theme}{Base ggplot2 theme. Use \code{bw}, \code{classic}, \code{light}, or \code{minimal}.}
 
 \item{show_panel_border}{Whether to draw the panel border. \code{NULL} preserves the selected theme default.}
-
-\item{text_size}{Text size.}
 }
 \value{
 A ggplot object.

@@ -13,38 +13,36 @@ merge_feature(
 )
 }
 \arguments{
-\item{...}{One or more \code{Feature}, \code{FeatureTrack}, or
-\code{GenePred} objects. A single list containing such objects is also
-accepted.}
+\item{...}{One or more \code{Feature}, \code{FeatureTrack}, or \code{GenePred} objects.
+A single list containing such objects is also accepted.}
 
 \item{source_names}{Optional unique source labels. If omitted, names from a
 supplied list or named arguments are used where available; remaining labels
-are generated as \code{track1}, \code{track2}, and so on. The labels are stored
-in the \code{track_source} column.}
+are generated as \code{track1}, \code{track2}, and so on. The labels are stored in the
+\code{track_source} column.}
 
 \item{conflict}{Duplicate-ID strategy. \code{"deduplicate"} keeps the first
 compatible annotation model according to input order. \code{"rename"} renames
 conflicting IDs in later inputs. \code{"keep_all"} retains conflicts unchanged,
-and \code{"error"} stops after duplicate detection. \code{"keep_first"} is
-accepted as a backward-compatible alias of \code{"deduplicate"}.}
+and \code{"error"} stops after duplicate detection. \code{"keep_first"} is accepted as
+a backward-compatible alias of \code{"deduplicate"}.}
 
-\item{rename_prefix}{Optional character vector with one prefix per input. Used
-only when \code{conflict = "rename"}. By default, \code{source_names} followed
-by an underscore are used.}
+\item{rename_prefix}{Optional character vector with one prefix per input.
+Used only when \code{conflict = "rename"}. By default, \code{source_names} followed by
+an underscore are used.}
 
 \item{sort}{Logical. Whether to sort the merged feature and hierarchy tables.}
 }
 \value{
-A merged \code{Feature} object. If transcript and exon tables are present, the
-result also inherits from \code{GenePred}.
+A merged \code{Feature} object. If transcript and exon tables are present,
+the result also inherits from \code{GenePred}.
 }
 \description{
-\code{merge_feature()} combines annotations read from GenePred, GTF, GFF, or
-BED files into one unified \code{Feature} object for downstream retrieval and
-plotting. Inputs may represent different genes, genomic regions, annotation
-formats, or independently retrieved subsets.
-}
-\details{
+\code{merge_feature()} combines annotations read from GenePred, GTF, GFF, or BED
+files into one unified \code{Feature} object for downstream retrieval and plotting.
+Inputs may represent different genes, genomic regions, annotation formats, or
+independently retrieved subsets.
+
 Duplicate identifiers are detected across input objects. A warning reports
 duplicated gene, transcript, and feature IDs before the selected conflict
 strategy is applied.
@@ -68,4 +66,5 @@ merged_formats <- merge_feature(
   conflict = "rename"
 )
 }
+
 }

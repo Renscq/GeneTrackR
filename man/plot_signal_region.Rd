@@ -82,12 +82,6 @@ plot_signal_region(
 
 \item{signal_y_ticks}{Signal y-axis tick mode. Use \code{range} to show only integer axis limits as the minimum and maximum ticks, or \code{pretty} to use ggplot2 default-style breaks.}
 
-\item{signal_y_limits}{Optional two-element numeric vector giving the plotted y-axis limits after \code{signal_transform}. Supplying limits changes \code{signal_y_scale} to \code{fixed}.}
-
-\item{signal_alpha}{Signal geometry transparency from 0 to 1.}
-
-\item{signal_bar_width}{Relative width of bar intervals from greater than 0 to 1. A value below 1 creates proportional gaps without changing interval centers.}
-
 \item{cds_height}{Vertical thickness of CDS rectangles in the gene model track.}
 
 \item{utr_height}{Vertical thickness of UTR/non-coding exon rectangles in the gene model track.}
@@ -98,11 +92,17 @@ plot_signal_region(
 
 \item{label_by}{Which identifier to use for gene model labels. Use \code{gene} for gene IDs or \code{transcript} for transcript IDs.}
 
+\item{text_size}{Text size in points for signal and gene model axis text, axis titles, facet strips, and legends.}
+
+\item{signal_y_limits}{Optional two-element numeric vector giving the plotted y-axis limits after \code{signal_transform}. Supplying limits changes \code{signal_y_scale} to \code{fixed}.}
+
+\item{signal_alpha}{Signal geometry transparency from 0 to 1.}
+
+\item{signal_bar_width}{Relative width of bar intervals from greater than 0 to 1. A value below 1 creates proportional gaps without changing interval centers.}
+
 \item{plot_theme}{Base ggplot2 theme. Use \code{bw}, \code{classic}, \code{light}, or \code{minimal}.}
 
 \item{show_panel_border}{Whether to draw panel borders. \code{NULL} preserves the selected theme default.}
-
-\item{text_size}{Text size in points for signal and gene model axis text, axis titles, facet strips, and legends.}
 }
 \value{
 A ggplot or patchwork object.
