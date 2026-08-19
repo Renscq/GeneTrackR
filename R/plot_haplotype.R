@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-07-30
-# Version: dev002
+# Version: dev003
 # Function: Plot haplotype-variant and haplotype-phenotype figures
 # Input: HapVariant and phenotype objects
 # Output: ggplot or patchwork figures
@@ -26,6 +26,7 @@
 #' @param gene_pos_axis_label Optional x-axis title for genomic coordinate labels.
 #' @param gene_pos_x_angle Angle of gene-position x-axis labels. Default is 0.
 #' @param gene_track_legend_position Legend position for variant-type markers in the gene track. One of `right`, `top`, or `none`.
+#' @param direction_mode Gene-strand arrow style for the compact gene track. `transcript` draws one arrow per transcript, `gene` draws one arrow per gene, `end` draws a short arrow at the directional end of each gene, and `none` hides direction arrows.
 #' @param text_size Base text size for gene-track labels, axes, legends, and table axes.
 #' @param table_x_angle Angle of haplotype table x-axis labels. Default is 90.
 #' @param genotype_text_size Genotype cell text size only. Default is 3.2.
@@ -77,6 +78,7 @@ plot_hap_variant <- function(hap,
                              gene_pos_axis_label = NULL,
                              gene_pos_x_angle = 0,
                              gene_track_legend_position = c("right", "top", "none"),
+                             direction_mode = c("transcript", "gene", "end", "none"),
                              text_size = 14,
                              table_x_angle = 90,
                              genotype_text_size = 3.2,
@@ -153,6 +155,7 @@ plot_hap_variant <- function(hap,
 
   variant_label <- match.arg(variant_label)
   gene_track_legend_position <- match.arg(gene_track_legend_position)
+  direction_mode <- match.arg(direction_mode)
   show_gene_pos_axis <- isTRUE(show_gene_pos_axis)
   gene_pos_axis_n <- as.integer(gene_pos_axis_n)[1L]
   if (is.na(gene_pos_axis_n) || gene_pos_axis_n < 2L) {
@@ -289,6 +292,7 @@ plot_hap_variant <- function(hap,
         show_variant_marker = show_variant_marker,
         variant_marker_size = variant_marker_size,
         gene_track_legend_position = gene_track_legend_position,
+        direction_mode = direction_mode,
         show_gene_pos_axis = show_gene_pos_axis,
         gene_pos_axis_n = gene_pos_axis_n,
         gene_pos_axis_label = gene_pos_axis_label,
@@ -624,6 +628,7 @@ draw_hap_gene_track <- function(gene_data,
                                 show_variant_marker = TRUE,
                                 variant_marker_size = 2.8,
                                 gene_track_legend_position = c("right", "top", "none"),
+                                direction_mode = c("transcript", "gene", "end", "none"),
                                 show_gene_pos_axis = TRUE,
                                 gene_pos_axis_n = 5L,
                                 gene_pos_axis_label = "Genomic position (bp)",
@@ -643,6 +648,7 @@ draw_hap_gene_track <- function(gene_data,
   if (is.na(gene_pos_x_angle)) gene_pos_x_angle <- 0
   gene_pos_x_angle <- max(0, min(180, gene_pos_x_angle))
   gene_track_legend_position <- match.arg(gene_track_legend_position)
+  direction_mode <- match.arg(direction_mode)
   show_variant_marker <- isTRUE(show_variant_marker)
   variant_marker_size <- as.numeric(variant_marker_size)[1L]
   if (is.na(variant_marker_size)) variant_marker_size <- 2.8
@@ -674,12 +680,21 @@ draw_hap_gene_track <- function(gene_data,
   seg[, "ymin" := as.numeric(track_y) - as.numeric(feature_width) / 2]
   seg[, "ymax" := as.numeric(track_y) + as.numeric(feature_width) / 2]
 
+  direction_dt <- make_hap_direction_arrows(
+    tx = tx,
+    direction_mode = direction_mode,
+    model_height = max(exon_height, cds_height)
+  )
+
   vars <- assign_variant_gene_track_y(
     vars = vars,
     tx = tx,
     cds_height = cds_height
   )
   y_upper <- max(seg$ymax, na.rm = TRUE) + 0.35
+  if (nrow(direction_dt) > 0L) {
+    y_upper <- max(y_upper, max(direction_dt$y, na.rm = TRUE) + 0.15)
+  }
   y_lower <- min(c(0.5, vars$marker_y - 0.18), na.rm = TRUE)
   vars[, "connector_top_y" := y_lower]
 
@@ -733,6 +748,14 @@ draw_hap_gene_track <- function(gene_data,
       ggplot2::aes(x = .data$tx_xstart, xend = .data$tx_xend, y = .data$track_y, yend = .data$track_y),
       linewidth = 0.35,
       color = "black"
+    ) +
+    ggplot2::geom_segment(
+      data = direction_dt,
+      ggplot2::aes(x = .data$x, xend = .data$xend, y = .data$y, yend = .data$y),
+      arrow = grid::arrow(length = grid::unit(0.08, "inches")),
+      linewidth = 0.25,
+      color = "black",
+      inherit.aes = FALSE
     ) +
     ggplot2::geom_rect(
       data = seg,
@@ -823,6 +846,67 @@ draw_hap_gene_track <- function(gene_data,
     )
 
   p
+}
+
+
+make_hap_direction_arrows <- function(tx,
+                                      direction_mode = c("transcript", "gene", "end", "none"),
+                                      model_height = 0.44,
+                                      offset = 0.12) {
+  direction_mode <- match.arg(direction_mode)
+  tx <- data.table::copy(data.table::as.data.table(tx))
+  if (identical(direction_mode, "none") || nrow(tx) == 0L || !"strand" %in% names(tx)) {
+    return(data.table::data.table(x = numeric(), xend = numeric(), y = numeric(), strand = character()))
+  }
+
+  tx[, "strand" := as.character(strand)]
+  tx <- tx[strand %in% c("+", "-")]
+  if (nrow(tx) == 0L) {
+    return(data.table::data.table(x = numeric(), xend = numeric(), y = numeric(), strand = character()))
+  }
+
+  arrow_offset <- as.numeric(model_height)[1L] / 2 + as.numeric(offset)[1L]
+  if (!is.finite(arrow_offset)) arrow_offset <- 0.34
+
+  if (identical(direction_mode, "transcript")) {
+    out <- tx[, .(
+      x = as.numeric(tx_xstart),
+      xend = as.numeric(tx_xend),
+      y = as.numeric(track_y) + arrow_offset,
+      strand = as.character(strand)
+    )]
+  } else {
+    if (!"gene_id" %in% names(tx)) {
+      tx[, "gene_id" := as.character(transcript_id)]
+    }
+    out <- tx[, .(
+      x = min(as.numeric(tx_xstart), na.rm = TRUE),
+      xend = max(as.numeric(tx_xend), na.rm = TRUE),
+      y = mean(as.numeric(track_y), na.rm = TRUE) + arrow_offset,
+      strand = as.character(strand[1L])
+    ), by = gene_id]
+    if (identical(direction_mode, "end")) {
+      span <- pmax(0, abs(out$xend - out$x))
+      short_len <- pmax(0, pmin(span * 0.15, span))
+      plus_idx <- which(out$strand == "+")
+      minus_idx <- which(out$strand == "-")
+      if (length(plus_idx) > 0L) {
+        out$x[plus_idx] <- out$xend[plus_idx] - short_len[plus_idx]
+      }
+      if (length(minus_idx) > 0L) {
+        out$xend[minus_idx] <- out$x[minus_idx] + short_len[minus_idx]
+      }
+    }
+    out[, "gene_id" := NULL]
+  }
+
+  minus_idx <- which(out$strand == "-")
+  if (length(minus_idx) > 0L) {
+    old_x <- out$x[minus_idx]
+    out$x[minus_idx] <- out$xend[minus_idx]
+    out$xend[minus_idx] <- old_x
+  }
+  out[is.finite(x) & is.finite(xend) & is.finite(y)][]
 }
 
 

@@ -279,3 +279,31 @@ test_that("plot_variant_effect uses signed-effect colors", {
   expect_equal(axis_text_x$vjust, 0.5)
 })
 
+
+test_that("haplotype gene track arrows follow transcript strand", {
+  tx <- data.table::data.table(
+    gene_id = c("GenePlus", "GeneMinus"),
+    transcript_id = c("TxPlus", "TxMinus"),
+    strand = c("+", "-"),
+    track_y = c(2, 1),
+    tx_xstart = c(0.5, 0.5),
+    tx_xend = c(2.5, 2.5)
+  )
+
+  arrows <- make_hap_direction_arrows(
+    tx = tx,
+    direction_mode = "transcript",
+    model_height = 0.44
+  )
+
+  expect_equal(nrow(arrows), 2L)
+  expect_lt(arrows[strand == "+", x], arrows[strand == "+", xend])
+  expect_gt(arrows[strand == "-", x], arrows[strand == "-", xend])
+
+  no_arrows <- make_hap_direction_arrows(
+    tx = tx,
+    direction_mode = "none",
+    model_height = 0.44
+  )
+  expect_equal(nrow(no_arrows), 0L)
+})

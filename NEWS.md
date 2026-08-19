@@ -1,3 +1,8 @@
+# GeneTrackR 0.4.6
+
+- Added strand-direction arrows to the compact gene model drawn by `plot_hap_variant()`. Positive-strand transcripts point right and negative-strand transcripts point left.
+- Added `direction_mode` to `plot_hap_variant()` with the same `transcript`, `gene`, `end`, and `none` semantics used by `plot_region()`.
+
 # GeneTrackR 0.4.5
 
 - Updated `plot_hap_pheno()` so multi-trait figures use facet strips without a redundant overall title.

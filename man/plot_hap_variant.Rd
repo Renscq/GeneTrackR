@@ -16,6 +16,7 @@ plot_hap_variant(
   gene_pos_axis_label = NULL,
   gene_pos_x_angle = 0,
   gene_track_legend_position = c("right", "top", "none"),
+  direction_mode = c("transcript", "gene", "end", "none"),
   text_size = 14,
   table_x_angle = 90,
   genotype_text_size = 3.2,
@@ -62,6 +63,8 @@ a compact gene track is drawn above the haplotype table.}
 \item{gene_pos_x_angle}{Angle of gene-position x-axis labels. Default is 0.}
 
 \item{gene_track_legend_position}{Legend position for variant-type markers in the gene track. One of \code{right}, \code{top}, or \code{none}.}
+
+\item{direction_mode}{Gene-strand arrow style for the compact gene track. \code{transcript} draws one arrow per transcript, \code{gene} draws one arrow per gene, \code{end} draws a short arrow at the directional end of each gene, and \code{none} hides direction arrows.}
 
 \item{text_size}{Base text size for gene-track labels, axes, legends, and table axes.}
 
