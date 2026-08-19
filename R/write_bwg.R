@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-05-28
-# Version: 0.2.7
+# Date: 2026-08-19
+# Version: dev001
 # Function: Write BwgTrack objects to bedGraph, wig, or bigWig files
 # Input: BwgTrack object
 # Output: Signal track files
@@ -108,11 +108,21 @@ write_bwg_lazy_copy <- function(object, sample_tbl, outdir, format, overwrite) {
       "Lazy BwgTrack objects can only be copied when output format matches the original format. ",
       "Sample '", sid, "' is ", src_format, " but requested ", requested_format, ". Use retrieve_bwg(as = \"BwgTrack\") to create an in-memory object first."
     ))
+    stop_if_not(file.exists(src), paste0("Source signal file does not exist: ", src))
+
+    compression_ext <- if (format %in% c("bedgraph", "wig") && grepl("\\.bgz$", src, ignore.case = TRUE)) {
+      ".bgz"
+    } else if (format %in% c("bedgraph", "wig") && grepl("\\.gz$", src, ignore.case = TRUE)) {
+      ".gz"
+    } else {
+      ""
+    }
     ext <- switch(format, bedgraph = ".bedgraph", wig = ".wig", bigwig = ".bigwig")
-    dst <- file.path(outdir, paste0(sid, ext))
+    dst <- file.path(outdir, paste0(sid, ext, compression_ext))
     check_output_file(dst, overwrite)
-    file.copy(src, dst, overwrite = overwrite)
-    out[[i]] <- data.table::data.table(sample_id = sid, file = normalizePath(dst, winslash = "/", mustWork = FALSE), format = format)
+    copied <- file.copy(src, dst, overwrite = overwrite)
+    stop_if_not(isTRUE(copied), paste0("Failed to copy signal file for sample '", sid, "': ", src))
+    out[[i]] <- data.table::data.table(sample_id = sid, file = normalizePath(dst, winslash = "/", mustWork = TRUE), format = format)
   }
   invisible(data.table::rbindlist(out, fill = TRUE))
 }
@@ -126,12 +136,19 @@ write_wig_table <- function(dt, file, compress = FALSE) {
   con <- if (compress) gzfile(file, open = "wt") else file(file, open = "wt")
   on.exit(close(con), add = TRUE)
   x <- data.table::copy(dt)
+  x[, "span" := as.integer(end) - as.integer(start) + 1L]
+  stop_if_not(all(!is.na(x$span) & x$span >= 1L), "WIG output requires valid intervals with end >= start.")
   data.table::setorderv(x, c("chrom", "start", "end"))
   split_x <- split(x, x$chrom)
   for (chr in names(split_x)) {
     y <- split_x[[chr]]
-    writeLines(paste0("variableStep chrom=", chr), con)
-    writeLines(paste(as.integer(y$start), as.numeric(y$value), sep = "\t"), con)
+    block_id <- cumsum(c(TRUE, y$span[-1L] != y$span[-nrow(y)]))
+    split_y <- split(y, block_id)
+    for (block in split_y) {
+      span <- unique(block$span)
+      writeLines(paste0("variableStep chrom=", chr, " span=", span), con)
+      writeLines(paste(as.integer(block$start), as.numeric(block$value), sep = "\t"), con)
+    }
   }
 }
 

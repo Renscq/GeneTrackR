@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-26
-# Version: 0.2.5
+# Version: dev001
 # Function: Read GenePred or GenePredExt annotation files
 # Input: GenePred-format text file
 # Output: GenePred object with transcript, exon, and gene tables

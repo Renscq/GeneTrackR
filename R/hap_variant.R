@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-07-30
-# Version: 0.3.22
+# Date: 2026-08-19
+# Version: dev001
 # Function: Build haplotype tables from VCF variants
 # Input: VariantTrack objects, VCF files, and genomic locators
 # Output: HapVariant objects
@@ -258,7 +258,12 @@ build_haplotype_from_region <- function(vcf,
   stop_if_not(length(variant_order) > 0L, "No genotype columns matched the retained variants.")
   data.table::setcolorder(geno_wide, c("sample_id", variant_order))
 
-  geno_wide[, "non_missing_variant_n" := rowSums(!is.na(.SD)), .SDcols = variant_order]
+  non_missing_counts <- geno_long[, .(
+    non_missing_variant_n = sum(!genotype_missing)
+  ), by = sample_id]
+  geno_wide[, "non_missing_variant_n" := non_missing_counts$non_missing_variant_n[
+    match(sample_id, non_missing_counts$sample_id)
+  ]]
 
   if (is.null(min_variant_number)) {
     min_variant_number <- length(variant_order)
@@ -402,8 +407,27 @@ extract_vcf_genotype_long <- function(dt, sample_cols, genotype_mode = "code", m
   if (!"FORMAT" %in% names(x)) {
     x[, "FORMAT" := "GT"]
   }
-  x[, "genotype" := normalize_vcf_gt(genotype_raw, FORMAT, ref, alt, mode = genotype_mode, missing_genotype = missing_genotype)]
-  x[, .(sample_id = as.character(sample_id), chrom, pos, variant_id, ref, alt, variant_type, genotype)]
+  x[, "genotype" := normalize_vcf_gt(
+    genotype_raw,
+    FORMAT,
+    ref,
+    alt,
+    mode = genotype_mode,
+    missing_genotype = NA_character_
+  )]
+  x[, "genotype_missing" := is.na(genotype)]
+  x[, "genotype" := replace_missing_label(genotype, missing_genotype)]
+  x[, .(
+    sample_id = as.character(sample_id),
+    chrom,
+    pos,
+    variant_id,
+    ref,
+    alt,
+    variant_type,
+    genotype,
+    genotype_missing
+  )]
 }
 
 normalize_vcf_gt <- function(genotype_raw, format, ref, alt, mode = c("code", "string"), missing_genotype = NA_character_) {

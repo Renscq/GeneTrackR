@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-28
-# Version: 0.2.3
+# Version: dev001
 # Function: Define unified Feature annotation class and GenePred-compatible constructor
 # Input: Standardized annotation or variant tables
 # Output: Unified S3 track objects
@@ -345,13 +345,6 @@ print.FeatureTrack <- function(x, ...) {
 ####################################################################
 # GenePred-compatible constructor and coercion helpers
 ####################################################################
-
-# Author: Rensc
-# Date: 2026-05-26
-# Version: 0.2.1
-# Function: GenePred S3 class constructors and coercion helpers
-# Input: Gene, transcript, and exon tables
-# Output: GenePred object and derived tables
 
 #' Create a GenePred object
 #'

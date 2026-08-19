@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-07-28
-# Version: 0.3.20
+# Version: dev001
 # Function: Merge Feature/GenePred-compatible annotation objects
 # Input: Feature-compatible annotation objects
 # Output: Merged Feature/GenePred-compatible object

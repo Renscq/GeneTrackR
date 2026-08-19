@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-28
-# Version: 0.2.13
+# Version: dev001
 # Function: Validate VCF-like VariantTrack objects
 # Input: VariantTrack objects
 # Output: Validation reports

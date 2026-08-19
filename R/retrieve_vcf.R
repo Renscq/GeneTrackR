@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-31
-# Version: 0.5.0
+# Version: dev001
 # Function: Retrieve variants from VariantTrack objects or indexed VCF files
 # Input: VariantTrack object or VCF path and filters
 # Output: data.table or VariantTrack object

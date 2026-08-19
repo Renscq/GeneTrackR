@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-27
-# Version: 0.3.21
+# Version: dev001
 # Function: Plot signal tracks for transcripts, genes, and genomic regions
 # Input: BwgTrack and optional GenePred objects
 # Output: ggplot signal figures
@@ -1986,36 +1986,6 @@ normalize_signal_colors <- function(
   )
   names(cols) <- sample_ids
   cols
-}
-
-apply_signal_discrete_fill_scale <- function(
-  sample_ids,
-  signal_palette = "Blues",
-  signal_palette_direction = 1,
-  signal_colors = NULL
-) {
-  cols <- normalize_signal_colors(
-    sample_ids,
-    signal_palette = signal_palette,
-    signal_palette_direction = signal_palette_direction,
-    signal_colors = signal_colors
-  )
-  ggplot2::scale_fill_manual(values = cols)
-}
-
-apply_signal_discrete_color_scale <- function(
-  sample_ids,
-  signal_palette = "Blues",
-  signal_palette_direction = 1,
-  signal_colors = NULL
-) {
-  cols <- normalize_signal_colors(
-    sample_ids,
-    signal_palette = signal_palette,
-    signal_palette_direction = signal_palette_direction,
-    signal_colors = signal_colors
-  )
-  ggplot2::scale_color_manual(values = cols)
 }
 
 apply_signal_continuous_fill_scale <- function(

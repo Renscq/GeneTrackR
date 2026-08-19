@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-31
-# Version: 0.1.0
+# Version: dev001
 # Function: Print method for GeneTrackR phenotype plot result
 # Input: GeneTrackRPhenoPlot object
 # Output: Printed ggplot figure

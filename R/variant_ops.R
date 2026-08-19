@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-28
-# Version: 0.2.14
+# Version: dev001
 # Function: Unified summary API for genome-level VariantTrack objects
 # Input: VariantTrack objects
 # Output: Variant summary tables

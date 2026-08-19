@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-28
-# Version: 0.2.2
+# Version: dev001
 # Function: Define VariantTrack class for genome-level variant data
 # Input: VCF-like variant tables
 # Output: VariantTrack S3 objects

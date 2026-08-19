@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-07-30
-# Version: 0.3.23
+# Version: dev003
 # Function: Refine haplotypes and prioritize phenotype-associated variant effects
 # Input: HapVariant objects and phenotype tables
 # Output: Refined haplotype objects, variant-effect tables, and ggplot figures
@@ -908,7 +908,8 @@ get_refined_hap_variant <- function(refined_hap) {
 #' an ordered effect-size plot. For a two-genotype variant, the effect is the
 #' mean difference between the second and first genotype groups. For variants
 #' with more than two genotype groups, the effect is the maximum group mean minus
-#' the minimum group mean.
+#' the minimum group mean. Point color encodes the signed effect direction and
+#' magnitude, with blue for negative effects and red for positive effects.
 #'
 #' @param hap A HapVariant object from `hap_variant()`.
 #' @param phenotype A phenotype table returned by `read_pheno()` or a compatible data.frame.
@@ -1057,7 +1058,19 @@ plot_variant_effect <- function(hap,
 
   p <- ggplot2::ggplot(effect_dt, ggplot2::aes(x = .data$x_value, y = .data$plot_effect)) +
     ggplot2::geom_hline(yintercept = 0, linewidth = 0.3, linetype = "dashed", color = "grey50") +
-    ggplot2::geom_point(ggplot2::aes(size = .data$abs_effect, alpha = .data$plot_log10_padj), color = "black") +
+    ggplot2::geom_point(ggplot2::aes(
+      size = .data$abs_effect,
+      alpha = .data$plot_log10_padj,
+      color = .data$effect
+    )) +
+    ggplot2::scale_color_gradient2(
+      name = "Signed effect",
+      low = "#2166AC",
+      mid = "#F7F7F7",
+      high = "#B2182B",
+      midpoint = 0,
+      na.value = "grey70"
+    ) +
     ggplot2::scale_size_continuous(name = "Absolute effect", range = c(point_size * 0.5, point_size * 1.8)) +
     ggplot2::scale_alpha_continuous(name = "-log10(adj. P)", range = c(0.45, 1), na.value = 0.45) +
     ggplot2::labs(
@@ -1068,6 +1081,9 @@ plot_variant_effect <- function(hap,
     ggplot2::theme(
       text = ggplot2::element_text(color = "black"),
       axis.text = ggplot2::element_text(size = text_size, color = "black"),
+      axis.text.x = ggplot2::element_text(
+        size = text_size, angle = 90, hjust = 1, vjust = 0.5, color = "black"
+      ),
       axis.title = ggplot2::element_text(size = text_size, color = "black"),
       legend.title = ggplot2::element_text(size = text_size * 0.9, color = "black"),
       legend.text = ggplot2::element_text(size = text_size * 0.85, color = "black"),

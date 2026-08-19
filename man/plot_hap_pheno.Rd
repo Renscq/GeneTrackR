@@ -27,6 +27,7 @@ plot_hap_pheno(
   bracket_step = 0.08,
   bracket_tip_fraction = 0.12,
   x_text_angle = 90,
+  facet_ncol = 3L,
   strip_label_width = 24,
   strip_text_lineheight = 0.9,
   strip_fill = "white",
@@ -79,9 +80,15 @@ plot_hap_pheno(
 
 \item{x_text_angle}{Rotation angle for haplotype labels on the x-axis.}
 
+\item{facet_ncol}{Maximum number of facet columns when multiple traits are plotted.}
+
 \item{strip_label_width}{Maximum character width for wrapping long facet strip labels.}
 
 \item{strip_text_lineheight}{Line height for wrapped facet strip labels.}
+
+\item{strip_fill}{Facet strip background fill color.}
+
+\item{strip_border_color}{Facet strip border color. Use NULL to remove the border.}
 
 \item{text_size}{Text size.}
 }

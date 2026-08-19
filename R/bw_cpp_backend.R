@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-27
-# Version: 0.1.4
+# Version: dev001
 # Function: R wrappers for the local libBigWig C++ backend
 # Input: Local bigWig file path and genomic regions
 # Output: Chromosome metadata and signal intervals

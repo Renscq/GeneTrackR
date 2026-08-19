@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-27
-# Version: 0.3.21
+# Version: dev001
 # Function: Plot transcript, gene, and genomic region structures
 # Input: GenePred objects and feature identifiers or regions
 # Output: ggplot gene model figures

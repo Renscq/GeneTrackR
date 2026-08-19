@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-26
-# Version: 0.1.0
+# Version: dev001
 # Function: Internal utility functions
 # Input: Generic R objects and coordinate tables
 # Output: Validated and transformed helper objects
@@ -9,10 +9,6 @@
   if (is.null(x)) y else x
 }
 
-arg_match <- function(x, choices) {
-  x <- match.arg(x, choices)
-  x
-}
 
 stop_if_not <- function(condition, message) {
   if (!isTRUE(condition)) {
@@ -33,12 +29,6 @@ paste_comma_integer <- function(x) {
   paste0(paste(as.integer(x), collapse = ","), ",")
 }
 
-normalize_chrom_filter <- function(chrom) {
-  if (is.null(chrom)) {
-    return(NULL)
-  }
-  as.character(chrom)
-}
 
 check_region <- function(chrom = NULL, start = NULL, end = NULL) {
   if (!is.null(start) || !is.null(end)) {

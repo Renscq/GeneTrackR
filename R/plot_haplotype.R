@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-07-30
-# Version: 0.3.23
+# Version: dev002
 # Function: Plot haplotype-variant and haplotype-phenotype figures
 # Input: HapVariant and phenotype objects
 # Output: ggplot or patchwork figures
@@ -1082,8 +1082,11 @@ make_hap_variant_fill_scale <- function(gene_features,
 #' @param show_signif_only Logical. Whether to only display significant comparisons.
 #' @param show_points Logical. Whether to show sample points.
 #' @param x_text_angle Rotation angle for haplotype labels on the x-axis.
+#' @param facet_ncol Maximum number of facet columns when multiple traits are plotted.
 #' @param strip_label_width Maximum character width for wrapping long facet strip labels.
 #' @param strip_text_lineheight Line height for wrapped facet strip labels.
+#' @param strip_fill Facet strip background fill color.
+#' @param strip_border_color Facet strip border color. Use NULL to remove the border.
 #' @param show_outliers Logical. Whether to show boxplot outliers.
 #' @param fill_palette RColorBrewer palette name used for median-based haplotype fills.
 #' @param fill_colors Optional custom fill colors for haplotypes.
@@ -1128,6 +1131,7 @@ plot_hap_pheno <- function(hap,
                            bracket_step = 0.08,
                            bracket_tip_fraction = 0.12,
                            x_text_angle = 90,
+                           facet_ncol = 3L,
                            strip_label_width = 24,
                            strip_text_lineheight = 0.9,
                            strip_fill = "white",
@@ -1150,6 +1154,8 @@ plot_hap_pheno <- function(hap,
   fill_alpha <- max(0, min(1, fill_alpha))
   x_text_angle <- as.numeric(x_text_angle)[1L]
   if (is.na(x_text_angle)) x_text_angle <- 90
+  facet_ncol <- as.integer(facet_ncol)[1L]
+  if (is.na(facet_ncol) || facet_ncol < 1L) facet_ncol <- 3L
   strip_label_width <- as.integer(strip_label_width)[1L]
   if (is.na(strip_label_width) || strip_label_width < 1L) strip_label_width <- 24L
   strip_text_lineheight <- as.numeric(strip_text_lineheight)[1L]
@@ -1228,8 +1234,15 @@ plot_hap_pheno <- function(hap,
     bracket_tip_fraction = bracket_tip_fraction
   )
 
+  # Preserve the exact trait order supplied by the user in facet layout.
+  plot_long <- data.table::copy(long)
+  plot_long[, "trait" := factor(as.character(trait), levels = traits)]
+  plot_bracket <- data.table::copy(bracket_dt)
+  if (nrow(plot_bracket) > 0L) {
+    plot_bracket[, "trait" := factor(as.character(trait), levels = traits)]
+  }
 
-  p <- ggplot2::ggplot(long, ggplot2::aes(x = .data$hap_id, y = .data$value, fill = .data$hap_fill))
+  p <- ggplot2::ggplot(plot_long, ggplot2::aes(x = .data$hap_id, y = .data$value, fill = .data$hap_fill))
 
   if (plot_type %in% c("violin", "violin_boxplot")) {
     p <- p + ggplot2::geom_violin(
@@ -1266,6 +1279,7 @@ plot_hap_pheno <- function(hap,
     p <- p + ggplot2::facet_wrap(
       ggplot2::vars(.data$trait),
       scales = "free_y",
+      ncol = min(facet_ncol, length(traits)),
       labeller = ggplot2::as_labeller(function(x) wrap_strip_labels(x, width = strip_label_width))
     )
   }
@@ -1273,28 +1287,28 @@ plot_hap_pheno <- function(hap,
   if (nrow(bracket_dt) > 0L) {
     p <- p +
       ggplot2::geom_segment(
-        data = bracket_dt,
+        data = plot_bracket,
         ggplot2::aes(x = .data$x1, xend = .data$x2, y = .data$y, yend = .data$y),
         inherit.aes = FALSE,
         color = "black",
         linewidth = 0.35
       ) +
       ggplot2::geom_segment(
-        data = bracket_dt,
+        data = plot_bracket,
         ggplot2::aes(x = .data$x1, xend = .data$x1, y = .data$y, yend = .data$y_tip),
         inherit.aes = FALSE,
         color = "black",
         linewidth = 0.35
       ) +
       ggplot2::geom_segment(
-        data = bracket_dt,
+        data = plot_bracket,
         ggplot2::aes(x = .data$x2, xend = .data$x2, y = .data$y, yend = .data$y_tip),
         inherit.aes = FALSE,
         color = "black",
         linewidth = 0.35
       ) +
       ggplot2::geom_text(
-        data = bracket_dt,
+        data = plot_bracket,
         ggplot2::aes(x = .data$x_mid, y = .data$label_y, label = .data$label),
         inherit.aes = FALSE,
         color = "black",
@@ -1306,14 +1320,7 @@ plot_hap_pheno <- function(hap,
   fill_values <- unique(long[, .(hap_fill)])$hap_fill
   names(fill_values) <- fill_values
 
-  plot_title <- NULL
-  if (!is.null(traits) && length(traits) > 0L) {
-    if (length(traits) == 1L) {
-      plot_title <- as.character(traits[1L])
-    } else {
-      plot_title <- paste(as.character(traits), collapse = ", ")
-    }
-  }
+  plot_title <- if (length(traits) == 1L) as.character(traits[1L]) else NULL
 
   p <- p +
     ggplot2::scale_x_discrete(labels = hap_axis_labels) +

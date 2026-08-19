@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-28
-# Version: 0.3.21
+# Version: dev001
 # Function: Plot generic feature and variant tracks
 # Input: FeatureTrack or VariantTrack objects
 # Output: ggplot track panels

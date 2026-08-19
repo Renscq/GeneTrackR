@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-28
-# Version: 0.2.23
+# Version: dev001
 # Function: Retrieve Feature/GenePred-compatible annotation sub-objects or tables
 # Input: Feature-compatible annotation object
 # Output: Retrieved Feature/GenePred-compatible sub-object or data.table

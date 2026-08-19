@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-28
-# Version: 0.2.14
+# Version: dev001
 # Function: Unified summary API for Feature-compatible annotation objects
 # Input: Feature, FeatureTrack, or GenePred-compatible annotation objects
 # Output: Summary tables

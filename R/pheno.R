@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-29
-# Version: 0.1.0
+# Version: dev001
 # Function: Read, summarize, and plot phenotype tables
 # Input: Phenotype files
 # Output: Phenotype tables and ggplot figures

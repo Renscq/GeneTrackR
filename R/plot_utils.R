@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-27
-# Version: 0.3.21
+# Version: dev001
 # Function: Internal plotting utilities for gene models and signal tracks
 # Input: Annotation and signal tables
 # Output: ggplot objects and transformed plotting tables
@@ -589,46 +589,6 @@ apply_variant_marker_color_scale <- function(p,
           alpha = 1
         )
       )
-    )
-}
-
-apply_variant_marker_fill_scale <- function(p,
-                                            variant_types,
-                                            variant_palette = "Set1",
-                                            variant_colors = NULL,
-                                            alpha = 0.6,
-                                            name = "Variant type",
-                                            drop = FALSE) {
-  colors <- make_variant_marker_fill_colors(
-    variant_palette = variant_palette,
-    variant_colors = variant_colors,
-    variant_types = variant_types,
-    alpha = alpha
-  )
-  observed <- normalize_variant_marker_type(variant_types %||% names(colors))
-  observed <- unique(as.character(observed))
-  observed <- observed[!is.na(observed) & nzchar(observed)]
-  breaks <- intersect(variant_marker_levels(), observed)
-  if (length(breaks) == 0L) {
-    breaks <- variant_marker_levels()
-  }
-
-  p +
-    ggplot2::scale_fill_manual(
-      values = colors,
-      limits = names(colors),
-      breaks = breaks,
-      name = name,
-      drop = drop,
-      na.value = grDevices::adjustcolor("grey85", alpha.f = alpha)
-    ) +
-    ggplot2::scale_color_manual(
-      values = colors,
-      limits = names(colors),
-      breaks = breaks,
-      name = name,
-      drop = drop,
-      na.value = grDevices::adjustcolor("grey85", alpha.f = alpha)
     )
 }
 

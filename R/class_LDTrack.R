@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-07-02
-# Version: 0.2.0
+# Version: dev001
 # Function: LDTrack class definition
 # Input: LD calculation outputs
 # Output: LDTrack S3 objects

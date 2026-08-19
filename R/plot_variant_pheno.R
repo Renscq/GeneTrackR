@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-05-31
-# Version: 0.1.0
+# Date: 2026-08-19
+# Version: dev001
 # Function: Plot phenotype distributions grouped by a single variant genotype
 # Input: VariantTrack/VCF/HapVariant objects and phenotype tables
 # Output: ggplot figures with pairwise test annotations
@@ -371,7 +371,7 @@ extract_single_variant_genotype <- function(variant,
     missing_genotype = missing_genotype
   )
   geno[, "genotype_group" := as.character(genotype)]
-  geno[is.na(genotype_group), "genotype_group" := NA_character_]
+  geno[genotype_missing | is.na(genotype_group), "genotype_group" := NA_character_]
   list(variant = vt$data[], genotype = geno[, .(sample_id, genotype_group)])
 }
 
@@ -456,6 +456,16 @@ extract_single_variant_from_hap <- function(hap,
   }
   stop_if_not(nrow(geno) > 0L, "No genotype records were found for the selected variant.")
   geno[, "genotype_group" := as.character(genotype)]
+  if ("genotype_missing" %in% names(geno)) {
+    geno[genotype_missing | is.na(genotype_group), "genotype_group" := NA_character_]
+  } else {
+    missing_label <- hap$meta$missing_genotype %||% NA_character_
+    if (!is.na(missing_label)) {
+      geno[is.na(genotype_group) | genotype_group == missing_label, "genotype_group" := NA_character_]
+    } else {
+      geno[is.na(genotype_group), "genotype_group" := NA_character_]
+    }
+  }
   list(variant = vars[], genotype = geno[, .(sample_id, genotype_group)])
 }
 

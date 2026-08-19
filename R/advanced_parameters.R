@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-27
-# Version: 0.3.21
+# Version: dev001
 # Function: Shared documentation for advanced plotting and query parameters
 # Input: None
 # Output: R documentation topic

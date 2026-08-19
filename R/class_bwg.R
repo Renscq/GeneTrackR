@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-26
-# Version: 0.1.5
+# Version: dev001
 # Function: BwgTrack S3 class constructors and print methods
 # Input: Signal sample metadata and optional in-memory signal table
 # Output: BwgTrack object

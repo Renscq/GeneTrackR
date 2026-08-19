@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-28
-# Version: 0.2.13
+# Version: dev001
 # Function: Validate unified Feature annotation objects
 # Input: Feature-compatible annotation objects
 # Output: Validation reports

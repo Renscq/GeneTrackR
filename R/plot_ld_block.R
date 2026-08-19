@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-07-02
-# Version: 0.2.0
+# Version: dev001
 # Function: Plot LD block triangular heatmaps
 # Input: LDTrack objects, VariantTrack objects, or VCF paths
 # Output: LDTrack objects with stored figures

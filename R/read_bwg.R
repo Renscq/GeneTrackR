@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-26
-# Version: 0.2.10
+# Version: dev001
 # Function: Read bedGraph, wig, and bigWig signal track files
 # Input: Signal track file paths
 # Output: BwgTrack object

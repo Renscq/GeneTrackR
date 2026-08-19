@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-29
-# Version: 0.3.21
+# Version: dev001
 # Function: Plot variant records from VariantTrack objects
 # Input: VariantTrack objects and genomic regions
 # Output: ggplot variant figures

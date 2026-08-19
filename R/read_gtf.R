@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-28
-# Version: 0.2.4
+# Version: dev001
 # Function: Read GTF files into unified Feature annotation objects
 # Input: GTF annotation files
 # Output: Feature objects

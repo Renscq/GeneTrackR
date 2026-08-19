@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-28
-# Version: 0.2.9
+# Version: dev001
 # Function: Write unified Feature annotation objects to GenePred, GFF, GTF, BED6, or BED12 files
 # Input: Feature/GenePred-compatible annotation object
 # Output: Annotation files

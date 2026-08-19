@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-28
-# Version: 0.2.5
+# Version: dev001
 # Function: Shared parsers for feature annotation files
 # Input: GFF/GTF attribute strings and feature tables
 # Output: Standardized feature tables
@@ -55,11 +55,6 @@ make_stage_progress <- function(total, progress = TRUE, prefix = "[GeneTrackR]")
   )
 }
 
-with_quiet_datatable <- function(expr) {
-  old <- options(datatable.verbose = FALSE)
-  on.exit(options(old), add = TRUE)
-  force(expr)
-}
 
 get_file_size_bytes <- function(file) {
   suppressWarnings(as.numeric(file.info(file)$size)[1L])

@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-31
-# Version: 0.5.0
+# Version: dev001
 # Function: Read VCF files into genome-level VariantTrack objects
 # Input: VCF files
 # Output: VariantTrack objects

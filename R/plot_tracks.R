@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-27
-# Version: 0.3.21
+# Version: dev001
 # Function: Combined genome-browser-like track plotting
 # Input: GenePred and BwgTrack objects
 # Output: Combined patchwork track figure

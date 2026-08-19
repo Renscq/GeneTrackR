@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-28
-# Version: 0.2.7
+# Version: dev001
 # Function: Write VariantTrack objects to VCF files
 # Input: VariantTrack object
 # Output: VCF file

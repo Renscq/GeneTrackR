@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-28
-# Version: 0.2.19
+# Version: dev001
 # Function: Merge VariantTrack objects
 # Input: VariantTrack objects
 # Output: Merged VariantTrack object

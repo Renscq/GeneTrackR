@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-26
-# Version: 0.1.0
+# Version: dev001
 # Function: Development workflow for GeneTrackR
 # Input: R package source directory
 # Output: Updated documentation, namespace, checks, and build artifacts

@@ -60,7 +60,8 @@ Calculate per-variant phenotype effect sizes from a HapVariant object and draw
 an ordered effect-size plot. For a two-genotype variant, the effect is the
 mean difference between the second and first genotype groups. For variants
 with more than two genotype groups, the effect is the maximum group mean minus
-the minimum group mean.
+the minimum group mean. Point color encodes the signed effect direction and
+magnitude, with blue for negative effects and red for positive effects.
 }
 \examples{
 vcf_file <- system.file("extdata", "example_haplotype.vcf", package = "GeneTrackR")

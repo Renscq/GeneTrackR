@@ -12,6 +12,39 @@ test_that("hap_gene_variant and hap_region_variant build HapVariant objects", {
   expect_gt(nrow(hap_region$sample_haplotypes), 0L)
 })
 
+
+test_that("custom missing genotype labels remain missing for haplotype filtering", {
+  vcf <- read_vcf(gtr_extdata("example_haplotype.vcf"), mode = "memory", verbose = FALSE)
+
+  hap <- hap_region_variant(
+    vcf,
+    chrom = "chr1",
+    start = 1,
+    end = 1200,
+    genotype_mode = "code",
+    missing_genotype = "-",
+    min_variant_number = 1
+  )
+
+  s10 <- hap$sample_haplotypes[hap$sample_haplotypes$sample_id == "S10", ]
+  missing_gt <- hap$genotype_long[
+    hap$genotype_long$sample_id == "S10" & hap$genotype_long$variant_id == "rs001_3",
+  ]
+  expect_equal(s10$non_missing_variant_n, 4L)
+  expect_identical(missing_gt$genotype, "-")
+  expect_true(missing_gt$genotype_missing)
+
+  hap_complete <- hap_region_variant(
+    vcf,
+    chrom = "chr1",
+    start = 1,
+    end = 1200,
+    genotype_mode = "code",
+    missing_genotype = "-"
+  )
+  expect_false("S10" %in% hap_complete$sample_haplotypes$sample_id)
+})
+
 test_that("plot_hap_variant returns a browser-like haplotype figure", {
   gp <- read_genepred(gtr_extdata("example.genePredExt"), format = "genePredExt", verbose = FALSE)
   vcf <- read_vcf(gtr_extdata("example_haplotype.vcf"), mode = "memory", verbose = FALSE)
@@ -149,6 +182,44 @@ test_that("phenotype readers and haplotype phenotype plots are stable", {
   expect_true(inherits(res$figure, "ggplot"))
   expect_true(is.data.frame(res$pvalue))
   expect_true(is.data.frame(res$summary))
+
+  trait_order <- c("seed_weight", "plant_height")
+  multi <- plot_hap_pheno(
+    hap,
+    phenotype = pheno,
+    traits = trait_order,
+    min_hap_samples = 1,
+    facet_ncol = 1
+  )
+  expect_null(multi$figure$labels$title)
+  expect_identical(levels(multi$figure$data$trait), trait_order)
+  expect_identical(multi$figure$facet$params$ncol, 1L)
+})
+
+test_that("custom missing genotype labels are excluded from variant phenotype groups", {
+  vcf <- read_vcf(gtr_extdata("example_haplotype.vcf"), mode = "memory", verbose = FALSE)
+
+  direct <- extract_single_variant_genotype(
+    variant = vcf,
+    variant_id = "rs001_2",
+    missing_genotype = "-"
+  )
+  expect_true(is.na(direct$genotype$genotype_group[direct$genotype$sample_id == "S12"]))
+
+  hap <- hap_region_variant(
+    vcf,
+    chrom = "chr1",
+    start = 1,
+    end = 1200,
+    genotype_mode = "code",
+    missing_genotype = "-",
+    min_variant_number = 1
+  )
+  from_hap <- extract_single_variant_genotype(
+    variant = hap,
+    variant_id = "rs001_2"
+  )
+  expect_true(is.na(from_hap$genotype$genotype_group[from_hap$genotype$sample_id == "S12"]))
 })
 
 test_that("single variant phenotype plots return figure and p-value tables", {
@@ -168,3 +239,43 @@ test_that("single variant phenotype plots return figure and p-value tables", {
   expect_true(is.data.frame(res$pvalue))
   expect_true(is.data.frame(res$variant_data))
 })
+
+test_that("plot_variant_effect uses signed-effect colors", {
+  gp <- read_genepred(gtr_extdata("example.genePredExt"), format = "genePredExt", verbose = FALSE)
+  vcf <- read_vcf(gtr_extdata("example_haplotype.vcf"), mode = "memory", verbose = FALSE)
+  pheno <- read_pheno(gtr_extdata("example_pheno.tsv"), verbose = FALSE)
+  hap <- hap_gene_variant(
+    vcf,
+    annotation = gp,
+    gene_id = "GeneA",
+    genotype_mode = "code",
+    min_variant_number = 1
+  )
+
+  res <- plot_variant_effect(
+    hap,
+    phenotype = pheno,
+    traits = "plant_height",
+    min_group_samples = 1
+  )
+
+  expect_true(inherits(res$figure, "ggplot"))
+  color_scale <- res$figure$scales$get_scales("colour")
+  expect_false(is.null(color_scale))
+  expect_identical(color_scale$name, "Signed effect")
+
+  point_layers <- Filter(
+    function(layer) inherits(layer$geom, "GeomPoint"),
+    res$figure$layers
+  )
+  expect_gt(length(point_layers), 0L)
+  expect_false(is.null(point_layers[[1L]]$mapping$colour))
+  expect_null(point_layers[[1L]]$aes_params$colour)
+
+  axis_text_x <- res$figure$theme$axis.text.x
+  expect_false(is.null(axis_text_x))
+  expect_equal(axis_text_x$angle, 90)
+  expect_equal(axis_text_x$hjust, 1)
+  expect_equal(axis_text_x$vjust, 0.5)
+})
+

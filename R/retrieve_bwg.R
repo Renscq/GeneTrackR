@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-28
-# Version: 0.2.19
+# Version: dev001
 # Function: Retrieve signal records from BwgTrack objects
 # Input: BwgTrack object and genomic region
 # Output: data.table, BwgTrack, or GRanges
