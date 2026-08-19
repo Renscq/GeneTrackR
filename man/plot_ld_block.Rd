@@ -83,8 +83,9 @@ stored in \verb{$figure}. If \code{return_object = FALSE}, the ggplot/patchwork 
 is returned directly.
 }
 \description{
-Draws an inverted triangular LD heatmap using ggplot2. Interior grid lines are
-suppressed; only the outside triangular frame is drawn. The function accepts
+Draws an inverted triangular LD heatmap using ggplot2. For exactly two
+variants, the single pairwise LD value is drawn as one rectangular heatmap
+cell. Interior grid lines are suppressed; only the outside frame is drawn. The function accepts
 either an \code{LDTrack} object or a \code{VariantTrack}/VCF path, in which case LD is
 computed first by \code{compute_ld_block()}. The default return value is an
 updated \code{LDTrack} object: LD calculation results remain in the object and the

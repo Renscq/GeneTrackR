@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-07-02
-# Version: dev001
+# Version: dev002
 # Function: Plot LD block triangular heatmaps
 # Input: LDTrack objects, VariantTrack objects, or VCF paths
 # Output: LDTrack objects with stored figures
@@ -8,8 +8,9 @@
 #' Plot a triangular LD heatmap
 #'
 #' @description
-#' Draws an inverted triangular LD heatmap using ggplot2. Interior grid lines are
-#' suppressed; only the outside triangular frame is drawn. The function accepts
+#' Draws an inverted triangular LD heatmap using ggplot2. For exactly two
+#' variants, the single pairwise LD value is drawn as one rectangular heatmap
+#' cell. Interior grid lines are suppressed; only the outside frame is drawn. The function accepts
 #' either an `LDTrack` object or a `VariantTrack`/VCF path, in which case LD is
 #' computed first by `compute_ld_block()`. The default return value is an
 #' updated `LDTrack` object: LD calculation results remain in the object and the
@@ -198,7 +199,7 @@ draw_ld_triangle_heatmap <- function(ld,
                                      show_variant_labels = TRUE,
                                      x_limits = NULL) {
   n_var <- nrow(variants)
-  poly_dt <- make_ld_triangle_polygons(pair_dt)
+  poly_dt <- make_ld_triangle_polygons(pair_dt, n_var = n_var)
   frame_dt <- make_ld_triangle_frame(n_var)
   colors <- make_ld_continuous_palette(color_palette)
   legend_title <- if (identical(ld$meta$method %||% "r2", "r2")) expression(r^2) else "D'"
@@ -257,11 +258,21 @@ draw_ld_triangle_heatmap <- function(ld,
   p
 }
 
-make_ld_triangle_polygons <- function(pair_dt) {
+make_ld_triangle_polygons <- function(pair_dt, n_var = NULL) {
   x <- data.table::copy(data.table::as.data.table(pair_dt))
   x[, "center_x" := (as.numeric(index_i) + as.numeric(index_j)) / 2]
   x[, "center_y" := (as.numeric(index_j) - as.numeric(index_i)) / 2]
   x[, "pair_id" := paste0(index_i, "_", index_j)]
+
+  if (!is.null(n_var) && as.integer(n_var)[1L] == 2L) {
+    stop_if_not(nrow(x) == 1L, "Exactly one LD pair is required when plotting two variants.")
+    return(data.table::rbindlist(list(
+      x[, .(pair_id, ld, x = center_x - 0.5, y = 0)],
+      x[, .(pair_id, ld, x = center_x + 0.5, y = 0)],
+      x[, .(pair_id, ld, x = center_x + 0.5, y = 1)],
+      x[, .(pair_id, ld, x = center_x - 0.5, y = 1)]
+    ), fill = TRUE)[])
+  }
 
   data.table::rbindlist(list(
     x[, .(pair_id, ld, x = center_x, y = center_y - 0.5)],
@@ -272,10 +283,10 @@ make_ld_triangle_polygons <- function(pair_dt) {
 }
 
 make_ld_triangle_frame <- function(n_var) {
-  if (n_var <= 2L) {
+  if (n_var == 2L) {
     return(data.table::data.table(
-      x = c(1, 1.5, 2, 1),
-      y = c(0.5, 0, 0.5, 0.5)
+      x = c(1, 2, 2, 1, 1),
+      y = c(0, 0, 1, 1, 0)
     ))
   }
   data.table::data.table(
