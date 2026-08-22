@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-08-23
-# Version: dev002
+# Version: dev003
 # Function: Generate the deterministic GeneTrackR demo dataset from canonical model tables
 # Input: inst/scripts/demo_model/*.tsv
 # Output: inst/extdata/gtr_demo_* example input files
@@ -237,7 +237,7 @@ write_vcf <- function(variants, samples, chromosomes, file) {
   con <- file(file, open = "wt")
   on.exit(close(con), add = TRUE)
   writeLines("##fileformat=VCFv4.2", con)
-  writeLines("##source=GeneTrackR_demo_v0.5.2", con)
+  writeLines("##source=GeneTrackR_demo_v0.5.3", con)
   for (i in seq_len(nrow(chromosomes))) {
     writeLines(paste0("##contig=<ID=", chromosomes$chrom[i], ",length=", chromosomes$size[i], ">"), con)
   }
@@ -292,7 +292,8 @@ get_cds_segments <- function(tx_row) {
   do.call(rbind, out)
 }
 
-build_rnaseq_signal <- function(transcripts, signal_design) {
+build_rnaseq_signal <- function(transcripts, signal_design, strand = c("+", "-")) {
+  strand <- match.arg(strand)
   exon_factors <- c(1.00, 0.90, 1.10, 0.95)
   local_wave <- c(0.92, 1.00, 1.08, 0.96, 1.04)
   rows <- list()
@@ -302,6 +303,7 @@ build_rnaseq_signal <- function(transcripts, signal_design) {
     weight <- as.numeric(signal_design$rnaseq_weight[i])
     if (is.na(weight) || weight <= 0) next
     tx <- transcripts[transcripts$transcript_id == signal_design$transcript_id[i], , drop = FALSE]
+    if (tx$strand[1L] != strand) next
     if (nrow(tx) != 1L) {
       stop("Signal design transcript was not found uniquely: ", signal_design$transcript_id[i], call. = FALSE)
     }
@@ -352,8 +354,9 @@ compress_rnaseq_signal <- function(signal) {
   do.call(rbind, out)
 }
 
-write_rnaseq_signal <- function(file, transcripts, signal_design) {
-  signal <- build_rnaseq_signal(transcripts, signal_design)
+write_rnaseq_signal <- function(file, transcripts, signal_design, strand = c("+", "-")) {
+  strand <- match.arg(strand)
+  signal <- build_rnaseq_signal(transcripts, signal_design, strand = strand)
   bedgraph <- compress_rnaseq_signal(signal)
   utils::write.table(
     bedgraph,
@@ -365,7 +368,8 @@ write_rnaseq_signal <- function(file, transcripts, signal_design) {
   )
 }
 
-build_riboseq_signal <- function(transcripts, signal_design) {
+build_riboseq_signal <- function(transcripts, signal_design, strand = c("+", "-")) {
+  strand <- match.arg(strand)
   phase_factor <- c(1.00, 0.18, 0.08)
   codon_wave <- c(0.90, 1.00, 1.12, 0.96, 1.06, 0.94)
   start_bonus <- c(4.8, 2.4, 1.2)
@@ -377,6 +381,7 @@ build_riboseq_signal <- function(transcripts, signal_design) {
     weight <- as.numeric(signal_design$riboseq_weight[i])
     if (is.na(weight) || weight <= 0) next
     tx <- transcripts[transcripts$transcript_id == signal_design$transcript_id[i], , drop = FALSE]
+    if (tx$strand[1L] != strand) next
     if (nrow(tx) != 1L) {
       stop("Signal design transcript was not found uniquely: ", signal_design$transcript_id[i], call. = FALSE)
     }
@@ -421,8 +426,9 @@ build_riboseq_signal <- function(transcripts, signal_design) {
   signal[order(signal$chrom, signal$pos), , drop = FALSE]
 }
 
-write_riboseq_signal <- function(file, transcripts, signal_design) {
-  signal <- build_riboseq_signal(transcripts, signal_design)
+write_riboseq_signal <- function(file, transcripts, signal_design, strand = c("+", "-")) {
+  strand <- match.arg(strand)
+  signal <- build_riboseq_signal(transcripts, signal_design, strand = strand)
   bedgraph <- data.frame(
     chrom = signal$chrom,
     start = signal$pos - 1L,
@@ -449,7 +455,13 @@ old_signal_files <- c(
   "gtr_demo_ctrl_plus.bedgraph",
   "gtr_demo_ctrl_minus.bedgraph",
   "gtr_demo_treat_plus.bedgraph",
-  "gtr_demo_treat_minus.bedgraph"
+  "gtr_demo_treat_minus.bedgraph",
+  "gtr_demo_rnaseq.bedgraph",
+  "gtr_demo_riboseq.bedgraph",
+  "gtr_demo_rnaseq_plus.bedgraph",
+  "gtr_demo_rnaseq_minus.bedgraph",
+  "gtr_demo_riboseq_plus.bedgraph",
+  "gtr_demo_riboseq_minus.bedgraph"
 )
 unlink(file.path(out_dir, old_signal_files), force = TRUE)
 
@@ -492,8 +504,10 @@ utils::write.table(chromosomes, file.path(out_dir, "gtr_demo.chrom.sizes"), sep 
 
 write_vcf(variants, samples, chromosomes, file.path(out_dir, "gtr_demo_variants.vcf"))
 write_phenotype(samples, file.path(out_dir, "gtr_demo_pheno.tsv"))
-write_rnaseq_signal(file.path(out_dir, "gtr_demo_rnaseq.bedgraph"), transcripts, signal_design)
-write_riboseq_signal(file.path(out_dir, "gtr_demo_riboseq.bedgraph"), transcripts, signal_design)
+write_rnaseq_signal(file.path(out_dir, "gtr_demo_rnaseq_plus.bedgraph"), transcripts, signal_design, strand = "+")
+write_rnaseq_signal(file.path(out_dir, "gtr_demo_rnaseq_minus.bedgraph"), transcripts, signal_design, strand = "-")
+write_riboseq_signal(file.path(out_dir, "gtr_demo_riboseq_plus.bedgraph"), transcripts, signal_design, strand = "+")
+write_riboseq_signal(file.path(out_dir, "gtr_demo_riboseq_minus.bedgraph"), transcripts, signal_design, strand = "-")
 
 message("[GeneTrackR demo] Generated files in: ", out_dir)
 message("[GeneTrackR demo] Genes: ", nrow(genes), "; transcripts: ", nrow(transcripts), "; samples: ", nrow(samples), "; variants: ", nrow(variants), ".")

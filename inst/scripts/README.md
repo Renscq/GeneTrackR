@@ -14,7 +14,7 @@ Files in `demo_model/` use 1-based closed coordinates. Format-specific coordinat
 - `signal_design.tsv`: transcript-level RNA-seq coverage weights, primary-transcript status, and Ribo-seq translation-density weights.
 - `truth.tsv`: stable dimensions and biological/statistical expectations used for documentation and regression tests.
 
-`generate_demo_data.R` builds all user-facing files from these canonical tables. RNA-seq signal is generated over exons, whereas Ribo-seq signal is generated as one-base CDS density with transcript-oriented three-nucleotide periodicity and initiation/termination peaks.
+`generate_demo_data.R` builds all user-facing files from these canonical tables. RNA-seq signal is generated over exons as separate plus/minus bedGraph files, whereas Ribo-seq signal is generated as separate plus/minus one-base CDS-density bedGraph files with transcript-oriented three-nucleotide periodicity and initiation/termination peaks.
 
 Regenerate data from a source checkout with:
 

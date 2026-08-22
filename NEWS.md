@@ -1,3 +1,9 @@
+# GeneTrackR 0.5.3
+
+- Split the demo RNA-seq bedGraph into strand-specific `gtr_demo_rnaseq_plus.bedgraph` and `gtr_demo_rnaseq_minus.bedgraph` files.
+- Split the demo Ribo-seq bedGraph into strand-specific `gtr_demo_riboseq_plus.bedgraph` and `gtr_demo_riboseq_minus.bedgraph` files.
+- Updated the demo-data generator, validator, and tests to use strand-specific signal tracks.
+
 # GeneTrackR 0.5.2
 
 - Replaced the four generic demo control/treatment strand bedGraph tracks with two assay-specific signal examples: `gtr_demo_rnaseq.bedgraph` and `gtr_demo_riboseq.bedgraph`.

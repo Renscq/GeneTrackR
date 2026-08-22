@@ -81,41 +81,79 @@ test_that("demo phenotype encodes designed effects and a negative control", {
 })
 
 
-test_that("demo RNA-seq signal is exon-enriched and intron-depleted", {
-  rnaseq <- data.table::fread(
-    gtr_extdata("gtr_demo_rnaseq.bedgraph"),
+test_that("demo RNA-seq signal is exon-enriched and strand-specific", {
+  rnaseq_plus <- data.table::fread(
+    gtr_extdata("gtr_demo_rnaseq_plus.bedgraph"),
+    col.names = c("chrom", "start", "end", "value")
+  )
+  rnaseq_minus <- data.table::fread(
+    gtr_extdata("gtr_demo_rnaseq_minus.bedgraph"),
     col.names = c("chrom", "start", "end", "value")
   )
 
-  expect_true(all(rnaseq$start < rnaseq$end))
-  expect_true(all(rnaseq$value > 0))
+  expect_true(all(rnaseq_plus$start < rnaseq_plus$end))
+  expect_true(all(rnaseq_minus$start < rnaseq_minus$end))
+  expect_true(all(rnaseq_plus$value > 0))
+  expect_true(all(rnaseq_minus$value > 0))
 
-  genea_exon <- rnaseq[chrom == "chr1" & start < 12341000L & end > 12340000L]
-  genea_intron <- rnaseq[chrom == "chr1" & start < 12342000L & end > 12341000L]
-  genei_lncRNA <- rnaseq[chrom == "chr1" & start < 15006000L & end > 15000000L]
+  genea_exon_plus <- rnaseq_plus[chrom == "chr1" & start < 12341000L & end > 12340000L]
+  genea_exon_minus <- rnaseq_minus[chrom == "chr1" & start < 12341000L & end > 12340000L]
+  genea_intron_plus <- rnaseq_plus[chrom == "chr1" & start < 12342000L & end > 12341000L]
+  geneb_exon_minus <- rnaseq_minus[chrom == "chr1" & start < 12357500L & end > 12356000L]
+  geneb_exon_plus <- rnaseq_plus[chrom == "chr1" & start < 12357500L & end > 12356000L]
+  genei_lncRNA_plus <- rnaseq_plus[chrom == "chr1" & start < 15006000L & end > 15000000L]
 
-  expect_gt(nrow(genea_exon), 0L)
-  expect_equal(nrow(genea_intron), 0L)
-  expect_gt(nrow(genei_lncRNA), 0L)
+  expect_gt(nrow(genea_exon_plus), 0L)
+  expect_equal(nrow(genea_exon_minus), 0L)
+  expect_equal(nrow(genea_intron_plus), 0L)
+  expect_gt(nrow(geneb_exon_minus), 0L)
+  expect_equal(nrow(geneb_exon_plus), 0L)
+  expect_gt(nrow(genei_lncRNA_plus), 0L)
 })
 
 
 test_that("demo Ribo-seq signal is single-base CDS density with 3-nt periodicity", {
-  riboseq <- data.table::fread(
-    gtr_extdata("gtr_demo_riboseq.bedgraph"),
+  riboseq_plus <- data.table::fread(
+    gtr_extdata("gtr_demo_riboseq_plus.bedgraph"),
+    col.names = c("chrom", "start", "end", "value")
+  )
+  riboseq_minus <- data.table::fread(
+    gtr_extdata("gtr_demo_riboseq_minus.bedgraph"),
     col.names = c("chrom", "start", "end", "value")
   )
 
-  expect_true(all(riboseq$end - riboseq$start == 1L))
-  expect_true(all(riboseq$value > 0))
+  expect_true(all(riboseq_plus$end - riboseq_plus$start == 1L))
+  expect_true(all(riboseq_minus$end - riboseq_minus$start == 1L))
+  expect_true(all(riboseq_plus$value > 0))
+  expect_true(all(riboseq_minus$value > 0))
 
-  # GeneI is a designed lncRNA and therefore has no Ribo-seq CDS signal.
+  # GeneI is a designed plus-strand lncRNA and therefore has no Ribo-seq CDS signal.
   expect_equal(
-    nrow(riboseq[chrom == "chr1" & start < 15006000L & end > 15000000L]),
+    nrow(riboseq_plus[chrom == "chr1" & start < 15006000L & end > 15000000L]),
     0L
   )
 
-  genea <- riboseq[chrom == "chr1" & start >= 12340500L & end <= 12351500L]
+  # Plus-strand CDS signal is restricted to the plus file.
+  expect_gt(
+    nrow(riboseq_plus[chrom == "chr1" & start >= 12340500L & end <= 12351500L]),
+    0L
+  )
+  expect_equal(
+    nrow(riboseq_minus[chrom == "chr1" & start >= 12340500L & end <= 12351500L]),
+    0L
+  )
+
+  # Minus-strand CDS signal is restricted to the minus file.
+  expect_gt(
+    nrow(riboseq_minus[chrom == "chr1" & start >= 12356500L & end <= 12366000L]),
+    0L
+  )
+  expect_equal(
+    nrow(riboseq_plus[chrom == "chr1" & start >= 12356500L & end <= 12366000L]),
+    0L
+  )
+
+  genea <- riboseq_plus[chrom == "chr1" & start >= 12340500L & end <= 12351500L]
   genea[, pos := start + 1L]
   start_peak <- genea[pos == 12340501L, value]
   stop_peak <- genea[pos >= 12351498L & pos <= 12351500L, max(value)]
