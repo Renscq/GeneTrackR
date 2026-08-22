@@ -1,0 +1,16 @@
+chrom	start	end	feature_id	type	strand
+chr1	12339001	12340000	GeneA_promoter	promoter	+
+chr1	12338201	12338750	GeneA_enhancer	enhancer	.
+chr1	12339701	12352000	GeneA_candidate_region	candidate_region	.
+chr1	12330001	12380000	SeedWeight_QTL	QTL	.
+chr1	12343201	12343800	GeneA_repeat	repeat	.
+chr1	12350401	12350900	GeneA_conserved	conserved_region	.
+chr1	12366501	12367500	GeneB_promoter	promoter	-
+chr1	12368001	12368500	GeneB_enhancer	enhancer	.
+chr1	12355501	12367000	GeneB_candidate_region	candidate_region	.
+chr2	8499001	8522000	GeneKL_overlap_region	overlap_region	.
+chr2	8503001	8506500	GeneK_enhancer	enhancer	.
+chr2	8518001	8519300	GeneL_promoter	promoter	-
+chr2	1999001	2008500	LowLD_region	candidate_region	.
+chr2	16994501	17006500	TwoVariantLD_region	candidate_region	.
+chr2	16994001	16995000	GeneT_promoter	promoter	+

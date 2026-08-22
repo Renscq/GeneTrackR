@@ -1,0 +1,67 @@
+# GeneTrackR demo data model (v0.5.2)
+
+This directory contains one deterministic demo genome shared across GeneTrackR examples.
+All `gtr_demo_*` files are generated from the canonical model tables in `inst/scripts/demo_model/`.
+
+## Coordinate conventions
+
+- Canonical model tables: 1-based closed.
+- GTF/GFF3/VCF: 1-based coordinates.
+- GenePredExt/BED/bedGraph: written using their standard 0-based conventions and converted by GeneTrackR readers.
+
+## Core dimensions
+
+- Chromosomes: 2 (`chr1`, `chr2`).
+- Genes: 20.
+- Transcripts: 24.
+- Samples: 36 (`S01`-`S36`).
+- Variants: 50.
+- Primary gene: `GeneA` (`+` strand, two transcripts).
+- Negative-strand gene: `GeneB` (`-` strand, two transcripts).
+
+## Designed truth
+
+`GeneA` contains four balanced genotype-defined design groups (9 samples each). `seed_weight` and `plant_height` have designed haplotype effects. `protein_content` is designed around `varA03`, whose ALT state is present in DesignHap2/DesignHap3. `flowering_time` is a negative-control phenotype with the same within-group value pattern in all four haplotypes.
+
+`varLD01`-`varLD06` share the same genotype pattern and therefore form a perfect high-LD block (`r2 = 1` in complete samples). The `GeneT` region (`chr2:16995001-17006000`) contains exactly `varPair01` and `varPair02`, providing a stable two-variant LD plotting case.
+
+The phenotype rows are deliberately stored in an order different from the VCF sample columns. Analyses must align samples by `sample_id`, not by row position.
+
+## Signal tracks
+
+Two unstranded signal files are provided. Their purpose is to represent two biologically different sequencing assays rather than arbitrary control/treatment tracks.
+
+### `gtr_demo_rnaseq.bedgraph`
+
+Synthetic RNA-seq coverage generated from the complete transcript exon model.
+
+- Exonic regions, including UTRs, contain positive coverage.
+- Alternative isoforms contribute lower additional coverage to shared or alternative exons.
+- Introns and intergenic regions have no bedGraph records and therefore represent zero coverage.
+- Protein-coding and lncRNA transcripts can both have RNA-seq coverage.
+
+### `gtr_demo_riboseq.bedgraph`
+
+Synthetic Ribo-seq P-site-like density generated from the primary protein-coding transcript of each gene.
+
+- Every bedGraph record is exactly 1 bp wide.
+- Signal is restricted to CDS positions; UTR, intron, intergenic, and lncRNA regions have no Ribo-seq records.
+- Internal CDS density has a strong three-nucleotide periodic pattern: phase 0 > phase 1 > phase 2.
+- Initiation and termination regions contain pronounced peaks.
+- Periodicity follows transcript orientation, including negative-strand coding genes.
+
+The transcript-specific RNA-seq and Ribo-seq weights are defined in `inst/scripts/demo_model/signal_design.tsv`.
+
+## Generated input files
+
+- `gtr_demo.genePredExt`, `gtr_demo.gtf`, `gtr_demo.gff3`: the same canonical annotation in three formats.
+- `gtr_demo_features.bed`: promoters, enhancers, QTL/candidate regions, repeats, and conserved intervals.
+- `gtr_demo_variants.vcf`: one shared VCF for variant, haplotype, LD, refinement, and variant-effect workflows.
+- `gtr_demo_pheno.tsv`: numeric and categorical phenotypes for all 36 VCF samples.
+- `gtr_demo_rnaseq.bedgraph`: exon-enriched RNA-seq coverage.
+- `gtr_demo_riboseq.bedgraph`: single-base CDS Ribo-seq density with 3-nt periodicity and start/stop peaks.
+- `gtr_demo.chrom.sizes`: chromosome lengths.
+
+## Legacy files
+
+Files beginning with `example_` are retained temporarily during the 0.5.x migration so existing examples and tests do not break. They will be removed after all documentation and tests use the new `gtr_demo_*` data.

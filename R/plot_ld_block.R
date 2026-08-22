@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-07-02
-# Version: dev002
+# Version: dev005
 # Function: Plot LD block triangular heatmaps
 # Input: LDTrack objects, VariantTrack objects, or VCF paths
 # Output: LDTrack objects with stored figures
@@ -9,8 +9,8 @@
 #'
 #' @description
 #' Draws an inverted triangular LD heatmap using ggplot2. For exactly two
-#' variants, the single pairwise LD value is drawn as one rectangular heatmap
-#' cell. Interior grid lines are suppressed; only the outside frame is drawn. The function accepts
+#' variants, the single pairwise LD value is drawn as one diamond-shaped heatmap
+#' cell, matching the 45-degree geometry used by the triangular LD matrix. Interior grid lines are suppressed; only the outside frame is drawn. The function accepts
 #' either an `LDTrack` object or a `VariantTrack`/VCF path, in which case LD is
 #' computed first by `compute_ld_block()`. The default return value is an
 #' updated `LDTrack` object: LD calculation results remain in the object and the
@@ -241,7 +241,7 @@ draw_ld_triangle_heatmap <- function(ld,
     ggplot2::theme(
       text = ggplot2::element_text(size = font, color = "black"),
       plot.title = ggplot2::element_text(size = font, color = "black", hjust = 0.5),
-      axis.text.x = ggplot2::element_text(size = font * 0.75, color = "black", angle = 90, hjust = 0, vjust = 0.5),
+      axis.text.x = ggplot2::element_text(size = font * 0.75, color = "black", angle = 90, hjust = 1, vjust = 0.5),
       axis.text.y = ggplot2::element_blank(),
       axis.ticks.x = ggplot2::element_blank(),
       axis.ticks.y = ggplot2::element_blank(),
@@ -267,10 +267,10 @@ make_ld_triangle_polygons <- function(pair_dt, n_var = NULL) {
   if (!is.null(n_var) && as.integer(n_var)[1L] == 2L) {
     stop_if_not(nrow(x) == 1L, "Exactly one LD pair is required when plotting two variants.")
     return(data.table::rbindlist(list(
-      x[, .(pair_id, ld, x = center_x - 0.5, y = 0)],
-      x[, .(pair_id, ld, x = center_x + 0.5, y = 0)],
-      x[, .(pair_id, ld, x = center_x + 0.5, y = 1)],
-      x[, .(pair_id, ld, x = center_x - 0.5, y = 1)]
+      x[, .(pair_id, ld, x = center_x, y = center_y - 0.5)],
+      x[, .(pair_id, ld, x = center_x + 0.5, y = center_y)],
+      x[, .(pair_id, ld, x = center_x, y = center_y + 0.5)],
+      x[, .(pair_id, ld, x = center_x - 0.5, y = center_y)]
     ), fill = TRUE)[])
   }
 
@@ -285,8 +285,8 @@ make_ld_triangle_polygons <- function(pair_dt, n_var = NULL) {
 make_ld_triangle_frame <- function(n_var) {
   if (n_var == 2L) {
     return(data.table::data.table(
-      x = c(1, 2, 2, 1, 1),
-      y = c(0, 0, 1, 1, 0)
+      x = c(1.5, 2, 1.5, 1, 1.5),
+      y = c(0, 0.5, 1, 0.5, 0)
     ))
   }
   data.table::data.table(
@@ -365,7 +365,7 @@ draw_ld_region_track <- function(ld,
       show_gene_pos_axis = TRUE,
       gene_pos_axis_n = 5L,
       gene_pos_axis_label = NULL,
-      gene_pos_x_angle = 0
+      gene_pos_x_angle = 90
     )
     attr(p, "gene_data") <- gene_data
     return(p)

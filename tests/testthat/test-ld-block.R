@@ -21,3 +21,21 @@ test_that("plot_ld_block returns LDTrack with triangular LD figure", {
   p <- plot_ld_block(ld, show_region = TRUE, show_variant_labels = FALSE, return_object = FALSE)
   expect_true(inherits(p, "ggplot") || inherits(p, "patchwork"))
 })
+
+
+test_that("two-variant LD geometry is a single diamond-shaped heatmap cell", {
+  pair_dt <- data.table::data.table(
+    index_i = 1L,
+    index_j = 2L,
+    ld = 0.75
+  )
+
+  poly <- GeneTrackR:::make_ld_triangle_polygons(pair_dt, n_var = 2L)
+  frame <- GeneTrackR:::make_ld_triangle_frame(2L)
+
+  expect_equal(poly$x, c(1.5, 2, 1.5, 1))
+  expect_equal(poly$y, c(0, 0.5, 1, 0.5))
+  expect_equal(poly$ld, rep(0.75, 4L))
+  expect_equal(frame$x, c(1.5, 2, 1.5, 1, 1.5))
+  expect_equal(frame$y, c(0, 0.5, 1, 0.5, 0))
+})

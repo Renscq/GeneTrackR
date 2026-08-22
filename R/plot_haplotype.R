@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-07-30
-# Version: dev003
+# Version: dev004
 # Function: Plot haplotype-variant and haplotype-phenotype figures
 # Input: HapVariant and phenotype objects
 # Output: ggplot or patchwork figures
@@ -715,7 +715,7 @@ draw_hap_gene_track <- function(gene_data,
         x_axis_title <- "Genomic position (bp)"
       }
     }
-    axis_hjust <- if (gene_pos_x_angle == 0) 0.5 else if (gene_pos_x_angle == 90) 0.5 else 0
+    axis_hjust <- if (gene_pos_x_angle == 0) 0.5 else if (gene_pos_x_angle == 90) 1 else 0
     axis_vjust <- if (gene_pos_x_angle == 0) 0 else 0.5
     x_axis_text <- ggplot2::element_text(
       size = gene_text_size,

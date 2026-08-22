@@ -84,8 +84,8 @@ is returned directly.
 }
 \description{
 Draws an inverted triangular LD heatmap using ggplot2. For exactly two
-variants, the single pairwise LD value is drawn as one rectangular heatmap
-cell. Interior grid lines are suppressed; only the outside frame is drawn. The function accepts
+variants, the single pairwise LD value is drawn as one diamond-shaped heatmap
+cell, matching the 45-degree geometry used by the triangular LD matrix. Interior grid lines are suppressed; only the outside frame is drawn. The function accepts
 either an \code{LDTrack} object or a \code{VariantTrack}/VCF path, in which case LD is
 computed first by \code{compute_ld_block()}. The default return value is an
 updated \code{LDTrack} object: LD calculation results remain in the object and the
