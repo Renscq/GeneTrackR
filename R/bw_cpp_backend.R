@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-27
-# Version: dev001
+# Version: dev005
 # Function: R wrappers for the local libBigWig C++ backend
 # Input: Local bigWig file path and genomic regions
 # Output: Chromosome metadata and signal intervals
@@ -90,4 +90,46 @@ read_bigwig_whole_cpp <- function(file, sample_id, strand = "*") {
   })
 
   data.table::rbindlist(out, fill = TRUE)
+}
+
+
+write_bigwig_libbigwig <- function(file, signal, chrom_sizes) {
+  file <- normalize_bigwig_path(file)
+  signal <- data.table::as.data.table(signal)
+  chrom_sizes <- data.table::as.data.table(chrom_sizes)
+
+  stop_if_not(nrow(signal) > 0L, "Cannot write an empty bigWig track.")
+  stop_if_not(nrow(chrom_sizes) > 0L, "`chrom_sizes` must contain at least one chromosome.")
+
+  completed <- FALSE
+  on.exit({
+    if (!completed && file.exists(file)) {
+      unlink(file, force = TRUE)
+    }
+  }, add = TRUE)
+
+  .Call(
+    `_GeneTrackR_bw_write_cpp`,
+    file,
+    as.character(chrom_sizes$chrom),
+    as.numeric(chrom_sizes$size),
+    as.character(signal$chrom),
+    as.numeric(signal$start) - 1,
+    as.numeric(signal$end),
+    as.numeric(signal$value)
+  )
+
+  stop_if_not(
+    file.exists(file) && isTRUE(file.info(file)$size > 0),
+    paste0("libBigWig did not create a valid output file: ", file)
+  )
+
+  seqinfo <- bw_seqinfo_cpp(file)
+  stop_if_not(
+    nrow(seqinfo) > 0L,
+    paste0("libBigWig created a file that could not be reopened: ", file)
+  )
+
+  completed <- TRUE
+  invisible(file)
 }

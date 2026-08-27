@@ -1,4 +1,4 @@
-# GeneTrackR
+<!-- README.md is generated from README.qmd and docs/*.qmd. Edit the QMD sources, not README.md. -->
 
 **GeneTrackR** is a lightweight R package for reading, querying, writing, and visualizing gene annotations, genomic signal tracks, variant tracks, haplotypes, and phenotype associations. It is designed for programmable IGV-like visualization in R while keeping direct access to the underlying annotation, coverage, variant, haplotype, and phenotype tables.
 
@@ -20,7 +20,7 @@
 
 GeneTrackR depends on CRAN and Bioconductor packages. Install the dependencies first, then install GeneTrackR from GitHub.
 
-```r
+```{r}
 ## CRAN dependencies
 install.packages(c(
   "devtools",
@@ -53,52 +53,95 @@ devtools::install_github(
 
 Load the package:
 
-```r
+```{r}
 library(GeneTrackR)
 ```
 
 For local development:
 
-```r
+```bash
 git clone https://github.com/Renscq/GeneTrackR.git
-setwd("GeneTrackR")
+cd GeneTrackR
+```
 
+```{r}
 devtools::document()
 devtools::install()
 ```
 
 ## Built-in example files
 
-GeneTrackR ships with example files in `inst/extdata`. The example data are large enough to test the major modules without external files.
+GeneTrackR ships with one deterministic demo genome in `inst/extdata`. The dataset is compact but intentionally designed to exercise the major modules without external files.
 
-```r
-gp_file <- system.file("extdata", "example.genePredExt", package = "GeneTrackR")
-gtf_file <- system.file("extdata", "example_annotation.gtf", package = "GeneTrackR")
-gff_file <- system.file("extdata", "example_annotation.gff3", package = "GeneTrackR")
-bed_file <- system.file("extdata", "example_features.bed", package = "GeneTrackR")
+```{r}
+gp_file <- system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR")
+gtf_file <- system.file("extdata", "gtr_demo.gtf", package = "GeneTrackR")
+gff_file <- system.file("extdata", "gtr_demo.gff3", package = "GeneTrackR")
+bed_file <- system.file("extdata", "gtr_demo_features.bed", package = "GeneTrackR")
 
-bg_files <- system.file(
+rnaseq_files <- system.file(
   "extdata",
-  c("example_signal_A.bedgraph", "example_signal_B.bedgraph"),
+  c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph"),
   package = "GeneTrackR"
 )
 
-vcf_file <- system.file("extdata", "example_haplotype.vcf", package = "GeneTrackR")
-variant_file <- system.file("extdata", "example_variants.vcf", package = "GeneTrackR")
-pheno_file <- system.file("extdata", "example_pheno.tsv", package = "GeneTrackR")
+riboseq_files <- system.file(
+  "extdata",
+  c("gtr_demo_riboseq_plus.bedgraph", "gtr_demo_riboseq_minus.bedgraph"),
+  package = "GeneTrackR"
+)
+
+vcf_file <- system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")
+pheno_file <- system.file("extdata", "gtr_demo_pheno.tsv", package = "GeneTrackR")
 ```
 
-The example set includes approximately 100 genes, multiple chromosomes, coding/non-coding transcripts, positive/negative strands, random signal coverage, around 500 VCF records, 60 samples, and multiple phenotype traits.
+The deterministic demo genome contains 2 chromosomes, 20 genes, 24 transcripts, 36 samples, 50 designed variants, strand-specific RNA-seq/Ribo-seq tracks, four balanced GeneA haplotype groups, and phenotype traits with known positive and negative-control associations. All protein-coding demo transcripts use CDS lengths divisible by three. The Ribo-seq tracks contain moderately dense heterogeneous integer P-site-like counts with designed frame0/frame1/frame2 total-count proportions of approximately 80%/10%/10%. Frame 0 is broadly occupied and variable, while frame 1 and frame 2 use different subsets of codons with lower irregular counts. Initiation and termination frame-0 counts are approximately two times the internal frame-0 mean.
 
-## 1. Annotation input
+## Annotation files: read, subset, merge, and write
 
-### GenePred / GenePredExt
+GeneTrackR supports five annotation inputs: **GenePred**, **GenePredExt**, **GTF**, **GFF3**, and **BED**. All readers standardize coordinates internally to **1-based closed** coordinates, but the source formats are not equivalent: GenePred/GenePredExt, GTF, and GFF3 can provide hierarchical gene models, whereas BED is primarily treated as an interval annotation track.
 
-```r
+### Supported formats and object types
+
+| Format | Typical content | Reader | Main return | Writer format |
+|---|---|---|---|---|
+| GenePred | 10-column transcript model | `read_genepred(..., format = "genePred")` | `GenePred` | `genepred` |
+| GenePredExt | 15-column GenePred with gene ID/status/frame fields | `read_genepred(..., format = "genePredExt")` | `GenePred` | `genepredext` |
+| GTF | 9-column hierarchical annotation with attributes | `read_gtf()` | `FeatureTrack` with derived gene model | `gtf` |
+| GFF3 | 9-column hierarchical annotation with `ID`/`Parent` relationships | `read_gff()` | `FeatureTrack` with derived gene model | `gff` |
+| BED | BED3-BED12 interval annotation | `read_bed()` | interval-style `FeatureTrack` | `bed6`; `bed12` for gene-model objects |
+
+Coordinate conventions are handled at the file boundary:
+
+- GenePred/GenePredExt default to UCSC-style **0-based half-open** input with `coordinate = "ucsc"`.
+- BED defaults to **0-based half-open** input with `coordinate = "bed"`.
+- GTF and GFF3 use **1-based closed** coordinates.
+- GeneTrackR stores all annotation coordinates internally as **1-based closed** coordinates.
+- `write_feature()` converts GenePred/BED-like outputs back to UCSC coordinates by default with `coordinate = "ucsc"`.
+
+The built-in annotation files describe the same demo genome:
+
+```{r}
+gp_file <- system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR")
+gtf_file <- system.file("extdata", "gtr_demo.gtf", package = "GeneTrackR")
+gff_file <- system.file("extdata", "gtr_demo.gff3", package = "GeneTrackR")
+bed_file <- system.file("extdata", "gtr_demo_features.bed", package = "GeneTrackR")
+```
+
+### GenePred and GenePredExt
+
+GenePred stores one transcript per row with transcript/CDS boundaries and exon blocks. Standard GenePred contains 10 core columns. GenePredExt adds `score`, `name2`, CDS status, and exon-frame information; GeneTrackR normally uses `name` as `transcript_id` and `name2` as `gene_id` for GenePredExt.
+
+#### Read
+
+The built-in file is GenePredExt:
+
+```{r}
 gp <- read_genepred(
   gp_file,
   format = "genePredExt",
-  verbose = TRUE
+  verbose = FALSE,
+  progress = FALSE
 )
 
 gp
@@ -107,87 +150,437 @@ head(gp$transcripts)
 head(gp$exons)
 ```
 
-Silent loading:
+Standard GenePred uses the same reader. Here a standard GenePred file is created from the demo object and read back:
 
-```r
-gp <- read_genepred(
-  gp_file,
-  format = "genePredExt",
+```{r}
+gp_standard_file <- file.path(tempdir(), "gtr_demo.genePred")
+
+write_feature(
+  gp,
+  gp_standard_file,
+  format = "genepred",
+  overwrite = TRUE
+)
+
+gp_standard <- read_genepred(
+  gp_standard_file,
+  format = "genePred",
   verbose = FALSE,
   progress = FALSE
 )
 ```
 
-### GTF / GFF3 / BED
+#### Subset
 
-```r
-gtf <- read_gtf(gtf_file)
-gff <- read_gff(gff_file)
-bed <- read_bed(bed_file)
-```
+GenePred-compatible objects can be subset by gene, transcript, or genomic region:
 
-`read_gtf()` and `read_gff()` standardize gene, transcript, exon, CDS, and UTR records when possible. `read_bed()` reads interval-style feature tracks.
-
-### Summarize annotation objects
-
-```r
-summary_feature(gp, level = "gene")
-summary_feature(gp, level = "transcript")
-summary_feature(gp, level = "exon")
-```
-
-## 2. Annotation retrieval and conversion
-
-### Retrieve by gene or transcript
-
-```r
-gene_feature <- retrieve_feature(
+```{r}
+gp_gene_a <- retrieve_feature(
   gp,
   gene_id = "GeneA"
 )
 
-tx_feature <- retrieve_feature(
+gp_tx_a1 <- retrieve_feature(
   gp,
   transcript_id = "TxA1"
 )
-```
 
-### Retrieve by genomic region
-
-```r
-region_feature <- retrieve_feature(
+gp_region <- retrieve_feature(
   gp,
   chrom = "chr1",
-  start = 1,
-  end = 20000
+  start = 12339001,
+  end = 12374500,
+  mode = "overlap"
 )
-
-unique(region_feature$genes$chrom)
 ```
 
-### Return standardized tables
+For a plain table instead of a sub-object:
 
-```r
-gene_table <- retrieve_feature(
+```{r}
+gp_gene_table <- retrieve_feature(
   gp,
   chrom = "chr1",
-  start = 1,
-  end = 20000,
+  start = 12339001,
+  end = 12374500,
   level = "gene",
   as = "data.table"
 )
+```
 
+#### Merge
+
+Subsets from the same or different GenePred objects can be recombined with `merge_feature()`:
+
+```{r}
+gp_gene_b <- retrieve_feature(gp, gene_id = "GeneB")
+
+gp_merged <- merge_feature(
+  gp_gene_a,
+  gp_gene_b,
+  source_names = c("GeneA", "GeneB"),
+  conflict = "deduplicate"
+)
+```
+
+#### Write
+
+A GenePred-compatible object can be written as either GenePred or GenePredExt:
+
+```{r}
+write_feature(
+  gp_gene_a,
+  file.path(tempdir(), "GeneA.genePred"),
+  format = "genepred",
+  overwrite = TRUE
+)
+
+write_feature(
+  gp_gene_a,
+  file.path(tempdir(), "GeneA.genePredExt"),
+  format = "genepredext",
+  overwrite = TRUE
+)
+```
+
+`write_genepred()` remains available as a backward-compatible wrapper around `write_feature()`.
+
+### GTF
+
+GTF stores gene-model records in a 9-column table and uses the final attribute column for identifiers such as `gene_id` and `transcript_id`. GeneTrackR parses the hierarchical records into a `FeatureTrack` with standardized `$genes`, `$transcripts`, `$exons`, and `$data` tables when the required records are present.
+
+#### Read
+
+```{r}
+gtf <- read_gtf(
+  gtf_file,
+  verbose = FALSE,
+  progress = FALSE
+)
+
+gtf
+head(gtf$genes)
+head(gtf$transcripts)
+```
+
+Selected feature types can be loaded when the full annotation is not required:
+
+```{r}
+gtf_core <- read_gtf(
+  gtf_file,
+  feature_types = c("gene", "transcript", "exon", "CDS"),
+  verbose = FALSE,
+  progress = FALSE
+)
+```
+
+#### Subset
+
+```{r}
+gtf_gene_a <- retrieve_feature(gtf, gene_id = "GeneA")
+
+gtf_gene_a_exons <- retrieve_feature(
+  gtf,
+  gene_id = "GeneA",
+  level = "exon",
+  as = "data.table"
+)
+
+gtf_region <- retrieve_feature(
+  gtf,
+  chrom = "chr1",
+  start = 12339001,
+  end = 12374500,
+  mode = "overlap"
+)
+```
+
+#### Merge
+
+```{r}
+gtf_gene_b <- retrieve_feature(gtf, gene_id = "GeneB")
+
+gtf_merged <- merge_feature(
+  gtf_gene_a,
+  gtf_gene_b,
+  source_names = c("GeneA", "GeneB")
+)
+```
+
+#### Write
+
+```{r}
+write_feature(
+  gtf_gene_a,
+  file.path(tempdir(), "GeneA.gtf"),
+  format = "gtf",
+  overwrite = TRUE
+)
+```
+
+Because a gene-model GTF contains transcript and exon hierarchy, it can also be converted directly to GenePred/GenePredExt or BED12 with `write_feature()`.
+
+### GFF3
+
+GFF3 also uses 9 columns, but hierarchy is represented primarily through `ID` and `Parent` attributes. `read_gff()` reconstructs gene/transcript/exon relationships and returns the same unified `FeatureTrack` interface used for GTF.
+
+#### Read
+
+```{r}
+gff <- read_gff(
+  gff_file,
+  verbose = FALSE,
+  progress = FALSE
+)
+
+gff
+head(gff$genes)
+head(gff$transcripts)
+```
+
+Feature-type filtering is also supported:
+
+```{r}
+gff_core <- read_gff(
+  gff_file,
+  feature_types = c("gene", "mRNA", "exon", "CDS"),
+  verbose = FALSE,
+  progress = FALSE
+)
+```
+
+#### Subset
+
+```{r}
+gff_gene_a <- retrieve_feature(gff, gene_id = "GeneA")
+
+gff_region <- retrieve_feature(
+  gff,
+  chrom = "chr1",
+  start = 12339001,
+  end = 12374500,
+  mode = "overlap"
+)
+```
+
+#### Merge
+
+```{r}
+gff_gene_b <- retrieve_feature(gff, gene_id = "GeneB")
+
+gff_merged <- merge_feature(
+  gff_gene_a,
+  gff_gene_b,
+  source_names = c("GeneA", "GeneB")
+)
+```
+
+#### Write
+
+```{r}
+write_feature(
+  gff_gene_a,
+  file.path(tempdir(), "GeneA.gff3"),
+  format = "gff",
+  overwrite = TRUE
+)
+```
+
+### BED
+
+BED is treated differently from GenePred/GTF/GFF3. `read_bed()` reads BED3-BED12-style files as **interval annotations** and standardizes the interval coordinates, name, score, and strand fields into a `FeatureTrack`. It does not reconstruct BED12 block columns into a transcript/exon hierarchy; use GenePred, GTF, or GFF3 when exon-level gene models are required.
+
+#### Read
+
+```{r}
+features <- read_bed(
+  bed_file,
+  verbose = FALSE,
+  progress = FALSE
+)
+
+features
+head(features$data)
+```
+
+The demo BED contains promoters, enhancers, candidate regions, repeats, conserved regions, and QTL intervals. Their semantic type is encoded in the BED name field, for example `GeneA_promoter|promoter`.
+
+#### Subset
+
+BED intervals can be selected by region or text pattern:
+
+```{r}
+bed_gene_a <- retrieve_feature(
+  features,
+  chrom = "chr1",
+  start = 12338201,
+  end = 12352000,
+  mode = "overlap"
+)
+
+bed_promoters <- retrieve_feature(
+  features,
+  pattern = "promoter"
+)
+```
+
+#### Merge
+
+```{r}
+bed_gene_b <- retrieve_feature(
+  features,
+  chrom = "chr1",
+  start = 12355501,
+  end = 12368500,
+  mode = "overlap"
+)
+
+bed_merged <- merge_feature(
+  bed_gene_a,
+  bed_gene_b,
+  source_names = c("GeneA_region", "GeneB_region"),
+  conflict = "keep_all"
+)
+```
+
+#### Write
+
+Generic BED-derived intervals should normally be written as BED6:
+
+```{r}
+write_feature(
+  bed_merged,
+  file.path(tempdir(), "merged_features.bed6"),
+  format = "bed6",
+  overwrite = TRUE
+)
+```
+
+BED12 output requires transcript/exon gene-model information. It is therefore appropriate for `GenePred` or gene-model GTF/GFF3 objects rather than a generic BED interval track:
+
+```{r}
+write_feature(
+  gp_gene_a,
+  file.path(tempdir(), "GeneA.bed12"),
+  format = "bed12",
+  overwrite = TRUE
+)
+```
+
+### Region-selection modes
+
+`retrieve_feature()` uses the same region-selection interface across annotation formats:
+
+| `mode` | Meaning |
+|---|---|
+| `"overlap"` | Keep records overlapping the requested region. This is the default. |
+| `"within"` | Keep records fully contained in the requested region. |
+| `"trim"` | For hierarchical gene models, keep overlapping records and clip transcript/exon boundaries to the requested interval. |
+
+For generic BED-style interval tracks, `"trim"` behaves as overlap selection because there is no transcript/exon hierarchy to rebuild.
+
+### Merge conflict handling
+
+`merge_feature()` accepts `Feature`, `FeatureTrack`, and `GenePred` objects, including a list of objects. Duplicate identifiers are handled explicitly:
+
+| `conflict` | Behavior |
+|---|---|
+| `"deduplicate"` | Keep the first compatible copy according to input order. Default. |
+| `"rename"` | Rename conflicting IDs in later inputs and update hierarchy references. |
+| `"keep_all"` | Retain conflicting records unchanged. |
+| `"error"` | Stop when duplicate IDs are detected. |
+| `"keep_first"` | Backward-compatible alias of `"deduplicate"`. |
+
+When the same locus is loaded from different annotation formats, `rename` is useful if both representations should be retained:
+
+```{r}
+cross_format <- merge_feature(
+  list(gp_gene_a, gtf_gene_a),
+  source_names = c("GenePred", "GTF"),
+  conflict = "rename"
+)
+```
+
+If the two inputs represent the same annotation and only one copy is needed, use `conflict = "deduplicate"` instead.
+
+### Cross-format conversion and standardized tables
+
+The readers share a common internal representation, so annotation formats can be converted without reparsing text manually:
+
+```{r}
+# GTF/GFF3 gene models -> GenePred-compatible object
+gtf_as_gp <- as_genepred(gtf)
+gff_as_gp <- as_genepred(gff)
+
+# Any annotation object -> standardized feature table
+feature_dt <- as_feature_table(gp)
+
+# Gene-model tables
 gene_dt <- as_gene_table(gp)
 tx_dt <- as_transcript_table(gp)
 exon_dt <- as_exon_table(gp)
-feature_dt <- as_feature_table(gp)
+
+# Bioconductor interoperability
+gene_gr <- as_granges(gp, level = "gene")
 ```
 
-## 3. Gene model plotting
+`write_feature()` is also the main cross-format writer. For example, a GTF-derived gene model can be exported as GenePredExt or BED12:
+
+```{r}
+write_feature(
+  gtf_gene_a,
+  file.path(tempdir(), "GeneA.from_gtf.genePredExt"),
+  format = "genepredext",
+  overwrite = TRUE
+)
+
+write_feature(
+  gtf_gene_a,
+  file.path(tempdir(), "GeneA.from_gtf.bed12"),
+  format = "bed12",
+  overwrite = TRUE
+)
+```
+
+### Annotation object contract
+
+After reading, GeneTrackR keeps annotation data in a small set of compatible objects:
+
+| Input | Main object | Important contents |
+|---|---|---|
+| GenePred / GenePredExt | `GenePred` | `$genes`, `$transcripts`, `$exons`, `$data` |
+| Gene-model GTF / GFF3 | `FeatureTrack` | `$data` plus derived `$genes`, `$transcripts`, `$exons` |
+| BED | interval `FeatureTrack` | primarily `$data` |
+
+`retrieve_feature()` returns a compatible sub-object by default (`as = "Feature"`) and a `data.table` when `as = "data.table"`. `merge_feature()` always returns a unified `Feature` object and additionally inherits from `GenePred` when transcript/exon tables are available.
+
+### How annotation objects connect to the rest of GeneTrackR
+
+Annotation objects are the first input to most downstream workflows. `GenePred` or gene-model `FeatureTrack` objects can be passed directly to gene-model plotting, signal plotting, haplotype extraction, LD visualization, and integrated browser-style tracks.
+
+### Core object flow and return contracts
+
+GeneTrackR uses a small set of S3 objects throughout the workflow. The examples below keep these objects intact instead of repeatedly converting them to plain tables.
+
+| Step | Function | Main return | Important contents / next consumer |
+|---|---|---|---|
+| Annotation | `read_genepred()` | `GenePred` | `$genes`, `$transcripts`, `$exons`, `$data`; used by gene/signal/haplotype plotting |
+| GTF/GFF/BED | `read_gtf()`, `read_gff()`, `read_bed()` | `FeatureTrack` | `$data` plus derived hierarchy when available; gene-model FeatureTracks are GenePred-convertible |
+| Signal | `read_bwg()` / `merge_bwg()` | `BwgTrack` | `$samples`, optional in-memory `$data`, `$meta`; consumed by `plot_signal_*()` and `plot_tracks()` |
+| Variant | `read_vcf()` | `VariantTrack` | `$data`, `$meta`; consumed by haplotype, LD, phenotype, and track functions |
+| Variant subset | `retrieve_vcf()` | `data.table` by default; `VariantTrack` with `as = "VariantTrack"` | use the table for inspection or request `VariantTrack` for downstream track/object workflows |
+| Haplotype | `hap_gene_variant()` / `hap_region_variant()` | `HapVariant` | `$variants`, `$haplotypes`, `$sample_haplotypes`, `$genotype_wide` |
+| Phenotype association | `plot_hap_pheno()` / `plot_variant_pheno()` | `GeneTrackRPhenoPlot` | `$figure`, `$pvalue`, `$summary`, `$plot_data` |
+| LD | `compute_ld_block()` | `LDTrack` | `$data`, `$matrix`, `$variants`, `$region`; `plot_ld_block()` stores the figure in `$figure` |
+| Refinement | `refine_haplotype()` | `HapRefined` | `$refined_hap`, `$refined_haplotypes`, `$haplotype_map`, `$pairwise_test` |
+| Variant effect | `plot_variant_effect()` | `GeneTrackRVariantEffectPlot` | `$figure`, `$effect`, `$plot_data` |
+
+Plotting functions such as `plot_gene()`, `plot_signal_gene()`, `plot_variant()`, `plot_tracks()`, `plot_hap_variant()`, and `plot_refined_hap_variant()` return a ggplot/patchwork figure directly. In contrast, phenotype/effect plotting functions return result objects containing `$figure` plus analysis tables. `plot_ld_block()` is intentionally stateful: by default it returns an updated `LDTrack` with the plot stored in `$figure`; use `return_object = FALSE` only when a figure-only return is required.
+
+## Gene model plotting
 
 ### Plot a gene
 
-```r
+```{r}
 plot_gene(
   gp,
   gene_id = "GeneA",
@@ -198,7 +591,7 @@ plot_gene(
 
 ### Plot a transcript
 
-```r
+```{r}
 plot_transcript(
   gp,
   transcript_id = "TxA1",
@@ -208,7 +601,7 @@ plot_transcript(
 
 Spliced transcript coordinate mode removes introns:
 
-```r
+```{r}
 plot_transcript(
   gp,
   transcript_id = "TxA1",
@@ -218,12 +611,12 @@ plot_transcript(
 
 ### Plot a genomic region
 
-```r
+```{r}
 plot_region(
   gp,
   chrom = "chr1",
-  start = 1,
-  end = 20000,
+  start = 12339001,
+  end = 12374500,
   mode = "overlap",
   label_by = "gene"
 )
@@ -231,18 +624,18 @@ plot_region(
 
 ### Customize gene model colors
 
-```r
+```{r}
 plot_gene(
   gp,
   gene_id = "GeneA",
-  color_palette = "Set2",
-  border_color = "black"
+  gene_palette = "Set2",
+  gene_border_color = "black"
 )
 
 plot_gene(
   gp,
   gene_id = "GeneA",
-  fill_colors = c(
+  gene_colors = c(
     CDS = "#1b9e77",
     UTR = "#a6d854",
     exon = "#7570b3"
@@ -250,67 +643,345 @@ plot_gene(
 )
 ```
 
-## 4. Signal track module
+## RNA-seq and Ribo-seq signal tracks
 
-### Read bedGraph / wig / bigWig
+GeneTrackR uses `BwgTrack` objects for continuous genomic signals. This module follows one complete workflow for the strand-specific RNA-seq and Ribo-seq demo data:
 
-```r
-bg <- read_bwg(
-  bg_files,
-  format = "bedgraph"
+1. read bedGraph files;
+2. write bigWig files;
+3. plot gene-level signal tracks;
+4. plot transcript-level signal tracks;
+5. combine RNA-seq and Ribo-seq with `plot_tracks()`;
+6. plot signals across a genomic region.
+
+The examples use the same `GeneA`/`TxA1` positive-strand locus whenever possible so that the outputs can be compared directly between steps.
+
+### Step 1. Read RNA-seq and Ribo-seq bedGraph data
+
+Load the annotation and locate the four strand-specific signal files:
+
+```{r}
+gp_file <- system.file(
+  "extdata",
+  "gtr_demo.genePredExt",
+  package = "GeneTrackR"
 )
 
-bg
-summary_bwg(bg)
+rnaseq_files <- system.file(
+  "extdata",
+  c(
+    "gtr_demo_rnaseq_plus.bedgraph",
+    "gtr_demo_rnaseq_minus.bedgraph"
+  ),
+  package = "GeneTrackR"
+)
+
+riboseq_files <- system.file(
+  "extdata",
+  c(
+    "gtr_demo_riboseq_plus.bedgraph",
+    "gtr_demo_riboseq_minus.bedgraph"
+  ),
+  package = "GeneTrackR"
+)
+
+gp <- read_genepred(
+  gp_file,
+  format = "genePredExt",
+  verbose = FALSE,
+  progress = FALSE
+)
 ```
 
-For bigWig files, GeneTrackR can use lazy region-based access, so large signal files do not need to be fully loaded before plotting.
+Read the RNA-seq plus/minus bedGraph files into one `BwgTrack` object:
 
-### Plot signal over a gene
+```{r}
+rnaseq <- read_bwg(
+  rnaseq_files,
+  format = "bedgraph",
+  sample_names = c("RNA_seq_plus", "RNA_seq_minus"),
+  strand = c("+", "-"),
+  mode = "memory"
+)
 
-```r
-plot_signal_gene(
-  signal = bg,
+rnaseq
+summary_bwg(rnaseq)
+```
+
+Read the Ribo-seq plus/minus bedGraph files in the same way:
+
+```{r}
+riboseq <- read_bwg(
+  riboseq_files,
+  format = "bedgraph",
+  sample_names = c("Ribo_seq_plus", "Ribo_seq_minus"),
+  strand = c("+", "-"),
+  mode = "memory"
+)
+
+riboseq
+summary_bwg(riboseq)
+```
+
+The two assays intentionally have different signal structures:
+
+- **RNA-seq** signal is enriched across exons, including UTRs, while intronic and intergenic regions have little or no coverage in the demo data.
+- **Ribo-seq** signal uses moderately dense 1-bp integer P-site-like counts within CDS regions. Frame 0 is broadly occupied with variable heights; frame 1 and frame 2 occur at different subsets of codons with lower irregular counts. Zero-count bases are omitted from bedGraph. Total counts remain approximately 80%/10%/10% for frame 0/frame 1/frame 2, and the initiation/termination frame-0 counts are approximately two times the internal frame-0 mean.
+
+Because bedGraph does not store strand metadata, `strand = c("+", "-")` explicitly records the strand associated with each input file in the `BwgTrack` sample table.
+
+### Step 2. Write RNA-seq and Ribo-seq bigWig files
+
+`write_bwg()` can convert an in-memory `BwgTrack` to bigWig directly with the bundled third-party libBigWig library in `src/`. No external conversion program is required; only chromosome sizes are needed for the bigWig header.
+
+```{r}
+chrom_sizes_file <- system.file(
+  "extdata",
+  "gtr_demo.chrom.sizes",
+  package = "GeneTrackR"
+)
+
+bigwig_dir <- file.path(tempdir(), "GeneTrackR_demo_bigwig")
+dir.create(bigwig_dir, recursive = TRUE, showWarnings = FALSE)
+```
+
+Write the RNA-seq tracks:
+
+```{r}
+rnaseq_bigwig <- write_bwg(
+  rnaseq,
+  outdir = bigwig_dir,
+  format = "bigwig",
+  chrom_sizes = chrom_sizes_file,
+  overwrite = TRUE
+)
+
+rnaseq_bigwig
+```
+
+Write the Ribo-seq tracks:
+
+```{r}
+riboseq_bigwig <- write_bwg(
+  riboseq,
+  outdir = bigwig_dir,
+  format = "bigwig",
+  chrom_sizes = chrom_sizes_file,
+  overwrite = TRUE
+)
+
+riboseq_bigwig
+```
+
+Each call invisibly returns a table with `sample_id`, output `file`, and `format`. With the sample names used above, the output directory contains:
+
+```text
+RNA_seq_plus.bigwig
+RNA_seq_minus.bigwig
+Ribo_seq_plus.bigwig
+Ribo_seq_minus.bigwig
+```
+
+BigWig export has a single backend in GeneTrackR: the bundled libBigWig implementation. This keeps the write path deterministic across platforms and avoids an external executable dependency.
+
+### Step 3. Plot RNA-seq and Ribo-seq tracks for a gene
+
+`plot_signal_gene()` retrieves the genomic span of a gene and optionally adds the gene model below the signal panel. With `strand = "auto"`, the gene strand is used to select the matching signal track. `GeneA` is on the positive strand, so the following examples use the plus RNA-seq and Ribo-seq samples automatically.
+
+RNA-seq gene track:
+
+```{r}
+p_rnaseq_gene <- plot_signal_gene(
+  signal = rnaseq,
   annotation = gp,
   gene_id = "GeneA",
   plot_type = "bar",
+  strand = "auto",
+  signal_palette = "Blues",
+  signal_palette_direction = -1,
   signal_y_scale = "fixed",
-  signal_y_ticks = "pretty"
+  signal_y_ticks = "pretty",
+  signal_track_height = 3,
+  gene_track_height = 1
 )
+
+p_rnaseq_gene
 ```
 
-### Plot signal over a transcript
+Ribo-seq gene track:
 
-```r
-plot_signal_transcript(
-  signal = bg,
+```{r}
+p_riboseq_gene <- plot_signal_gene(
+  signal = riboseq,
+  annotation = gp,
+  gene_id = "GeneA",
+  plot_type = "bar",
+  strand = "auto",
+  signal_palette = "Reds",
+  signal_palette_direction = -1,
+  signal_y_scale = "fixed",
+  signal_y_ticks = "pretty",
+  signal_track_height = 3,
+  gene_track_height = 1
+)
+
+p_riboseq_gene
+```
+
+At a whole-gene genomic scale, thousands of bases are compressed into the available plot width, so a three-nucleotide pattern cannot be resolved visually even when the underlying RPF counts are frame-biased. The gene-level bar track is intended to show where translation signal occurs across CDS exons. Use the transcript-level `frame` view below, or a short genomic window, to inspect three-nucleotide periodicity.
+
+The relative vertical space occupied by the signal and gene-model panels is controlled directly by `signal_track_height` and `gene_track_height`.
+
+### Step 4. Plot RNA-seq and Ribo-seq tracks for a transcript
+
+`plot_signal_transcript()` focuses on a single transcript. The RNA-seq example uses the standard bar representation in transcript coordinates:
+
+```{r}
+p_rnaseq_transcript <- plot_signal_transcript(
+  signal = rnaseq,
   annotation = gp,
   transcript_id = "TxA1",
   coordinate = "transcript",
-  plot_type = "bar"
+  plot_type = "bar",
+  strand = "auto",
+  signal_palette = "Blues",
+  signal_palette_direction = -1,
+  signal_y_scale = "fixed",
+  signal_track_height = 3,
+  gene_track_height = 1
 )
+
+p_rnaseq_transcript
 ```
 
-### Heatmap signal with binning
+For Ribo-seq, `plot_type = "frame"` maps P-site counts back onto the transcript reading frame. The demo is designed so that frame 0 contributes about 80% of total RPF counts, while frame 1 and frame 2 each contribute about 10%. Counts within each frame are deliberately heterogeneous rather than repeated at nearly identical heights. Discrete palettes such as `Set1` are assigned strictly in palette order: `frame0`, `frame1`, and `frame2` receive the first, second, and third palette colors, respectively:
 
-For long regions, `plot_type = "heatmap"` may produce very narrow tiles. Use binning to make the heatmap readable:
-
-```r
-plot_signal_gene(
-  signal = bg,
+```{r}
+p_riboseq_transcript <- plot_signal_transcript(
+  signal = riboseq,
   annotation = gp,
-  gene_id = "GeneA",
-  plot_type = "heatmap",
-  heatmap_bin_size = 50,
-  heatmap_summary = "mean"
+  transcript_id = "TxA1",
+  coordinate = "transcript",
+  plot_type = "frame",
+  strand = "auto",
+  frame_palette = "Set1",
+  signal_track_height = 3,
+  gene_track_height = 1
+)
+
+p_riboseq_transcript
+```
+
+Use `plot_type = "bar"` instead when the goal is to compare the genomic distribution of Ribo-seq P-site counts with the RNA-seq coverage representation:
+
+```{r}
+plot_signal_transcript(
+  signal = riboseq,
+  annotation = gp,
+  transcript_id = "TxA1",
+  coordinate = "transcript",
+  plot_type = "bar",
+  strand = "auto",
+  signal_palette = "Reds",
+  signal_palette_direction = -1
 )
 ```
 
-## 5. Variant track module
+### Step 5. Plot RNA-seq and Ribo-seq together with `plot_tracks()`
+
+Merge the two `BwgTrack` objects so RNA-seq and Ribo-seq can be displayed in one integrated track figure:
+
+```{r}
+signal_all <- merge_bwg(rnaseq, riboseq)
+
+signal_all
+summary_bwg(signal_all)
+```
+
+For the positive-strand `GeneA` locus, explicitly select the two plus-strand samples:
+
+```{r}
+p_signal_tracks <- plot_tracks(
+  annotation = gp,
+  signal = signal_all,
+  gene_id = "GeneA",
+  samples = c("RNA_seq_plus", "Ribo_seq_plus"),
+  strand = "+",
+  signal_type = "bar",
+  signal_palette = "Dark2",
+  signal_palette_direction = 1,
+  signal_y_scale = "free",
+  signal_y_ticks = "pretty",
+  heights = c(
+    signal = 4,
+    gene = 1,
+    feature = 0.8,
+    variant = 0.7
+  )
+)
+
+p_signal_tracks
+```
+
+`plot_tracks()` uses its named `heights` vector to control panel proportions. The `signal` and `gene` entries play the same role as `signal_track_height` and `gene_track_height` in the dedicated signal plotting functions.
+
+### Step 6. Plot RNA-seq and Ribo-seq tracks across a genomic region
+
+`plot_signal_region()` is useful when the region contains several genes or when the target interval is not defined by a single gene/transcript.
+
+For `bar` and `line` region plots, sample/group colors follow the sample/group level order and the standard RColorBrewer class order. Discrete colors are not selected by interpolating between the first and last palette colors. Heatmaps remain continuous gradients.
+
+The following region contains the positive-strand `GeneA`, negative-strand `GeneB`, and positive-strand `GeneC`, making it useful for displaying both strand-specific RNA-seq tracks:
+
+```{r}
+p_rnaseq_region <- plot_signal_region(
+  signal = rnaseq,
+  annotation = gp,
+  chrom = "chr1",
+  start = 12339001,
+  end = 12374500,
+  strand = "both",
+  plot_type = "bar",
+  signal_palette = "Blues",
+  signal_palette_direction = -1,
+  signal_y_scale = "free",
+  signal_y_ticks = "pretty",
+  signal_track_height = 4,
+  gene_track_height = 1
+)
+
+p_rnaseq_region
+```
+
+Plot the Ribo-seq tracks over the same interval:
+
+```{r}
+p_riboseq_region <- plot_signal_region(
+  signal = riboseq,
+  annotation = gp,
+  chrom = "chr1",
+  start = 12339001,
+  end = 12374500,
+  strand = "both",
+  plot_type = "bar",
+  signal_palette = "Reds",
+  signal_palette_direction = -1,
+  signal_y_scale = "free",
+  signal_y_ticks = "pretty",
+  signal_track_height = 4,
+  gene_track_height = 1
+)
+
+p_riboseq_region
+```
+
+For large real-world signal files, use lazy `BwgTrack` access where appropriate so that only the requested genomic interval is retrieved during plotting.
+
+## Variant track module
 
 ### Read VCF into memory
 
-```r
+```{r}
 vcf <- read_vcf(vcf_file, mode = "memory")
 vcf
 summary_vcf(vcf)
@@ -320,50 +991,56 @@ summary_vcf(vcf)
 
 For large `vcf.gz` files with `.tbi` or `.csi` indexes, use lazy mode. This reads the header and sample names first, then reads variants only for requested regions.
 
-```r
-vcf_lazy <- read_vcf(
-  "large.vcf.gz",
-  mode = "lazy"
-)
+```{r}
+large_vcf <- "/path/to/large.vcf.gz"
 
-vcf_region <- retrieve_vcf(
-  vcf_lazy,
-  chrom = "chr1",
-  start = 1,
-  end = 20000,
-  as = "VariantTrack"
-)
+# For a real bgzip-compressed VCF with a .tbi/.csi index:
+# vcf_lazy <- read_vcf(large_vcf, mode = "lazy")
+# vcf_region <- retrieve_vcf(
+#   vcf_lazy,
+#   chrom = "chr1",
+#   start = 12339001,
+#   end = 12374500,
+#   as = "VariantTrack"
+# )
 ```
 
 If no index is available, use memory mode or create a tabix index before lazy retrieval.
 
 ### Retrieve and plot variants
 
-```r
+```{r}
 vcf_region <- retrieve_vcf(
   vcf,
   chrom = "chr1",
-  start = 1,
-  end = 20000
+  start = 12339001,
+  end = 12374500,
+  as = "VariantTrack"
 )
+
+vcf_region
+head(vcf_region$data)
 
 plot_variant(
   vcf,
   chrom = "chr1",
-  start = 1,
-  end = 20000,
+  start = 12339001,
+  end = 12374500,
   color_by = "variant_type"
 )
 ```
 
-## 6. Browser-like combined tracks
+`retrieve_vcf()` returns a `data.table` by default. Set `as = "VariantTrack"` when the retrieved subset itself should be passed to functions that require a `VariantTrack`.
+
+## Browser-like combined tracks
 
 `plot_tracks()` combines gene models, signal tracks, BED feature tracks, and VCF variant tracks.
+It returns the assembled ggplot/patchwork figure directly rather than wrapping it in a result list.
 
-```r
+```{r}
 plot_tracks(
   annotation = gp,
-  signal = bg,
+  signal = rnaseq,
   gene_id = "GeneA",
   signal_type = "bar"
 )
@@ -371,10 +1048,10 @@ plot_tracks(
 
 Customize gene model colors in combined tracks:
 
-```r
+```{r}
 plot_tracks(
   annotation = gp,
-  signal = bg,
+  signal = rnaseq,
   gene_id = "GeneA",
   signal_type = "bar",
   gene_palette = "Set2",
@@ -383,7 +1060,7 @@ plot_tracks(
 
 plot_tracks(
   annotation = gp,
-  signal = bg,
+  signal = rnaseq,
   gene_id = "GeneA",
   gene_colors = c(
     CDS = "#1b9e77",
@@ -395,10 +1072,10 @@ plot_tracks(
 
 Control the complete track style with standardized parameters:
 
-```r
+```{r}
 plot_tracks(
   annotation = gp,
-  signal = bg,
+  signal = rnaseq,
   gene_id = "GeneA",
   signal_type = "bar",
   signal_transform = "sqrt",
@@ -413,47 +1090,46 @@ plot_tracks(
 
 Add feature and variant tracks:
 
-```r
-features <- read_bed(bed_file)
-variants <- read_vcf(variant_file)
-
+```{r}
 plot_tracks(
   annotation = gp,
-  signal = bg,
+  signal = signal_all,
   features = features,
-  variants = variants,
+  variants = vcf,
   chrom = "chr1",
-  start = 1,
-  end = 20000,
+  start = 12339001,
+  end = 12374500,
   signal_type = "bar"
 )
 ```
 
-## 7. Haplotype extraction
+## Haplotype extraction
 
 GeneTrackR now separates gene/transcript-based and region-based haplotype extraction.
 
 ### Gene or transcript haplotypes
 
-```r
+```{r}
 hap_gene <- hap_gene_variant(
   vcf,
   annotation = gp,
   gene_id = "GeneA",
-  genotype_mode = "string"
+  genotype_mode = "string",
+  min_variant_number = 1
 )
 
 hap_tx <- hap_gene_variant(
   vcf,
   annotation = gp,
   transcript_id = "TxA1",
-  genotype_mode = "code"
+  genotype_mode = "code",
+  min_variant_number = 1
 )
 ```
 
 Include upstream/downstream variants around a gene or transcript:
 
-```r
+```{r}
 hap_gene_ext <- hap_gene_variant(
   vcf,
   annotation = gp,
@@ -461,19 +1137,21 @@ hap_gene_ext <- hap_gene_variant(
   upstream = 1000,
   downstream = 1000,
   strand_aware = TRUE,
-  genotype_mode = "string"
+  genotype_mode = "string",
+  min_variant_number = 1
 )
 ```
 
 ### Region haplotypes
 
-```r
+```{r}
 hap_region <- hap_region_variant(
   vcf,
   chrom = "chr1",
-  start = 1,
-  end = 20000,
-  genotype_mode = "code"
+  start = 12339700,
+  end = 12352000,
+  genotype_mode = "code",
+  min_variant_number = 1
 )
 ```
 
@@ -481,46 +1159,50 @@ hap_region <- hap_region_variant(
 
 ### Inspect haplotype tables
 
-```r
+```{r}
 hap_gene$region
 hap_gene$variants
 hap_gene$haplotypes
 hap_gene$sample_haplotypes
 ```
 
-## 8. Haplotype-variant plot
+`hap_gene` is a `HapVariant`. Downstream haplotype plots and phenotype/refinement functions consume this object directly; there is no need to reconstruct genotype tables manually.
+
+## Haplotype-variant plot
 
 `plot_hap_variant()` draws a gene model, variant markers, connector lines, and a genotype table.
 
-```r
-plot_hap_variant(
+```{r}
+hap_variant_figure <- plot_hap_variant(
   hap_gene,
   annotation = gp,
   min_hap_samples = 3,
   show_reference_row = TRUE,
   table_x_angle = 90
 )
+
+hap_variant_figure
 ```
 
 Customize table and variant colors:
 
-```r
+```{r}
 plot_hap_variant(
   hap_gene,
   annotation = gp,
   min_hap_samples = 3,
-  table_fill_palette = "RdBu",
-  table_fill_alpha = 0.6,
+  table_palette = "RdBu",
+  table_alpha = 0.6,
   variant_palette = "Set1",
   genotype_text_size = 3
 )
 ```
 
-## 9. Phenotype input and summary
+## Phenotype input and summary
 
 The phenotype table should contain sample/taxa IDs in the first column or a named sample column. Each additional column is treated as one trait.
 
-```r
+```{r}
 pheno <- read_pheno(pheno_file)
 
 summary_pheno(pheno)
@@ -531,11 +1213,13 @@ plot_pheno(
 )
 ```
 
-## 10. Haplotype-phenotype association
+`read_pheno()` returns a `data.table`; `plot_pheno()` returns a figure directly.
+
+## Haplotype-phenotype association
 
 `plot_hap_pheno()` compares phenotype distributions among haplotype groups. It returns both the figure and the p-value table.
 
-```r
+```{r}
 hap_res <- plot_hap_pheno(
   hap = hap_gene,
   phenotype = pheno,
@@ -553,7 +1237,7 @@ hap_res$summary
 
 Use Wilcoxon or KS tests:
 
-```r
+```{r}
 plot_hap_pheno(
   hap = hap_gene,
   phenotype = pheno,
@@ -563,32 +1247,33 @@ plot_hap_pheno(
 )$figure
 ```
 
-Long trait names are wrapped in facet strips:
+Multiple traits preserve the requested order and are arranged over multiple facet columns:
 
-```r
+```{r}
 plot_hap_pheno(
   hap = hap_gene,
   phenotype = pheno,
   traits = c(
+    "seed_weight",
     "plant_height",
-    "very_long_trait_name_related_to_seed_weight_under_stress"
+    "protein_content",
+    "flowering_time"
   ),
-  strip_label_width = 12,
-  strip_border_color = NULL,
+  facet_ncol = 2,
   min_hap_samples = 3
 )$figure
 ```
 
-## 11. Single-variant phenotype association
+## Single-variant phenotype association
 
 `plot_variant_pheno()` is the single-variant version of `plot_hap_pheno()`. It groups samples by genotype or allele state at one variant.
 
-```r
+```{r}
 variant_res <- plot_variant_pheno(
   variant = vcf,
   phenotype = pheno,
-  variant_id = "rsA1",
-  traits = "plant_height",
+  variant_id = "varA03",
+  traits = "protein_content",
   genotype_mode = "string",
   min_group_samples = 3
 )
@@ -600,60 +1285,138 @@ variant_res$variant_data
 
 You can also select a variant by genomic position:
 
-```r
+```{r}
 plot_variant_pheno(
   variant = vcf,
   phenotype = pheno,
   chrom = "chr1",
-  pos = 1000,
-  traits = "plant_height",
+  pos = 12342550,
+  traits = "protein_content",
   genotype_mode = "code",
   min_group_samples = 3
 )$figure
 ```
 
-## 12. Export module
+## Linkage disequilibrium analysis
 
-### Export annotations
+The demo VCF contains a designed six-variant high-LD block (`varLD01`-`varLD06`) in `GeneA`. These variants share the same genotype pattern and therefore provide a deterministic `r2 = 1` example.
 
-```r
-write_feature(
-  gp,
-  file = "example.output.gtf",
-  format = "gtf",
-  overwrite = TRUE
+```{r}
+ld <- compute_ld_block(
+  vcf,
+  chrom = "chr1",
+  start = 12342620,
+  end = 12343180,
+  method = "r2",
+  verbose = FALSE
 )
 
-write_feature(
-  gp,
-  file = "example.output.bed6",
-  format = "bed6",
-  overwrite = TRUE
-)
-
-write_feature(
-  gp,
-  file = "example.output.bed12",
-  format = "bed12",
-  overwrite = TRUE
-)
+ld$data
 ```
+
+Add the compact GeneA structure above the triangular heatmap:
+
+```{r}
+ld <- plot_ld_block(
+  ld,
+  show_region = TRUE,
+  annotation = gp,
+  show_variant_labels = FALSE
+)
+
+ld$figure
+```
+
+The assignment is intentional: `plot_ld_block()` returns the updated `LDTrack`, not the figure, when `return_object = TRUE` (the default).
+
+The `GeneT` region contains exactly two variants and is retained as the deterministic two-variant LD plotting case:
+
+```{r}
+ld_pair <- compute_ld_block(
+  vcf,
+  chrom = "chr2",
+  start = 16995001,
+  end = 17006000,
+  method = "r2",
+  verbose = FALSE
+)
+
+plot_ld_block(ld_pair, return_object = FALSE)
+```
+
+## Haplotype refinement
+
+`seed_weight` has a designed GeneA haplotype effect and can be used to demonstrate phenotype-guided haplotype refinement.
+
+```{r}
+refined <- refine_haplotype(
+  hap_gene,
+  phenotype = pheno,
+  traits = "seed_weight",
+  min_hap_samples = 3
+)
+
+refined$refined_haplotypes
+```
+
+`refined` is a `HapRefined`; `refined$refined_hap` is the corresponding refined `HapVariant` used internally by the refined plotting wrappers.
+
+The refined object can be plotted with the same phenotype and variant interfaces:
+
+```{r}
+refined_pheno <- plot_refined_hap_pheno(
+  refined,
+  phenotype = pheno,
+  traits = "seed_weight",
+  min_hap_samples = 3
+)
+refined_pheno$figure
+refined_pheno$pvalue
+
+refined_variant_figure <- plot_refined_hap_variant(
+  refined,
+  annotation = gp,
+  min_hap_samples = 3
+)
+refined_variant_figure
+```
+
+## Variant effect prioritization
+
+`protein_content` was designed around `varA03`, providing a deterministic positive-effect example for `plot_variant_effect()`.
+
+```{r}
+effect_res <- plot_variant_effect(
+  hap_gene,
+  phenotype = pheno,
+  traits = "protein_content",
+  min_group_samples = 3,
+  x_axis = "position"
+)
+
+effect_res$figure
+effect_res$effect
+```
+
+## Export variants and analysis results
+
+Annotation writing and cross-format conversion are covered in the **Annotation files** module for GenePred, GenePredExt, GTF, GFF3, BED6, and BED12.
 
 ### Export variants
 
-```r
+```{r}
 write_vcf(
   vcf,
-  file = "example.output.vcf",
+  file = file.path(tempdir(), "gtr_demo.output.vcf"),
   overwrite = TRUE
 )
 ```
 
 ### Save figures and tables
 
-```r
+```{r}
 ggplot2::ggsave(
-  filename = "hap_pheno.pdf",
+  filename = file.path(tempdir(), "hap_pheno.pdf"),
   plot = hap_res$figure,
   width = 6,
   height = 5
@@ -661,68 +1424,118 @@ ggplot2::ggsave(
 
 data.table::fwrite(
   hap_res$pvalue,
-  file = "hap_pheno.pvalue.tsv",
+  file = file.path(tempdir(), "hap_pheno.pvalue.tsv"),
   sep = "\t"
 )
 ```
 
-## 13. Recommended workflow
+## Recommended workflow
 
-```r
+```{r}
 library(GeneTrackR)
 
 ## Input files
-gp_file <- system.file("extdata", "example.genePredExt", package = "GeneTrackR")
-vcf_file <- system.file("extdata", "example_haplotype.vcf", package = "GeneTrackR")
-pheno_file <- system.file("extdata", "example_pheno.tsv", package = "GeneTrackR")
-bg_files <- system.file(
+gp_file <- system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR")
+vcf_file <- system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")
+pheno_file <- system.file("extdata", "gtr_demo_pheno.tsv", package = "GeneTrackR")
+rnaseq_files <- system.file(
   "extdata",
-  c("example_signal_A.bedgraph", "example_signal_B.bedgraph"),
+  c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph"),
+  package = "GeneTrackR"
+)
+riboseq_files <- system.file(
+  "extdata",
+  c("gtr_demo_riboseq_plus.bedgraph", "gtr_demo_riboseq_minus.bedgraph"),
   package = "GeneTrackR"
 )
 
 ## Read data
 gp <- read_genepred(gp_file, format = "genePredExt", verbose = FALSE)
-vcf <- read_vcf(vcf_file, mode = "memory")
-pheno <- read_pheno(pheno_file)
-bg <- read_bwg(bg_files, format = "bedgraph")
+vcf <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
+pheno <- read_pheno(pheno_file, verbose = FALSE)
+rnaseq <- read_bwg(
+  rnaseq_files,
+  format = "bedgraph",
+  sample_names = c("RNA_seq_plus", "RNA_seq_minus"),
+  strand = c("+", "-"),
+  mode = "memory"
+)
+riboseq <- read_bwg(
+  riboseq_files,
+  format = "bedgraph",
+  sample_names = c("Ribo_seq_plus", "Ribo_seq_minus"),
+  strand = c("+", "-"),
+  mode = "memory"
+)
+signal_all <- merge_bwg(rnaseq, riboseq)
 
-## Browser-like view
-plot_tracks(
+## Browser-like view (direct figure return)
+browser_figure <- plot_tracks(
   annotation = gp,
-  signal = bg,
+  signal = signal_all,
   variants = vcf,
   gene_id = "GeneA",
   signal_type = "bar"
 )
+browser_figure
 
 ## Haplotype extraction
 hap <- hap_gene_variant(
   vcf,
   annotation = gp,
   gene_id = "GeneA",
-  upstream = 1000,
-  downstream = 1000,
-  genotype_mode = "string"
+  genotype_mode = "string",
+  min_variant_number = 1
 )
 
-## Haplotype-variant figure
-plot_hap_variant(
+## Haplotype-variant figure (direct figure return)
+hap_plot <- plot_hap_variant(
   hap,
   annotation = gp,
   min_hap_samples = 3
 )
+hap_plot
 
 ## Haplotype-phenotype association
 res <- plot_hap_pheno(
   hap,
   phenotype = pheno,
-  traits = "plant_height",
+  traits = "seed_weight",
   min_hap_samples = 3
 )
 
 res$figure
 res$pvalue
+
+## LD block
+ld <- compute_ld_block(
+  vcf,
+  chrom = "chr1",
+  start = 12342620,
+  end = 12343180,
+  verbose = FALSE
+)
+ld <- plot_ld_block(ld, show_region = TRUE, annotation = gp, show_variant_labels = FALSE)
+ld$figure
+
+## Phenotype-guided refinement
+refined <- refine_haplotype(
+  hap,
+  phenotype = pheno,
+  traits = "seed_weight",
+  min_hap_samples = 3
+)
+refined$refined_haplotypes
+
+## Variant effects
+effect_res <- plot_variant_effect(
+  hap,
+  phenotype = pheno,
+  traits = "protein_content",
+  min_group_samples = 3,
+  x_axis = "position"
+)
+effect_res$figure
 ```
 
 ## Notes

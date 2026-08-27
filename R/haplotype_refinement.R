@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-07-30
-# Version: dev003
+# Version: dev004
 # Function: Refine haplotypes and prioritize phenotype-associated variant effects
 # Input: HapVariant objects and phenotype tables
 # Output: Refined haplotype objects, variant-effect tables, and ggplot figures
@@ -31,16 +31,16 @@
 #' HapVariant-compatible object and can be passed to `plot_hap_pheno()` and
 #' `plot_hap_variant()`.
 #' @examples
-#' vcf_file <- system.file("extdata", "example_haplotype.vcf", package = "GeneTrackR")
-#' pheno_file <- system.file("extdata", "example_pheno.tsv", package = "GeneTrackR")
-#' anno_file <- system.file("extdata", "example.genePredExt", package = "GeneTrackR")
-#' vcf <- read_vcf(vcf_file)
-#' pheno <- read_pheno(pheno_file)
+#' vcf_file <- system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")
+#' pheno_file <- system.file("extdata", "gtr_demo_pheno.tsv", package = "GeneTrackR")
+#' anno_file <- system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR")
+#' vcf <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
+#' pheno <- read_pheno(pheno_file, verbose = FALSE)
 #' anno <- read_genepred(anno_file, format = "genePredExt", verbose = FALSE)
-#' hap <- hap_variant(vcf, annotation = anno, gene_id = "GeneA", genotype_mode = "string")
-#' refined <- refine_haplotype(hap, phenotype = pheno, traits = "plant_height", min_hap_samples = 1)
+#' hap <- hap_variant(vcf, annotation = anno, gene_id = "GeneA", genotype_mode = "string", min_variant_number = 1)
+#' refined <- refine_haplotype(hap, phenotype = pheno, traits = "seed_weight", min_hap_samples = 3)
 #' refined$refined_haplotypes
-#' plot_hap_pheno(refined$refined_hap, phenotype = pheno, traits = "plant_height", min_hap_samples = 1)
+#' plot_hap_pheno(refined$refined_hap, phenotype = pheno, traits = "seed_weight", min_hap_samples = 3)
 #' @export
 refine_haplotype <- function(hap,
                              phenotype,
@@ -262,15 +262,15 @@ refine_haplotype <- function(hap,
 #' @param text_size Text size.
 #' @return A `GeneTrackRPhenoPlot` object returned by `plot_hap_pheno()`.
 #' @examples
-#' vcf_file <- system.file("extdata", "example_haplotype.vcf", package = "GeneTrackR")
-#' pheno_file <- system.file("extdata", "example_pheno.tsv", package = "GeneTrackR")
-#' anno_file <- system.file("extdata", "example.genePredExt", package = "GeneTrackR")
-#' vcf <- read_vcf(vcf_file)
-#' pheno <- read_pheno(pheno_file)
+#' vcf_file <- system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")
+#' pheno_file <- system.file("extdata", "gtr_demo_pheno.tsv", package = "GeneTrackR")
+#' anno_file <- system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR")
+#' vcf <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
+#' pheno <- read_pheno(pheno_file, verbose = FALSE)
 #' anno <- read_genepred(anno_file, format = "genePredExt", verbose = FALSE)
-#' hap <- hap_variant(vcf, annotation = anno, gene_id = "GeneA", genotype_mode = "string")
-#' refined <- refine_haplotype(hap, phenotype = pheno, traits = "plant_height", min_hap_samples = 1)
-#' plot_refined_hap_pheno(refined, phenotype = pheno, traits = "plant_height", min_hap_samples = 1)
+#' hap <- hap_variant(vcf, annotation = anno, gene_id = "GeneA", genotype_mode = "string", min_variant_number = 1)
+#' refined <- refine_haplotype(hap, phenotype = pheno, traits = "seed_weight", min_hap_samples = 3)
+#' plot_refined_hap_pheno(refined, phenotype = pheno, traits = "seed_weight", min_hap_samples = 3)
 #' @export
 plot_refined_hap_pheno <- function(refined_hap,
                                    phenotype,
@@ -394,14 +394,14 @@ plot_refined_hap_pheno <- function(refined_hap,
 #' @return A patchwork object with attributes `plot_data`, `variant_data`,
 #' `gene_data`, `refined_haplotype_map`, and `refined_haplotypes` when available.
 #' @examples
-#' vcf_file <- system.file("extdata", "example_haplotype.vcf", package = "GeneTrackR")
-#' pheno_file <- system.file("extdata", "example_pheno.tsv", package = "GeneTrackR")
-#' anno_file <- system.file("extdata", "example.genePredExt", package = "GeneTrackR")
-#' vcf <- read_vcf(vcf_file)
-#' pheno <- read_pheno(pheno_file)
+#' vcf_file <- system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")
+#' pheno_file <- system.file("extdata", "gtr_demo_pheno.tsv", package = "GeneTrackR")
+#' anno_file <- system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR")
+#' vcf <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
+#' pheno <- read_pheno(pheno_file, verbose = FALSE)
 #' anno <- read_genepred(anno_file, format = "genePredExt", verbose = FALSE)
-#' hap <- hap_variant(vcf, annotation = anno, gene_id = "GeneA", genotype_mode = "string")
-#' refined <- refine_haplotype(hap, phenotype = pheno, traits = "plant_height", min_hap_samples = 1)
+#' hap <- hap_variant(vcf, annotation = anno, gene_id = "GeneA", genotype_mode = "string", min_variant_number = 1)
+#' refined <- refine_haplotype(hap, phenotype = pheno, traits = "seed_weight", min_hap_samples = 3)
 #' plot_refined_hap_variant(refined, annotation = anno, min_hap_samples = 1)
 #' @export
 plot_refined_hap_variant <- function(refined_hap,
@@ -929,14 +929,14 @@ get_refined_hap_variant <- function(refined_hap) {
 #' @param text_size Base text size.
 #' @return A list with `figure`, `effect`, and `plot_data` elements.
 #' @examples
-#' vcf_file <- system.file("extdata", "example_haplotype.vcf", package = "GeneTrackR")
-#' pheno_file <- system.file("extdata", "example_pheno.tsv", package = "GeneTrackR")
-#' anno_file <- system.file("extdata", "example.genePredExt", package = "GeneTrackR")
-#' vcf <- read_vcf(vcf_file)
-#' pheno <- read_pheno(pheno_file)
+#' vcf_file <- system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")
+#' pheno_file <- system.file("extdata", "gtr_demo_pheno.tsv", package = "GeneTrackR")
+#' anno_file <- system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR")
+#' vcf <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
+#' pheno <- read_pheno(pheno_file, verbose = FALSE)
 #' anno <- read_genepred(anno_file, format = "genePredExt", verbose = FALSE)
-#' hap <- hap_variant(vcf, annotation = anno, gene_id = "GeneA", genotype_mode = "code")
-#' plot_variant_effect(hap, phenotype = pheno, traits = "plant_height", min_group_samples = 1)
+#' hap <- hap_variant(vcf, annotation = anno, gene_id = "GeneA", genotype_mode = "code", min_variant_number = 1)
+#' plot_variant_effect(hap, phenotype = pheno, traits = "protein_content", min_group_samples = 3)
 #' @export
 plot_variant_effect <- function(hap,
                                 phenotype,

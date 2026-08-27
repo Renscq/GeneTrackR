@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-07-02
-# Version: dev001
+# Version: dev002
 # Function: LD block calculation from VCF genotypes
 # Input: VariantTrack objects or VCF paths
 # Output: LDTrack objects
@@ -33,6 +33,18 @@
 #' dosage matrix in the returned object.
 #' @param verbose Logical. Whether to print progress messages.
 #' @return An `LDTrack` object.
+#' @examples
+#' vcf_file <- system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")
+#' vcf <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
+#' ld <- compute_ld_block(
+#'   vcf,
+#'   chrom = "chr1",
+#'   start = 12342620,
+#'   end = 12343180,
+#'   method = "r2",
+#'   verbose = FALSE
+#' )
+#' ld$data
 #' @export
 compute_ld_block <- function(vcf,
                              chrom = NULL,

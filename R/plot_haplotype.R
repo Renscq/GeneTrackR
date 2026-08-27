@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-07-30
-# Version: dev004
+# Version: dev005
 # Function: Plot haplotype-variant and haplotype-phenotype figures
 # Input: HapVariant and phenotype objects
 # Output: ggplot or patchwork figures
@@ -53,11 +53,11 @@
 #' @param variant_marker_size Size of natural-variant triangle markers. Set to 0 to hide markers.
 #' @return A patchwork object with attributes `plot_data`, `variant_data`, and `gene_data`.
 #' @examples
-#' vcf_file <- system.file("extdata", "example_haplotype.vcf", package = "GeneTrackR")
-#' anno_file <- system.file("extdata", "example.genePredExt", package = "GeneTrackR")
-#' vcf <- read_vcf(vcf_file)
+#' vcf_file <- system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")
+#' anno_file <- system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR")
+#' vcf <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
 #' anno <- read_genepred(anno_file, format = "genePredExt", verbose = FALSE)
-#' hap <- hap_variant(vcf, annotation = anno, gene_id = "GeneA", genotype_mode = "string")
+#' hap <- hap_variant(vcf, annotation = anno, gene_id = "GeneA", genotype_mode = "string", min_variant_number = 1)
 #' plot_hap_variant(hap, annotation = anno, min_hap_samples = 1)
 #' plot_hap_variant(
 #'   hap,
@@ -1182,15 +1182,15 @@ make_hap_variant_fill_scale <- function(gene_features,
 #' @param text_size Text size.
 #' @return A list with `figure` and `pvalue` elements. Additional elements include `summary`, `bracket`, and `plot_data`.
 #' @examples
-#' vcf_file <- system.file("extdata", "example_haplotype.vcf", package = "GeneTrackR")
-#' anno_file <- system.file("extdata", "example.genePredExt", package = "GeneTrackR")
-#' pheno_file <- system.file("extdata", "example_pheno.tsv", package = "GeneTrackR")
-#' vcf <- read_vcf(vcf_file)
+#' vcf_file <- system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")
+#' anno_file <- system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR")
+#' pheno_file <- system.file("extdata", "gtr_demo_pheno.tsv", package = "GeneTrackR")
+#' vcf <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
 #' anno <- read_genepred(anno_file, format = "genePredExt", verbose = FALSE)
-#' hap <- hap_variant(vcf, annotation = anno, gene_id = "GeneA", genotype_mode = "code")
-#' pheno <- read_pheno(pheno_file)
-#' plot_hap_pheno(hap, phenotype = pheno, traits = "plant_height", min_hap_samples = 1)
-#' plot_hap_pheno(hap, phenotype = pheno, traits = "plant_height", min_hap_samples = 1,
+#' hap <- hap_variant(vcf, annotation = anno, gene_id = "GeneA", genotype_mode = "code", min_variant_number = 1)
+#' pheno <- read_pheno(pheno_file, verbose = FALSE)
+#' plot_hap_pheno(hap, phenotype = pheno, traits = "seed_weight", min_hap_samples = 3)
+#' plot_hap_pheno(hap, phenotype = pheno, traits = "seed_weight", min_hap_samples = 3,
 #'                test_method = "wilcox.test", p_label = "number")
 #' @export
 plot_hap_pheno <- function(hap,

@@ -1,4 +1,4 @@
-# GeneTrackR demo data model (v0.5.3)
+# GeneTrackR demo data model (v0.5.21)
 
 This directory contains one deterministic demo genome shared across GeneTrackR examples.
 All `gtr_demo_*` files are generated from the canonical model tables in `inst/scripts/demo_model/`.
@@ -49,20 +49,21 @@ Synthetic RNA-seq coverage generated from exons of `-`-strand transcripts.
 
 ### `gtr_demo_riboseq_plus.bedgraph`
 
-Synthetic Ribo-seq P-site-like density generated from the primary protein-coding `+`-strand transcript of each gene.
+Synthetic Ribo-seq P-site-like counts generated from the primary protein-coding `+`-strand transcript of each gene.
 
-- Every bedGraph record is exactly 1 bp wide.
+- Every bedGraph record is exactly 1 bp wide and stores a positive integer count.
+- Zero-count bases are omitted, so the track is sparse rather than a continuous CDS waveform.
 - Signal is restricted to CDS positions; UTR, intron, intergenic, and lncRNA regions have no Ribo-seq records.
-- Internal CDS density has a strong three-nucleotide periodic pattern: phase 0 > phase 1 > phase 2.
-- Initiation and termination regions contain pronounced peaks.
+- Total counts are distributed at approximately 80%/10%/10% across frame 0/frame 1/frame 2. Frame 0 is broadly occupied with variable peak heights, while frame 1 and frame 2 occur at different subsets of codons with lower, irregular counts. The signal remains moderately dense while zero-count codons are retained.
+- Initiation and termination frame-0 positions contain pronounced peaks.
 
 ### `gtr_demo_riboseq_minus.bedgraph`
 
-Synthetic Ribo-seq P-site-like density generated from the primary protein-coding `-`-strand transcript of each gene.
+Synthetic Ribo-seq P-site-like counts generated from the primary protein-coding `-`-strand transcript of each gene.
 
-- Uses the same 1-bp CDS-only logic as the plus track.
-- Three-nucleotide periodicity is calculated in transcript direction and then written back to genomic coordinates.
-- Initiation and termination peaks are preserved for negative-strand coding genes.
+- Uses the same sparse integer 1-bp CDS-only logic as the plus track.
+- Frame enrichment is calculated in transcript direction and then written back to genomic coordinates.
+- The same approximately two-fold initiation/termination behavior is preserved for negative-strand coding genes.
 
 The transcript-specific RNA-seq and Ribo-seq weights are defined in `inst/scripts/demo_model/signal_design.tsv`.
 
@@ -73,9 +74,6 @@ The transcript-specific RNA-seq and Ribo-seq weights are defined in `inst/script
 - `gtr_demo_variants.vcf`: one shared VCF for variant, haplotype, LD, refinement, and variant-effect workflows.
 - `gtr_demo_pheno.tsv`: numeric and categorical phenotypes for all 36 VCF samples.
 - `gtr_demo_rnaseq_plus.bedgraph`, `gtr_demo_rnaseq_minus.bedgraph`: strand-specific exon-enriched RNA-seq coverage.
-- `gtr_demo_riboseq_plus.bedgraph`, `gtr_demo_riboseq_minus.bedgraph`: strand-specific single-base CDS Ribo-seq density with 3-nt periodicity and start/stop peaks.
+- `gtr_demo_riboseq_plus.bedgraph`, `gtr_demo_riboseq_minus.bedgraph`: strand-specific moderately dense heterogeneous integer P-site-like Ribo-seq counts with approximately 80%/10%/10% frame0/frame1/frame2 totals and approximately two-fold initiation/termination frame-0 counts.
 - `gtr_demo.chrom.sizes`: chromosome lengths.
 
-## Legacy files
-
-Files beginning with `example_` are retained temporarily during the 0.5.x migration so existing examples and tests do not break. They will be removed after all documentation and tests use the new `gtr_demo_*` data.

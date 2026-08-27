@@ -25,7 +25,26 @@ Merge signal track objects
 }
 \examples{
 \dontrun{
-merge_bwg(bg1, bg2, sample_conflict = "rename")
-merge_bwg(rep1, rep2, sample_conflict = "mean")
+rnaseq <- read_bwg(
+  system.file(
+    "extdata",
+    c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph"),
+    package = "GeneTrackR"
+  ),
+  sample_names = c("RNA_seq_plus", "RNA_seq_minus"),
+  strand = c("+", "-"),
+  mode = "memory"
+)
+riboseq <- read_bwg(
+  system.file(
+    "extdata",
+    c("gtr_demo_riboseq_plus.bedgraph", "gtr_demo_riboseq_minus.bedgraph"),
+    package = "GeneTrackR"
+  ),
+  sample_names = c("Ribo_seq_plus", "Ribo_seq_minus"),
+  strand = c("+", "-"),
+  mode = "memory"
+)
+signal_all <- merge_bwg(rnaseq, riboseq)
 }
 }

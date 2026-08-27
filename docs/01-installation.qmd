@@ -1,0 +1,52 @@
+## Installation
+
+GeneTrackR depends on CRAN and Bioconductor packages. Install the dependencies first, then install GeneTrackR from GitHub.
+
+```{r}
+## CRAN dependencies
+install.packages(c(
+  "devtools",
+  "data.table",
+  "ggplot2",
+  "patchwork",
+  "rlang",
+  "Rcpp",
+  "RColorBrewer"
+))
+
+## Bioconductor dependencies
+if (!requireNamespace("BiocManager", quietly = TRUE)) {
+  install.packages("BiocManager")
+}
+
+BiocManager::install(c(
+  "GenomicRanges",
+  "IRanges",
+  "Rsamtools"
+), ask = FALSE, update = FALSE)
+
+## Install GeneTrackR from GitHub
+devtools::install_github(
+  "Renscq/GeneTrackR",
+  dependencies = TRUE,
+  build_vignettes = FALSE
+)
+```
+
+Load the package:
+
+```{r}
+library(GeneTrackR)
+```
+
+For local development:
+
+```bash
+git clone https://github.com/Renscq/GeneTrackR.git
+cd GeneTrackR
+```
+
+```{r}
+devtools::document()
+devtools::install()
+```

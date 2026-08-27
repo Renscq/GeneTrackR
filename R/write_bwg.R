@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-08-19
-# Version: dev001
+# Version: dev006
 # Function: Write BwgTrack objects to bedGraph, wig, or bigWig files
 # Input: BwgTrack object
 # Output: Signal track files
@@ -9,8 +9,8 @@
 #'
 #' @description
 #' Writes a `BwgTrack` object to bedGraph, wig, or bigWig files. bedGraph and
-#' wig output are implemented directly in R. bigWig output requires the external
-#' UCSC `bedGraphToBigWig` command and chromosome sizes.
+#' wig output are implemented directly in R. bigWig output is written directly
+#' with the bundled third-party libBigWig library and requires chromosome sizes.
 #'
 #' For in-memory `BwgTrack` objects, signal records are written from `object$data`.
 #' For lazy objects, direct conversion is not possible because signal records are
@@ -25,14 +25,20 @@
 #' a data.frame/data.table with two columns: chromosome and size.
 #' @param overwrite Whether to overwrite existing files.
 #' @param compress Whether to gzip-compress bedGraph or wig output.
-#' @param bedGraphToBigWig Path to UCSC `bedGraphToBigWig`. By default the
-#' command is searched from `PATH`.
 #' @return Invisibly returns a data.table containing sample IDs and output files.
 #' @examples
 #' \dontrun{
-#' write_bwg(bg, outdir = "tracks", format = "bedgraph")
-#' write_bwg(bg, outdir = "tracks", format = "wig")
-#' write_bwg(bg, outdir = "tracks", format = "bigwig", chrom_sizes = "chrom.sizes")
+#' rnaseq <- read_bwg(
+#'   system.file(
+#'     "extdata",
+#'     c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph"),
+#'     package = "GeneTrackR"
+#'   ),
+#'   sample_names = c("RNA_seq_plus", "RNA_seq_minus"),
+#'   strand = c("+", "-"),
+#'   mode = "memory"
+#' )
+#' write_bwg(rnaseq, outdir = tempdir(), format = "bedgraph", overwrite = TRUE)
 #' }
 #' @export
 write_bwg <- function(object,
@@ -41,8 +47,7 @@ write_bwg <- function(object,
                       samples = NULL,
                       chrom_sizes = NULL,
                       overwrite = FALSE,
-                      compress = FALSE,
-                      bedGraphToBigWig = Sys.which("bedGraphToBigWig")) {
+                      compress = FALSE) {
   stop_if_not(inherits(object, "BwgTrack"), "`object` must be a BwgTrack object.")
   format <- match.arg(format)
   dir.create(outdir, recursive = TRUE, showWarnings = FALSE)
@@ -65,8 +70,7 @@ write_bwg <- function(object,
 
   if (format == "bigwig") {
     stop_if_not(!is.null(chrom_sizes), "`chrom_sizes` is required when `format = 'bigwig'`.")
-    stop_if_not(nzchar(bedGraphToBigWig), "`bedGraphToBigWig` was not found. Provide its path or add it to PATH.")
-    chrom_sizes_file <- prepare_chrom_sizes_file(chrom_sizes)
+    chrom_sizes_table <- prepare_chrom_sizes_table(chrom_sizes)
   }
 
   out <- vector("list", nrow(sample_tbl))
@@ -85,11 +89,9 @@ write_bwg <- function(object,
     } else {
       file <- file.path(outdir, paste0(sid, ".bigwig"))
       check_output_file(file, overwrite)
-      tmp_bg <- tempfile(pattern = paste0(sid, "_"), fileext = ".bedgraph")
-      on.exit(unlink(tmp_bg), add = TRUE)
-      write_bedgraph_table(x, tmp_bg, compress = FALSE)
-      cmd_status <- system2(bedGraphToBigWig, args = c(normalizePath(tmp_bg, winslash = "/"), normalizePath(chrom_sizes_file, winslash = "/"), normalizePath(file, winslash = "/", mustWork = FALSE)))
-      stop_if_not(identical(cmd_status, 0L), paste0("bedGraphToBigWig failed for sample: ", sid))
+      x <- prepare_bigwig_signal(x, chrom_sizes_table, sample_id = sid)
+
+      write_bigwig_libbigwig(file, x, chrom_sizes_table)
     }
     out[[i]] <- data.table::data.table(sample_id = sid, file = normalizePath(file, winslash = "/", mustWork = FALSE), format = format)
   }
@@ -152,16 +154,62 @@ write_wig_table <- function(dt, file, compress = FALSE) {
   }
 }
 
-prepare_chrom_sizes_file <- function(chrom_sizes) {
+prepare_chrom_sizes_table <- function(chrom_sizes) {
   if (is.character(chrom_sizes) && length(chrom_sizes) == 1L) {
     stop_if_not(file.exists(chrom_sizes), paste0("Chromosome size file does not exist: ", chrom_sizes))
-    return(chrom_sizes)
+    cs <- data.table::fread(
+      chrom_sizes,
+      header = FALSE,
+      select = 1:2,
+      col.names = c("chrom", "size"),
+      showProgress = FALSE
+    )
+  } else {
+    cs <- data.table::as.data.table(chrom_sizes)
+    stop_if_not(ncol(cs) >= 2L, "`chrom_sizes` must have at least two columns: chrom and size.")
+    cs <- cs[, .(chrom = as.character(cs[[1L]]), size = as.numeric(cs[[2L]]))]
   }
-  cs <- data.table::as.data.table(chrom_sizes)
-  stop_if_not(ncol(cs) >= 2L, "`chrom_sizes` must have at least two columns: chrom and size.")
-  out <- tempfile(fileext = ".chrom.sizes")
-  data.table::fwrite(cs[, .(chrom = as.character(cs[[1L]]), size = as.integer(cs[[2L]]))], out, sep = "\t", col.names = FALSE)
-  out
+
+  cs[, `:=`(chrom = as.character(chrom), size = as.numeric(size))]
+  stop_if_not(nrow(cs) > 0L, "`chrom_sizes` must contain at least one chromosome.")
+  stop_if_not(all(!is.na(cs$chrom) & nzchar(cs$chrom)), "`chrom_sizes` contains missing or empty chromosome names.")
+  stop_if_not(!anyDuplicated(cs$chrom), "`chrom_sizes` contains duplicated chromosome names.")
+  stop_if_not(all(is.finite(cs$size) & cs$size >= 1 & cs$size <= 4294967295), "Chromosome sizes must be finite integers between 1 and 4,294,967,295.")
+  stop_if_not(all(cs$size == floor(cs$size)), "Chromosome sizes must be integer values.")
+  cs[]
+}
+
+prepare_bigwig_signal <- function(dt, chrom_sizes, sample_id = NULL) {
+  x <- data.table::copy(dt)
+  required <- c("chrom", "start", "end", "value")
+  stop_if_not(all(required %in% names(x)), "Signal data must contain chrom, start, end, and value columns.")
+
+  x[, `:=`(
+    chrom = as.character(chrom),
+    start = as.numeric(start),
+    end = as.numeric(end),
+    value = as.numeric(value)
+  )]
+  label <- if (is.null(sample_id)) "Signal" else paste0("Sample '", sample_id, "'")
+
+  stop_if_not(all(!is.na(x$chrom) & nzchar(x$chrom)), paste0(label, " contains missing chromosome names."))
+  stop_if_not(all(is.finite(x$start) & is.finite(x$end)), paste0(label, " contains non-finite coordinates."))
+  stop_if_not(all(x$start == floor(x$start) & x$end == floor(x$end)), paste0(label, " contains non-integer coordinates."))
+  stop_if_not(all(x$start >= 1 & x$end >= x$start), paste0(label, " contains invalid 1-based closed intervals."))
+  stop_if_not(all(is.finite(x$value)), paste0(label, " contains non-finite signal values."))
+  stop_if_not(all(x$chrom %in% chrom_sizes$chrom), paste0(label, " contains chromosomes absent from `chrom_sizes`."))
+
+  x[, chrom_order__ := match(chrom, chrom_sizes$chrom)]
+  x[, chrom_size__ := chrom_sizes$size[chrom_order__]]
+  stop_if_not(all(x$end <= x$chrom_size__), paste0(label, " contains intervals extending beyond chromosome sizes."))
+  data.table::setorderv(x, c("chrom_order__", "start", "end"))
+
+  x[, previous_end__ := data.table::shift(end), by = chrom]
+  has_overlap <- any(!is.na(x$previous_end__) & x$start <= x$previous_end__)
+  stop_if_not(!has_overlap, paste0(label, " contains overlapping intervals; bigWig output requires non-overlapping intervals within each chromosome."))
+
+  x[, c("chrom_order__", "chrom_size__", "previous_end__") := NULL]
+  x[]
 }
 
 check_output_file <- function(file, overwrite = FALSE) {

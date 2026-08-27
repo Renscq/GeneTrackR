@@ -1,53 +1,134 @@
-test_that("read_bwg reads bedGraph tracks and retrieves regional signal", {
-  files <- gtr_extdata(c("example_signal_A.bedgraph", "example_signal_B.bedgraph"))
-  bg <- read_bwg(files, format = "bedgraph", mode = "lazy", verbose = FALSE)
+test_that("read_bwg reads strand-specific demo bedGraph tracks", {
+  files <- gtr_extdata(c(
+    "gtr_demo_rnaseq_plus.bedgraph",
+    "gtr_demo_rnaseq_minus.bedgraph",
+    "gtr_demo_riboseq_plus.bedgraph",
+    "gtr_demo_riboseq_minus.bedgraph"
+  ))
+  bg <- read_bwg(
+    files,
+    format = "bedgraph",
+    sample_names = c("RNA_seq_plus", "RNA_seq_minus", "Ribo_seq_plus", "Ribo_seq_minus"),
+    strand = c("+", "-", "+", "-"),
+    mode = "lazy",
+    verbose = FALSE
+  )
 
   expect_s3_class(bg, "BwgTrack")
-  expect_equal(nrow(bg$samples), 2L)
-  dt <- retrieve_bwg(bg, chrom = "chr1", start = 101, end = 450)
-  expect_gt(nrow(dt), 0L)
-  expect_true(all(dt$start <= 450L))
-  expect_true(all(dt$end >= 101L))
+  expect_equal(nrow(bg$samples), 4L)
+  expect_identical(bg$samples$strand, c("+", "-", "+", "-"))
+
+  dt_plus <- retrieve_bwg(
+    bg,
+    chrom = "chr1",
+    start = 12340001,
+    end = 12341000,
+    strand = "+"
+  )
+  expect_gt(nrow(dt_plus), 0L)
+  expect_true(all(dt_plus$strand == "+"))
+
+  dt_minus <- retrieve_bwg(
+    bg,
+    chrom = "chr1",
+    start = 12356001,
+    end = 12357500,
+    strand = "-"
+  )
+  expect_gt(nrow(dt_minus), 0L)
+  expect_true(all(dt_minus$strand == "-"))
 })
 
-test_that("gene model, signal, and combined track plots are generated", {
-  gp <- read_genepred(gtr_extdata("example.genePredExt"), format = "genePredExt", verbose = FALSE)
-  bg <- read_bwg(gtr_extdata(c("example_signal_A.bedgraph", "example_signal_B.bedgraph")), format = "bedgraph", mode = "lazy", verbose = FALSE)
-  bed <- read_bed(gtr_extdata("example_features.bed"), verbose = FALSE)
-  vcf <- read_vcf(gtr_extdata("example_variants.vcf"), mode = "memory", verbose = FALSE)
+test_that("gene model, signal, and combined track plots use unified demo data", {
+  gp <- read_genepred(
+    gtr_extdata("gtr_demo.genePredExt"),
+    format = "genePredExt",
+    verbose = FALSE
+  )
+  signal_all <- read_bwg(
+    gtr_extdata(c(
+      "gtr_demo_rnaseq_plus.bedgraph",
+      "gtr_demo_rnaseq_minus.bedgraph",
+      "gtr_demo_riboseq_plus.bedgraph",
+      "gtr_demo_riboseq_minus.bedgraph"
+    )),
+    format = "bedgraph",
+    sample_names = c("RNA_seq_plus", "RNA_seq_minus", "Ribo_seq_plus", "Ribo_seq_minus"),
+    strand = c("+", "-", "+", "-"),
+    mode = "lazy",
+    verbose = FALSE
+  )
+  bed <- read_bed(gtr_extdata("gtr_demo_features.bed"), verbose = FALSE)
+  vcf <- read_vcf(gtr_extdata("gtr_demo_variants.vcf"), mode = "memory", verbose = FALSE)
 
   expect_s3_class(plot_gene(gp, gene_id = "GeneA"), "ggplot")
   expect_s3_class(plot_transcript(gp, transcript_id = "TxA1"), "ggplot")
-  expect_s3_class(plot_region(gp, chrom = "chr1", start = 1, end = 1200), "ggplot")
+  expect_s3_class(
+    plot_region(gp, chrom = "chr1", start = 12339001, end = 12374500),
+    "ggplot"
+  )
 
-  expect_true(inherits(plot_signal_gene(bg, gp, gene_id = "GeneA"), "patchwork"))
-  expect_true(inherits(plot_signal_transcript(bg, gp, transcript_id = "TxA1"), "patchwork"))
-  expect_true(inherits(plot_signal_region(bg, chrom = "chr1", start = 101, end = 900, annotation = gp), "patchwork"))
+  expect_true(inherits(plot_signal_gene(signal_all, gp, gene_id = "GeneA"), "patchwork"))
+  expect_true(inherits(plot_signal_transcript(signal_all, gp, transcript_id = "TxA1"), "patchwork"))
+  expect_true(inherits(
+    plot_signal_region(
+      signal_all,
+      chrom = "chr1",
+      start = 12339001,
+      end = 12374500,
+      strand = "both",
+      annotation = gp
+    ),
+    "patchwork"
+  ))
 
   p <- plot_tracks(
     annotation = gp,
-    signal = bg,
+    signal = signal_all,
     features = bed,
     variants = vcf,
     chrom = "chr1",
-    start = 1,
-    end = 1200,
+    start = 12339001,
+    end = 12374500,
+    strand = "both",
     gene_palette = "Set2"
   )
   expect_true(inherits(p, "patchwork") || inherits(p, "ggplot"))
 })
 
-test_that("signal plotting supports sample groups and summaries", {
-  gp <- read_genepred(gtr_extdata("example.genePredExt"), format = "genePredExt", verbose = FALSE)
-  bg <- read_bwg(gtr_extdata(c("example_signal_A.bedgraph", "example_signal_B.bedgraph")), format = "bedgraph", mode = "lazy", verbose = FALSE)
-  groups <- c(example_signal_A = "A", example_signal_B = "B")
+test_that("signal plotting supports assay groups and summaries", {
+  gp <- read_genepred(
+    gtr_extdata("gtr_demo.genePredExt"),
+    format = "genePredExt",
+    verbose = FALSE
+  )
+  signal_all <- read_bwg(
+    gtr_extdata(c(
+      "gtr_demo_rnaseq_plus.bedgraph",
+      "gtr_demo_rnaseq_minus.bedgraph",
+      "gtr_demo_riboseq_plus.bedgraph",
+      "gtr_demo_riboseq_minus.bedgraph"
+    )),
+    format = "bedgraph",
+    sample_names = c("RNA_seq_plus", "RNA_seq_minus", "Ribo_seq_plus", "Ribo_seq_minus"),
+    strand = c("+", "-", "+", "-"),
+    mode = "lazy",
+    verbose = FALSE
+  )
+  groups <- c(
+    RNA_seq_plus = "RNA-seq",
+    RNA_seq_minus = "RNA-seq",
+    Ribo_seq_plus = "Ribo-seq",
+    Ribo_seq_minus = "Ribo-seq"
+  )
 
   p <- plot_signal_region(
-    bg,
+    signal_all,
     annotation = gp,
     chrom = "chr1",
-    start = 101,
-    end = 900,
+    start = 12339001,
+    end = 12374500,
+    strand = "both",
     sample_groups = groups,
     signal_color_by = "group",
     signal_summary = "mean",
@@ -127,3 +208,168 @@ test_that("variant marker colors are stable and ordered", {
   expect_true(all(c("SNP", "Ind", "...") %in% names(cols)))
   expect_identical(normalize_variant_marker_type(c("SNP", "INS", "unknown")), c("SNP", "Ind", "..."))
 })
+
+test_that("discrete signal palettes preserve standard class order", {
+  blues3 <- RColorBrewer::brewer.pal(3L, "Blues")
+  blues4 <- RColorBrewer::brewer.pal(4L, "Blues")
+
+  expect_identical(
+    make_signal_palette(2L, "Blues", signal_palette_direction = 1),
+    unname(blues3[1:2])
+  )
+  expect_identical(
+    make_signal_palette(2L, "Blues", signal_palette_direction = -1),
+    unname(rev(blues3)[1:2])
+  )
+  expect_identical(
+    make_signal_palette(4L, "Blues", signal_palette_direction = 1),
+    unname(blues4)
+  )
+
+  continuous <- make_signal_continuous_palette(
+    32L,
+    "Blues",
+    signal_palette_direction = 1
+  )
+  continuous_rev <- make_signal_continuous_palette(
+    32L,
+    "Blues",
+    signal_palette_direction = -1
+  )
+  expect_identical(continuous, rev(continuous_rev))
+
+  exact <- c(sampleA = "#112233", sampleB = "#445566")
+  expect_identical(
+    normalize_signal_colors(
+      c("sampleA", "sampleB"),
+      signal_palette = "Blues",
+      signal_palette_direction = -1,
+      signal_colors = exact
+    ),
+    exact
+  )
+})
+
+
+
+test_that("qualitative signal palettes preserve palette order", {
+  set1 <- RColorBrewer::brewer.pal(3L, "Set1")
+  expected <- stats::setNames(set1, c("frame0", "frame1", "frame2"))
+
+  expect_identical(
+    make_signal_palette(3L, "Set1", signal_palette_direction = 1),
+    unname(set1)
+  )
+  expect_identical(
+    make_signal_palette(3L, "Set1", signal_palette_direction = -1),
+    rev(unname(set1))
+  )
+  expect_identical(
+    make_frame_colors(frame_palette = "Set1"),
+    expected
+  )
+
+  ordered_ids <- c("sampleB", "sampleA", "sampleC")
+  ordered_cols <- normalize_signal_colors(
+    ordered_ids,
+    signal_palette = "Set1"
+  )
+  expect_identical(names(ordered_cols), ordered_ids)
+  expect_identical(unname(ordered_cols), unname(set1))
+})
+
+test_that("plot_signal_region uses sample order for discrete palette mapping", {
+  sample_ids <- c("RNA_seq_plus", "RNA_seq_minus", "Ribo_seq_plus", "Ribo_seq_minus")
+  expected <- stats::setNames(
+    RColorBrewer::brewer.pal(4L, "Set1"),
+    sample_ids
+  )
+  observed <- normalize_signal_colors(
+    sample_ids,
+    signal_palette = "Set1",
+    signal_palette_direction = 1
+  )
+
+  expect_identical(observed, expected)
+})
+
+
+test_that("signal group palette order follows sample-group mapping order", {
+  dt <- data.table::data.table(
+    sample_id = factor(
+      c("sampleB", "sampleA", "sampleC"),
+      levels = c("sampleA", "sampleB", "sampleC")
+    ),
+    chrom = "chr1",
+    start = 1:3,
+    end = 1:3,
+    value = 1:3,
+    strand = "*"
+  )
+  groups <- c(sampleA = "group2", sampleB = "group1", sampleC = "group3")
+  grouped <- apply_signal_grouping(dt, sample_groups = groups, signal_summary = "none")
+
+  expect_true(is.factor(grouped$sample_group))
+  expect_identical(levels(grouped$sample_group), c("group2", "group1", "group3"))
+})
+
+test_that("signal plot wrappers accept explicit signal and gene track heights", {
+  gp <- read_genepred(
+    gtr_extdata("gtr_demo.genePredExt"),
+    format = "genePredExt",
+    verbose = FALSE
+  )
+  rnaseq <- read_bwg(
+    gtr_extdata(c(
+      "gtr_demo_rnaseq_plus.bedgraph",
+      "gtr_demo_rnaseq_minus.bedgraph"
+    )),
+    format = "bedgraph",
+    sample_names = c("RNA_seq_plus", "RNA_seq_minus"),
+    strand = c("+", "-"),
+    mode = "lazy",
+    verbose = FALSE
+  )
+
+  expect_true(inherits(
+    plot_signal_gene(
+      rnaseq,
+      gp,
+      gene_id = "GeneA",
+      signal_palette_direction = -1,
+      signal_track_height = 4,
+      gene_track_height = 1
+    ),
+    "patchwork"
+  ))
+  expect_true(inherits(
+    plot_signal_transcript(
+      rnaseq,
+      gp,
+      transcript_id = "TxA1",
+      signal_track_height = 2,
+      gene_track_height = 1
+    ),
+    "patchwork"
+  ))
+  expect_true(inherits(
+    plot_signal_region(
+      rnaseq,
+      chrom = "chr1",
+      start = 12339001,
+      end = 12374500,
+      annotation = gp,
+      strand = "both",
+      signal_track_height = 5,
+      gene_track_height = 1
+    ),
+    "patchwork"
+  ))
+
+  expect_equal(normalize_track_height(4, "signal_track_height", 3), 4)
+  expect_warning(
+    expect_equal(normalize_track_height(0, "signal_track_height", 3), 3),
+    "positive numeric"
+  )
+})
+

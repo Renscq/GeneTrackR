@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-27
-# Version: dev001
+# Version: dev005
 # Function: Plot signal tracks for transcripts, genes, and genomic regions
 # Input: BwgTrack and optional GenePred objects
 # Output: ggplot signal figures
@@ -20,10 +20,13 @@
 #' @param bin_size Optional bin size for signal aggregation.
 #' @param highlight Optional data frame used to shade intervals on the signal and gene model tracks. It must contain `start` and `end` columns. For `coordinate = "genomic"`, these are genomic coordinates; for `coordinate = "transcript"`, these are spliced transcript coordinates.
 #' @param show_gene_model Whether to append the transcript gene model track. Default TRUE.
-#' @param signal_palette Signal color palette. Any palette name from `RColorBrewer::brewer.pal.info` can be used, such as `Blues`, `Reds`, `RdBu`, `Paired`, `Set1`, `Dark2`, `YlGnBu`, or `Spectral`. If the number of samples or groups exceeds the palette maximum, colors are automatically interpolated.
-#' @param frame_palette RColorBrewer palette for CDS frame colors when `plot_type = "frame"`. Default is `Set1`.
+#' @param signal_track_height Relative height of the signal panel when the gene model is shown. Default 3.
+#' @param gene_track_height Relative height of the gene model panel when it is shown. Default 1.
+#' @param signal_palette Signal color palette. Any palette name from `RColorBrewer::brewer.pal.info` can be used, such as `Blues`, `Reds`, `RdBu`, `Paired`, `Set1`, `Dark2`, `YlGnBu`, or `Spectral`. Discrete sample/group colors are assigned in the standard RColorBrewer class order; heatmaps use the corresponding continuous gradient.
+#' @param signal_palette_direction Direction for generated signal colors. Use `1` for the standard palette order and `-1` for the reversed palette order. Discrete sample/group colors preserve level-to-color order; heatmap gradients reverse continuously.
+#' @param frame_palette RColorBrewer palette for CDS frame colors when `plot_type = "frame"`. Default is `Set1`. Colors are assigned in order to `frame0`, `frame1`, and `frame2`.
 #' @param frame_colors Optional named colors for `frame0`, `frame1`, and `frame2`.
-#' @param signal_colors Optional named or unnamed vector of colors for samples. If supplied, it overrides `signal_palette`.
+#' @param signal_colors Optional named or unnamed vector of explicit colors for samples. If supplied, it overrides `signal_palette`; explicit colors are not modified by `signal_palette_direction`.
 #' @param signal_transform Signal-axis transformation. Use `none`, `log2`, `log10`, or `sqrt`. Log transforms use signed log1p-style transformation to tolerate zero values.
 #' @param signal_y_scale Signal y-axis scale mode. Use `free` for each sample to have its own y-axis range, or `fixed` to force all samples to share the same y-axis range.
 #' @param signal_y_ticks Signal y-axis tick mode. Use `range` to show only integer axis limits as the minimum and maximum ticks, or `pretty` to use ggplot2 default-style breaks.
@@ -48,21 +51,28 @@
 #' @return A ggplot or patchwork object.
 #' @examples
 #' \dontrun{
-#' groups <- c(sampleA = "WT", sampleB = "KO")
+#' gp <- read_genepred(
+#'   system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR"),
+#'   format = "genePredExt",
+#'   verbose = FALSE
+#' )
+#' riboseq <- read_bwg(
+#'   system.file(
+#'     "extdata",
+#'     c("gtr_demo_riboseq_plus.bedgraph", "gtr_demo_riboseq_minus.bedgraph"),
+#'     package = "GeneTrackR"
+#'   ),
+#'   format = "bedgraph",
+#'   sample_names = c("Ribo_seq_plus", "Ribo_seq_minus"),
+#'   strand = c("+", "-"),
+#'   mode = "memory"
+#' )
 #' plot_signal_transcript(
-#'   signal = bg,
+#'   signal = riboseq,
 #'   annotation = gp,
 #'   transcript_id = "TxA1",
-#'   samples = c("sampleA", "sampleB"),
-#'   sample_groups = groups,
-#'   signal_color_by = "group",
-#'   signal_summary = "mean",
-#'   signal_palette = "Set1",
-#'   signal_transform = "sqrt",
-#'   signal_y_scale = "fixed",
-#'   signal_y_ticks = "range",
-#'   show_gene_model = TRUE,
-#'   highlight = data.frame(start = 100, end = 250)
+#'   coordinate = "transcript",
+#'   plot_type = "frame"
 #' )
 #' }
 #' @export
@@ -80,6 +90,8 @@ plot_signal_transcript <- function(
   bin_size = NULL,
   highlight = NULL,
   show_gene_model = TRUE,
+  signal_track_height = 3,
+  gene_track_height = 1,
   signal_palette = "Blues",
   signal_palette_direction = 1,
   signal_colors = NULL,
@@ -122,6 +134,16 @@ plot_signal_transcript <- function(
   signal_y_scale <- resolve_signal_y_scale(signal_y_scale, signal_y_limits)
   signal_alpha <- normalize_signal_alpha(signal_alpha)
   signal_bar_width <- normalize_signal_bar_width(signal_bar_width)
+  signal_track_height <- normalize_track_height(
+    signal_track_height,
+    "signal_track_height",
+    3
+  )
+  gene_track_height <- normalize_track_height(
+    gene_track_height,
+    "gene_track_height",
+    1
+  )
   plot_theme <- normalize_plot_theme(plot_theme)
   show_panel_border <- normalize_show_panel_border(show_panel_border)
   direction_mode <- match.arg(direction_mode)
@@ -274,7 +296,12 @@ plot_signal_transcript <- function(
     label_by = label_by,
     text_size = text_size
   )
-  patchwork::wrap_plots(p_signal, p_model, ncol = 1, heights = c(3, 1))
+  patchwork::wrap_plots(
+    p_signal,
+    p_model,
+    ncol = 1,
+    heights = c(signal_track_height, gene_track_height)
+  )
 }
 
 #' Plot signal over a gene
@@ -291,9 +318,11 @@ plot_signal_transcript <- function(
 #' @param bin_size Optional bin size for signal aggregation.
 #' @param highlight Optional data frame used to shade intervals on the signal and gene model tracks. It must contain `start` and `end` columns in genomic coordinates.
 #' @param show_gene_model Whether to append the gene model track.
-#' @param signal_palette Signal color palette. Any palette name from `RColorBrewer::brewer.pal.info` can be used, such as `Blues`, `Reds`, `RdBu`, `Paired`, `Set1`, `Dark2`, `YlGnBu`, or `Spectral`. If the number of samples or groups exceeds the palette maximum, colors are automatically interpolated.
-#' @param signal_palette_direction Direction for the signal palette. Use `1` for the default order and `-1` to reverse the palette, for example `RdBu` to `BuRd`.
-#' @param signal_colors Optional named or unnamed vector of colors for samples. If supplied, it overrides `signal_palette`.
+#' @param signal_track_height Relative height of the signal panel when the gene model is shown. Default 3.
+#' @param gene_track_height Relative height of the gene model panel when it is shown. Default 1.
+#' @param signal_palette Signal color palette. Any palette name from `RColorBrewer::brewer.pal.info` can be used, such as `Blues`, `Reds`, `RdBu`, `Paired`, `Set1`, `Dark2`, `YlGnBu`, or `Spectral`. Discrete sample/group colors are assigned in the standard RColorBrewer class order; heatmaps use the corresponding continuous gradient.
+#' @param signal_palette_direction Direction for generated signal colors. Use `1` for the standard palette order and `-1` for the reversed palette order. Discrete sample/group colors preserve level-to-color order; heatmap gradients reverse continuously.
+#' @param signal_colors Optional named or unnamed vector of explicit colors for samples. If supplied, it overrides `signal_palette`; explicit colors are not modified by `signal_palette_direction`.
 #' @param signal_transform Signal-axis transformation. Use `none`, `log2`, `log10`, or `sqrt`. Log transforms use signed log1p-style transformation to tolerate zero values.
 #' @param signal_y_scale Signal y-axis scale mode. Use `free` for each sample to have its own y-axis range, or `fixed` to force all samples to share the same y-axis range.
 #' @param signal_y_ticks Signal y-axis tick mode. Use `range` to show only integer axis limits as the minimum and maximum ticks, or `pretty` to use ggplot2 default-style breaks.
@@ -317,21 +346,33 @@ plot_signal_transcript <- function(
 #' @return A ggplot or patchwork object.
 #' @examples
 #' \dontrun{
-#' groups <- c(KO1 = "KO", KO2 = "KO", WT1 = "WT", WT2 = "WT")
+#' gp <- read_genepred(
+#'   system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR"),
+#'   format = "genePredExt",
+#'   verbose = FALSE
+#' )
+#' rnaseq <- read_bwg(
+#'   system.file(
+#'     "extdata",
+#'     c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph"),
+#'     package = "GeneTrackR"
+#'   ),
+#'   format = "bedgraph",
+#'   sample_names = c("RNA_seq_plus", "RNA_seq_minus"),
+#'   strand = c("+", "-"),
+#'   mode = "memory"
+#' )
 #' plot_signal_gene(
-#'   signal = bg,
+#'   signal = rnaseq,
 #'   annotation = gp,
 #'   gene_id = "GeneA",
-#'   samples = c("KO1", "KO2", "WT1", "WT2"),
-#'   sample_groups = groups,
-#'   signal_color_by = "group",
-#'   signal_summary = "mean",
-#'   bin_size = 50,
-#'   signal_palette = "RdBu",
-#'   signal_transform = "log2",
+#'   plot_type = "bar",
+#'   signal_palette = "Blues",
+#'   signal_palette_direction = -1,
 #'   signal_y_scale = "fixed",
-#'   signal_y_ticks = "range",
-#'   label_position = "feature"
+#'   signal_y_ticks = "pretty",
+#'   signal_track_height = 4,
+#'   gene_track_height = 1
 #' )
 #' }
 #' @export
@@ -348,6 +389,8 @@ plot_signal_gene <- function(
   bin_size = NULL,
   highlight = NULL,
   show_gene_model = TRUE,
+  signal_track_height = 3,
+  gene_track_height = 1,
   signal_palette = "Blues",
   signal_palette_direction = 1,
   signal_colors = NULL,
@@ -387,6 +430,16 @@ plot_signal_gene <- function(
   signal_y_scale <- resolve_signal_y_scale(signal_y_scale, signal_y_limits)
   signal_alpha <- normalize_signal_alpha(signal_alpha)
   signal_bar_width <- normalize_signal_bar_width(signal_bar_width)
+  signal_track_height <- normalize_track_height(
+    signal_track_height,
+    "signal_track_height",
+    3
+  )
+  gene_track_height <- normalize_track_height(
+    gene_track_height,
+    "gene_track_height",
+    1
+  )
   plot_theme <- normalize_plot_theme(plot_theme)
   show_panel_border <- normalize_show_panel_border(show_panel_border)
   direction_mode <- match.arg(direction_mode)
@@ -486,7 +539,12 @@ plot_signal_gene <- function(
     label_by = label_by,
     text_size = text_size
   )
-  patchwork::wrap_plots(p_signal, p_model, ncol = 1, heights = c(3, 1))
+  patchwork::wrap_plots(
+    p_signal,
+    p_model,
+    ncol = 1,
+    heights = c(signal_track_height, gene_track_height)
+  )
 }
 
 #' Plot signal over a genomic region
@@ -505,9 +563,11 @@ plot_signal_gene <- function(
 #' @param highlight Optional data frame used to shade intervals on the signal and gene model tracks. It must contain `start` and `end` columns in genomic coordinates.
 #' @param annotation Optional GenePred object.
 #' @param show_gene_model Whether to append a gene model track. Default TRUE.
-#' @param signal_palette Signal color palette. Any palette name from `RColorBrewer::brewer.pal.info` can be used, such as `Blues`, `Reds`, `RdBu`, `Paired`, `Set1`, `Dark2`, `YlGnBu`, or `Spectral`. If the number of samples or groups exceeds the palette maximum, colors are automatically interpolated.
-#' @param signal_palette_direction Direction for the signal palette. Use `1` for the default order and `-1` to reverse the palette, for example `RdBu` to `BuRd`.
-#' @param signal_colors Optional named or unnamed vector of colors for samples. If supplied, it overrides `signal_palette`.
+#' @param signal_track_height Relative height of the signal panel when the gene model is shown. Default 3.
+#' @param gene_track_height Relative height of the gene model panel when it is shown. Default 1.
+#' @param signal_palette Signal color palette. Any palette name from `RColorBrewer::brewer.pal.info` can be used, such as `Blues`, `Reds`, `RdBu`, `Paired`, `Set1`, `Dark2`, `YlGnBu`, or `Spectral`. Discrete sample/group colors are assigned in the standard RColorBrewer class order; heatmaps use the corresponding continuous gradient.
+#' @param signal_palette_direction Direction for generated signal colors. Use `1` for the standard palette order and `-1` for the reversed palette order. Discrete sample/group colors preserve level-to-color order; heatmap gradients reverse continuously.
+#' @param signal_colors Optional named or unnamed vector of explicit colors for samples. If supplied, it overrides `signal_palette`; explicit colors are not modified by `signal_palette_direction`.
 #' @param signal_transform Signal-axis transformation. Use `none`, `log2`, `log10`, or `sqrt`. Log transforms use signed log1p-style transformation to tolerate zero values.
 #' @param signal_y_scale Signal y-axis scale mode. Use `free` for each sample to have its own y-axis range, or `fixed` to force all samples to share the same y-axis range.
 #' @param signal_y_ticks Signal y-axis tick mode. Use `range` to show only integer axis limits as the minimum and maximum ticks, or `pretty` to use ggplot2 default-style breaks.
@@ -531,19 +591,33 @@ plot_signal_gene <- function(
 #' @return A ggplot or patchwork object.
 #' @examples
 #' \dontrun{
+#' gp <- read_genepred(
+#'   system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR"),
+#'   format = "genePredExt",
+#'   verbose = FALSE
+#' )
+#' signal_all <- read_bwg(
+#'   system.file(
+#'     "extdata",
+#'     c(
+#'       "gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph",
+#'       "gtr_demo_riboseq_plus.bedgraph", "gtr_demo_riboseq_minus.bedgraph"
+#'     ),
+#'     package = "GeneTrackR"
+#'   ),
+#'   format = "bedgraph",
+#'   sample_names = c("RNA_seq_plus", "RNA_seq_minus", "Ribo_seq_plus", "Ribo_seq_minus"),
+#'   strand = c("+", "-", "+", "-"),
+#'   mode = "memory"
+#' )
 #' plot_signal_region(
-#'   signal = bg,
+#'   signal = signal_all,
 #'   annotation = gp,
 #'   chrom = "chr1",
-#'   start = 1,
-#'   end = 1000,
-#'   samples = c("sampleA", "sampleB"),
-#'   signal_colors = c(sampleA = "#2166AC", sampleB = "#B2182B"),
-#'   plot_type = "bar",
-#'   signal_y_scale = "free",
-#'   signal_y_ticks = "range",
-#'   show_gene_model = TRUE,
-#'   label_by = "gene"
+#'   start = 12339001,
+#'   end = 12374500,
+#'   strand = "both",
+#'   plot_type = "bar"
 #' )
 #' }
 #' @export
@@ -562,6 +636,8 @@ plot_signal_region <- function(
   highlight = NULL,
   annotation = NULL,
   show_gene_model = TRUE,
+  signal_track_height = 3,
+  gene_track_height = 1,
   signal_palette = "Blues",
   signal_palette_direction = 1,
   signal_colors = NULL,
@@ -597,6 +673,16 @@ plot_signal_region <- function(
   signal_y_scale <- resolve_signal_y_scale(signal_y_scale, signal_y_limits)
   signal_alpha <- normalize_signal_alpha(signal_alpha)
   signal_bar_width <- normalize_signal_bar_width(signal_bar_width)
+  signal_track_height <- normalize_track_height(
+    signal_track_height,
+    "signal_track_height",
+    3
+  )
+  gene_track_height <- normalize_track_height(
+    gene_track_height,
+    "gene_track_height",
+    1
+  )
   plot_theme <- normalize_plot_theme(plot_theme)
   show_panel_border <- normalize_show_panel_border(show_panel_border)
   direction_mode <- match.arg(direction_mode)
@@ -678,7 +764,12 @@ plot_signal_region <- function(
     label_by = label_by,
     text_size = text_size
   )
-  patchwork::wrap_plots(p_signal, p_model, ncol = 1, heights = c(3, 1))
+  patchwork::wrap_plots(
+    p_signal,
+    p_model,
+    ncol = 1,
+    heights = c(signal_track_height, gene_track_height)
+  )
 }
 
 
@@ -1908,15 +1999,74 @@ make_signal_palette <- function(
   ) {
     pal_info <- RColorBrewer::brewer.pal.info[signal_palette, , drop = FALSE]
     max_colors <- as.integer(pal_info[["maxcolors"]][1L])
-    base_n <- max(3L, min(max_colors, max(3L, n)))
-    base <- RColorBrewer::brewer.pal(base_n, signal_palette)
-    if (n > max_colors) {
-      cols <- grDevices::colorRampPalette(base)(n)
+
+    # Discrete signal mappings must follow the published palette order. Ask
+    # RColorBrewer for the required class count instead of interpolating from
+    # the full palette, because interpolation makes two or three tracks jump
+    # toward the palette endpoints rather than use colors in sequence.
+    if (n <= max_colors) {
+      request_n <- max(3L, n)
+      cols <- RColorBrewer::brewer.pal(request_n, signal_palette)
       if (signal_palette_direction == -1L) {
         cols <- rev(cols)
       }
-      return(cols)
+      return(cols[seq_len(n)])
     }
+
+    base <- RColorBrewer::brewer.pal(max_colors, signal_palette)
+    if (signal_palette_direction == -1L) {
+      base <- rev(base)
+    }
+    return(grDevices::colorRampPalette(base)(n))
+  }
+
+  predefined <- list(
+    Blues = c("#DEEBF7", "#9ECAE1", "#3182BD", "#08519C"),
+    Reds = c("#FEE0D2", "#FC9272", "#DE2D26", "#A50F15"),
+    RdBu = c("#B2182B", "#EF8A62", "#FDDDBC", "#D1E5F0", "#67A9CF", "#2166AC")
+  )
+  base <- predefined[[signal_palette]]
+  if (is.null(base)) {
+    warning(
+      sprintf(
+        "Unknown `signal_palette`: %s. Falling back to 'Blues'.",
+        signal_palette
+      ),
+      call. = FALSE
+    )
+    base <- predefined[["Blues"]]
+  }
+  if (signal_palette_direction == -1L) {
+    base <- rev(base)
+  }
+  if (n <= length(base)) {
+    return(base[seq_len(n)])
+  }
+  grDevices::colorRampPalette(base)(n)
+}
+
+make_signal_continuous_palette <- function(
+  n = 256L,
+  signal_palette = "Blues",
+  signal_palette_direction = 1
+) {
+  n <- max(2L, as.integer(n))
+  signal_palette_direction <- normalize_palette_direction(
+    signal_palette_direction
+  )
+  signal_palette <- as.character(signal_palette)[1L]
+  if (is.na(signal_palette) || !nzchar(signal_palette)) {
+    signal_palette <- "Blues"
+  }
+
+  if (
+    requireNamespace("RColorBrewer", quietly = TRUE) &&
+      signal_palette %in% rownames(RColorBrewer::brewer.pal.info)
+  ) {
+    max_colors <- as.integer(
+      RColorBrewer::brewer.pal.info[signal_palette, "maxcolors"]
+    )
+    base <- RColorBrewer::brewer.pal(max_colors, signal_palette)
   } else {
     predefined <- list(
       Blues = c("#DEEBF7", "#9ECAE1", "#3182BD", "#08519C"),
@@ -1935,11 +2085,11 @@ make_signal_palette <- function(
       base <- predefined[["Blues"]]
     }
   }
-  cols <- grDevices::colorRampPalette(base)(n)
+
   if (signal_palette_direction == -1L) {
-    cols <- rev(cols)
+    base <- rev(base)
   }
-  cols
+  grDevices::colorRampPalette(base)(n)
 }
 
 normalize_palette_direction <- function(direction = 1) {
@@ -1967,15 +2117,13 @@ normalize_signal_colors <- function(
   )
   if (!is.null(signal_colors)) {
     cols <- as.character(signal_colors)
-    if (signal_palette_direction == -1L) {
-      cols <- rev(cols)
-    }
     if (!is.null(names(cols)) && all(sample_ids %in% names(cols))) {
       return(cols[sample_ids])
     }
     if (length(cols) < n) {
       cols <- rep(cols, length.out = n)
     }
+    cols <- cols[seq_len(n)]
     names(cols) <- sample_ids
     return(cols)
   }
@@ -1998,9 +2146,8 @@ apply_signal_continuous_fill_scale <- function(
   )
   if (!is.null(signal_colors)) {
     cols <- as.character(signal_colors)
-    if (signal_palette_direction == -1L) cols <- rev(cols)
   } else {
-    cols <- make_signal_palette(
+    cols <- make_signal_continuous_palette(
       256L,
       signal_palette = signal_palette,
       signal_palette_direction = signal_palette_direction
@@ -2008,6 +2155,7 @@ apply_signal_continuous_fill_scale <- function(
   }
   ggplot2::scale_fill_gradientn(colors = cols)
 }
+
 get_ordered_signal_ids <- function(dt, column = "sample_id") {
   x <- dt[[column]]
   x_chr <- as.character(x)
@@ -2059,11 +2207,15 @@ apply_signal_grouping <- function(
   dt <- data.table::copy(data.table::as.data.table(dt))
   sample_ids <- get_ordered_signal_ids(dt, "sample_id")
   group_map <- normalize_sample_groups(sample_ids, sample_groups)
+  group_levels <- unique(as.character(group_map[sample_ids]))
   dt[,
-    "sample_group" := as.character(group_map[as.character(dt[["sample_id"]])])
+    "sample_group" := factor(
+      as.character(group_map[as.character(dt[["sample_id"]])]),
+      levels = group_levels
+    )
   ]
   if (signal_summary == "none") {
-    return(dt)
+    return(dt[])
   }
   summary_fun <- switch(
     signal_summary,
@@ -2078,7 +2230,6 @@ apply_signal_grouping <- function(
     ),
     by = .(sample_group, chrom, start, end)
   ]
-  group_levels <- unique(as.character(group_map[sample_ids]))
   out[, "sample_id" := as.character(out[["sample_group"]])]
   out[,
     "sample_id" := factor(

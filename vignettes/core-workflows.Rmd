@@ -1,0 +1,246 @@
+---
+title: "GeneTrackR deterministic demo workflows"
+author: "Rensc"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{GeneTrackR deterministic demo workflows}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 8,
+  fig.height = 4.8
+)
+```
+
+This vignette uses the single deterministic `gtr_demo_*` dataset shipped with GeneTrackR. The same annotation, VCF, phenotype table, and designed truth are shared across annotation, variant, haplotype, LD, refinement, and variant-effect workflows.
+
+## Load the canonical demo inputs
+
+```{r load-data}
+library(GeneTrackR)
+
+gp_file <- system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR")
+gtf_file <- system.file("extdata", "gtr_demo.gtf", package = "GeneTrackR")
+gff_file <- system.file("extdata", "gtr_demo.gff3", package = "GeneTrackR")
+bed_file <- system.file("extdata", "gtr_demo_features.bed", package = "GeneTrackR")
+vcf_file <- system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")
+pheno_file <- system.file("extdata", "gtr_demo_pheno.tsv", package = "GeneTrackR")
+
+gp <- read_genepred(gp_file, format = "genePredExt", verbose = FALSE)
+gtf <- read_gtf(gtf_file, verbose = FALSE, progress = FALSE)
+gff <- read_gff(gff_file, verbose = FALSE, progress = FALSE)
+features <- read_bed(bed_file, verbose = FALSE, progress = FALSE)
+vcf <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
+pheno <- read_pheno(pheno_file, verbose = FALSE)
+```
+
+The three annotation formats describe the same canonical 20-gene, 24-transcript model. The VCF contains 50 designed variants in 36 samples. Phenotype row order is intentionally different from VCF sample order, so downstream analyses must align by `sample_id`.
+
+## Object contracts used in the workflow
+
+The workflow deliberately passes package objects between functions rather than rebuilding intermediate tables. `gp` is a `GenePred`, `features` is a `FeatureTrack`, `vcf` is a `VariantTrack`, and `pheno` is a `data.table`. The `VariantTrack` feeds variant-phenotype and LD analyses; `hap_gene_variant()` creates a `HapVariant` for haplotype plots, haplotype-phenotype analysis, refinement, and variant-effect analysis; `refine_haplotype()` creates a `HapRefined` for refined plots.
+
+Plotting functions have two return conventions in this vignette:
+
+- gene/track/haplotype-variant plots return a ggplot/patchwork figure directly;
+- phenotype and variant-effect plots return result objects with a `$figure` field plus analysis tables;
+- `plot_ld_block()` returns the updated `LDTrack` by default and stores its figure in `$figure`.
+
+## Annotation and feature retrieval
+
+`GeneA` is a positive-strand protein-coding gene with two transcripts. `GeneB` is a negative-strand two-transcript gene.
+
+```{r annotation-retrieval}
+genea <- retrieve_feature(gp, gene_id = "GeneA")
+geneb <- retrieve_feature(gp, gene_id = "GeneB")
+
+genea$genes
+geneb$genes
+```
+
+The BED file contains promoters, enhancers, candidate regions, a QTL interval, repeats, and conserved regions around the designed loci.
+
+```{r feature-table}
+head(features$data)
+```
+
+## Variant retrieval
+
+The main GeneA interval contains SNPs, insertions, deletions, a high-LD block, and a deliberately incomplete upstream variant.
+
+```{r variant-retrieval}
+genea_variants <- retrieve_vcf(
+  vcf,
+  chrom = "chr1",
+  start = 12339700,
+  end = 12352000,
+  as = "VariantTrack",
+  verbose = FALSE
+)
+
+genea_variants
+genea_variants$data[, c("variant_id", "chrom", "pos", "ref", "alt"), with = FALSE]
+```
+
+`retrieve_vcf()` returns a `data.table` by default; `as = "VariantTrack"` is set here because the subset is retained as a package object.
+
+## GeneA haplotypes
+
+The GeneA gene body was designed to produce four balanced genotype-defined groups of nine samples each.
+
+```{r haplotype}
+hap <- hap_gene_variant(
+  vcf,
+  annotation = gp,
+  gene_id = "GeneA",
+  genotype_mode = "string",
+  min_variant_number = 1
+)
+
+hap$haplotypes
+```
+
+```{r haplotype-plot}
+hap_figure <- plot_hap_variant(
+  hap,
+  annotation = gp,
+  min_hap_samples = 3,
+  show_reference_row = TRUE,
+  gene_pos_x_angle = 90
+)
+hap_figure
+```
+
+## Haplotype-phenotype association
+
+`seed_weight` has a designed GeneA haplotype effect. `flowering_time` is a negative-control trait with the same distribution in all four designed groups.
+
+```{r hap-pheno}
+hap_pheno <- plot_hap_pheno(
+  hap,
+  phenotype = pheno,
+  traits = c("seed_weight", "flowering_time"),
+  min_hap_samples = 3,
+  facet_ncol = 2
+)
+
+hap_pheno$figure
+hap_pheno$pvalue
+```
+
+## Single-variant phenotype association
+
+`varA03` was designed so its ALT genotype is associated with higher `protein_content`.
+
+```{r variant-pheno}
+variant_pheno <- plot_variant_pheno(
+  vcf,
+  phenotype = pheno,
+  variant_id = "varA03",
+  traits = "protein_content",
+  genotype_mode = "code",
+  min_group_samples = 3
+)
+
+variant_pheno$figure
+variant_pheno$pvalue
+```
+
+## Linkage disequilibrium
+
+`varLD01` through `varLD06` share the same genotype pattern and therefore provide a deterministic high-LD block.
+
+```{r ld-block}
+ld <- compute_ld_block(
+  vcf,
+  chrom = "chr1",
+  start = 12342620,
+  end = 12343180,
+  method = "r2",
+  verbose = FALSE
+)
+
+ld$data
+```
+
+```{r ld-plot}
+ld <- plot_ld_block(
+  ld,
+  annotation = gp,
+  show_region = TRUE,
+  show_variant_labels = FALSE
+)
+ld$figure
+```
+
+The `GeneT` interval on chromosome 2 contains exactly two variants and is retained as the stable two-variant LD geometry case.
+
+```{r ld-pair}
+ld_pair <- compute_ld_block(
+  vcf,
+  chrom = "chr2",
+  start = 16995001,
+  end = 17006000,
+  method = "r2",
+  verbose = FALSE
+)
+ld_pair_figure <- plot_ld_block(ld_pair, return_object = FALSE)
+ld_pair_figure
+```
+
+## Phenotype-guided haplotype refinement
+
+```{r refinement}
+refined <- refine_haplotype(
+  hap,
+  phenotype = pheno,
+  traits = "seed_weight",
+  min_hap_samples = 3
+)
+
+refined$refined_haplotypes
+```
+
+```{r refinement-plot}
+refined_pheno <- plot_refined_hap_pheno(
+  refined,
+  phenotype = pheno,
+  traits = "seed_weight",
+  min_hap_samples = 3
+)
+refined_pheno$figure
+refined_pheno$pvalue
+```
+
+The refined haplotype-variant plot returns a figure directly:
+
+```{r refinement-variant-plot}
+refined_variant_figure <- plot_refined_hap_variant(
+  refined,
+  annotation = gp,
+  min_hap_samples = 3
+)
+refined_variant_figure
+```
+
+## Variant-effect prioritization
+
+```{r variant-effect}
+effect_res <- plot_variant_effect(
+  hap,
+  phenotype = pheno,
+  traits = "protein_content",
+  min_group_samples = 3,
+  x_axis = "position"
+)
+
+effect_res$figure
+effect_res$effect
+```
+
+The deterministic model is intended to make documentation examples and regression tests share the same biological and statistical expectations rather than maintaining separate example datasets for each module.

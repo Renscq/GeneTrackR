@@ -75,11 +75,11 @@ file path and the function will query only the requested region using
 \code{Rsamtools::scanTabix()}.
 }
 \examples{
-vcf_file <- system.file("extdata", "example_haplotype.vcf", package = "GeneTrackR")
-vcf <- read_vcf(vcf_file)
-retrieve_vcf(vcf, chrom = "chr1", start = 100, end = 600)
+vcf_file <- system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")
+vcf <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
+retrieve_vcf(vcf, chrom = "chr1", start = 12339700, end = 12343200)
 retrieve_vcf(vcf, variant_type = "SNP")
-retrieve_vcf(vcf, pattern = "rsA", fixed = TRUE)
-vt <- retrieve_vcf(vcf, chrom = "chr1", start = 100, end = 600, as = "VariantTrack")
+retrieve_vcf(vcf, pattern = "varA", fixed = TRUE)
+vt <- retrieve_vcf(vcf, chrom = "chr1", start = 12339700, end = 12343200, as = "VariantTrack")
 vt
 }

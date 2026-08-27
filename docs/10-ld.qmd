@@ -1,0 +1,46 @@
+## Linkage disequilibrium analysis
+
+The demo VCF contains a designed six-variant high-LD block (`varLD01`-`varLD06`) in `GeneA`. These variants share the same genotype pattern and therefore provide a deterministic `r2 = 1` example.
+
+```{r}
+ld <- compute_ld_block(
+  vcf,
+  chrom = "chr1",
+  start = 12342620,
+  end = 12343180,
+  method = "r2",
+  verbose = FALSE
+)
+
+ld$data
+```
+
+Add the compact GeneA structure above the triangular heatmap:
+
+```{r}
+ld <- plot_ld_block(
+  ld,
+  show_region = TRUE,
+  annotation = gp,
+  show_variant_labels = FALSE
+)
+
+ld$figure
+```
+
+The assignment is intentional: `plot_ld_block()` returns the updated `LDTrack`, not the figure, when `return_object = TRUE` (the default).
+
+The `GeneT` region contains exactly two variants and is retained as the deterministic two-variant LD plotting case:
+
+```{r}
+ld_pair <- compute_ld_block(
+  vcf,
+  chrom = "chr2",
+  start = 16995001,
+  end = 17006000,
+  method = "r2",
+  verbose = FALSE
+)
+
+plot_ld_block(ld_pair, return_object = FALSE)
+```

@@ -58,3 +58,16 @@ reference, 1 is heterozygous/non-reference carrier, and 2 is homozygous
 alternate for diploid biallelic records. Multi-allelic non-reference alleles
 are collapsed into total non-reference dosage.
 }
+\examples{
+vcf_file <- system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")
+vcf <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
+ld <- compute_ld_block(
+  vcf,
+  chrom = "chr1",
+  start = 12342620,
+  end = 12343180,
+  method = "r2",
+  verbose = FALSE
+)
+ld$data
+}

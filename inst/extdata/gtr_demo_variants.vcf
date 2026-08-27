@@ -1,5 +1,5 @@
 ##fileformat=VCFv4.2
-##source=GeneTrackR_demo_v0.5.2
+##source=GeneTrackR_demo_v0.5.5
 ##contig=<ID=chr1,length=25000000>
 ##contig=<ID=chr2,length=18000000>
 ##INFO=<ID=ROLE,Number=1,Type=String,Description="Designed role in GeneTrackR demo data">

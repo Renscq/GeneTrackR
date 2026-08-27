@@ -94,3 +94,18 @@ track follows the compact gene-model style used by \code{plot_hap_variant()} in
 GeneTrackR 0.3.15 and connects genomic variant markers to LD heatmap columns
 with a shared x scale, so line endpoints remain aligned after resizing.
 }
+\examples{
+vcf_file <- system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")
+anno_file <- system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR")
+vcf <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
+anno <- read_genepred(anno_file, format = "genePredExt", verbose = FALSE)
+ld <- compute_ld_block(
+  vcf,
+  chrom = "chr1",
+  start = 12342620,
+  end = 12343180,
+  verbose = FALSE
+)
+ld <- plot_ld_block(ld, show_region = TRUE, annotation = anno, show_variant_labels = FALSE)
+ld$figure
+}

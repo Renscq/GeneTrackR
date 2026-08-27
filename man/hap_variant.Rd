@@ -62,12 +62,12 @@ Compatibility wrapper for haplotype construction. For new code, prefer
 for direct genomic interval queries.
 }
 \examples{
-vcf_file <- system.file("extdata", "example_haplotype.vcf", package = "GeneTrackR")
-anno_file <- system.file("extdata", "example.genePredExt", package = "GeneTrackR")
-vcf <- read_vcf(vcf_file)
+vcf_file <- system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")
+anno_file <- system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR")
+vcf <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
 anno <- read_genepred(anno_file, format = "genePredExt", verbose = FALSE)
-hap <- hap_variant(vcf, annotation = anno, gene_id = "GeneA", genotype_mode = "code")
+hap <- hap_variant(vcf, annotation = anno, gene_id = "GeneA", genotype_mode = "code", min_variant_number = 1)
 hap
-hap_region <- hap_variant(vcf, chrom = "chr1", start = 1000, end = 12000)
+hap_region <- hap_variant(vcf, chrom = "chr1", start = 12339700, end = 12352000, min_variant_number = 1)
 hap_region$haplotypes
 }

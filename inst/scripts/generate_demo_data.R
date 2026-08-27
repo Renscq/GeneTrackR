@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-08-23
-# Version: dev003
+# Version: dev007
 # Function: Generate the deterministic GeneTrackR demo dataset from canonical model tables
 # Input: inst/scripts/demo_model/*.tsv
 # Output: inst/extdata/gtr_demo_* example input files
@@ -237,7 +237,7 @@ write_vcf <- function(variants, samples, chromosomes, file) {
   con <- file(file, open = "wt")
   on.exit(close(con), add = TRUE)
   writeLines("##fileformat=VCFv4.2", con)
-  writeLines("##source=GeneTrackR_demo_v0.5.3", con)
+  writeLines("##source=GeneTrackR_demo_v0.5.5", con)
   for (i in seq_len(nrow(chromosomes))) {
     writeLines(paste0("##contig=<ID=", chromosomes$chrom[i], ",length=", chromosomes$size[i], ">"), con)
   }
@@ -370,59 +370,153 @@ write_rnaseq_signal <- function(file, transcripts, signal_design, strand = c("+"
 
 build_riboseq_signal <- function(transcripts, signal_design, strand = c("+", "-")) {
   strand <- match.arg(strand)
-  phase_factor <- c(1.00, 0.18, 0.08)
-  codon_wave <- c(0.90, 1.00, 1.12, 0.96, 1.06, 0.94)
-  start_bonus <- c(4.8, 2.4, 1.2)
-  stop_bonus_by_distance <- c(1.4, 2.6, 5.2)
+
+  # Generate moderately dense integer P-site-like counts with heterogeneous
+  # heights within every frame. Total counts are calibrated to approximately
+  # 80:10:10 for frame0:frame1:frame2. Frame 0 is broadly occupied and carries
+  # the dominant peaks, whereas frame 1 and frame 2 occur at distinct subsets
+  # of codons with lower, irregular integer counts.
+  frame0_wave <- c(
+    0.55, 0.80, 1.10, 1.40, 0.70, 1.55, 0.95,
+    1.25, 0.60, 1.35, 1.00, 1.50, 0.85
+  )
+  frame0_jitter <- c(0.90, 1.12, 0.82, 1.25, 1.00, 1.18, 0.94, 1.08, 0.86)
   rows <- list()
   k <- 0L
+
+  allocate_integer_counts <- function(weights, target_total) {
+    weights <- as.numeric(weights)
+    weights[!is.finite(weights) | weights < 0] <- 0
+    target_total <- as.integer(round(target_total))
+    out <- integer(length(weights))
+    if (target_total <= 0L || sum(weights) <= 0) {
+      return(out)
+    }
+
+    scaled <- weights / sum(weights) * target_total
+    out <- as.integer(floor(scaled))
+    remainder <- target_total - sum(out)
+    if (remainder > 0L) {
+      fractional <- scaled - out
+      order_index <- order(
+        -fractional,
+        -weights,
+        seq_along(weights)
+      )
+      selected <- order_index[seq_len(remainder)]
+      out[selected] <- out[selected] + 1L
+    }
+    out
+  }
 
   for (i in seq_len(nrow(signal_design))) {
     weight <- as.numeric(signal_design$riboseq_weight[i])
     if (is.na(weight) || weight <= 0) next
+
     tx <- transcripts[transcripts$transcript_id == signal_design$transcript_id[i], , drop = FALSE]
     if (tx$strand[1L] != strand) next
     if (nrow(tx) != 1L) {
       stop("Signal design transcript was not found uniquely: ", signal_design$transcript_id[i], call. = FALSE)
     }
+
     cds <- get_cds_segments(tx)
     if (nrow(cds) == 0L) next
 
     if (tx$strand == "+") {
       cds <- cds[order(cds$start), , drop = FALSE]
-      positions <- unlist(lapply(seq_len(nrow(cds)), function(j) seq.int(cds$start[j], cds$end[j])), use.names = FALSE)
+      positions <- unlist(
+        lapply(seq_len(nrow(cds)), function(j) seq.int(cds$start[j], cds$end[j])),
+        use.names = FALSE
+      )
     } else {
       cds <- cds[order(cds$start, decreasing = TRUE), , drop = FALSE]
-      positions <- unlist(lapply(seq_len(nrow(cds)), function(j) seq.int(cds$end[j], cds$start[j])), use.names = FALSE)
+      positions <- unlist(
+        lapply(seq_len(nrow(cds)), function(j) seq.int(cds$end[j], cds$start[j])),
+        use.names = FALSE
+      )
     }
 
-    offset <- seq_along(positions) - 1L
-    codon_index <- offset %/% 3L
-    values <- weight * phase_factor[offset %% 3L + 1L] * codon_wave[codon_index %% length(codon_wave) + 1L]
+    if (length(positions) %% 3L != 0L) {
+      stop(
+        "Primary coding transcript CDS length is not divisible by 3: ",
+        signal_design$transcript_id[i],
+        call. = FALSE
+      )
+    }
 
-    start_idx <- offset < 3L
-    values[start_idx] <- values[start_idx] + weight * start_bonus[offset[start_idx] + 1L]
-    start_shoulder <- offset >= 3L & offset < 12L & offset %% 3L == 0L
-    values[start_shoulder] <- values[start_shoulder] + weight * 1.2
+    n_codons <- length(positions) %/% 3L
+    codon_index <- seq_len(n_codons) - 1L
 
-    distance_to_end <- length(positions) - 1L - offset
-    stop_idx <- distance_to_end < 3L
-    values[stop_idx] <- values[stop_idx] + weight * stop_bonus_by_distance[distance_to_end[stop_idx] + 1L]
-    stop_shoulder <- distance_to_end >= 3L & distance_to_end < 12L & offset %% 3L == 0L
-    values[stop_shoulder] <- values[stop_shoulder] + weight * 1.4
+    # Frame 0 is present at most codons but has strongly heterogeneous heights.
+    # The occupancy rule is deterministic so regenerated demo data are stable.
+    frame0_active <- ((codon_index * 19L + 7L) %% 31L) < 28L
+    frame0_active[1L] <- TRUE
+    frame0_active[n_codons] <- TRUE
+    frame0_raw <- weight *
+      frame0_wave[codon_index %% length(frame0_wave) + 1L] *
+      frame0_jitter[codon_index %% length(frame0_jitter) + 1L]
+    frame0 <- integer(n_codons)
+    frame0[frame0_active] <- pmax(
+      1L,
+      as.integer(round(frame0_raw[frame0_active]))
+    )
+
+    internal_frame0 <- frame0
+    internal_frame0[c(1L, n_codons)] <- 0L
+    internal_mean <- mean(internal_frame0[internal_frame0 > 0L])
+    if (!is.finite(internal_mean) || internal_mean <= 0) {
+      internal_mean <- weight
+    }
+    boundary_count <- max(1L, as.integer(round(2 * internal_mean)))
+    frame0[1L] <- boundary_count
+    frame0[n_codons] <- boundary_count
+
+    # Each off-frame receives one eighth of the frame-0 total, giving an
+    # approximately 80:10:10 total-count ratio. Frame 1 and frame 2 use
+    # different active codons and different pseudo-irregular weight patterns,
+    # so their bars are neither synchronized nor nearly equal in height.
+    off_frame_total <- as.integer(round(sum(frame0) / 8))
+
+    frame1_active <- ((codon_index * 13L + 5L) %% 29L) < 13L
+    frame2_active <- ((codon_index * 17L + 9L) %% 31L) < 14L
+    frame1_active[c(1L, n_codons)] <- FALSE
+    frame2_active[c(1L, n_codons)] <- FALSE
+
+    frame1_weights <- frame1_active *
+      (1 + ((codon_index * 7L + 3L) %% 9L)) *
+      (0.75 + 0.08 * ((codon_index * 5L + 2L) %% 7L))
+    frame2_weights <- frame2_active *
+      (1 + ((codon_index * 11L + 4L) %% 8L)) *
+      (0.80 + 0.07 * ((codon_index * 3L + 1L) %% 8L))
+
+    frame1 <- allocate_integer_counts(frame1_weights, off_frame_total)
+    frame2 <- allocate_integer_counts(frame2_weights, off_frame_total)
+
+    values <- numeric(length(positions))
+    values[seq.int(1L, length(values), by = 3L)] <- frame0
+    values[seq.int(2L, length(values), by = 3L)] <- frame1
+    values[seq.int(3L, length(values), by = 3L)] <- frame2
+
+    keep <- values > 0
+    if (!any(keep)) next
 
     k <- k + 1L
     rows[[k]] <- data.frame(
       chrom = tx$chrom,
-      pos = as.integer(positions),
-      value = values,
+      pos = as.integer(positions[keep]),
+      value = as.numeric(values[keep]),
       stringsAsFactors = FALSE
     )
   }
 
+  if (length(rows) == 0L) {
+    return(data.frame(chrom = character(), pos = integer(), value = numeric()))
+  }
+
   signal <- do.call(rbind, rows)
   signal <- stats::aggregate(value ~ chrom + pos, data = signal, FUN = sum)
-  signal$value <- round(signal$value, 3)
+  signal$value <- as.numeric(round(signal$value))
+  signal <- signal[signal$value > 0, , drop = FALSE]
   signal[order(signal$chrom, signal$pos), , drop = FALSE]
 }
 
@@ -464,6 +558,20 @@ old_signal_files <- c(
   "gtr_demo_riboseq_minus.bedgraph"
 )
 unlink(file.path(out_dir, old_signal_files), force = TRUE)
+
+legacy_example_files <- c(
+  "example.genePredExt",
+  "example_annotation.gff3",
+  "example_annotation.gtf",
+  "example_features.bed",
+  "example_haplotype.vcf",
+  "example_pheno.tsv",
+  "example_signal_A.bedgraph",
+  "example_signal_B.bedgraph",
+  "example_variants.vcf",
+  "example_variants_NC12.vcf"
+)
+unlink(file.path(out_dir, legacy_example_files), force = TRUE)
 
 chromosomes <- read_tsv(file.path(model_dir, "chromosomes.tsv"))
 transcripts <- read_tsv(file.path(model_dir, "transcripts.tsv"))

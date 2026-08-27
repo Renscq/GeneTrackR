@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-28
-# Version: dev001
+# Version: dev002
 # Function: Retrieve signal records from BwgTrack objects
 # Input: BwgTrack object and genomic region
 # Output: data.table, BwgTrack, or GRanges
@@ -47,25 +47,40 @@
 #'
 #' @examples
 #' \dontrun{
-#' bg <- read_bwg("sample.bedgraph.gz", format = "bedgraph", mode = "lazy")
+#' rnaseq_files <- system.file(
+#'   "extdata",
+#'   c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph"),
+#'   package = "GeneTrackR"
+#' )
+#' rnaseq <- read_bwg(
+#'   rnaseq_files,
+#'   format = "bedgraph",
+#'   sample_names = c("RNA_seq_plus", "RNA_seq_minus"),
+#'   strand = c("+", "-"),
+#'   mode = "memory"
+#' )
 #'
 #' dt <- retrieve_bwg(
-#'   bg,
+#'   rnaseq,
 #'   chrom = "chr1",
-#'   start = 1,
-#'   end = 10000
+#'   start = 12339001,
+#'   end = 12352000,
+#'   strand = "+"
 #' )
 #'
-#' bg_sub <- retrieve_bwg(
-#'   bg,
-#'   chrom = "chr1",
-#'   start = 1,
-#'   end = 10000,
-#'   as = "BwgTrack"
+#' anno <- read_genepred(
+#'   system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR"),
+#'   format = "genePredExt",
+#'   verbose = FALSE
 #' )
-#'
-#' anno <- read_genepred(system.file("extdata", "example.genePredExt", package = "GeneTrackR"), format = "genePredExt")
-#' gene_signal <- retrieve_bwg(bg, annotation = anno, gene_id = "GeneA", upstream = 500, downstream = 500)
+#' gene_signal <- retrieve_bwg(
+#'   rnaseq,
+#'   annotation = anno,
+#'   gene_id = "GeneA",
+#'   upstream = 500,
+#'   downstream = 500,
+#'   strand = "auto"
+#' )
 #' }
 #'
 #' @export

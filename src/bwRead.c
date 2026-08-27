@@ -303,7 +303,7 @@ int bwIsBigWig(const char *fname, CURLcode (*callBack) (CURL*)) {
     uint32_t magic = 0;
     URL_t *URL = NULL;
 
-    URL = urlOpen(fname, *callBack, NULL);
+    URL = urlOpen(fname, callBack, NULL);
 
     if(!URL) return 0;
     if(urlRead(URL, (void*) &magic, sizeof(uint32_t)) != sizeof(uint32_t)) magic = 0;
@@ -333,7 +333,7 @@ int bbIsBigBed(const char *fname, CURLcode (*callBack) (CURL*)) {
     uint32_t magic = 0;
     URL_t *URL = NULL;
 
-    URL = urlOpen(fname, *callBack, NULL);
+    URL = urlOpen(fname, callBack, NULL);
 
     if(!URL) return 0;
     if(urlRead(URL, (void*) &magic, sizeof(uint32_t)) != sizeof(uint32_t)) magic = 0;
@@ -350,7 +350,7 @@ bigWigFile_t *bwOpen(const char *fname, CURLcode (*callBack) (CURL*), const char
     }
     if((!mode) || (strchr(mode, 'w') == NULL)) {
         bwg->isWrite = 0;
-        bwg->URL = urlOpen(fname, *callBack, NULL);
+        bwg->URL = urlOpen(fname, callBack, NULL);
         if(!bwg->URL) {
             fprintf(stderr, "[bwOpen] urlOpen is NULL!\n");
             goto error;
@@ -380,7 +380,9 @@ bigWigFile_t *bwOpen(const char *fname, CURLcode (*callBack) (CURL*), const char
         }
     } else {
         bwg->isWrite = 1;
-        bwg->URL = urlOpen(fname, NULL, "w+");
+        /* BigWig is a binary format. The binary flag is required on Windows;
+         * POSIX platforms ignore it. */
+        bwg->URL = urlOpen(fname, NULL, "w+b");
         if(!bwg->URL) goto error;
         bwg->writeBuffer = calloc(1,sizeof(bwWriteBuffer_t));
         if(!bwg->writeBuffer) goto error;
@@ -404,7 +406,7 @@ bigWigFile_t *bbOpen(const char *fname, CURLcode (*callBack) (CURL*)) {
     //Set the type to 1 for bigBed
     bb->type = 1;
 
-    bb->URL = urlOpen(fname, *callBack, NULL);
+    bb->URL = urlOpen(fname, callBack, NULL);
     if(!bb->URL) goto error;
 
     //Attempt to read in the fixed header

@@ -102,14 +102,14 @@ number from left to right. Fill colors are mapped to the median phenotype
 value of each haplotype group.
 }
 \examples{
-vcf_file <- system.file("extdata", "example_haplotype.vcf", package = "GeneTrackR")
-anno_file <- system.file("extdata", "example.genePredExt", package = "GeneTrackR")
-pheno_file <- system.file("extdata", "example_pheno.tsv", package = "GeneTrackR")
-vcf <- read_vcf(vcf_file)
+vcf_file <- system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")
+anno_file <- system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR")
+pheno_file <- system.file("extdata", "gtr_demo_pheno.tsv", package = "GeneTrackR")
+vcf <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
 anno <- read_genepred(anno_file, format = "genePredExt", verbose = FALSE)
-hap <- hap_variant(vcf, annotation = anno, gene_id = "GeneA", genotype_mode = "code")
-pheno <- read_pheno(pheno_file)
-plot_hap_pheno(hap, phenotype = pheno, traits = "plant_height", min_hap_samples = 1)
-plot_hap_pheno(hap, phenotype = pheno, traits = "plant_height", min_hap_samples = 1,
+hap <- hap_variant(vcf, annotation = anno, gene_id = "GeneA", genotype_mode = "code", min_variant_number = 1)
+pheno <- read_pheno(pheno_file, verbose = FALSE)
+plot_hap_pheno(hap, phenotype = pheno, traits = "seed_weight", min_hap_samples = 3)
+plot_hap_pheno(hap, phenotype = pheno, traits = "seed_weight", min_hap_samples = 3,
                test_method = "wilcox.test", p_label = "number")
 }

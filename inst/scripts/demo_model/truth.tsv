@@ -14,7 +14,8 @@ phenotype	seed_weight	haplotype_associated	Strong differences among the four Gen
 phenotype	protein_content	varA03_associated	ALT groups have higher expected values
 phenotype	plant_height	haplotype_associated_medium	Moderate GeneA haplotype effect
 phenotype	flowering_time	negative_control	Identical within-group residual pattern; no designed haplotype effect
+annotation	coding_cds_length	multiple_of_three	Every protein-coding demo transcript has a CDS length divisible by 3
 signal	rnaseq	exon_enriched	RNA-seq coverage is generated on transcript exons including UTR; designed intronic/intergenic regions have zero coverage
-signal	riboseq	single_base_cds	Ribo-seq bedGraph uses 1-bp intervals only within protein-coding CDS
-signal	riboseq_periodicity	three_nt	Ribo-seq density is highest in phase 0 with lower phase 1/2 background across internal CDS
-signal	riboseq_peaks	start_and_stop	Ribo-seq density contains pronounced initiation and termination peaks
+signal	riboseq	moderately_dense_integer_psite	Ribo-seq bedGraph stores moderately dense heterogeneous integer P-site-like counts as 1-bp intervals within primary protein-coding CDS
+signal	riboseq_periodicity	80_10_10_frames	Ribo-seq total counts are designed around frame0/frame1/frame2 proportions of 80%/10%/10%; zero-count bases are omitted from bedGraph
+signal	riboseq_peaks	start_and_stop_2x	Initiation and termination frame-0 counts are approximately two times the internal frame-0 mean

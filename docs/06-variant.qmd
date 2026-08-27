@@ -1,0 +1,54 @@
+## Variant track module
+
+### Read VCF into memory
+
+```{r}
+vcf <- read_vcf(vcf_file, mode = "memory")
+vcf
+summary_vcf(vcf)
+```
+
+### Lazy indexed VCF access
+
+For large `vcf.gz` files with `.tbi` or `.csi` indexes, use lazy mode. This reads the header and sample names first, then reads variants only for requested regions.
+
+```{r}
+large_vcf <- "/path/to/large.vcf.gz"
+
+# For a real bgzip-compressed VCF with a .tbi/.csi index:
+# vcf_lazy <- read_vcf(large_vcf, mode = "lazy")
+# vcf_region <- retrieve_vcf(
+#   vcf_lazy,
+#   chrom = "chr1",
+#   start = 12339001,
+#   end = 12374500,
+#   as = "VariantTrack"
+# )
+```
+
+If no index is available, use memory mode or create a tabix index before lazy retrieval.
+
+### Retrieve and plot variants
+
+```{r}
+vcf_region <- retrieve_vcf(
+  vcf,
+  chrom = "chr1",
+  start = 12339001,
+  end = 12374500,
+  as = "VariantTrack"
+)
+
+vcf_region
+head(vcf_region$data)
+
+plot_variant(
+  vcf,
+  chrom = "chr1",
+  start = 12339001,
+  end = 12374500,
+  color_by = "variant_type"
+)
+```
+
+`retrieve_vcf()` returns a `data.table` by default. Set `as = "VariantTrack"` when the retrieved subset itself should be passed to functions that require a `VariantTrack`.

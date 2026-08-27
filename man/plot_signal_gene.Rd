@@ -17,6 +17,8 @@ plot_signal_gene(
   bin_size = NULL,
   highlight = NULL,
   show_gene_model = TRUE,
+  signal_track_height = 3,
+  gene_track_height = 1,
   signal_palette = "Blues",
   signal_palette_direction = 1,
   signal_colors = NULL,
@@ -64,11 +66,15 @@ plot_signal_gene(
 
 \item{show_gene_model}{Whether to append the gene model track.}
 
-\item{signal_palette}{Signal color palette. Any palette name from \code{RColorBrewer::brewer.pal.info} can be used, such as \code{Blues}, \code{Reds}, \code{RdBu}, \code{Paired}, \code{Set1}, \code{Dark2}, \code{YlGnBu}, or \code{Spectral}. If the number of samples or groups exceeds the palette maximum, colors are automatically interpolated.}
+\item{signal_track_height}{Relative height of the signal panel when the gene model is shown. Default 3.}
 
-\item{signal_palette_direction}{Direction for the signal palette. Use \code{1} for the default order and \code{-1} to reverse the palette, for example \code{RdBu} to \code{BuRd}.}
+\item{gene_track_height}{Relative height of the gene model panel when it is shown. Default 1.}
 
-\item{signal_colors}{Optional named or unnamed vector of colors for samples. If supplied, it overrides \code{signal_palette}.}
+\item{signal_palette}{Signal color palette. Any palette name from \code{RColorBrewer::brewer.pal.info} can be used, such as \code{Blues}, \code{Reds}, \code{RdBu}, \code{Paired}, \code{Set1}, \code{Dark2}, \code{YlGnBu}, or \code{Spectral}. Discrete sample/group colors are assigned in the standard RColorBrewer class order; heatmaps use the corresponding continuous gradient.}
+
+\item{signal_palette_direction}{Direction for generated signal colors. Use \code{1} for the standard palette order and \code{-1} for the reversed palette order. Discrete sample/group colors preserve level-to-color order; heatmap gradients reverse continuously.}
+
+\item{signal_colors}{Optional named or unnamed vector of explicit colors for samples. If supplied, it overrides \code{signal_palette}; explicit colors are not modified by \code{signal_palette_direction}.}
 
 \item{signal_transform}{Signal-axis transformation. Use \code{none}, \code{log2}, \code{log10}, or \code{sqrt}. Log transforms use signed log1p-style transformation to tolerate zero values.}
 
@@ -113,21 +119,33 @@ queried signal table is not modified. See also \link{GeneTrackR-advanced-paramet
 }
 \examples{
 \dontrun{
-groups <- c(KO1 = "KO", KO2 = "KO", WT1 = "WT", WT2 = "WT")
+gp <- read_genepred(
+  system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR"),
+  format = "genePredExt",
+  verbose = FALSE
+)
+rnaseq <- read_bwg(
+  system.file(
+    "extdata",
+    c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph"),
+    package = "GeneTrackR"
+  ),
+  format = "bedgraph",
+  sample_names = c("RNA_seq_plus", "RNA_seq_minus"),
+  strand = c("+", "-"),
+  mode = "memory"
+)
 plot_signal_gene(
-  signal = bg,
+  signal = rnaseq,
   annotation = gp,
   gene_id = "GeneA",
-  samples = c("KO1", "KO2", "WT1", "WT2"),
-  sample_groups = groups,
-  signal_color_by = "group",
-  signal_summary = "mean",
-  bin_size = 50,
-  signal_palette = "RdBu",
-  signal_transform = "log2",
+  plot_type = "bar",
+  signal_palette = "Blues",
+  signal_palette_direction = -1,
   signal_y_scale = "fixed",
-  signal_y_ticks = "range",
-  label_position = "feature"
+  signal_y_ticks = "pretty",
+  signal_track_height = 4,
+  gene_track_height = 1
 )
 }
 }

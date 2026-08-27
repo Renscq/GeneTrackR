@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-07-02
-# Version: dev005
+# Version: dev006
 # Function: Plot LD block triangular heatmaps
 # Input: LDTrack objects, VariantTrack objects, or VCF paths
 # Output: LDTrack objects with stored figures
@@ -48,6 +48,20 @@
 #' @return By default, an updated `LDTrack` object with the generated figure
 #' stored in `$figure`. If `return_object = FALSE`, the ggplot/patchwork figure
 #' is returned directly.
+#' @examples
+#' vcf_file <- system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")
+#' anno_file <- system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR")
+#' vcf <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
+#' anno <- read_genepred(anno_file, format = "genePredExt", verbose = FALSE)
+#' ld <- compute_ld_block(
+#'   vcf,
+#'   chrom = "chr1",
+#'   start = 12342620,
+#'   end = 12343180,
+#'   verbose = FALSE
+#' )
+#' ld <- plot_ld_block(ld, show_region = TRUE, annotation = anno, show_variant_labels = FALSE)
+#' ld$figure
 #' @export
 plot_ld_block <- function(object,
                           chrom = NULL,

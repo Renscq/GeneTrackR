@@ -1,6 +1,6 @@
 test_that("compute_ld_block builds LDTrack from genotype-rich VCF", {
-  vcf <- read_vcf(gtr_extdata("example_haplotype.vcf"), mode = "memory", verbose = FALSE)
-  ld <- compute_ld_block(vcf, chrom = "chr1", start = 1, end = 1200, min_pair_samples = 3, verbose = FALSE)
+  vcf <- read_vcf(gtr_extdata("gtr_demo_variants.vcf"), mode = "memory", verbose = FALSE)
+  ld <- compute_ld_block(vcf, chrom = "chr1", start = 12342620, end = 12343180, min_pair_samples = 3, verbose = FALSE)
 
   expect_s3_class(ld, "LDTrack")
   expect_gt(nrow(ld$variants), 1L)
@@ -11,8 +11,8 @@ test_that("compute_ld_block builds LDTrack from genotype-rich VCF", {
 })
 
 test_that("plot_ld_block returns LDTrack with triangular LD figure", {
-  vcf <- read_vcf(gtr_extdata("example_haplotype.vcf"), mode = "memory", verbose = FALSE)
-  ld <- compute_ld_block(vcf, chrom = "chr1", start = 1, end = 1200, min_pair_samples = 3, verbose = FALSE)
+  vcf <- read_vcf(gtr_extdata("gtr_demo_variants.vcf"), mode = "memory", verbose = FALSE)
+  ld <- compute_ld_block(vcf, chrom = "chr1", start = 12342620, end = 12343180, min_pair_samples = 3, verbose = FALSE)
   ld_with_figure <- plot_ld_block(ld, show_variant_labels = FALSE)
   expect_s3_class(ld_with_figure, "LDTrack")
   expect_true(inherits(ld_with_figure$figure, "ggplot") || inherits(ld_with_figure$figure, "patchwork"))

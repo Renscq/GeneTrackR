@@ -1,0 +1,94 @@
+## Haplotype extraction
+
+GeneTrackR now separates gene/transcript-based and region-based haplotype extraction.
+
+### Gene or transcript haplotypes
+
+```{r}
+hap_gene <- hap_gene_variant(
+  vcf,
+  annotation = gp,
+  gene_id = "GeneA",
+  genotype_mode = "string",
+  min_variant_number = 1
+)
+
+hap_tx <- hap_gene_variant(
+  vcf,
+  annotation = gp,
+  transcript_id = "TxA1",
+  genotype_mode = "code",
+  min_variant_number = 1
+)
+```
+
+Include upstream/downstream variants around a gene or transcript:
+
+```{r}
+hap_gene_ext <- hap_gene_variant(
+  vcf,
+  annotation = gp,
+  gene_id = "GeneA",
+  upstream = 1000,
+  downstream = 1000,
+  strand_aware = TRUE,
+  genotype_mode = "string",
+  min_variant_number = 1
+)
+```
+
+### Region haplotypes
+
+```{r}
+hap_region <- hap_region_variant(
+  vcf,
+  chrom = "chr1",
+  start = 12339700,
+  end = 12352000,
+  genotype_mode = "code",
+  min_variant_number = 1
+)
+```
+
+`hap_variant()` is retained as a compatibility wrapper, but new code should prefer `hap_gene_variant()` and `hap_region_variant()`.
+
+### Inspect haplotype tables
+
+```{r}
+hap_gene$region
+hap_gene$variants
+hap_gene$haplotypes
+hap_gene$sample_haplotypes
+```
+
+`hap_gene` is a `HapVariant`. Downstream haplotype plots and phenotype/refinement functions consume this object directly; there is no need to reconstruct genotype tables manually.
+
+## Haplotype-variant plot
+
+`plot_hap_variant()` draws a gene model, variant markers, connector lines, and a genotype table.
+
+```{r}
+hap_variant_figure <- plot_hap_variant(
+  hap_gene,
+  annotation = gp,
+  min_hap_samples = 3,
+  show_reference_row = TRUE,
+  table_x_angle = 90
+)
+
+hap_variant_figure
+```
+
+Customize table and variant colors:
+
+```{r}
+plot_hap_variant(
+  hap_gene,
+  annotation = gp,
+  min_hap_samples = 3,
+  table_palette = "RdBu",
+  table_alpha = 0.6,
+  variant_palette = "Set1",
+  genotype_text_size = 3
+)
+```

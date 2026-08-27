@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-08-19
-# Version: dev001
+# Version: dev002
 # Function: Plot phenotype distributions grouped by a single variant genotype
 # Input: VariantTrack/VCF/HapVariant objects and phenotype tables
 # Output: ggplot figures with pairwise test annotations
@@ -56,15 +56,15 @@
 #' @return A list with `figure` and `pvalue` elements. Additional elements include
 #' `summary`, `bracket`, `plot_data`, and `variant_data`.
 #' @examples
-#' vcf_file <- system.file("extdata", "example_haplotype.vcf", package = "GeneTrackR")
-#' pheno_file <- system.file("extdata", "example_pheno.tsv", package = "GeneTrackR")
-#' vcf <- read_vcf(vcf_file)
-#' pheno <- read_pheno(pheno_file)
-#' plot_variant_pheno(vcf, phenotype = pheno, variant_id = "var1",
-#'                    traits = "plant_height", min_group_samples = 1)
-#' plot_variant_pheno(vcf, phenotype = pheno, chrom = "chr1", pos = 120,
-#'                    traits = "seed_weight", genotype_mode = "string",
-#'                    min_group_samples = 1, test_method = "wilcox.test")
+#' vcf_file <- system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")
+#' pheno_file <- system.file("extdata", "gtr_demo_pheno.tsv", package = "GeneTrackR")
+#' vcf <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
+#' pheno <- read_pheno(pheno_file, verbose = FALSE)
+#' plot_variant_pheno(vcf, phenotype = pheno, variant_id = "varA03",
+#'                    traits = "protein_content", min_group_samples = 3)
+#' plot_variant_pheno(vcf, phenotype = pheno, chrom = "chr1", pos = 12342550,
+#'                    traits = "protein_content", genotype_mode = "string",
+#'                    min_group_samples = 3, test_method = "wilcox.test")
 #' @export
 plot_variant_pheno <- function(variant,
                                phenotype,

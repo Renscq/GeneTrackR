@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-26
-# Version: dev001
+# Version: dev002
 # Function: Read GenePred or GenePredExt annotation files
 # Input: GenePred-format text file
 # Output: GenePred object with transcript, exon, and gene tables
@@ -27,21 +27,11 @@
 #' `progress = TRUE` additionally shows a stage-level text progress bar.
 #' @return A GenePred object.
 #' @examples
-#' \dontrun{
-#' gp <- read_genepred("annotation.genePredExt", format = "genePredExt")
-#' gp_quiet <- read_genepred(
-#'   "annotation.genePredExt",
-#'   format = "genePredExt",
-#'   verbose = FALSE
-#' )
-#' gp_custom <- read_genepred(
-#'   "annotation.genePredExt",
-#'   format = "genePredExt",
-#'   gene_col = "name2",
-#'   transcript_col = "name",
-#'   remove_invalid = TRUE
-#' )
-#' }
+#' gp_file <- system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR")
+#' gp <- read_genepred(gp_file, format = "genePredExt", verbose = FALSE)
+#' gp
+#' head(gp$genes)
+#' head(gp$transcripts)
 #' @export
 read_genepred <- function(file,
                           format = c("auto", "genePred", "genePredExt"),

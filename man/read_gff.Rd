@@ -26,3 +26,9 @@ A FeatureTrack object.
 \description{
 Read a GFF3 file as a FeatureTrack
 }
+\examples{
+gff_file <- system.file("extdata", "gtr_demo.gff3", package = "GeneTrackR")
+gff <- read_gff(gff_file, verbose = FALSE, progress = FALSE)
+gff
+head(gff$genes)
+}

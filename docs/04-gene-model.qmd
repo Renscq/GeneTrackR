@@ -1,0 +1,66 @@
+## Gene model plotting
+
+### Plot a gene
+
+```{r}
+plot_gene(
+  gp,
+  gene_id = "GeneA",
+  label_position = "axis",
+  direction_mode = "end"
+)
+```
+
+### Plot a transcript
+
+```{r}
+plot_transcript(
+  gp,
+  transcript_id = "TxA1",
+  coordinate = "genomic"
+)
+```
+
+Spliced transcript coordinate mode removes introns:
+
+```{r}
+plot_transcript(
+  gp,
+  transcript_id = "TxA1",
+  coordinate = "transcript"
+)
+```
+
+### Plot a genomic region
+
+```{r}
+plot_region(
+  gp,
+  chrom = "chr1",
+  start = 12339001,
+  end = 12374500,
+  mode = "overlap",
+  label_by = "gene"
+)
+```
+
+### Customize gene model colors
+
+```{r}
+plot_gene(
+  gp,
+  gene_id = "GeneA",
+  gene_palette = "Set2",
+  gene_border_color = "black"
+)
+
+plot_gene(
+  gp,
+  gene_id = "GeneA",
+  gene_colors = c(
+    CDS = "#1b9e77",
+    UTR = "#a6d854",
+    exon = "#7570b3"
+  )
+)
+```

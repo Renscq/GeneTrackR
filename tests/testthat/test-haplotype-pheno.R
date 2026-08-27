@@ -1,9 +1,9 @@
 test_that("hap_gene_variant and hap_region_variant build HapVariant objects", {
-  gp <- read_genepred(gtr_extdata("example.genePredExt"), format = "genePredExt", verbose = FALSE)
-  vcf <- read_vcf(gtr_extdata("example_haplotype.vcf"), mode = "memory", verbose = FALSE)
+  gp <- read_genepred(gtr_extdata("gtr_demo.genePredExt"), format = "genePredExt", verbose = FALSE)
+  vcf <- read_vcf(gtr_extdata("gtr_demo_variants.vcf"), mode = "memory", verbose = FALSE)
 
   hap_gene <- hap_gene_variant(vcf, annotation = gp, gene_id = "GeneA", genotype_mode = "string", min_variant_number = 1)
-  hap_region <- hap_region_variant(vcf, chrom = "chr1", start = 1, end = 1200, genotype_mode = "code", min_variant_number = 1)
+  hap_region <- hap_region_variant(vcf, chrom = "chr1", start = 12339700, end = 12352000, genotype_mode = "code", min_variant_number = 1)
 
   expect_s3_class(hap_gene, "HapVariant")
   expect_s3_class(hap_region, "HapVariant")
@@ -14,40 +14,40 @@ test_that("hap_gene_variant and hap_region_variant build HapVariant objects", {
 
 
 test_that("custom missing genotype labels remain missing for haplotype filtering", {
-  vcf <- read_vcf(gtr_extdata("example_haplotype.vcf"), mode = "memory", verbose = FALSE)
+  vcf <- read_vcf(gtr_extdata("gtr_demo_variants.vcf"), mode = "memory", verbose = FALSE)
 
   hap <- hap_region_variant(
     vcf,
     chrom = "chr1",
-    start = 1,
-    end = 1200,
+    start = 12339700,
+    end = 12352000,
     genotype_mode = "code",
     missing_genotype = "-",
     min_variant_number = 1
   )
 
-  s10 <- hap$sample_haplotypes[hap$sample_haplotypes$sample_id == "S10", ]
+  s12 <- hap$sample_haplotypes[hap$sample_haplotypes$sample_id == "S12", ]
   missing_gt <- hap$genotype_long[
-    hap$genotype_long$sample_id == "S10" & hap$genotype_long$variant_id == "rs001_3",
+    hap$genotype_long$sample_id == "S12" & hap$genotype_long$variant_id == "varAup01",
   ]
-  expect_equal(s10$non_missing_variant_n, 4L)
+  expect_equal(s12$non_missing_variant_n, 11L)
   expect_identical(missing_gt$genotype, "-")
   expect_true(missing_gt$genotype_missing)
 
   hap_complete <- hap_region_variant(
     vcf,
     chrom = "chr1",
-    start = 1,
-    end = 1200,
+    start = 12339700,
+    end = 12352000,
     genotype_mode = "code",
     missing_genotype = "-"
   )
-  expect_false("S10" %in% hap_complete$sample_haplotypes$sample_id)
+  expect_false("S12" %in% hap_complete$sample_haplotypes$sample_id)
 })
 
 test_that("plot_hap_variant returns a browser-like haplotype figure", {
-  gp <- read_genepred(gtr_extdata("example.genePredExt"), format = "genePredExt", verbose = FALSE)
-  vcf <- read_vcf(gtr_extdata("example_haplotype.vcf"), mode = "memory", verbose = FALSE)
+  gp <- read_genepred(gtr_extdata("gtr_demo.genePredExt"), format = "genePredExt", verbose = FALSE)
+  vcf <- read_vcf(gtr_extdata("gtr_demo_variants.vcf"), mode = "memory", verbose = FALSE)
   hap <- hap_gene_variant(vcf, annotation = gp, gene_id = "GeneA", genotype_mode = "string", min_variant_number = 1)
 
   p <- plot_hap_variant(
@@ -168,9 +168,9 @@ test_that("haplotype gene-track variant legend uses an independent color guide",
 })
 
 test_that("phenotype readers and haplotype phenotype plots are stable", {
-  gp <- read_genepred(gtr_extdata("example.genePredExt"), format = "genePredExt", verbose = FALSE)
-  vcf <- read_vcf(gtr_extdata("example_haplotype.vcf"), mode = "memory", verbose = FALSE)
-  pheno <- read_pheno(gtr_extdata("example_pheno.tsv"), verbose = FALSE)
+  gp <- read_genepred(gtr_extdata("gtr_demo.genePredExt"), format = "genePredExt", verbose = FALSE)
+  vcf <- read_vcf(gtr_extdata("gtr_demo_variants.vcf"), mode = "memory", verbose = FALSE)
+  pheno <- read_pheno(gtr_extdata("gtr_demo_pheno.tsv"), verbose = FALSE)
   hap <- hap_gene_variant(vcf, annotation = gp, gene_id = "GeneA", genotype_mode = "code", min_variant_number = 1)
 
   pheno_sum <- summary_pheno(pheno)
@@ -197,11 +197,11 @@ test_that("phenotype readers and haplotype phenotype plots are stable", {
 })
 
 test_that("custom missing genotype labels are excluded from variant phenotype groups", {
-  vcf <- read_vcf(gtr_extdata("example_haplotype.vcf"), mode = "memory", verbose = FALSE)
+  vcf <- read_vcf(gtr_extdata("gtr_demo_variants.vcf"), mode = "memory", verbose = FALSE)
 
   direct <- extract_single_variant_genotype(
     variant = vcf,
-    variant_id = "rs001_2",
+    variant_id = "varAup01",
     missing_genotype = "-"
   )
   expect_true(is.na(direct$genotype$genotype_group[direct$genotype$sample_id == "S12"]))
@@ -209,28 +209,28 @@ test_that("custom missing genotype labels are excluded from variant phenotype gr
   hap <- hap_region_variant(
     vcf,
     chrom = "chr1",
-    start = 1,
-    end = 1200,
+    start = 12339700,
+    end = 12352000,
     genotype_mode = "code",
     missing_genotype = "-",
     min_variant_number = 1
   )
   from_hap <- extract_single_variant_genotype(
     variant = hap,
-    variant_id = "rs001_2"
+    variant_id = "varAup01"
   )
   expect_true(is.na(from_hap$genotype$genotype_group[from_hap$genotype$sample_id == "S12"]))
 })
 
 test_that("single variant phenotype plots return figure and p-value tables", {
-  vcf <- read_vcf(gtr_extdata("example_haplotype.vcf"), mode = "memory", verbose = FALSE)
-  pheno <- read_pheno(gtr_extdata("example_pheno.tsv"), verbose = FALSE)
+  vcf <- read_vcf(gtr_extdata("gtr_demo_variants.vcf"), mode = "memory", verbose = FALSE)
+  pheno <- read_pheno(gtr_extdata("gtr_demo_pheno.tsv"), verbose = FALSE)
 
   res <- plot_variant_pheno(
     variant = vcf,
     phenotype = pheno,
-    variant_id = "rsA1",
-    traits = "plant_height",
+    variant_id = "varA03",
+    traits = "protein_content",
     min_group_samples = 1
   )
 
@@ -241,9 +241,9 @@ test_that("single variant phenotype plots return figure and p-value tables", {
 })
 
 test_that("plot_variant_effect uses signed-effect colors", {
-  gp <- read_genepred(gtr_extdata("example.genePredExt"), format = "genePredExt", verbose = FALSE)
-  vcf <- read_vcf(gtr_extdata("example_haplotype.vcf"), mode = "memory", verbose = FALSE)
-  pheno <- read_pheno(gtr_extdata("example_pheno.tsv"), verbose = FALSE)
+  gp <- read_genepred(gtr_extdata("gtr_demo.genePredExt"), format = "genePredExt", verbose = FALSE)
+  vcf <- read_vcf(gtr_extdata("gtr_demo_variants.vcf"), mode = "memory", verbose = FALSE)
+  pheno <- read_pheno(gtr_extdata("gtr_demo_pheno.tsv"), verbose = FALSE)
   hap <- hap_gene_variant(
     vcf,
     annotation = gp,
@@ -255,7 +255,7 @@ test_that("plot_variant_effect uses signed-effect colors", {
   res <- plot_variant_effect(
     hap,
     phenotype = pheno,
-    traits = "plant_height",
+    traits = "protein_content",
     min_group_samples = 1
   )
 

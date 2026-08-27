@@ -19,6 +19,8 @@ plot_signal_region(
   highlight = NULL,
   annotation = NULL,
   show_gene_model = TRUE,
+  signal_track_height = 3,
+  gene_track_height = 1,
   signal_palette = "Blues",
   signal_palette_direction = 1,
   signal_colors = NULL,
@@ -70,11 +72,15 @@ plot_signal_region(
 
 \item{show_gene_model}{Whether to append a gene model track. Default TRUE.}
 
-\item{signal_palette}{Signal color palette. Any palette name from \code{RColorBrewer::brewer.pal.info} can be used, such as \code{Blues}, \code{Reds}, \code{RdBu}, \code{Paired}, \code{Set1}, \code{Dark2}, \code{YlGnBu}, or \code{Spectral}. If the number of samples or groups exceeds the palette maximum, colors are automatically interpolated.}
+\item{signal_track_height}{Relative height of the signal panel when the gene model is shown. Default 3.}
 
-\item{signal_palette_direction}{Direction for the signal palette. Use \code{1} for the default order and \code{-1} to reverse the palette, for example \code{RdBu} to \code{BuRd}.}
+\item{gene_track_height}{Relative height of the gene model panel when it is shown. Default 1.}
 
-\item{signal_colors}{Optional named or unnamed vector of colors for samples. If supplied, it overrides \code{signal_palette}.}
+\item{signal_palette}{Signal color palette. Any palette name from \code{RColorBrewer::brewer.pal.info} can be used, such as \code{Blues}, \code{Reds}, \code{RdBu}, \code{Paired}, \code{Set1}, \code{Dark2}, \code{YlGnBu}, or \code{Spectral}. Discrete sample/group colors are assigned in the standard RColorBrewer class order; heatmaps use the corresponding continuous gradient.}
+
+\item{signal_palette_direction}{Direction for generated signal colors. Use \code{1} for the standard palette order and \code{-1} for the reversed palette order. Discrete sample/group colors preserve level-to-color order; heatmap gradients reverse continuously.}
+
+\item{signal_colors}{Optional named or unnamed vector of explicit colors for samples. If supplied, it overrides \code{signal_palette}; explicit colors are not modified by \code{signal_palette_direction}.}
 
 \item{signal_transform}{Signal-axis transformation. Use \code{none}, \code{log2}, \code{log10}, or \code{sqrt}. Log transforms use signed log1p-style transformation to tolerate zero values.}
 
@@ -119,19 +125,33 @@ or a named vector. Named values are matched to sample IDs when
 }
 \examples{
 \dontrun{
+gp <- read_genepred(
+  system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR"),
+  format = "genePredExt",
+  verbose = FALSE
+)
+signal_all <- read_bwg(
+  system.file(
+    "extdata",
+    c(
+      "gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph",
+      "gtr_demo_riboseq_plus.bedgraph", "gtr_demo_riboseq_minus.bedgraph"
+    ),
+    package = "GeneTrackR"
+  ),
+  format = "bedgraph",
+  sample_names = c("RNA_seq_plus", "RNA_seq_minus", "Ribo_seq_plus", "Ribo_seq_minus"),
+  strand = c("+", "-", "+", "-"),
+  mode = "memory"
+)
 plot_signal_region(
-  signal = bg,
+  signal = signal_all,
   annotation = gp,
   chrom = "chr1",
-  start = 1,
-  end = 1000,
-  samples = c("sampleA", "sampleB"),
-  signal_colors = c(sampleA = "#2166AC", sampleB = "#B2182B"),
-  plot_type = "bar",
-  signal_y_scale = "free",
-  signal_y_ticks = "range",
-  show_gene_model = TRUE,
-  label_by = "gene"
+  start = 12339001,
+  end = 12374500,
+  strand = "both",
+  plot_type = "bar"
 )
 }
 }

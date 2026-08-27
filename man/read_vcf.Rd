@@ -43,9 +43,15 @@ index, \code{chrom}, \code{start}, and \code{end} can be supplied to load only a
 interval instead of parsing the whole VCF file.
 }
 \examples{
-\dontrun{
-variants <- read_vcf("variants.vcf.gz")
-region_variants <- read_vcf("variants.vcf.gz", chrom = "chr1", start = 1, end = 10000)
-plot_variant(region_variants, chrom = "chr1", start = 1, end = 10000)
-}
+vcf_file <- system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")
+variants <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
+region_variants <- retrieve_vcf(
+  variants,
+  chrom = "chr1",
+  start = 12339700,
+  end = 12343200,
+  as = "VariantTrack",
+  verbose = FALSE
+)
+plot_variant(region_variants, chrom = "chr1", start = 12339700, end = 12343200)
 }

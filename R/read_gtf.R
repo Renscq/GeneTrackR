@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-28
-# Version: dev001
+# Version: dev002
 # Function: Read GTF files into unified Feature annotation objects
 # Input: GTF annotation files
 # Output: Feature objects
@@ -12,6 +12,11 @@
 #' @param verbose Whether to print progress messages.
 #' @param progress Whether to show a stage progress bar. The parser reports major stages using the same style as `read_genepred()`.
 #' @return A FeatureTrack object.
+#' @examples
+#' gtf_file <- system.file("extdata", "gtr_demo.gtf", package = "GeneTrackR")
+#' gtf <- read_gtf(gtf_file, verbose = FALSE, progress = FALSE)
+#' gtf
+#' head(gtf$genes)
 #' @export
 read_gtf <- function(file, feature_types = NULL, verbose = TRUE, progress = interactive() && isTRUE(verbose)) {
   read_gff_gtf(file, format = "GTF", feature_types = feature_types, verbose = verbose, progress = progress)

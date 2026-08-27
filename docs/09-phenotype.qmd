@@ -1,0 +1,98 @@
+## Phenotype input and summary
+
+The phenotype table should contain sample/taxa IDs in the first column or a named sample column. Each additional column is treated as one trait.
+
+```{r}
+pheno <- read_pheno(pheno_file)
+
+summary_pheno(pheno)
+
+plot_pheno(
+  pheno,
+  traits = c("plant_height", "seed_weight")
+)
+```
+
+`read_pheno()` returns a `data.table`; `plot_pheno()` returns a figure directly.
+
+## Haplotype-phenotype association
+
+`plot_hap_pheno()` compares phenotype distributions among haplotype groups. It returns both the figure and the p-value table.
+
+```{r}
+hap_res <- plot_hap_pheno(
+  hap = hap_gene,
+  phenotype = pheno,
+  traits = "plant_height",
+  min_hap_samples = 3,
+  test_method = "t.test",
+  p_value_type = "raw",
+  p_label = "stars"
+)
+
+hap_res$figure
+hap_res$pvalue
+hap_res$summary
+```
+
+Use Wilcoxon or KS tests:
+
+```{r}
+plot_hap_pheno(
+  hap = hap_gene,
+  phenotype = pheno,
+  traits = "seed_weight",
+  test_method = "wilcox.test",
+  min_hap_samples = 3
+)$figure
+```
+
+Multiple traits preserve the requested order and are arranged over multiple facet columns:
+
+```{r}
+plot_hap_pheno(
+  hap = hap_gene,
+  phenotype = pheno,
+  traits = c(
+    "seed_weight",
+    "plant_height",
+    "protein_content",
+    "flowering_time"
+  ),
+  facet_ncol = 2,
+  min_hap_samples = 3
+)$figure
+```
+
+## Single-variant phenotype association
+
+`plot_variant_pheno()` is the single-variant version of `plot_hap_pheno()`. It groups samples by genotype or allele state at one variant.
+
+```{r}
+variant_res <- plot_variant_pheno(
+  variant = vcf,
+  phenotype = pheno,
+  variant_id = "varA03",
+  traits = "protein_content",
+  genotype_mode = "string",
+  min_group_samples = 3
+)
+
+variant_res$figure
+variant_res$pvalue
+variant_res$variant_data
+```
+
+You can also select a variant by genomic position:
+
+```{r}
+plot_variant_pheno(
+  variant = vcf,
+  phenotype = pheno,
+  chrom = "chr1",
+  pos = 12342550,
+  traits = "protein_content",
+  genotype_mode = "code",
+  min_group_samples = 3
+)$figure
+```

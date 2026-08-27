@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-27
-# Version: dev001
+# Version: dev004
 # Function: Shared documentation for advanced plotting and query parameters
 # Input: None
 # Output: R documentation topic
@@ -53,6 +53,11 @@
 #' signal_colors = c(sampleA = "#2166AC", sampleB = "#B2182B")
 #' ```
 #'
+#' `signal_palette_direction` reverses the standard discrete palette order. Discrete
+#' sample/group/frame colors otherwise follow the RColorBrewer class order exactly,
+#' while heatmaps use a continuous gradient. Explicit `signal_colors` are treated
+#' as exact user mappings and are not reversed.
+#'
 #' Group-level coloring is controlled by a named vector or a two-column data
 #' frame:
 #'
@@ -85,7 +90,14 @@
 #' show_panel_border = FALSE
 #' signal_alpha = 0.80
 #' signal_bar_width = 0.85
+#' signal_track_height = 4
+#' gene_track_height = 1
 #' ```
+#'
+#' `signal_track_height` and `gene_track_height` control the relative panel
+#' heights in `plot_signal_transcript()`, `plot_signal_gene()`, and
+#' `plot_signal_region()`. `plot_tracks()` uses its named `heights` vector for
+#' the same purpose.
 #'
 #' `signal_bar_width` is relative to each BedGraph interval. It changes the
 #' visual bar width around the interval center without changing genomic

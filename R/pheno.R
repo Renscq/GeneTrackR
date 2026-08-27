@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-29
-# Version: dev001
+# Version: dev002
 # Function: Read, summarize, and plot phenotype tables
 # Input: Phenotype files
 # Output: Phenotype tables and ggplot figures
@@ -19,8 +19,8 @@
 #' @param progress Logical. Reserved for future compact progress display.
 #' @return A data.table with the first column standardized as `sample_id`.
 #' @examples
-#' pheno_file <- system.file("extdata", "example_pheno.tsv", package = "GeneTrackR")
-#' pheno <- read_pheno(pheno_file)
+#' pheno_file <- system.file("extdata", "gtr_demo_pheno.tsv", package = "GeneTrackR")
+#' pheno <- read_pheno(pheno_file, verbose = FALSE)
 #' head(pheno)
 #' summary_pheno(pheno)
 #' plot_pheno(pheno, traits = c("plant_height", "seed_weight"))

@@ -51,6 +51,11 @@ signal_palette_direction = -1
 signal_colors = c(sampleA = "#2166AC", sampleB = "#B2182B")
 }\if{html}{\out{</div>}}
 
+\code{signal_palette_direction} reverses the standard discrete palette order. Discrete
+sample/group/frame colors otherwise follow the RColorBrewer class order exactly,
+while heatmaps use a continuous gradient. Explicit \code{signal_colors} are treated
+as exact user mappings and are not reversed.
+
 Group-level coloring is controlled by a named vector or a two-column data
 frame:
 
@@ -84,7 +89,14 @@ Signal geometry can be adjusted with \code{signal_alpha} and
 show_panel_border = FALSE
 signal_alpha = 0.80
 signal_bar_width = 0.85
+signal_track_height = 4
+gene_track_height = 1
 }\if{html}{\out{</div>}}
+
+\code{signal_track_height} and \code{gene_track_height} control the relative panel
+heights in \code{plot_signal_transcript()}, \code{plot_signal_gene()}, and
+\code{plot_signal_region()}. \code{plot_tracks()} uses its named \code{heights} vector for
+the same purpose.
 
 \code{signal_bar_width} is relative to each BedGraph interval. It changes the
 visual bar width around the interval center without changing genomic

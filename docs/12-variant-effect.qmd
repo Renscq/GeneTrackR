@@ -1,0 +1,16 @@
+## Variant effect prioritization
+
+`protein_content` was designed around `varA03`, providing a deterministic positive-effect example for `plot_variant_effect()`.
+
+```{r}
+effect_res <- plot_variant_effect(
+  hap_gene,
+  phenotype = pheno,
+  traits = "protein_content",
+  min_group_samples = 3,
+  x_axis = "position"
+)
+
+effect_res$figure
+effect_res$effect
+```

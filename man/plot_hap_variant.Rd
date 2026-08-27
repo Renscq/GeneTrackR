@@ -120,11 +120,11 @@ compressed by mapping variant positions to evenly spaced table columns while
 retaining the relative order of gene model features.
 }
 \examples{
-vcf_file <- system.file("extdata", "example_haplotype.vcf", package = "GeneTrackR")
-anno_file <- system.file("extdata", "example.genePredExt", package = "GeneTrackR")
-vcf <- read_vcf(vcf_file)
+vcf_file <- system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")
+anno_file <- system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR")
+vcf <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
 anno <- read_genepred(anno_file, format = "genePredExt", verbose = FALSE)
-hap <- hap_variant(vcf, annotation = anno, gene_id = "GeneA", genotype_mode = "string")
+hap <- hap_variant(vcf, annotation = anno, gene_id = "GeneA", genotype_mode = "string", min_variant_number = 1)
 plot_hap_variant(hap, annotation = anno, min_hap_samples = 1)
 plot_hap_variant(
   hap,

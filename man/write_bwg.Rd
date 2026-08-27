@@ -11,8 +11,7 @@ write_bwg(
   samples = NULL,
   chrom_sizes = NULL,
   overwrite = FALSE,
-  compress = FALSE,
-  bedGraphToBigWig = Sys.which("bedGraphToBigWig")
+  compress = FALSE
 )
 }
 \arguments{
@@ -31,16 +30,14 @@ a data.frame/data.table with two columns: chromosome and size.}
 
 \item{compress}{Whether to gzip-compress bedGraph or wig output.}
 
-\item{bedGraphToBigWig}{Path to UCSC \code{bedGraphToBigWig}. By default the
-command is searched from \code{PATH}.}
 }
 \value{
 Invisibly returns a data.table containing sample IDs and output files.
 }
 \description{
 Writes a \code{BwgTrack} object to bedGraph, wig, or bigWig files. bedGraph and
-wig output are implemented directly in R. bigWig output requires the external
-UCSC \code{bedGraphToBigWig} command and chromosome sizes.
+wig output are implemented directly in R. bigWig output is written directly
+with the bundled third-party libBigWig library and requires chromosome sizes.
 
 For in-memory \code{BwgTrack} objects, signal records are written from \code{object$data}.
 For lazy objects, direct conversion is not possible because signal records are
@@ -49,8 +46,16 @@ original files are copied to the output directory.
 }
 \examples{
 \dontrun{
-write_bwg(bg, outdir = "tracks", format = "bedgraph")
-write_bwg(bg, outdir = "tracks", format = "wig")
-write_bwg(bg, outdir = "tracks", format = "bigwig", chrom_sizes = "chrom.sizes")
+rnaseq <- read_bwg(
+  system.file(
+    "extdata",
+    c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph"),
+    package = "GeneTrackR"
+  ),
+  sample_names = c("RNA_seq_plus", "RNA_seq_minus"),
+  strand = c("+", "-"),
+  mode = "memory"
+)
+write_bwg(rnaseq, outdir = tempdir(), format = "bedgraph", overwrite = TRUE)
 }
 }

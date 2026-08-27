@@ -1,3 +1,5 @@
 ^GeneTrackR\.Rproj$
 ^\.Rproj\.user$
 ^dev$
+^README\.qmd$
+^docs$

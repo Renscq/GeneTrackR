@@ -26,3 +26,9 @@ A FeatureTrack object.
 \description{
 Read a GTF file as a FeatureTrack
 }
+\examples{
+gtf_file <- system.file("extdata", "gtr_demo.gtf", package = "GeneTrackR")
+gtf <- read_gtf(gtf_file, verbose = FALSE, progress = FALSE)
+gtf
+head(gtf$genes)
+}

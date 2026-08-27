@@ -43,9 +43,9 @@ Extracts variants from a user-defined genomic interval and converts sample
 genotype profiles into haplotypes.
 }
 \examples{
-vcf_file <- system.file("extdata", "example_haplotype.vcf", package = "GeneTrackR")
-vcf <- read_vcf(vcf_file)
-hap <- hap_region_variant(vcf, chrom = "chr1", start = 1000, end = 12000, genotype_mode = "code")
+vcf_file <- system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")
+vcf <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
+hap <- hap_region_variant(vcf, chrom = "chr1", start = 12339700, end = 12352000, genotype_mode = "code", min_variant_number = 1)
 hap
 hap$haplotypes
 }

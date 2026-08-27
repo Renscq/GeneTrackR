@@ -35,8 +35,8 @@ Reads BED3-BED12 style files and converts BED coordinates from 0-based
 half-open to 1-based closed intervals by default.
 }
 \examples{
-\dontrun{
-peaks <- read_bed("peaks.bed")
-plot_feature_track(peaks, chrom = "chr1", start = 1, end = 10000)
-}
+bed_file <- system.file("extdata", "gtr_demo_features.bed", package = "GeneTrackR")
+features <- read_bed(bed_file, verbose = FALSE, progress = FALSE)
+features
+plot_feature_track(features, chrom = "chr1", start = 12338201, end = 12374500)
 }

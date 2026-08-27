@@ -1,29 +1,29 @@
-test_that("example annotation files are readable and internally consistent", {
-  gp <- read_genepred(gtr_extdata("example.genePredExt"), format = "genePredExt", verbose = FALSE)
-  gff <- read_gff(gtr_extdata("example_annotation.gff3"), verbose = FALSE)
-  gtf <- read_gtf(gtr_extdata("example_annotation.gtf"), verbose = FALSE)
-  bed <- read_bed(gtr_extdata("example_features.bed"), verbose = FALSE)
+test_that("deterministic demo annotation files are readable and internally consistent", {
+  gp <- read_genepred(gtr_extdata("gtr_demo.genePredExt"), format = "genePredExt", verbose = FALSE)
+  gff <- read_gff(gtr_extdata("gtr_demo.gff3"), verbose = FALSE)
+  gtf <- read_gtf(gtr_extdata("gtr_demo.gtf"), verbose = FALSE)
+  bed <- read_bed(gtr_extdata("gtr_demo_features.bed"), verbose = FALSE)
 
   expect_s3_class(gp, "GenePred")
   expect_s3_class(gff, "Feature")
   expect_s3_class(gtf, "Feature")
   expect_s3_class(bed, "Feature")
 
-  expect_gte(nrow(gp$genes), 90L)
-  expect_gte(nrow(gp$transcripts), 90L)
-  expect_gte(nrow(gp$exons), 90L)
+  expect_equal(nrow(gp$genes), 20L)
+  expect_equal(nrow(gp$transcripts), 24L)
+  expect_gt(nrow(gp$exons), 0L)
   expect_true("GeneA" %in% gp$genes$gene_id)
   expect_true("TxA1" %in% gp$transcripts$transcript_id)
 
-  expect_gte(nrow(gff$genes), 90L)
-  expect_gte(nrow(gtf$genes), 90L)
-  expect_gte(nrow(bed$data), 90L)
+  expect_equal(nrow(gff$genes), 20L)
+  expect_equal(nrow(gtf$genes), 20L)
+  expect_equal(nrow(bed$data), 15L)
 })
 
 test_that("retrieve_feature applies chromosome and range filters strictly", {
-  gp <- read_genepred(gtr_extdata("example.genePredExt"), format = "genePredExt", verbose = FALSE)
+  gp <- read_genepred(gtr_extdata("gtr_demo.genePredExt"), format = "genePredExt", verbose = FALSE)
 
-  sub <- retrieve_feature(gp, chrom = "chr1", start = 1, end = 1200, as = "Feature")
+  sub <- retrieve_feature(gp, chrom = "chr1", start = 12340001, end = 12352000, as = "Feature")
   expect_s3_class(sub, "GenePred")
   expect_true(nrow(sub$genes) > 0L)
   expect_true(all(sub$genes$chrom == "chr1"))

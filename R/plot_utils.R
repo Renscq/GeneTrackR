@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-27
-# Version: dev001
+# Version: dev002
 # Function: Internal plotting utilities for gene models and signal tracks
 # Input: Annotation and signal tables
 # Output: ggplot objects and transformed plotting tables
@@ -65,6 +65,18 @@ normalize_signal_alpha <- function(signal_alpha = 0.85) {
     stop("`signal_alpha` must be a numeric value between 0 and 1.", call. = FALSE)
   }
   signal_alpha
+}
+
+normalize_track_height <- function(value, name, default) {
+  value <- suppressWarnings(as.numeric(value)[1L])
+  if (!is.finite(value) || value <= 0) {
+    warning(
+      sprintf("`%s` must be a positive numeric value. Falling back to %s.", name, default),
+      call. = FALSE
+    )
+    return(as.numeric(default))
+  }
+  value
 }
 
 normalize_signal_bar_width <- function(signal_bar_width = 1) {

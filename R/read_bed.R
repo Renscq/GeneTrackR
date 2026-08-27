@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-28
-# Version: dev001
+# Version: dev002
 # Function: Read BED track files into unified Feature objects
 # Input: BED interval files
 # Output: Feature objects
@@ -20,10 +20,10 @@
 #' @param progress Whether to show a stage progress bar.
 #' @return A FeatureTrack object.
 #' @examples
-#' \dontrun{
-#' peaks <- read_bed("peaks.bed")
-#' plot_feature_track(peaks, chrom = "chr1", start = 1, end = 10000)
-#' }
+#' bed_file <- system.file("extdata", "gtr_demo_features.bed", package = "GeneTrackR")
+#' features <- read_bed(bed_file, verbose = FALSE, progress = FALSE)
+#' features
+#' plot_feature_track(features, chrom = "chr1", start = 12338201, end = 12374500)
 #' @export
 read_bed <- function(file,
                      coordinate = c("bed", "granges"),

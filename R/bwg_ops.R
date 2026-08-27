@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-26
-# Version: dev001
+# Version: dev002
 # Function: Query, normalize, summarize, slice, merge, and write signal tracks
 # Input: BwgTrack objects and genomic regions
 # Output: Signal tables, subset objects, and exported signal files
@@ -464,7 +464,17 @@ query_bedgraph_full_file <- function(file, sample_id, chrom, start, end, strand 
 #' @return A data.table reporting index presence, backend availability, and whether indexed querying is enabled.
 #' @examples
 #' \dontrun{
-#' diagnose_tabix(bg)
+#' rnaseq <- read_bwg(
+#'   system.file(
+#'     "extdata",
+#'     c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph"),
+#'     package = "GeneTrackR"
+#'   ),
+#'   sample_names = c("RNA_seq_plus", "RNA_seq_minus"),
+#'   strand = c("+", "-"),
+#'   mode = "lazy"
+#' )
+#' diagnose_tabix(rnaseq)
 #' }
 #' @export
 diagnose_tabix <- function(object) {
@@ -560,8 +570,21 @@ benchmark_tabix_query <- function(object, chrom, start, end, samples = NULL) {
 #' @return A normalized BwgTrack object.
 #' @examples
 #' \dontrun{
-#' norm_bwg(bg, method = "RPM", library_size = c(sampleA = 2e6, sampleB = 3e6))
-#' norm_bwg(bg, method = "scale", scale_factor = c(sampleA = 0.5, sampleB = 2))
+#' rnaseq <- read_bwg(
+#'   system.file(
+#'     "extdata",
+#'     c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph"),
+#'     package = "GeneTrackR"
+#'   ),
+#'   sample_names = c("RNA_seq_plus", "RNA_seq_minus"),
+#'   strand = c("+", "-"),
+#'   mode = "memory"
+#' )
+#' norm_bwg(
+#'   rnaseq,
+#'   method = "scale",
+#'   scale_factor = c(RNA_seq_plus = 0.5, RNA_seq_minus = 0.5)
+#' )
 #' }
 #' @export
 norm_bwg <- function(object, method = c("none", "RPM", "CPM", "scale", "custom"), library_size = NULL, scale_factor = NULL, custom_factor = NULL) {
@@ -659,8 +682,24 @@ summary_bwg <- function(object, chrom = NULL, start = NULL, end = NULL, samples 
 #' @return A BwgTrack, data.table, or GRanges object.
 #' @examples
 #' \dontrun{
-#' slice_bwg(bg, chrom = "chr1", start = 1, end = 1000, as = "data.frame")
-#' slice_bwg(bg, chrom = "chr1", start = 1, end = 1000, as = "BwgTrack")
+#' rnaseq <- read_bwg(
+#'   system.file(
+#'     "extdata",
+#'     c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph"),
+#'     package = "GeneTrackR"
+#'   ),
+#'   sample_names = c("RNA_seq_plus", "RNA_seq_minus"),
+#'   strand = c("+", "-"),
+#'   mode = "memory"
+#' )
+#' slice_bwg(
+#'   rnaseq,
+#'   chrom = "chr1",
+#'   start = 12339001,
+#'   end = 12352000,
+#'   strand = "+",
+#'   as = "BwgTrack"
+#' )
 #' }
 #' @export
 slice_bwg <- function(object, chrom, start, end, samples = NULL, strand = "ignore", as = c("BwgTrack", "data.frame", "GRanges")) {
@@ -695,8 +734,27 @@ slice_bwg <- function(object, chrom, start, end, samples = NULL, strand = "ignor
 #' @return A merged BwgTrack object.
 #' @examples
 #' \dontrun{
-#' merge_bwg(bg1, bg2, sample_conflict = "rename")
-#' merge_bwg(rep1, rep2, sample_conflict = "mean")
+#' rnaseq <- read_bwg(
+#'   system.file(
+#'     "extdata",
+#'     c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph"),
+#'     package = "GeneTrackR"
+#'   ),
+#'   sample_names = c("RNA_seq_plus", "RNA_seq_minus"),
+#'   strand = c("+", "-"),
+#'   mode = "memory"
+#' )
+#' riboseq <- read_bwg(
+#'   system.file(
+#'     "extdata",
+#'     c("gtr_demo_riboseq_plus.bedgraph", "gtr_demo_riboseq_minus.bedgraph"),
+#'     package = "GeneTrackR"
+#'   ),
+#'   sample_names = c("Ribo_seq_plus", "Ribo_seq_minus"),
+#'   strand = c("+", "-"),
+#'   mode = "memory"
+#' )
+#' signal_all <- merge_bwg(rnaseq, riboseq)
 #' }
 #' @export
 merge_bwg <- function(..., sample_conflict = c("error", "rename", "sum", "mean", "keep_first"), require_same_norm = TRUE) {
@@ -766,7 +824,23 @@ merge_bwg <- function(..., sample_conflict = c("error", "rename", "sum", "mean",
 #' @return A binned signal table.
 #' @examples
 #' \dontrun{
-#' dt <- retrieve_bwg(bg, chrom = "chr1", start = 1, end = 10000)
+#' rnaseq <- read_bwg(
+#'   system.file(
+#'     "extdata",
+#'     c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph"),
+#'     package = "GeneTrackR"
+#'   ),
+#'   sample_names = c("RNA_seq_plus", "RNA_seq_minus"),
+#'   strand = c("+", "-"),
+#'   mode = "memory"
+#' )
+#' dt <- retrieve_bwg(
+#'   rnaseq,
+#'   chrom = "chr1",
+#'   start = 12339001,
+#'   end = 12352000,
+#'   strand = "+"
+#' )
 #' bin_bwg(dt, bin_size = 50)
 #' }
 #' @export

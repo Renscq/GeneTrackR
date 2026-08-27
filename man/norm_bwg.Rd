@@ -31,7 +31,20 @@ Normalize signal tracks
 }
 \examples{
 \dontrun{
-norm_bwg(bg, method = "RPM", library_size = c(sampleA = 2e6, sampleB = 3e6))
-norm_bwg(bg, method = "scale", scale_factor = c(sampleA = 0.5, sampleB = 2))
+rnaseq <- read_bwg(
+  system.file(
+    "extdata",
+    c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph"),
+    package = "GeneTrackR"
+  ),
+  sample_names = c("RNA_seq_plus", "RNA_seq_minus"),
+  strand = c("+", "-"),
+  mode = "memory"
+)
+norm_bwg(
+  rnaseq,
+  method = "scale",
+  scale_factor = c(RNA_seq_plus = 0.5, RNA_seq_minus = 0.5)
+)
 }
 }

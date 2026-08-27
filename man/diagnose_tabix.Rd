@@ -17,6 +17,16 @@ Diagnose tabix availability for bedGraph tracks
 }
 \examples{
 \dontrun{
-diagnose_tabix(bg)
+rnaseq <- read_bwg(
+  system.file(
+    "extdata",
+    c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph"),
+    package = "GeneTrackR"
+  ),
+  sample_names = c("RNA_seq_plus", "RNA_seq_minus"),
+  strand = c("+", "-"),
+  mode = "lazy"
+)
+diagnose_tabix(rnaseq)
 }
 }

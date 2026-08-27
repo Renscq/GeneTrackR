@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-31
-# Version: dev001
+# Version: dev002
 # Function: Retrieve variants from VariantTrack objects or indexed VCF files
 # Input: VariantTrack object or VCF path and filters
 # Output: data.table or VariantTrack object
@@ -34,12 +34,12 @@
 #' @param progress Logical. Whether to print a compact stage-level progress indicator.
 #' @return A data.table or VariantTrack object.
 #' @examples
-#' vcf_file <- system.file("extdata", "example_haplotype.vcf", package = "GeneTrackR")
-#' vcf <- read_vcf(vcf_file)
-#' retrieve_vcf(vcf, chrom = "chr1", start = 100, end = 600)
+#' vcf_file <- system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")
+#' vcf <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
+#' retrieve_vcf(vcf, chrom = "chr1", start = 12339700, end = 12343200)
 #' retrieve_vcf(vcf, variant_type = "SNP")
-#' retrieve_vcf(vcf, pattern = "rsA", fixed = TRUE)
-#' vt <- retrieve_vcf(vcf, chrom = "chr1", start = 100, end = 600, as = "VariantTrack")
+#' retrieve_vcf(vcf, pattern = "varA", fixed = TRUE)
+#' vt <- retrieve_vcf(vcf, chrom = "chr1", start = 12339700, end = 12343200, as = "VariantTrack")
 #' vt
 #' @export
 retrieve_vcf <- function(object,

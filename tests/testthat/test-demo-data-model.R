@@ -112,7 +112,34 @@ test_that("demo RNA-seq signal is exon-enriched and strand-specific", {
 })
 
 
-test_that("demo Ribo-seq signal is single-base CDS density with 3-nt periodicity", {
+test_that("all protein-coding demo transcripts use 3n CDS lengths", {
+  transcript_file <- system.file(
+    "scripts", "demo_model", "transcripts.tsv",
+    package = "GeneTrackR",
+    mustWork = TRUE
+  )
+  transcripts <- data.table::fread(transcript_file)
+  coding <- transcripts[gene_type == "protein_coding"]
+
+  cds_lengths <- vapply(seq_len(nrow(coding)), function(i) {
+    tx <- coding[i]
+    starts <- as.integer(strsplit(tx$exon_starts, ",", fixed = TRUE)[[1L]])
+    ends <- as.integer(strsplit(tx$exon_ends, ",", fixed = TRUE)[[1L]])
+    cds_start <- as.integer(tx$cds_start)
+    cds_end <- as.integer(tx$cds_end)
+    sum(vapply(seq_along(starts), function(j) {
+      start <- max(starts[j], cds_start)
+      end <- min(ends[j], cds_end)
+      if (start > end) 0L else end - start + 1L
+    }, integer(1L)))
+  }, numeric(1L))
+
+  expect_true(all(cds_lengths > 0L))
+  expect_true(all(cds_lengths %% 3L == 0L))
+})
+
+
+test_that("demo Ribo-seq signal is moderately dense with an 80:10:10 frame-count ratio", {
   riboseq_plus <- data.table::fread(
     gtr_extdata("gtr_demo_riboseq_plus.bedgraph"),
     col.names = c("chrom", "start", "end", "value")
@@ -126,14 +153,16 @@ test_that("demo Ribo-seq signal is single-base CDS density with 3-nt periodicity
   expect_true(all(riboseq_minus$end - riboseq_minus$start == 1L))
   expect_true(all(riboseq_plus$value > 0))
   expect_true(all(riboseq_minus$value > 0))
+  expect_true(all(riboseq_plus$value == round(riboseq_plus$value)))
+  expect_true(all(riboseq_minus$value == round(riboseq_minus$value)))
 
-  # GeneI is a designed plus-strand lncRNA and therefore has no Ribo-seq CDS signal.
+  # GeneI is a designed plus-strand lncRNA and therefore has no Ribo-seq signal.
   expect_equal(
     nrow(riboseq_plus[chrom == "chr1" & start < 15006000L & end > 15000000L]),
     0L
   )
 
-  # Plus-strand CDS signal is restricted to the plus file.
+  # Plus- and minus-strand CDS signals are kept in their respective files.
   expect_gt(
     nrow(riboseq_plus[chrom == "chr1" & start >= 12340500L & end <= 12351500L]),
     0L
@@ -142,8 +171,6 @@ test_that("demo Ribo-seq signal is single-base CDS density with 3-nt periodicity
     nrow(riboseq_minus[chrom == "chr1" & start >= 12340500L & end <= 12351500L]),
     0L
   )
-
-  # Minus-strand CDS signal is restricted to the minus file.
   expect_gt(
     nrow(riboseq_minus[chrom == "chr1" & start >= 12356500L & end <= 12366000L]),
     0L
@@ -153,17 +180,78 @@ test_that("demo Ribo-seq signal is single-base CDS density with 3-nt periodicity
     0L
   )
 
-  genea <- riboseq_plus[chrom == "chr1" & start >= 12340500L & end <= 12351500L]
-  genea[, pos := start + 1L]
-  start_peak <- genea[pos == 12340501L, value]
-  stop_peak <- genea[pos >= 12351498L & pos <= 12351500L, max(value)]
-  periodic <- genea[pos >= 12340531L & pos <= 12340990L]
-  periodic[, phase := (pos - 12340501L) %% 3L]
-  phase_means <- periodic[, mean(value), by = phase][order(phase)]$V1
+  transcript_file <- system.file(
+    "scripts", "demo_model", "transcripts.tsv",
+    package = "GeneTrackR",
+    mustWork = TRUE
+  )
+  transcripts <- data.table::fread(transcript_file)
+  genea_tx <- transcripts[transcript_id == "TxA1"]
+  starts <- as.integer(strsplit(genea_tx$exon_starts, ",", fixed = TRUE)[[1L]])
+  ends <- as.integer(strsplit(genea_tx$exon_ends, ",", fixed = TRUE)[[1L]])
+  cds_start <- as.integer(genea_tx$cds_start)
+  cds_end <- as.integer(genea_tx$cds_end)
+  segments <- lapply(seq_along(starts), function(i) {
+    start <- max(starts[i], cds_start)
+    end <- min(ends[i], cds_end)
+    if (start > end) return(NULL)
+    seq.int(start, end)
+  })
+  positions <- unlist(Filter(Negate(is.null), segments), use.names = FALSE)
 
-  expect_equal(length(start_peak), 1L)
-  expect_gt(start_peak, max(periodic$value))
-  expect_gt(stop_peak, max(periodic$value))
-  expect_true(phase_means[1L] > phase_means[2L])
-  expect_true(phase_means[2L] > phase_means[3L])
+  expect_gt(length(positions), 0L)
+  expect_equal(length(positions) %% 3L, 0L)
+
+  genea <- riboseq_plus[chrom == "chr1"]
+  genea[, pos := start + 1L]
+  counts <- numeric(length(positions))
+  idx <- match(genea$pos, positions)
+  keep <- !is.na(idx)
+  counts[idx[keep]] <- genea$value[keep]
+
+  phase <- (seq_along(positions) - 1L) %% 3L
+  phase_totals <- vapply(0:2, function(x) sum(counts[phase == x]), numeric(1L))
+  occupancy <- mean(counts > 0)
+  phase_fractions <- phase_totals / sum(phase_totals)
+  frame0_idx <- which(phase == 0L)
+  internal_idx <- frame0_idx[frame0_idx > 9L & frame0_idx < length(counts) - 8L]
+  internal_mean <- mean(counts[internal_idx][counts[internal_idx] > 0])
+  start_ratio <- counts[frame0_idx[1L]] / internal_mean
+  stop_ratio <- counts[frame0_idx[length(frame0_idx)]] / internal_mean
+
+  frame_values <- lapply(0:2, function(x) counts[phase == x & counts > 0])
+  frame_unique_n <- vapply(frame_values, function(x) length(unique(x)), integer(1L))
+  frame_cv <- vapply(frame_values, function(x) stats::sd(x) / mean(x), numeric(1L))
+
+  expect_gt(occupancy, 0.45)
+  expect_lt(occupancy, 0.65)
+  expect_true(all(frame_unique_n >= c(8L, 4L, 4L)))
+  expect_true(all(frame_cv > 0.20))
+  expect_equal(phase_fractions[1L], 0.80, tolerance = 0.02)
+  expect_equal(phase_fractions[2L], 0.10, tolerance = 0.02)
+  expect_equal(phase_fractions[3L], 0.10, tolerance = 0.02)
+  expect_equal(start_ratio, 2, tolerance = 0.35)
+  expect_equal(stop_ratio, 2, tolerance = 0.35)
+})
+
+
+test_that("legacy example files have been removed from the unified demo dataset", {
+  legacy_files <- c(
+    "example.genePredExt",
+    "example_annotation.gff3",
+    "example_annotation.gtf",
+    "example_features.bed",
+    "example_haplotype.vcf",
+    "example_pheno.tsv",
+    "example_signal_A.bedgraph",
+    "example_signal_B.bedgraph",
+    "example_variants.vcf",
+    "example_variants_NC12.vcf"
+  )
+  legacy_paths <- vapply(
+    legacy_files,
+    function(x) system.file("extdata", x, package = "GeneTrackR"),
+    character(1L)
+  )
+  expect_true(all(legacy_paths == ""))
 })

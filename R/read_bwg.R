@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-26
-# Version: dev001
+# Version: dev002
 # Function: Read bedGraph, wig, and bigWig signal track files
 # Input: Signal track file paths
 # Output: BwgTrack object
@@ -32,18 +32,30 @@
 #' @return A BwgTrack object.
 #' @examples
 #' \dontrun{
-#' bg <- read_bwg(
-#'   files = c("KO1.mRNA2.bedgraph.gz", "WT1.mRNA2.bedgraph.gz"),
-#'   format = "auto",
-#'   mode = "lazy"
+#' rnaseq_files <- system.file(
+#'   "extdata",
+#'   c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph"),
+#'   package = "GeneTrackR"
+#' )
+#' riboseq_files <- system.file(
+#'   "extdata",
+#'   c("gtr_demo_riboseq_plus.bedgraph", "gtr_demo_riboseq_minus.bedgraph"),
+#'   package = "GeneTrackR"
 #' )
 #'
-#' plus_minus <- read_bwg(
-#'   files = c("sample.plus.bedgraph.gz", "sample.minus.bedgraph.gz"),
+#' rnaseq <- read_bwg(
+#'   rnaseq_files,
 #'   format = "bedgraph",
-#'   sample_names = c("sample_plus", "sample_minus"),
+#'   sample_names = c("RNA_seq_plus", "RNA_seq_minus"),
 #'   strand = c("+", "-"),
-#'   use_tabix = "auto"
+#'   mode = "memory"
+#' )
+#' riboseq <- read_bwg(
+#'   riboseq_files,
+#'   format = "bedgraph",
+#'   sample_names = c("Ribo_seq_plus", "Ribo_seq_minus"),
+#'   strand = c("+", "-"),
+#'   mode = "memory"
 #' )
 #' }
 #' @export

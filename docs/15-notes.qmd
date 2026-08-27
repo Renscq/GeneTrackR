@@ -1,0 +1,7 @@
+## Notes
+
+- For large indexed VCF files, use `read_vcf(file, mode = "lazy")` and query regions with `retrieve_vcf()` or directly through `hap_gene_variant()` / `hap_region_variant()`.
+- For bigWig files, region-based access avoids loading the whole signal file into memory.
+- For long signal regions, use `bin_size`, `heatmap_bin_size`, or `heatmap_max_bins` to keep plots readable.
+- `hap_variant()` remains available for compatibility, but new code should use `hap_gene_variant()` or `hap_region_variant()`.
+- `plot_hap_pheno()` and `plot_variant_pheno()` return structured lists. Use `$figure` for plotting and `$pvalue` for statistical results.

@@ -19,7 +19,23 @@ Bin signal tracks into fixed-width windows
 }
 \examples{
 \dontrun{
-dt <- retrieve_bwg(bg, chrom = "chr1", start = 1, end = 10000)
+rnaseq <- read_bwg(
+  system.file(
+    "extdata",
+    c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph"),
+    package = "GeneTrackR"
+  ),
+  sample_names = c("RNA_seq_plus", "RNA_seq_minus"),
+  strand = c("+", "-"),
+  mode = "memory"
+)
+dt <- retrieve_bwg(
+  rnaseq,
+  chrom = "chr1",
+  start = 12339001,
+  end = 12352000,
+  strand = "+"
+)
 bin_bwg(dt, bin_size = 50)
 }
 }

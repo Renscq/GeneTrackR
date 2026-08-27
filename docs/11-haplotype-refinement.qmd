@@ -1,0 +1,36 @@
+## Haplotype refinement
+
+`seed_weight` has a designed GeneA haplotype effect and can be used to demonstrate phenotype-guided haplotype refinement.
+
+```{r}
+refined <- refine_haplotype(
+  hap_gene,
+  phenotype = pheno,
+  traits = "seed_weight",
+  min_hap_samples = 3
+)
+
+refined$refined_haplotypes
+```
+
+`refined` is a `HapRefined`; `refined$refined_hap` is the corresponding refined `HapVariant` used internally by the refined plotting wrappers.
+
+The refined object can be plotted with the same phenotype and variant interfaces:
+
+```{r}
+refined_pheno <- plot_refined_hap_pheno(
+  refined,
+  phenotype = pheno,
+  traits = "seed_weight",
+  min_hap_samples = 3
+)
+refined_pheno$figure
+refined_pheno$pvalue
+
+refined_variant_figure <- plot_refined_hap_variant(
+  refined,
+  annotation = gp,
+  min_hap_samples = 3
+)
+refined_variant_figure
+```

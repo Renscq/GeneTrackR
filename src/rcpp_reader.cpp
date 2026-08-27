@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <cmath>
 #include <limits>
 #include <string>
 #include <vector>
@@ -32,6 +33,16 @@ int scalar_int(SEXP x, const char *name) {
     stop("`%s` must not be NA.", name);
   }
   return value;
+}
+
+std::string character_at(SEXP x,
+                         R_xlen_t i,
+                         const char *missing_message) {
+  SEXP value = STRING_ELT(x, i);
+  if (value == NA_STRING) {
+    stop("%s", missing_message);
+  }
+  return Rcpp::as<std::string>(value);
 }
 
 bool is_remote_path(const std::string &file) {
@@ -238,6 +249,169 @@ DataFrame query_impl(const std::string &file,
   );
 }
 
+
+
+void write_impl(const std::string &file,
+                SEXP chrom_names,
+                const NumericVector &chrom_lengths,
+                SEXP interval_chrom,
+                const NumericVector &interval_start,
+                const NumericVector &interval_end,
+                const NumericVector &interval_value) {
+  if (!Rf_isString(chrom_names) || !Rf_isString(interval_chrom)) {
+    stop("BigWig chromosome vectors must be character vectors.");
+  }
+  const R_xlen_t n_chrom = XLENGTH(chrom_names);
+  const R_xlen_t n_interval = XLENGTH(interval_chrom);
+
+  if (n_chrom <= 0 || chrom_lengths.size() != n_chrom) {
+    stop("Chromosome names and lengths must be non-empty vectors of equal length.");
+  }
+  if (interval_start.size() != n_interval ||
+      interval_end.size() != n_interval ||
+      interval_value.size() != n_interval) {
+    stop("BigWig interval vectors must have equal lengths.");
+  }
+  if (n_interval <= 0) {
+    stop("Cannot write an empty bigWig track.");
+  }
+  if (n_chrom > static_cast<R_xlen_t>(std::numeric_limits<int64_t>::max()) ||
+      n_interval > static_cast<R_xlen_t>(std::numeric_limits<uint32_t>::max())) {
+    stop("BigWig input exceeds libBigWig vector limits.");
+  }
+
+  std::vector<std::string> chrom_storage;
+  std::vector<const char *> chrom_ptrs;
+  std::vector<uint32_t> chrom_len;
+  chrom_storage.reserve(static_cast<size_t>(n_chrom));
+  chrom_ptrs.reserve(static_cast<size_t>(n_chrom));
+  chrom_len.reserve(static_cast<size_t>(n_chrom));
+
+  for (R_xlen_t i = 0; i < n_chrom; ++i) {
+    std::string name = character_at(
+      chrom_names,
+      i,
+      "Chromosome names must not be NA."
+    );
+    double len = chrom_lengths[i];
+    if (name.empty() || !std::isfinite(len) || len < 1.0 ||
+        len > static_cast<double>(std::numeric_limits<uint32_t>::max()) ||
+        std::floor(len) != len) {
+      stop("Invalid chromosome name or length supplied to libBigWig.");
+    }
+    chrom_storage.push_back(name);
+    chrom_len.push_back(static_cast<uint32_t>(len));
+  }
+  for (const std::string &name : chrom_storage) {
+    chrom_ptrs.push_back(name.c_str());
+  }
+
+  std::vector<std::string> interval_chrom_storage;
+  std::vector<const char *> interval_chrom_ptrs;
+  std::vector<uint32_t> starts;
+  std::vector<uint32_t> ends;
+  std::vector<float> values;
+  interval_chrom_storage.reserve(static_cast<size_t>(n_interval));
+  interval_chrom_ptrs.reserve(static_cast<size_t>(n_interval));
+  starts.reserve(static_cast<size_t>(n_interval));
+  ends.reserve(static_cast<size_t>(n_interval));
+  values.reserve(static_cast<size_t>(n_interval));
+
+  for (R_xlen_t i = 0; i < n_interval; ++i) {
+    std::string chrom = character_at(
+      interval_chrom,
+      i,
+      "BigWig interval chromosome names must not be NA."
+    );
+    double start = interval_start[i];
+    double end = interval_end[i];
+    double value = interval_value[i];
+
+    if (chrom.empty() || !std::isfinite(start) || !std::isfinite(end) ||
+        start < 0.0 || end <= start ||
+        start > static_cast<double>(std::numeric_limits<uint32_t>::max()) ||
+        end > static_cast<double>(std::numeric_limits<uint32_t>::max()) ||
+        std::floor(start) != start || std::floor(end) != end) {
+      stop("Invalid 0-based half-open interval supplied to libBigWig.");
+    }
+    if (!std::isfinite(value) ||
+        value > static_cast<double>(std::numeric_limits<float>::max()) ||
+        value < -static_cast<double>(std::numeric_limits<float>::max())) {
+      stop("BigWig signal values must be finite 32-bit floating point values.");
+    }
+
+    interval_chrom_storage.push_back(chrom);
+    starts.push_back(static_cast<uint32_t>(start));
+    ends.push_back(static_cast<uint32_t>(end));
+    values.push_back(static_cast<float>(value));
+  }
+  for (const std::string &chrom : interval_chrom_storage) {
+    interval_chrom_ptrs.push_back(chrom.c_str());
+  }
+
+  if (bwInit(kDefaultBufferSize) != 0) {
+    stop("Failed to initialize bundled libBigWig for writing.");
+  }
+
+  bigWigFile_t *fp = nullptr;
+  bool success = false;
+  std::string path = sanitize_local_path(file);
+
+  try {
+    fp = bwOpen(path.c_str(), NULL, "w");
+    if (fp == nullptr) {
+      stop("Failed to create bigWig file: %s", path.c_str());
+    }
+
+    int status = bwCreateHdr(fp, 10);
+    if (status != 0) {
+      stop("libBigWig failed to create the bigWig header (status %d).", status);
+    }
+
+    fp->cl = bwCreateChromList(
+      chrom_ptrs.data(),
+      chrom_len.data(),
+      static_cast<int64_t>(n_chrom)
+    );
+    if (fp->cl == nullptr) {
+      stop("libBigWig failed to create the chromosome list.");
+    }
+
+    status = bwWriteHdr(fp);
+    if (status != 0) {
+      stop("libBigWig failed to write the bigWig header (status %d).", status);
+    }
+
+    status = bwAddIntervals(
+      fp,
+      interval_chrom_ptrs.data(),
+      starts.data(),
+      ends.data(),
+      values.data(),
+      static_cast<uint32_t>(n_interval)
+    );
+    if (status != 0) {
+      stop("libBigWig failed to write signal intervals (status %d).", status);
+    }
+
+    bwClose(fp);
+    fp = nullptr;
+    success = true;
+  } catch (...) {
+    if (fp != nullptr) {
+      bwClose(fp);
+      fp = nullptr;
+    }
+    bwCleanup();
+    throw;
+  }
+
+  bwCleanup();
+  if (!success) {
+    stop("libBigWig failed to finalize the output file.");
+  }
+}
+
 }  // namespace
 
 extern "C" SEXP _GeneTrackR_bw_seqinfo_cpp(SEXP fileSEXP) {
@@ -257,9 +431,33 @@ extern "C" SEXP _GeneTrackR_bw_query_cpp(SEXP fileSEXP, SEXP chromSEXP, SEXP sta
   END_RCPP
 }
 
+
+extern "C" SEXP _GeneTrackR_bw_write_cpp(SEXP fileSEXP,
+                                           SEXP chromNamesSEXP,
+                                           SEXP chromLengthsSEXP,
+                                           SEXP intervalChromSEXP,
+                                           SEXP intervalStartSEXP,
+                                           SEXP intervalEndSEXP,
+                                           SEXP intervalValueSEXP) {
+  BEGIN_RCPP
+  std::string file = scalar_string(fileSEXP, "file");
+  write_impl(
+    file,
+    chromNamesSEXP,
+    NumericVector(chromLengthsSEXP),
+    intervalChromSEXP,
+    NumericVector(intervalStartSEXP),
+    NumericVector(intervalEndSEXP),
+    NumericVector(intervalValueSEXP)
+  );
+  return R_NilValue;
+  END_RCPP
+}
+
 static const R_CallMethodDef CallEntries[] = {
   {"_GeneTrackR_bw_seqinfo_cpp", (DL_FUNC) &_GeneTrackR_bw_seqinfo_cpp, 1},
   {"_GeneTrackR_bw_query_cpp", (DL_FUNC) &_GeneTrackR_bw_query_cpp, 4},
+  {"_GeneTrackR_bw_write_cpp", (DL_FUNC) &_GeneTrackR_bw_write_cpp, 7},
   {NULL, NULL, 0}
 };
 

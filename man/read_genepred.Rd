@@ -52,19 +52,9 @@ For large files, \code{verbose = TRUE} prints major processing stages, while
 \code{progress = TRUE} additionally shows a stage-level text progress bar.
 }
 \examples{
-\dontrun{
-gp <- read_genepred("annotation.genePredExt", format = "genePredExt")
-gp_quiet <- read_genepred(
-  "annotation.genePredExt",
-  format = "genePredExt",
-  verbose = FALSE
-)
-gp_custom <- read_genepred(
-  "annotation.genePredExt",
-  format = "genePredExt",
-  gene_col = "name2",
-  transcript_col = "name",
-  remove_invalid = TRUE
-)
-}
+gp_file <- system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR")
+gp <- read_genepred(gp_file, format = "genePredExt", verbose = FALSE)
+gp
+head(gp$genes)
+head(gp$transcripts)
 }

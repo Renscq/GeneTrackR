@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-27
-# Version: dev001
+# Version: dev005
 # Function: Combined genome-browser-like track plotting
 # Input: GenePred and BwgTrack objects
 # Output: Combined patchwork track figure
@@ -27,9 +27,9 @@
 #' @param signal_color_by Color signal tracks by `sample` or `group`.
 #' @param signal_summary Replicate summary mode. Use `none` to plot individual samples, or `mean`, `median`, or `sum` to summarize samples within each group.
 #' @param signal_type Signal plot type.
-#' @param signal_palette Signal color palette for signal tracks. Any palette name from `RColorBrewer::brewer.pal.info` can be used.
-#' @param signal_palette_direction Direction for the signal palette. Use `1` for the default order and `-1` to reverse the palette.
-#' @param signal_colors Optional named or unnamed vector of colors for signal samples.
+#' @param signal_palette Signal color palette for signal tracks. Any palette name from `RColorBrewer::brewer.pal.info` can be used. Discrete signal sample/group colors follow the standard RColorBrewer class order; heatmaps use the corresponding continuous gradient.
+#' @param signal_palette_direction Direction for generated signal colors. Use `1` for the standard palette order and `-1` for the reversed palette order. Discrete sample/group colors preserve level-to-color order; heatmap gradients reverse continuously.
+#' @param signal_colors Optional named or unnamed vector of explicit colors for signal samples. Explicit colors override `signal_palette` and are not modified by `signal_palette_direction`.
 #' @param gene_palette RColorBrewer palette name used for gene model feature fills.
 #' @param gene_colors Optional custom fill colors for gene model features. Use a named vector such as `c(UTR = "#b2df8a", CDS = "#33a02c", exon = "#fb9a99")`.
 #' @param gene_border_color Optional rectangle border color for gene model features. Use `NA` to hide borders.
@@ -59,21 +59,42 @@
 #' @examples
 #' \dontrun{
 #' gp <- read_genepred(
-#'   system.file("extdata", "example.genePredExt", package = "GeneTrackR"),
-#'   format = "genePredExt"
+#'   system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR"),
+#'   format = "genePredExt",
+#'   verbose = FALSE
 #' )
-#' bg <- read_bwg(
-#'   system.file("extdata", c("example_signal_A.bedgraph", "example_signal_B.bedgraph"), package = "GeneTrackR"),
-#'   format = "bedgraph"
+#' signal_all <- read_bwg(
+#'   system.file(
+#'     "extdata",
+#'     c(
+#'       "gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph",
+#'       "gtr_demo_riboseq_plus.bedgraph", "gtr_demo_riboseq_minus.bedgraph"
+#'     ),
+#'     package = "GeneTrackR"
+#'   ),
+#'   format = "bedgraph",
+#'   sample_names = c("RNA_seq_plus", "RNA_seq_minus", "Ribo_seq_plus", "Ribo_seq_minus"),
+#'   strand = c("+", "-", "+", "-"),
+#'   mode = "memory"
+#' )
+#' peaks <- read_bed(
+#'   system.file("extdata", "gtr_demo_features.bed", package = "GeneTrackR")
+#' )
+#' vars <- read_vcf_track(
+#'   system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")
 #' )
 #'
-#' plot_tracks(annotation = gp, gene_id = "GeneA")
-#' plot_tracks(annotation = gp, signal = bg, gene_id = "GeneA")
-#' plot_tracks(annotation = gp, signal = bg, transcript_id = "TxA1")
-#' plot_tracks(annotation = gp, signal = bg, chrom = "chr1", start = 1, end = 1200)
-#' peaks <- read_bed(system.file("extdata", "example_features.bed", package = "GeneTrackR"))
-#' vars <- read_vcf_track(system.file("extdata", "example_variants.vcf", package = "GeneTrackR"))
-#' plot_tracks(annotation = gp, signal = bg, features = peaks, variants = vars, chrom = "chr1", start = 1, end = 1200)
+#' plot_tracks(annotation = gp, signal = signal_all, gene_id = "GeneA")
+#' plot_tracks(
+#'   annotation = gp,
+#'   signal = signal_all,
+#'   features = peaks,
+#'   variants = vars,
+#'   chrom = "chr1",
+#'   start = 12339001,
+#'   end = 12374500,
+#'   strand = "both"
+#' )
 #' }
 #' @export
 plot_tracks <- function(annotation,
