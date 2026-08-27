@@ -79,9 +79,9 @@ plot_tracks(
 
 \item{signal_type}{Signal plot type.}
 
-\item{signal_palette}{Signal color palette for signal tracks. Any palette name from \code{RColorBrewer::brewer.pal.info} can be used. Discrete signal sample/group colors are assigned in the standard RColorBrewer class order; heatmaps use the corresponding continuous gradient.}
+\item{signal_palette}{Signal color palette for signal tracks. Any palette name from \code{RColorBrewer::brewer.pal.info} can be used. Discrete signal sample/group colors follow the standard RColorBrewer class order; heatmaps use the corresponding continuous gradient.}
 
-\item{signal_palette_direction}{Direction for generated signal colors. Use \code{1} for the standard palette order and \code{-1} for the reversed palette order. Discrete signal colors preserve level-to-color order; heatmap gradients reverse continuously.}
+\item{signal_palette_direction}{Direction for generated signal colors. Use \code{1} for the standard palette order and \code{-1} for the reversed palette order. Discrete sample/group colors preserve level-to-color order; heatmap gradients reverse continuously.}
 
 \item{signal_colors}{Optional named or unnamed vector of explicit colors for signal samples. Explicit colors override \code{signal_palette} and are not modified by \code{signal_palette_direction}.}
 
