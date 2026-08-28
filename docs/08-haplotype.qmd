@@ -335,7 +335,7 @@ hap_variant_figure <- plot_hap_variant(
 hap_variant_figure
 ```
 
-All plotting palettes default to `Paired`. The main visual controls can still be changed independently:
+General plotting palettes default to `Paired`; `plot_ld_block()` is the deliberate package-level exception and defaults to `Reds`. The main haplotype visual controls can still be changed independently:
 
 ```{r}
 hap_variant_custom <- plot_hap_variant(

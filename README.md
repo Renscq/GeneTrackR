@@ -1408,7 +1408,7 @@ The four inputs play different roles in `plot_tracks()`:
 - `features`: optional `FeatureTrack` containing BED/GFF/GTF-style intervals;
 - `variants`: optional `VariantTrack` containing VCF-derived variants.
 
-All GeneTrackR plotting palette arguments now default to `"Paired"`. This includes gene, signal, frame, feature, variant, LD, haplotype-table, and phenotype-fill palettes. Supply another RColorBrewer palette explicitly only when a different color scheme is required.
+General GeneTrackR plotting palette arguments default to `"Paired"`. The deliberate exception is `plot_ld_block()`, whose `color_palette` defaults to the sequential `"Reds"` palette for LD heatmaps. Supply another RColorBrewer palette explicitly when a different color scheme is required.
 
 `plot_tracks()` accepts **exactly one genomic locator** per call:
 
@@ -2015,7 +2015,7 @@ hap_variant_figure <- plot_hap_variant(
 hap_variant_figure
 ```
 
-All plotting palettes default to `Paired`. The main visual controls can still be changed independently:
+General plotting palettes default to `Paired`; `plot_ld_block()` is the deliberate package-level exception and defaults to `Reds`. The main haplotype visual controls can still be changed independently:
 
 ```{r}
 hap_variant_custom <- plot_hap_variant(
@@ -2349,7 +2349,7 @@ With four haplotypes there are six pairwise comparisons per trait, so adjusted p
 
 ### Step 6. Control phenotype-association plot appearance
 
-All GeneTrackR plotting palettes now default to `Paired`. `plot_hap_pheno()` maps fill colors according to the **median phenotype value within each trait**, so the colors are used as an ordered visual encoding rather than as permanent haplotype identities.
+General GeneTrackR plotting palettes default to `Paired`; `plot_ld_block()` is the deliberate package-level exception and defaults to `Reds`. `plot_hap_pheno()` maps fill colors according to the **median phenotype value within each trait**, so the colors are used as an ordered visual encoding rather than as permanent haplotype identities.
 
 A more detailed plot can be requested as follows:
 

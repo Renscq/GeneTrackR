@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-27
-# Version: dev003
+# Version: dev004
 # Function: Internal plotting utilities for gene models and signal tracks
 # Input: Annotation and signal tables
 # Output: ggplot objects and transformed plotting tables
@@ -538,7 +538,10 @@ make_variant_marker_fill_colors <- function(variant_palette = "Paired",
   }
 
   out <- default_cols[unique(c(all_levels, intersect(names(default_cols), canonical)))]
-  grDevices::adjustcolor(out, alpha.f = alpha)
+  out_names <- names(out)
+  out <- grDevices::adjustcolor(out, alpha.f = alpha)
+  names(out) <- out_names
+  out
 }
 
 

@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-07-30
-# Version: dev006
+# Version: dev007
 # Function: Plot haplotype-variant and haplotype-phenotype figures
 # Input: HapVariant and phenotype objects
 # Output: ggplot or patchwork figures
@@ -1025,7 +1025,9 @@ make_hap_table_fill_colors <- function(table_palette = "Paired",
     }
   }
 
-  grDevices::adjustcolor(default_colors[levels], alpha.f = table_alpha)
+  out <- grDevices::adjustcolor(default_colors[levels], alpha.f = table_alpha)
+  names(out) <- levels
+  out
 }
 
 assign_variant_gene_track_y <- function(vars,

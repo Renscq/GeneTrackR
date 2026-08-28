@@ -103,13 +103,16 @@ test_that("bundled libBigWig backend writes and rereads bigWig", {
   expect_true(file.exists(written$file))
   expect_equal(written$format, "bigwig")
 
-  reread <- read_bwg(
-    written$file,
-    format = "bigwig",
-    sample_names = "sampleA",
-    strand = "+",
-    mode = "memory",
-    verbose = FALSE
+  expect_warning(
+    reread <- read_bwg(
+      written$file,
+      format = "bigwig",
+      sample_names = "sampleA",
+      strand = "+",
+      mode = "memory",
+      verbose = FALSE
+    ),
+    "Full-memory bigWig loading"
   )
 
   observed <- reread$data[, .(chrom, start, end, value)]
@@ -181,21 +184,27 @@ test_that("bundled libBigWig backend writes multiple strand-specific samples", {
   expect_true(all(file.exists(written$file)))
   expect_true(all(written$format == "bigwig"))
 
-  plus <- read_bwg(
-    written$file[written$sample_id == "RNA_seq_plus"],
-    format = "bigwig",
-    sample_names = "RNA_seq_plus",
-    strand = "+",
-    mode = "memory",
-    verbose = FALSE
+  expect_warning(
+    plus <- read_bwg(
+      written$file[written$sample_id == "RNA_seq_plus"],
+      format = "bigwig",
+      sample_names = "RNA_seq_plus",
+      strand = "+",
+      mode = "memory",
+      verbose = FALSE
+    ),
+    "Full-memory bigWig loading"
   )
-  minus <- read_bwg(
-    written$file[written$sample_id == "RNA_seq_minus"],
-    format = "bigwig",
-    sample_names = "RNA_seq_minus",
-    strand = "-",
-    mode = "memory",
-    verbose = FALSE
+  expect_warning(
+    minus <- read_bwg(
+      written$file[written$sample_id == "RNA_seq_minus"],
+      format = "bigwig",
+      sample_names = "RNA_seq_minus",
+      strand = "-",
+      mode = "memory",
+      verbose = FALSE
+    ),
+    "Full-memory bigWig loading"
   )
 
   expect_equal(
@@ -239,13 +248,16 @@ test_that("demo strand-specific RNA-seq tracks round-trip through bundled libBig
   expect_true(all(file.exists(written$file)))
   expect_true(all(file.info(written$file)$size > 0))
 
-  reread <- read_bwg(
-    written$file,
-    format = "bigwig",
-    sample_names = written$sample_id,
-    strand = c("+", "-"),
-    mode = "memory",
-    verbose = FALSE
+  expect_warning(
+    reread <- read_bwg(
+      written$file,
+      format = "bigwig",
+      sample_names = written$sample_id,
+      strand = c("+", "-"),
+      mode = "memory",
+      verbose = FALSE
+    ),
+    "Full-memory bigWig loading"
   )
 
   observed <- data.table::copy(reread$data)

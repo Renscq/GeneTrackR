@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-26
-# Version: dev002
+# Version: dev003
 # Function: Read bedGraph, wig, and bigWig signal track files
 # Input: Signal track file paths
 # Output: BwgTrack object
@@ -137,6 +137,13 @@ read_bwg <- function(files,
     if (verbose) {
       message("[GeneTrackR] Loading signal files into memory.")
     }
+    if (any(formats == "bigwig")) {
+      warning(
+        "Full-memory bigWig loading may use a large amount of memory. ",
+        "For routine analysis, use `mode = 'lazy'` and retrieve_bwg().",
+        call. = FALSE
+      )
+    }
     data <- data.table::rbindlist(lapply(seq_along(files), function(i) {
       if (verbose) {
         message(sprintf("[GeneTrackR] Loading %s/%s: %s", i, length(files), sample_names[i]))
@@ -146,11 +153,6 @@ read_bwg <- function(files,
       } else if (formats[i] == "wig") {
         read_wig_file(files[i], sample_names[i], strand[i])
       } else {
-        warning(
-          "Full-memory bigWig loading may use a large amount of memory. ",
-          "For routine analysis, use `mode = 'lazy'` and retrieve_bwg().",
-          call. = FALSE
-        )
         read_bigwig_whole_cpp(files[i], sample_names[i], strand[i])
       }
     }), fill = TRUE)

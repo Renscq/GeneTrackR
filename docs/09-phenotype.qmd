@@ -259,7 +259,7 @@ With four haplotypes there are six pairwise comparisons per trait, so adjusted p
 
 ### Step 6. Control phenotype-association plot appearance
 
-All GeneTrackR plotting palettes now default to `Paired`. `plot_hap_pheno()` maps fill colors according to the **median phenotype value within each trait**, so the colors are used as an ordered visual encoding rather than as permanent haplotype identities.
+General GeneTrackR plotting palettes default to `Paired`; `plot_ld_block()` is the deliberate package-level exception and defaults to `Reds`. `plot_hap_pheno()` maps fill colors according to the **median phenotype value within each trait**, so the colors are used as an ordered visual encoding rather than as permanent haplotype identities.
 
 A more detailed plot can be requested as follows:
 

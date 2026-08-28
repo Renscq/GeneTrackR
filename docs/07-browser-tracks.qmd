@@ -95,7 +95,7 @@ The four inputs play different roles in `plot_tracks()`:
 - `features`: optional `FeatureTrack` containing BED/GFF/GTF-style intervals;
 - `variants`: optional `VariantTrack` containing VCF-derived variants.
 
-All GeneTrackR plotting palette arguments now default to `"Paired"`. This includes gene, signal, frame, feature, variant, LD, haplotype-table, and phenotype-fill palettes. Supply another RColorBrewer palette explicitly only when a different color scheme is required.
+General GeneTrackR plotting palette arguments default to `"Paired"`. The deliberate exception is `plot_ld_block()`, whose `color_palette` defaults to the sequential `"Reds"` palette for LD heatmaps. Supply another RColorBrewer palette explicitly when a different color scheme is required.
 
 `plot_tracks()` accepts **exactly one genomic locator** per call:
 

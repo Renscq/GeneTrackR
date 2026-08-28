@@ -413,7 +413,7 @@ test_that("feature browser tracks use compact automatic legend groups", {
   expect_s3_class(p, "ggplot")
 })
 
-test_that("all exported plotting palette defaults are Paired", {
+test_that("exported plotting palette defaults follow package conventions", {
   plot_functions <- grep(
     "^plot_",
     getNamespaceExports("GeneTrackR"),
@@ -425,10 +425,23 @@ test_that("all exported plotting palette defaults are Paired", {
     defaults <- formals(fn)
     palette_args <- grep("palette$", names(defaults), value = TRUE)
     for (arg_name in palette_args) {
+      expected_palette <- if (
+        identical(fn_name, "plot_ld_block") &&
+          identical(arg_name, "color_palette")
+      ) {
+        "Reds"
+      } else {
+        "Paired"
+      }
       expect_identical(
         defaults[[arg_name]],
-        "Paired",
-        info = paste(fn_name, arg_name, "should default to Paired")
+        expected_palette,
+        info = paste(
+          fn_name,
+          arg_name,
+          "should default to",
+          expected_palette
+        )
       )
     }
   }

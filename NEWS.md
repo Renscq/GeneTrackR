@@ -1,3 +1,10 @@
+# GeneTrackR 0.5.37
+
+- Fixed haplotype allele fill color helpers so the stable `A`, `T`, `C`, `G`, and `indel` mapping retains its names after alpha adjustment.
+- Fixed variant marker color helpers so the stable `SNP`, `Ind`, and `...` mapping retains its names after alpha adjustment.
+- Updated plotting-default regression tests to preserve the intentional `Reds` default for `plot_ld_block()` while other plotting palettes remain `Paired`.
+- Changed full-memory bigWig loading to emit one memory warning per `read_bwg()` call instead of one warning per input file, and made round-trip tests explicitly expect this warning.
+
 # GeneTrackR 0.5.36
 
 - Rebuilt `docs/13-export.qmd` as a structured export workflow for genomic tracks, PDF/PNG figures, analysis tables, optional Excel workbooks, and complete RDS objects.
