@@ -119,4 +119,5 @@ gene_signal <- retrieve_bwg(
   strand = "auto"
 )
 }
+
 }

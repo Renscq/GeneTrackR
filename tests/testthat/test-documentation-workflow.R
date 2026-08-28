@@ -584,19 +584,21 @@ test_that("variant-effect documentation workflow follows deterministic GeneA tru
     expected_top
   )
 
-  effect_multi <- plot_variant_effect(
-    hap_effect,
-    phenotype = pheno,
-    traits = c(
-      "protein_content",
-      "seed_weight",
-      "plant_height",
-      "flowering_time"
-    ),
-    min_group_samples = 3,
-    effect_type = "absolute",
-    top_n = 0,
-    x_axis = "position"
+  expect_silent(
+    effect_multi <- plot_variant_effect(
+      hap_effect,
+      phenotype = pheno,
+      traits = c(
+        "protein_content",
+        "seed_weight",
+        "plant_height",
+        "flowering_time"
+      ),
+      min_group_samples = 3,
+      effect_type = "absolute",
+      top_n = 0,
+      x_axis = "position"
+    )
   )
   multi_dt <- data.table::as.data.table(effect_multi$effect)
   varA03_effect <- multi_dt[variant_id == "varA03", .(effect = effect[1L]), by = trait]

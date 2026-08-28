@@ -26,7 +26,7 @@ plot_variant_effect(
 
 \item{phenotype}{A phenotype table returned by \code{read_pheno()} or a compatible data.frame.}
 
-\item{traits}{Phenotype trait names. If NULL, all numeric traits are used.}
+\item{traits}{Numeric phenotype trait names. Integer and double storage modes are accepted and normalized before reshaping. If NULL, all numeric traits are used.}
 
 \item{sample_col}{Sample column name in phenotype table.}
 

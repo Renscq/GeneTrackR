@@ -307,3 +307,43 @@ test_that("haplotype gene track arrows follow transcript strand", {
   )
   expect_equal(nrow(no_arrows), 0L)
 })
+
+test_that("plot_variant_effect handles mixed integer and double numeric traits silently", {
+  gp <- read_genepred(
+    gtr_extdata("gtr_demo.genePredExt"),
+    format = "genePredExt",
+    verbose = FALSE
+  )
+  vcf <- read_vcf(
+    gtr_extdata("gtr_demo_variants.vcf"),
+    mode = "memory",
+    verbose = FALSE
+  )
+  pheno <- read_pheno(
+    gtr_extdata("gtr_demo_pheno.tsv"),
+    verbose = FALSE
+  )
+  hap <- hap_gene_variant(
+    vcf,
+    annotation = gp,
+    gene_id = "GeneA",
+    genotype_mode = "code"
+  )
+
+  expect_true(is.double(pheno$protein_content))
+  expect_true(is.integer(pheno$flowering_time))
+
+  expect_silent(
+    res <- plot_variant_effect(
+      hap,
+      phenotype = pheno,
+      traits = c("protein_content", "flowering_time"),
+      min_group_samples = 3,
+      effect_type = "absolute",
+      top_n = 0
+    )
+  )
+
+  expect_s3_class(res, "GeneTrackRVariantEffectPlot")
+  expect_setequal(unique(res$effect$trait), c("protein_content", "flowering_time"))
+})

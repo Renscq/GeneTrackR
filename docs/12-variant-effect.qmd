@@ -359,6 +359,8 @@ effect_multi <- plot_variant_effect(
 effect_multi$figure
 ```
 
+Numeric traits may be stored as either integer or double columns. `plot_variant_effect()` normalizes selected numeric traits internally before reshaping them, so mixed numeric storage modes can be analyzed together without `data.table::melt()` coercion warnings.
+
 Inspect the same variant across traits:
 
 ```{r}

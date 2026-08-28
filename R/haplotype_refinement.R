@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-07-30
-# Version: dev006
+# Version: dev007
 # Function: Refine haplotypes and prioritize phenotype-associated variant effects
 # Input: HapVariant objects and phenotype tables
 # Output: Refined haplotype objects, variant-effect tables, and ggplot figures
@@ -931,7 +931,7 @@ get_refined_hap_variant <- function(refined_hap) {
 #'
 #' @param hap A HapVariant object from `hap_variant()`.
 #' @param phenotype A phenotype table returned by `read_pheno()` or a compatible data.frame.
-#' @param traits Phenotype trait names. If NULL, all numeric traits are used.
+#' @param traits Numeric phenotype trait names. Integer and double storage modes are accepted and normalized before reshaping. If NULL, all numeric traits are used.
 #' @param sample_col Sample column name in phenotype table.
 #' @param min_group_samples Minimum sample number required for a genotype group.
 #' @param test_method Significance test method. One of `t.test`, `wilcox.test`,
@@ -1017,15 +1017,29 @@ plot_variant_effect <- function(hap,
   geno_long[, "genotype_group" := as.character(genotype_group)]
   geno_long <- geno_long[!is.na(genotype_group) & genotype_group != ""]
 
+  # data.table::melt() warns when numeric measure columns mix integer and
+  # double storage modes. Variant-effect traits are numeric by contract, so
+  # normalize them to double before reshaping. This keeps multi-trait calls
+  # warning-free without changing phenotype values or downstream statistics.
+  numeric_trait <- vapply(traits, function(trait) is.numeric(dt[[trait]]), logical(1L))
+  stop_if_not(
+    all(numeric_trait),
+    paste0(
+      "All selected `traits` must be numeric. Non-numeric traits: ",
+      paste(traits[!numeric_trait], collapse = ", ")
+    )
+  )
+  pheno_dt <- data.table::copy(dt[, c("sample_id", traits), with = FALSE])
+  pheno_dt[, (traits) := lapply(.SD, as.numeric), .SDcols = traits]
+
   pheno_long <- data.table::melt(
-    dt[, c("sample_id", traits), with = FALSE],
+    pheno_dt,
     id.vars = "sample_id",
     measure.vars = traits,
     variable.name = "trait",
     value.name = "value",
     variable.factor = FALSE
   )
-  pheno_long[, "value" := suppressWarnings(as.numeric(value))]
   pheno_long <- pheno_long[!is.na(value)]
 
   long <- merge(geno_long, pheno_long, by = "sample_id", allow.cartesian = TRUE)

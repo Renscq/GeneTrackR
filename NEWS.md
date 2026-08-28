@@ -1,3 +1,11 @@
+# GeneTrackR 0.5.35
+
+- Fixed `plot_variant_effect()` multi-trait reshaping so mixed integer and double phenotype columns no longer trigger `data.table::melt()` coercion warnings.
+- Standardized selected numeric traits to double before long-format conversion without changing their values or effect statistics.
+- Added regression coverage requiring the documented multi-trait variant-effect workflow to run silently.
+- Clarified mixed numeric trait handling in `docs/12-variant-effect.qmd`.
+- Bumped the package version to 0.5.35.
+
 # GeneTrackR 0.5.34
 
 - Rebuilt `docs/12-variant-effect.qmd` as a complete regional variant-effect prioritization workflow.

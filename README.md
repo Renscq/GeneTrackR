@@ -4015,6 +4015,8 @@ effect_multi <- plot_variant_effect(
 effect_multi$figure
 ```
 
+Numeric traits may be stored as either integer or double columns. `plot_variant_effect()` normalizes selected numeric traits internally before reshaping them, so mixed numeric storage modes can be analyzed together without `data.table::melt()` coercion warnings.
+
 Inspect the same variant across traits:
 
 ```{r}
@@ -4054,7 +4056,6 @@ GeneA HapVariant
 ```
 
 For the demo, `protein_content` refinement groups `Hap1/Hap2` and `Hap3/Hap4`, and `varA03` separates exactly those two refined genotype/phenotype clusters. The surrounding `p13` variants receive the same statistical effect because they carry the same genotype partition. That agreement is useful evidence for the regional signal, but it should not be mistaken for proof that every tied variant is causal.
-
 ## Export variants and analysis results
 
 Annotation writing and cross-format conversion are covered in the **Annotation files** module for GenePred, GenePredExt, GTF, GFF3, BED6, and BED12.
