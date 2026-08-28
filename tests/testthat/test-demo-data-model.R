@@ -69,6 +69,12 @@ test_that("demo LD truth includes a twelve-variant gradient and two-variant case
 })
 
 
+test_that("GeneA refinement genotype clusters are locally coherent", {
+  model_file <- system.file("scripts", "demo_model", "variants.tsv", package = "GeneTrackR", mustWork = TRUE)
+  variants <- data.table::fread(model_file, data.table = TRUE)
+  expect_identical(variants[variant_id == "varA03", pattern], "p13")
+})
+
 test_that("demo phenotype encodes designed effects and a negative control", {
   model_file <- system.file("scripts", "demo_model", "samples.tsv", package = "GeneTrackR", mustWork = TRUE)
   samples <- data.table::fread(model_file, data.table = TRUE)
@@ -77,10 +83,12 @@ test_that("demo phenotype encodes designed effects and a negative control", {
 
   seed_means <- x[, mean(seed_weight), by = hap_group][order(hap_group), V1]
   protein_means <- x[, mean(protein_content), by = hap_group][order(hap_group), V1]
+  height_means <- x[, mean(plant_height), by = hap_group][order(hap_group), V1]
   flowering_means <- x[, mean(flowering_time), by = hap_group][order(hap_group), V1]
 
-  expect_equal(round(seed_means, 6), c(20, 25, 31, 23))
-  expect_equal(round(protein_means, 6), c(38, 44, 44, 38))
+  expect_equal(round(seed_means, 6), c(20, 22, 30, 28))
+  expect_equal(round(protein_means, 6), c(38, 38, 44, 44))
+  expect_equal(round(height_means, 6), c(100, 102, 108, 106))
   expect_equal(round(flowering_means, 6), rep(45, 4L))
 })
 

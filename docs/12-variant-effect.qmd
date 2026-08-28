@@ -1,6 +1,6 @@
 ## Variant effect prioritization
 
-`protein_content` was designed around `varA03`, providing a deterministic positive-effect example for `plot_variant_effect()`.
+`protein_content` was designed around `varA03`, which separates the `Hap1/Hap2` and `Hap3/Hap4` genotype clusters and provides a deterministic positive-effect example for `plot_variant_effect()`.
 
 ```{r}
 effect_res <- plot_variant_effect(

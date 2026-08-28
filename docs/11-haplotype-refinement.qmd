@@ -4,14 +4,14 @@
 
 This module uses the same `GeneA` haplotypes created in the haplotype workflow and the same phenotype table used in the phenotype workflow. The demo is deliberately structured so that the refinement behavior can be checked against known expectations:
 
-- `protein_content`: the four GeneA haplotypes form **two phenotype groups** and provide the main 4 -> 2 refinement example;
-- `seed_weight`: all four GeneA haplotypes are strongly separated and therefore should remain distinct;
+- `protein_content`: the genotype-nearest pair `Hap1/Hap2` shares the low phenotype class and the genotype-nearest pair `Hap3/Hap4` shares the high phenotype class, providing the main 4 -> 2 refinement example;
+- `seed_weight`: all four haplotypes retain distinct means, but genotype-nearest haplotypes remain phenotypically closer than cross-cluster haplotypes;
 - `flowering_time`: no GeneA haplotype effect was designed, so the four haplotypes can collapse into one phenotype group under the default significance criterion.
 
 The workflow follows nine steps:
 
 1. prepare the original haplotypes and phenotype data;
-2. inspect the phenotype pattern before refinement;
+2. inspect genotype similarity and phenotype correspondence before refinement;
 3. refine GeneA haplotypes using `protein_content`;
 4. inspect the `HapRefined` result object;
 5. inspect pairwise tests and the original-to-refined mapping;
@@ -88,9 +88,48 @@ For the bundled demo, the expected starting point is:
 
 Refinement is therefore performed on a fixed biological definition of the original haplotypes. Do not silently change the gene region, variant filter, missing-data rule, or sample set immediately before refinement, because those changes would redefine the groups being compared.
 
-### Step 2. Inspect the phenotype pattern before refinement
+### Step 2. Inspect genotype similarity and phenotype correspondence before refinement
 
-Before grouping haplotypes, first confirm what phenotype structure is present in the original groups. The main refinement example uses `protein_content`:
+Refinement is easiest to interpret when the phenotype grouping is compatible with the underlying genotype geometry. First calculate the number of allele-state differences between the four original GeneA haplotypes:
+
+```{r}
+hap_variant_ids <- as.character(hap_gene$variants$variant_id)
+
+hap_alleles <- as.matrix(
+  hap_gene$haplotypes[, ..hap_variant_ids]
+)
+
+hap_ids <- as.character(hap_gene$haplotypes$hap_id)
+
+hap_distance <- outer(
+  seq_along(hap_ids),
+  seq_along(hap_ids),
+  Vectorize(function(i, j) {
+    sum(hap_alleles[i, ] != hap_alleles[j, ])
+  })
+)
+
+dimnames(hap_distance) <- list(hap_ids, hap_ids)
+hap_distance
+```
+
+The deterministic GeneA design is hierarchical:
+
+```text
+          Hap1  Hap2  Hap3  Hap4
+Hap1         0     1     9    11
+Hap2         1     0    10    10
+Hap3         9    10     0     2
+Hap4        11    10     2     0
+```
+
+Therefore:
+
+- `Hap1` and `Hap2` are the closest genotype pair and differ at only one of the 11 GeneA variants;
+- `Hap3` and `Hap4` are the second closest pair and differ at only two variants;
+- comparisons between these two clusters differ at 9-11 variants.
+
+The phenotype design follows the same structure. Inspect `protein_content` before refinement:
 
 ```{r}
 protein_before <- plot_hap_pheno(
@@ -110,12 +149,24 @@ protein_before$summary
 protein_before$pvalue
 ```
 
-The demo was designed so that the four GeneA haplotypes occur in two `protein_content` classes:
+The expected phenotype means are:
 
-- one pair has a mean near 44;
-- the other pair has a mean near 38.
+```text
+Hap1 ≈ 38
+Hap2 ≈ 38
+Hap3 ≈ 44
+Hap4 ≈ 44
+```
 
-Within each pair, the phenotype distributions are intentionally very similar. Between the two pairs, the difference is large. This structure is appropriate for demonstrating refinement because the phenotype contains less group complexity than the original 11-variant haplotype definition.
+This correspondence is intentional:
+
+```text
+genotype-nearest pair        phenotype class
+Hap1 + Hap2                  low protein_content
+Hap3 + Hap4                  high protein_content
+```
+
+`varA03` follows the same cluster split: `Hap1/Hap2` carry the REF class and `Hap3/Hap4` carry the ALT class. The main refinement example therefore groups haplotypes that are similar in both multi-variant genotype structure and phenotype, rather than joining genetically distant haplotypes only because their phenotype means happen to match.
 
 ### Step 3. Refine haplotypes using `protein_content`
 
@@ -137,7 +188,14 @@ refined_protein
 refined_protein$refined_haplotypes
 ```
 
-The expected demo result is **4 original haplotypes -> 2 refined haplotypes**, with 18 samples in each refined group.
+The expected demo result is **4 original haplotypes -> 2 refined haplotypes**, with 18 samples in each refined group:
+
+```text
+Hap1 + Hap2  -> one refined group
+Hap3 + Hap4  -> one refined group
+```
+
+This is the key truth condition for the example: refinement follows the two nearest genotype clusters rather than crossing between them.
 
 The two refinement criteria have different roles:
 
@@ -201,14 +259,14 @@ refined_protein$pairwise_test[, c(
 )]
 ```
 
-For the `protein_content` demo, two original-haplotype pairs are expected to have:
+For the `protein_content` demo, the two mergeable comparisons are expected to be `Hap1` versus `Hap2` and `Hap3` versus `Hap4`. Both pairs have:
 
 - nearly identical means;
 - adjusted P values greater than 0.05;
 - `abs_mean_diff <= 0.5`;
 - `can_merge = TRUE`.
 
-The remaining cross-class comparisons have a large phenotype difference and should not be merged.
+All comparisons between the `Hap1/Hap2` and `Hap3/Hap4` genotype clusters have a large phenotype difference and should not be merged.
 
 The trait-specific grouping can be inspected separately:
 
@@ -314,7 +372,7 @@ Refinement is **trait dependent**. The same original haplotypes can produce very
 
 #### A strongly haplotype-associated trait may preserve all groups
 
-`seed_weight` was designed to distinguish all four GeneA haplotypes. Refinement therefore should not collapse them under the standard cutoff:
+`seed_weight` was designed with four distinct means while preserving the same genotype hierarchy: `Hap1/Hap2` remain closer to one another than to `Hap3/Hap4`, and the same is true within the second pair. The within-pair mean differences are nevertheless larger than `effect_threshold = 0.5`, so refinement should retain all four groups:
 
 ```{r}
 refined_seed_weight <- refine_haplotype(
@@ -398,7 +456,7 @@ refined_protein$haplotype_map
 refined_protein$refined_haplotypes
 ```
 
-For the `protein_content` demo, the two refined groups are expected to retain the allele class at the designed `varA03` effect locus while several other variants become heterogeneous (`mixed`) within the refined groups. This is exactly the pattern refinement is intended to expose: several distinct multi-variant haplotypes can represent the same phenotype class, while a smaller subset of variants remains consistent with the phenotype separation.
+For the `protein_content` demo, the final grouping is expected to be `Hap1/Hap2` versus `Hap3/Hap4`. The two groups retain different allele classes at `varA03` and at the broader `p13` cluster, including `varA01`, `varLD01`-`varLD06`, and `varA04`. Within the low group, `varA02` is heterogeneous; within the high group, `varA02` and `varA05` are heterogeneous. These positions appear as `mixed` in the collapsed view. This is the intended refinement logic: genetically close haplotypes with the same phenotype class are combined, while the variants that consistently separate the two genotype/phenotype clusters remain visible.
 
 The refined object can be passed directly to the refined plotting wrappers, while the **original** `hap_gene` remains the preferred input for variant-level effect prioritization:
 

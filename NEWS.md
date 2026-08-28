@@ -1,3 +1,13 @@
+# GeneTrackR 0.5.33
+
+- Replaced `docs/10-ld.qmd` with the user-updated LD workflow while restoring valid executable QMD syntax.
+- Redesigned the GeneA genotype/phenotype truth so refinement follows genotype-nearest haplotype pairs.
+- Changed `varA03` from the cross-cluster `p23` pattern to the cluster-consistent `p13` pattern.
+- Redesigned phenotype means so Hap1/Hap2 are locally similar, Hap3/Hap4 are locally similar, and cross-cluster differences are larger.
+- Updated the `protein_content` refinement truth to `Hap1 + Hap2` versus `Hap3 + Hap4`.
+- Updated phenotype, refinement, variant-effect, workflow, vignette, generator, validator, help examples, and regression tests.
+- Bumped the package version to 0.5.33.
+
 # GeneTrackR 0.5.32
 
 - Expanded the primary LD demo from 6 to 12 natural SNPs while preserving the 11-variant GeneA haplotype truth.

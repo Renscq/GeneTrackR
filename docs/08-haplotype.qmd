@@ -74,6 +74,8 @@ The demo is designed so that this call contains:
 - four haplotype groups;
 - nine samples in each haplotype group.
 
+The four genotype patterns are intentionally hierarchical: `Hap1/Hap2` are the closest pair, `Hap3/Hap4` are the second closest pair, and cross-pair comparisons differ at many more GeneA variants. This structure is used later by the phenotype-refinement demo.
+
 Check these values directly from the returned object rather than assuming a fixed number for real datasets:
 
 ```{r}

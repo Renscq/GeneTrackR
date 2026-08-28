@@ -431,6 +431,25 @@ test_that("haplotype refinement documentation workflow has deterministic demo ou
     genotype_mode = "string"
   )
 
+  variant_ids <- as.character(hap_gene$variants$variant_id)
+  hap_alleles <- as.matrix(hap_gene$haplotypes[, ..variant_ids])
+  hap_ids <- as.character(hap_gene$haplotypes$hap_id)
+  hap_distance <- outer(
+    seq_along(hap_ids),
+    seq_along(hap_ids),
+    Vectorize(function(i, j) sum(hap_alleles[i, ] != hap_alleles[j, ]))
+  )
+  dimnames(hap_distance) <- list(hap_ids, hap_ids)
+  expect_equal(
+    unname(hap_distance),
+    matrix(c(
+      0, 1, 9, 11,
+      1, 0, 10, 10,
+      9, 10, 0, 2,
+      11, 10, 2, 0
+    ), nrow = 4, byrow = TRUE)
+  )
+
   refined_protein <- refine_haplotype(
     hap_gene,
     phenotype = pheno,
@@ -451,7 +470,7 @@ test_that("haplotype refinement documentation workflow has deterministic demo ou
   ), by = refined_hap_id]
   expect_setequal(
     grouped_members$original_haps,
-    c("Hap1;Hap3", "Hap2;Hap4")
+    c("Hap1;Hap2", "Hap3;Hap4")
   )
   expect_setequal(
     as.character(refined_protein$refined_haplotypes$varA03),

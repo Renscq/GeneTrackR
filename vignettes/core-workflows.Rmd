@@ -200,8 +200,9 @@ ld_pair_figure
 refined <- refine_haplotype(
   hap,
   phenotype = pheno,
-  traits = "seed_weight",
-  min_hap_samples = 3
+  traits = "protein_content",
+  min_hap_samples = 3,
+  effect_threshold = 0.5
 )
 
 refined$refined_haplotypes
@@ -211,7 +212,7 @@ refined$refined_haplotypes
 refined_pheno <- plot_refined_hap_pheno(
   refined,
   phenotype = pheno,
-  traits = "seed_weight",
+  traits = "protein_content",
   min_hap_samples = 3
 )
 refined_pheno$figure

@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-08-23
-# Version: dev008
+# Version: dev009
 # Function: Generate the deterministic GeneTrackR demo dataset from canonical model tables
 # Input: inst/scripts/demo_model/*.tsv
 # Output: inst/extdata/gtr_demo_* example input files
@@ -247,7 +247,7 @@ write_vcf <- function(variants, samples, chromosomes, file) {
   con <- file(file, open = "wt")
   on.exit(close(con), add = TRUE)
   writeLines("##fileformat=VCFv4.2", con)
-  writeLines("##source=GeneTrackR_demo_v0.5.32", con)
+  writeLines("##source=GeneTrackR_demo_v0.5.33", con)
   for (i in seq_len(nrow(chromosomes))) {
     writeLines(paste0("##contig=<ID=", chromosomes$chrom[i], ",length=", chromosomes$size[i], ">"), con)
   }
@@ -268,9 +268,9 @@ write_vcf <- function(variants, samples, chromosomes, file) {
 write_phenotype <- function(samples, file) {
   residual <- c(-1.2, -0.8, -0.4, 0, 0.4, 0.8, 1.2, -0.6, 0.6)
   flowering_residual <- c(-2, -1, 0, 1, 2, -1, 0, 1, 0)
-  seed_base <- c(`1` = 20, `2` = 25, `3` = 31, `4` = 23)
-  height_base <- c(`1` = 100, `2` = 104, `3` = 110, `4` = 106)
-  protein_base <- c(`1` = 38, `2` = 44, `3` = 44, `4` = 38)
+  seed_base <- c(`1` = 20, `2` = 22, `3` = 30, `4` = 28)
+  height_base <- c(`1` = 100, `2` = 102, `3` = 108, `4` = 106)
+  protein_base <- c(`1` = 38, `2` = 38, `3` = 44, `4` = 44)
   x <- samples
   x$seed_weight <- seed_base[as.character(x$hap_group)] + residual[x$within_group]
   x$protein_content <- protein_base[as.character(x$hap_group)] + residual[x$within_group] * 0.35

@@ -10,12 +10,13 @@ locus	overlap_region	chr2:8499001-8522000	GeneK/GeneL overlap
 haplotype	GeneA_haplotype_n	4	Four design groups with nine samples each; GeneTrackR assigns Hap IDs from genotype patterns
 ld	ld_gradient_variants	varLD01,varLD02,varLD03,varLD04,varLD05,varLD06,varLD07,varLD08,varLD09,varLD10,varLD11,varLD12	Twelve-SNP LD example: varLD01-varLD06 form a perfect core and varLD07-varLD12 progressively decorrelate to create an r2 gradient
 ld	two_variant_region	chr2:16995001-17006000	Exactly varPair01 and varPair02; expected one LD diamond
-phenotype	seed_weight	haplotype_associated	Strong differences among the four GeneA design groups
-phenotype	protein_content	varA03_associated	ALT groups have higher expected values
-phenotype	plant_height	haplotype_associated_medium	Moderate GeneA haplotype effect
+phenotype	seed_weight	haplotype_associated_hierarchical	Four distinct means; genotype-nearest Hap1/Hap2 and Hap3/Hap4 are phenotypically closer than cross-cluster pairs
+phenotype	protein_content	varA03_cluster_associated	varA03 follows the p13 cluster split; Hap1/Hap2 are low and Hap3/Hap4 are high
+phenotype	plant_height	haplotype_associated_medium_hierarchical	Moderate four-level effect with genotype-nearest haplotype pairs remaining phenotypically closer
 phenotype	flowering_time	negative_control	Identical within-group residual pattern; no designed haplotype effect
 annotation	coding_cds_length	multiple_of_three	Every protein-coding demo transcript has a CDS length divisible by 3
 signal	rnaseq	exon_enriched	RNA-seq coverage is generated on transcript exons including UTR; designed intronic/intergenic regions have zero coverage
 signal	riboseq	moderately_dense_integer_psite	Ribo-seq bedGraph stores moderately dense heterogeneous integer P-site-like counts as 1-bp intervals within primary protein-coding CDS
 signal	riboseq_periodicity	80_10_10_frames	Ribo-seq total counts are designed around frame0/frame1/frame2 proportions of 80%/10%/10%; zero-count bases are omitted from bedGraph
 signal	riboseq_peaks	start_and_stop_2x	Initiation and termination frame-0 counts are approximately two times the internal frame-0 mean
+refinement	protein_content	Hap1+Hap2;Hap3+Hap4	Expected 4-to-2 refinement follows the two genotype-nearest haplotype clusters

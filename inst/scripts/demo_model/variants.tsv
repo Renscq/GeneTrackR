@@ -9,7 +9,7 @@ chr1	9005000	varH01	A	G	background_variant	p13
 chr1	12339750	varAup01	A	T	upstream_missing_heterozygous	mixed_missing
 chr1	12340250	varA01	A	G	core_haplotype;high_ld	p13
 chr1	12340600	varA02	T	C	core_haplotype	p23
-chr1	12342550	varA03	C	G	core_haplotype;protein_effect	p23
+chr1	12342550	varA03	C	G	core_haplotype;protein_effect	p13
 chr1	12342620	varLD01	G	A	high_ld;ld_gradient	p13
 chr1	12342710	varLD02	A	T	high_ld;ld_gradient	p13
 chr1	12342805	varLD03	C	T	high_ld;ld_gradient	p13

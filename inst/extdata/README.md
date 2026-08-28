@@ -1,4 +1,4 @@
-# GeneTrackR demo data model (v0.5.32)
+# GeneTrackR demo data model (v0.5.33)
 
 This directory contains one deterministic demo genome shared across GeneTrackR examples.
 All `gtr_demo_*` files are generated from the canonical model tables in `inst/scripts/demo_model/`.
@@ -21,7 +21,7 @@ All `gtr_demo_*` files are generated from the canonical model tables in `inst/sc
 
 ## Designed truth
 
-`GeneA` contains four balanced genotype-defined design groups (9 samples each). `seed_weight` and `plant_height` have designed haplotype effects. `protein_content` is designed around `varA03`, whose ALT state is present in DesignHap2/DesignHap3. `flowering_time` is a negative-control phenotype with the same within-group value pattern in all four haplotypes.
+`GeneA` contains four balanced genotype-defined design groups (9 samples each). The genotype geometry is intentionally hierarchical: GeneTrackR Hap1/Hap2 are the nearest pair and Hap3/Hap4 are the second nearest pair, while cross-cluster haplotypes differ at many loci. `protein_content` follows this same two-cluster structure through `varA03`: Hap1/Hap2 carry the low class and Hap3/Hap4 carry the high class. `seed_weight` and `plant_height` retain four distinct means, but the nearest genotype pairs also remain phenotypically closer than cross-cluster pairs. `flowering_time` is a negative-control phenotype with the same within-group value pattern in all four haplotypes.
 
 The primary LD example now contains 12 SNPs (`varLD01`-`varLD12`). `varLD01`-`varLD06` retain the same `p13` genotype pattern and form a perfect high-LD core. `varLD07`-`varLD12` are placed immediately downstream of `GeneA` and progressively decorrelate from that core, producing a deterministic LD gradient with strong, intermediate, and weak pairwise `r2` values. The added variants remain outside the `GeneA` gene body, so the canonical 11-variant GeneA haplotype truth is unchanged. The `GeneT` region (`chr2:16995001-17006000`) still contains exactly `varPair01` and `varPair02`, providing a stable two-variant LD plotting case.
 

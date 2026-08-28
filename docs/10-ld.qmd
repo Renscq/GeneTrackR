@@ -5,7 +5,9 @@ GeneTrackR separates linkage disequilibrium analysis into two stages. `compute_l
 The bundled demo now contains three deterministic LD scenarios:
 
 - `varLD01`-`varLD12`: twelve SNPs forming the primary **LD-gradient** example. `varLD01`-`varLD06` are a perfect high-LD core, while `varLD07`-`varLD12` progressively decorrelate from that core so the heatmap contains high, intermediate, and low `r2` values;
+
 - `varLow01`-`varLow04`: four variants designed to have little linkage, with most pairwise `r2 = 0` and a maximum of approximately `0.111`;
+
 - `varPair01`-`varPair02`: exactly two variants, retained to test the single-diamond LD plot.
 
 The added gradient variants are outside the `GeneA` gene body, so the canonical GeneA haplotype example still contains 11 variants and four balanced haplotypes.
@@ -13,13 +15,21 @@ The added gradient variants are outside the `GeneA` gene body, so the canonical 
 This module follows nine steps:
 
 1. prepare genotype-rich VCF data and gene annotation;
+
 2. compute the primary twelve-variant LD-gradient example;
+
 3. inspect the `LDTrack` object and pairwise statistics;
+
 4. inspect the LD matrix and quantify high/intermediate/low LD pairs;
+
 5. draw the triangular LD heatmap using the default `Reds` palette;
+
 6. add gene structure, natural-variant markers, and connector lines;
+
 7. compare the LD-gradient, low-LD, and two-variant regions;
+
 8. control samples, variant types, LD methods, and retained genotype matrices;
+
 9. interpret LD results and pass a selected region to haplotype analysis.
 
 ### Step 1. Prepare VCF genotypes and annotation
@@ -27,32 +37,53 @@ This module follows nine steps:
 Locate and read the same demo VCF and GenePred annotation used in the variant and haplotype workflows:
 
 ```{r}
+
 vcf_file <- system.file(
+
   "extdata",
+
   "gtr_demo_variants.vcf",
+
   package = "GeneTrackR"
+
 )
 
 gp_file <- system.file(
+
   "extdata",
+
   "gtr_demo.genePredExt",
+
   package = "GeneTrackR"
+
 )
 
 vcf <- read_vcf(
+
   vcf_file,
+
   mode = "memory",
+
   keep_genotype = TRUE,
+
   verbose = FALSE,
+
   progress = FALSE
+
 )
 
 gp <- read_genepred(
+
   gp_file,
+
   format = "genePredExt",
+
   verbose = FALSE,
+
   progress = FALSE
+
 )
+
 ```
 
 LD calculation requires VCF genotype columns. If the VCF was previously read with `keep_genotype = FALSE`, read it again with `keep_genotype = TRUE` before calling `compute_ld_block()`.
@@ -64,32 +95,49 @@ For large bgzip-compressed and indexed VCF files, a lazy `VariantTrack` can be u
 The main demo interval starts inside `GeneA` and extends into the short downstream interval before `GeneB`. It contains 12 designed LD SNPs plus two GeneA indels. Use `variant_type = "snp"` so the LD example contains exactly `varLD01`-`varLD12`:
 
 ```{r}
+
 ld_gradient <- compute_ld_block(
+
   vcf,
+
   chrom = "chr1",
+
   start = 12342620,
+
   end = 12355500,
+
   variant_type = "snp",
+
   method = "r2",
+
   min_pair_samples = 3,
+
   verbose = FALSE
+
 )
 
 ld_gradient
+
 ```
 
 The expected result is:
 
 - 12 retained SNPs;
+
 - 66 unique variant pairs (`12 * 11 / 2`);
+
 - 36 available samples per pair;
+
 - a perfect six-variant core (`varLD01`-`varLD06`, `r2 = 1` within the core);
+
 - a progressive decline in LD toward `varLD12`, including weak pairs with `r2 < 0.2` and pairs reaching `r2 = 0`.
 
 Check the retained variants before interpreting the heatmap:
 
 ```{r}
+
 ld_gradient$variants
+
 ```
 
 The first six variants remain inside GeneA and use the same genotype pattern required by the GeneA haplotype demo. The six added variants lie downstream of the GeneA gene body, so they increase LD-plot density without changing the 11-variant GeneA haplotype definition.
@@ -99,50 +147,79 @@ The first six variants remain inside GeneA and use the same genotype pattern req
 `LDTrack` keeps the complete state of an LD calculation:
 
 ```{r}
+
 names(ld_gradient)
+
 ```
 
 The main components are:
 
 | Component | Content | Typical use |
+
 | --- | --- | --- |
+
 | `data` | one row per unique variant pair | inspect `r2`, `Dprime`, distance, sample number, and allele frequencies |
+
 | `matrix` | symmetric matrix of the selected LD metric | matrix-based inspection or export |
+
 | `variants` | ordered metadata for retained variants | confirm positions and IDs |
+
 | `region` | chromosome and queried boundaries | record the analyzed interval |
+
 | `genotype` | optional variant-by-sample dosage matrix | detailed QC when explicitly retained |
+
 | `figure` | figure created by `plot_ld_block()` | plotting/export |
+
 | `meta` | method, sample count, ploidy, and calculation notes | reproduce the analysis settings |
 
 Inspect the pairwise table directly:
 
 ```{r}
+
 ld_gradient$data[, .(
+
   variant_i,
+
   variant_j,
+
   distance_bp,
+
   n_samples,
+
   r,
+
   r2,
+
   Dprime,
+
   ld
+
 )]
+
 ```
 
 Important columns are:
 
 - `distance_bp`: physical distance between the two variants;
+
 - `n_samples`: paired non-missing sample number used for that comparison;
+
 - `r`: dosage correlation;
+
 - `r2`: squared dosage correlation;
+
 - `Dprime`: dosage-based D-prime approximation;
+
 - `ld`: the metric selected by `method`; for `method = "r2"`, `ld` is identical to `r2`.
 
 The region and settings used for calculation are preserved in the object:
 
 ```{r}
+
 ld_gradient$region
+
 ld_gradient$meta
+
 ```
 
 ### Step 4. Inspect the LD matrix and quantify the LD gradient
@@ -150,7 +227,9 @@ ld_gradient$meta
 The symmetric LD matrix uses variant IDs as row and column names and contains 1 on the diagonal:
 
 ```{r}
+
 round(ld_gradient$matrix, 3)
+
 ```
 
 Unlike the previous all-identical six-variant example, the new matrix is intentionally heterogeneous. The upper-left core is strongly linked, whereas LD decreases as progressively decorrelated downstream variants are compared with the core.
@@ -158,20 +237,29 @@ Unlike the previous all-identical six-variant example, the new matrix is intenti
 Summarize the distribution directly:
 
 ```{r}
+
 range(ld_gradient$data$r2, na.rm = TRUE)
+
 summary(ld_gradient$data$r2)
+
 ```
 
 Define descriptive groups explicitly when useful:
 
 ```{r}
+
 ld_pair_summary <- ld_gradient$data[, .(
+
   high_ld = sum(r2 >= 0.8, na.rm = TRUE),
+
   intermediate_ld = sum(r2 >= 0.2 & r2 < 0.8, na.rm = TRUE),
+
   low_ld = sum(r2 < 0.2, na.rm = TRUE)
+
 )]
 
 ld_pair_summary
+
 ```
 
 For the deterministic demo, 15 pairs have `r2 >= 0.8` and 16 pairs have `r2 < 0.2`. The remaining pairs form the intermediate gradient.
@@ -183,15 +271,23 @@ GeneTrackR calculates pairwise LD but does **not** automatically call biological
 `plot_ld_block()` now defaults to the sequential `Reds` palette, which is well suited to an `r2` scale from 0 to 1:
 
 ```{r}
+
 ld_gradient <- plot_ld_block(
+
   ld_gradient,
+
   label_by = "variant_id",
+
   show_variant_labels = TRUE,
+
   show_region = FALSE,
+
   return_object = TRUE
+
 )
 
 ld_gradient$figure
+
 ```
 
 The default color interpretation is straightforward: pale cells indicate low LD and progressively darker red cells indicate stronger LD.
@@ -199,14 +295,21 @@ The default color interpretation is straightforward: pale cells indicate low LD 
 The palette can still be changed explicitly when needed:
 
 ```{r}
+
 ld_gradient_paired <- plot_ld_block(
+
   ld_gradient,
-  color_palette = "Paired",
+
+  color_palette = "Reds",
+
   show_variant_labels = FALSE,
+
   return_object = TRUE
+
 )
 
 ld_gradient_paired$figure
+
 ```
 
 `plot_ld_block()` returns the updated `LDTrack` by default. The calculation results remain unchanged and the generated ggplot/patchwork figure is stored in `$figure`.
@@ -216,27 +319,43 @@ ld_gradient_paired$figure
 For locus interpretation, add the compact genomic region track above the triangular heatmap:
 
 ```{r}
+
 ld_gradient_region <- plot_ld_block(
+
   ld_gradient,
+
   show_region = TRUE,
+
   annotation = gp,
+
   connect_region = TRUE,
+
   show_variant_marker = TRUE,
+
   variant_marker_size = 3,
+
   label_by = "variant_id",
+
   show_variant_labels = TRUE,
+
   region_height = 1.25,
+
   connector_height = 0.35,
+
   return_object = TRUE
+
 )
 
 ld_gradient_region$figure
+
 ```
 
 The combined plot contains three aligned components when `connect_region = TRUE`:
 
 1. compact gene/variant region track;
+
 2. connector lines from genomic variant positions to LD columns;
+
 3. triangular LD heatmap.
 
 With 12 variants, the region panel is now dense enough to show the relationship between physical position and the LD gradient. Variant triangle markers can be hidden with `show_variant_marker = FALSE`, or resized with `variant_marker_size`.
@@ -246,78 +365,121 @@ With 12 variants, the region panel is now dense enough to show the relationship 
 The dedicated low-LD interval remains useful as an extreme comparison:
 
 ```{r}
+
 ld_low <- compute_ld_block(
+
   vcf,
+
   chrom = "chr2",
+
   start = 1999000,
+
   end = 2008500,
+
   method = "r2",
+
   verbose = FALSE
+
 )
 
 ld_low$data[, .(
+
   variant_i,
+
   variant_j,
+
   distance_bp,
+
   r2
+
 )]
+
 ```
 
 The six pairwise values are designed so that most are zero and the maximum is approximately `1 / 9`:
 
 ```{r}
+
 range(ld_low$data$r2, na.rm = TRUE)
+
 max(ld_low$data$r2, na.rm = TRUE)
+
 ```
 
 Plot it using the same default `Reds` scale:
 
 ```{r}
+
 ld_low <- plot_ld_block(
+
   ld_low,
+
   label_by = "variant_id",
+
   return_object = TRUE
+
 )
 
 ld_low$figure
+
 ```
 
 The two-variant demo region contains exactly one pairwise comparison:
 
 ```{r}
+
 ld_pair <- compute_ld_block(
+
   vcf,
+
   chrom = "chr2",
+
   start = 16995001,
+
   end = 17006000,
+
   method = "r2",
+
   verbose = FALSE
+
 )
 
 ld_pair$data
+
 ```
 
 `plot_ld_block()` draws this case as one centered diamond:
 
 ```{r}
+
 ld_pair <- plot_ld_block(
+
   ld_pair,
+
   label_by = "variant_id",
+
   return_object = TRUE
+
 )
 
 ld_pair$figure
+
 ```
 
 When only the figure is needed for a temporary plotting call, compatibility mode can return it directly:
 
 ```{r}
+
 pair_figure <- plot_ld_block(
+
   ld_pair,
+
   return_object = FALSE
+
 )
 
 pair_figure
+
 ```
 
 ### Step 8. Control samples, variant types, LD methods, and genotype retention
@@ -327,21 +489,33 @@ pair_figure
 LD is population dependent. Use `samples` when LD should be estimated in a defined population subset:
 
 ```{r}
+
 subset_samples <- sprintf("S%02d", 1:24)
 
 ld_subset <- compute_ld_block(
+
   vcf,
+
   chrom = "chr1",
+
   start = 12342620,
+
   end = 12355500,
+
   variant_type = "snp",
+
   samples = subset_samples,
+
   min_pair_samples = 10,
+
   method = "r2",
+
   verbose = FALSE
+
 )
 
 ld_subset$meta$sample_n
+
 ```
 
 #### Select variant types
@@ -349,15 +523,25 @@ ld_subset$meta$sample_n
 `variant_type` controls the records retained before pairwise calculation. It is important in the primary demo because the genomic interval also contains GeneA indels that are not part of the 12-SNP LD truth set:
 
 ```{r}
+
 ld_snp <- compute_ld_block(
+
   vcf,
+
   chrom = "chr1",
+
   start = 12342620,
+
   end = 12355500,
+
   variant_type = "snp",
+
   method = "r2",
+
   verbose = FALSE
+
 )
+
 ```
 
 Available choices are `both`, `snp`, and `ind`. At least two retained variants are required.
@@ -367,19 +551,31 @@ Available choices are `both`, `snp`, and `ind`. At least two retained variants a
 The genotype dosage matrix is omitted by default to reduce object size. Retain it only when detailed genotype QC or downstream matrix analysis is needed:
 
 ```{r}
+
 ld_with_gt <- compute_ld_block(
+
   vcf,
+
   chrom = "chr1",
+
   start = 12342620,
+
   end = 12355500,
+
   variant_type = "snp",
+
   method = "r2",
+
   keep_genotype_matrix = TRUE,
+
   verbose = FALSE
+
 )
 
 dim(ld_with_gt$genotype)
+
 ld_with_gt$genotype[, 1:6, drop = FALSE]
+
 ```
 
 For the demo, the retained genotype matrix is `12 x 36`.
@@ -389,22 +585,37 @@ For the demo, the retained genotype matrix is `12 x 36`.
 `method = "Dprime"` is also available:
 
 ```{r}
+
 ld_dprime <- compute_ld_block(
+
   vcf,
+
   chrom = "chr2",
+
   start = 1999000,
+
   end = 2008500,
+
   method = "Dprime",
+
   verbose = FALSE
+
 )
 
 ld_dprime$data[, .(
+
   variant_i,
+
   variant_j,
+
   r2,
+
   Dprime,
+
   ld
+
 )]
+
 ```
 
 The current `Dprime` implementation is a **dosage-based approximation for unphased VCF genotypes**. It should not be described as an exact haplotype-based D-prime estimate. For ordinary unphased genotype VCF workflows, `r2` is the recommended primary GeneTrackR LD metric.
@@ -416,27 +627,43 @@ LD measures statistical association between variants; it does not by itself iden
 Once an interval has been selected biologically, the same region can be passed to the haplotype workflow. To reproduce the 12-SNP LD definition, retain SNPs only:
 
 ```{r}
+
 hap_ld_region <- hap_region_variant(
+
   vcf,
+
   chrom = "chr1",
+
   start = 12342620,
+
   end = 12355500,
+
   variant_type = "SNP",
+
   genotype_mode = "string"
+
 )
 
 hap_ld_region
+
 ```
 
 This keeps the analysis chain explicit:
 
 ```text
+
 VCF genotypes
+
     -> pairwise LD calculation
+
     -> inspect the LD gradient and regional gene context
+
     -> define the biological interval of interest
+
     -> construct regional haplotypes
+
     -> phenotype/refinement analysis if appropriate
+
 ```
 
 For real GWAS loci, it is usually preferable to define the LD query around a lead SNP or candidate interval first, inspect the pairwise pattern, and only then decide which linked variants or genes should move into the haplotype analysis.

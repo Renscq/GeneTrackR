@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-08-23
-# Version: dev008
+# Version: dev009
 # Function: Validate structural invariants and designed truth of the GeneTrackR demo dataset
 # Input: inst/scripts/demo_model/*.tsv and inst/extdata/gtr_demo_* files
 # Output: Validation messages; stops on any failed invariant
@@ -156,8 +156,20 @@ expect_true(identical(pair$variant_id, c("varPair01", "varPair02")), "GeneT two-
 
 expect_true(all(c("seed_weight", "protein_content", "plant_height", "flowering_time", "flower_color") %in% names(pheno)), "Phenotype table is missing designed traits.")
 
-# The negative-control trait uses the same within-haplotype pattern in all four groups.
+
+varA03_design <- variants[variants$variant_id == "varA03", , drop = FALSE]
+expect_true(nrow(varA03_design) == 1L && identical(varA03_design$pattern, "p13"), "varA03 must follow the p13 genotype-cluster split.")
+
 pheno_design <- merge(samples, pheno, by = "sample_id", sort = FALSE)
+seed_means <- tapply(pheno_design$seed_weight, pheno_design$hap_group, mean)
+protein_means <- tapply(pheno_design$protein_content, pheno_design$hap_group, mean)
+height_means <- tapply(pheno_design$plant_height, pheno_design$hap_group, mean)
+expect_true(isTRUE(all.equal(as.numeric(seed_means), c(20, 22, 30, 28), tolerance = 1e-8)), "seed_weight group means do not match the hierarchical haplotype design.")
+expect_true(isTRUE(all.equal(as.numeric(protein_means), c(38, 38, 44, 44), tolerance = 1e-8)), "protein_content group means do not match the genotype-nearest refinement design.")
+expect_true(isTRUE(all.equal(as.numeric(height_means), c(100, 102, 108, 106), tolerance = 1e-8)), "plant_height group means do not match the hierarchical haplotype design.")
+
+
+# The negative-control trait uses the same within-haplotype pattern in all four groups.
 flower_patterns <- split(pheno_design$flowering_time, pheno_design$hap_group)
 flower_patterns <- lapply(flower_patterns, sort)
 expect_true(all(vapply(flower_patterns[-1L], identical, logical(1L), flower_patterns[[1L]])), "flowering_time negative-control distributions differ across haplotypes.")

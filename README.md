@@ -95,7 +95,7 @@ vcf_file <- system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrack
 pheno_file <- system.file("extdata", "gtr_demo_pheno.tsv", package = "GeneTrackR")
 ```
 
-The deterministic demo genome contains 2 chromosomes, 20 genes, 24 transcripts, 36 samples, 56 designed variants, strand-specific RNA-seq/Ribo-seq tracks, four balanced GeneA haplotype groups, and phenotype traits with known positive and negative-control associations. All protein-coding demo transcripts use CDS lengths divisible by three. The Ribo-seq tracks contain moderately dense heterogeneous integer P-site-like counts with designed frame0/frame1/frame2 total-count proportions of approximately 80%/10%/10%. Frame 0 is broadly occupied and variable, while frame 1 and frame 2 use different subsets of codons with lower irregular counts. Initiation and termination frame-0 counts are approximately two times the internal frame-0 mean.
+The deterministic demo genome contains 2 chromosomes, 20 genes, 24 transcripts, 36 samples, 56 designed variants, strand-specific RNA-seq/Ribo-seq tracks, four balanced GeneA haplotype groups, and phenotype traits with known positive and negative-control associations. The GeneA genotype design is hierarchical: `Hap1/Hap2` are the closest pair and `Hap3/Hap4` are the second closest pair. `protein_content` follows the same two-cluster structure through `varA03`, while `seed_weight` and `plant_height` retain four distinct but hierarchically ordered haplotype means. All protein-coding demo transcripts use CDS lengths divisible by three. The Ribo-seq tracks contain moderately dense heterogeneous integer P-site-like counts with designed frame0/frame1/frame2 total-count proportions of approximately 80%/10%/10%. Frame 0 is broadly occupied and variable, while frame 1 and frame 2 use different subsets of codons with lower irregular counts. Initiation and termination frame-0 counts are approximately two times the internal frame-0 mean.
 
 ## Annotation files: read, subset, merge, and write
 
@@ -1754,6 +1754,8 @@ The demo is designed so that this call contains:
 - four haplotype groups;
 - nine samples in each haplotype group.
 
+The four genotype patterns are intentionally hierarchical: `Hap1/Hap2` are the closest pair, `Hap3/Hap4` are the second closest pair, and cross-pair comparisons differ at many more GeneA variants. This structure is used later by the phenotype-refinement demo.
+
 Check these values directly from the returned object rather than assuming a fixed number for real datasets:
 
 ```{r}
@@ -2105,9 +2107,9 @@ The bundled phenotype data contain four numeric traits and one categorical trait
 
 | Trait | Type | Demo role |
 | --- | --- | --- |
-| `seed_weight` | numeric | strong GeneA haplotype effect |
-| `plant_height` | numeric | moderate GeneA haplotype effect |
-| `protein_content` | numeric | strong `varA03` effect |
+| `seed_weight` | numeric | strong four-level GeneA haplotype effect with nearest genotype pairs remaining phenotypically closer |
+| `plant_height` | numeric | moderate four-level GeneA haplotype effect with the same hierarchical ordering |
+| `protein_content` | numeric | strong `varA03` effect aligned with the `Hap1/Hap2` versus `Hap3/Hap4` genotype split |
 | `flowering_time` | numeric | negative control for GeneA haplotypes |
 | `flower_color` | categorical | categorical phenotype example |
 
@@ -2289,8 +2291,8 @@ Haplotype groups are ordered by retained sample number. The x-axis label include
 
 The demo provides three useful haplotype-level behaviors in one dataset:
 
-- `seed_weight`: strong designed haplotype differences;
-- `plant_height`: moderate designed haplotype differences;
+- `seed_weight`: strong four-level differences, while the genotype-nearest pairs remain phenotypically closer than cross-cluster pairs;
+- `plant_height`: the same hierarchical pattern with a more moderate effect scale;
 - `flowering_time`: negative control without a designed GeneA haplotype effect.
 
 Plot them together while preserving the requested trait order:
@@ -2398,7 +2400,7 @@ Use fixed haplotype colors only after confirming the actual `hap_id` values in `
 
 ### Step 7. Test a single variant against phenotype
 
-`plot_variant_pheno()` is the single-variant counterpart of `plot_hap_pheno()`. The demo variant `varA03` is designed so that ALT carriers have higher `protein_content` values.
+`plot_variant_pheno()` is the single-variant counterpart of `plot_hap_pheno()`. The demo variant `varA03` follows the same genotype-cluster split used by refinement: `Hap1/Hap2` carry the REF class, `Hap3/Hap4` carry the ALT class, and ALT carriers have higher `protein_content` values.
 
 Select the variant by ID and use the compact binary REF/ALT representation:
 
@@ -2501,7 +2503,9 @@ GeneTrackR separates linkage disequilibrium analysis into two stages. `compute_l
 The bundled demo now contains three deterministic LD scenarios:
 
 - `varLD01`-`varLD12`: twelve SNPs forming the primary **LD-gradient** example. `varLD01`-`varLD06` are a perfect high-LD core, while `varLD07`-`varLD12` progressively decorrelate from that core so the heatmap contains high, intermediate, and low `r2` values;
+
 - `varLow01`-`varLow04`: four variants designed to have little linkage, with most pairwise `r2 = 0` and a maximum of approximately `0.111`;
+
 - `varPair01`-`varPair02`: exactly two variants, retained to test the single-diamond LD plot.
 
 The added gradient variants are outside the `GeneA` gene body, so the canonical GeneA haplotype example still contains 11 variants and four balanced haplotypes.
@@ -2509,13 +2513,21 @@ The added gradient variants are outside the `GeneA` gene body, so the canonical 
 This module follows nine steps:
 
 1. prepare genotype-rich VCF data and gene annotation;
+
 2. compute the primary twelve-variant LD-gradient example;
+
 3. inspect the `LDTrack` object and pairwise statistics;
+
 4. inspect the LD matrix and quantify high/intermediate/low LD pairs;
+
 5. draw the triangular LD heatmap using the default `Reds` palette;
+
 6. add gene structure, natural-variant markers, and connector lines;
+
 7. compare the LD-gradient, low-LD, and two-variant regions;
+
 8. control samples, variant types, LD methods, and retained genotype matrices;
+
 9. interpret LD results and pass a selected region to haplotype analysis.
 
 ### Step 1. Prepare VCF genotypes and annotation
@@ -2523,32 +2535,53 @@ This module follows nine steps:
 Locate and read the same demo VCF and GenePred annotation used in the variant and haplotype workflows:
 
 ```{r}
+
 vcf_file <- system.file(
+
   "extdata",
+
   "gtr_demo_variants.vcf",
+
   package = "GeneTrackR"
+
 )
 
 gp_file <- system.file(
+
   "extdata",
+
   "gtr_demo.genePredExt",
+
   package = "GeneTrackR"
+
 )
 
 vcf <- read_vcf(
+
   vcf_file,
+
   mode = "memory",
+
   keep_genotype = TRUE,
+
   verbose = FALSE,
+
   progress = FALSE
+
 )
 
 gp <- read_genepred(
+
   gp_file,
+
   format = "genePredExt",
+
   verbose = FALSE,
+
   progress = FALSE
+
 )
+
 ```
 
 LD calculation requires VCF genotype columns. If the VCF was previously read with `keep_genotype = FALSE`, read it again with `keep_genotype = TRUE` before calling `compute_ld_block()`.
@@ -2560,32 +2593,49 @@ For large bgzip-compressed and indexed VCF files, a lazy `VariantTrack` can be u
 The main demo interval starts inside `GeneA` and extends into the short downstream interval before `GeneB`. It contains 12 designed LD SNPs plus two GeneA indels. Use `variant_type = "snp"` so the LD example contains exactly `varLD01`-`varLD12`:
 
 ```{r}
+
 ld_gradient <- compute_ld_block(
+
   vcf,
+
   chrom = "chr1",
+
   start = 12342620,
+
   end = 12355500,
+
   variant_type = "snp",
+
   method = "r2",
+
   min_pair_samples = 3,
+
   verbose = FALSE
+
 )
 
 ld_gradient
+
 ```
 
 The expected result is:
 
 - 12 retained SNPs;
+
 - 66 unique variant pairs (`12 * 11 / 2`);
+
 - 36 available samples per pair;
+
 - a perfect six-variant core (`varLD01`-`varLD06`, `r2 = 1` within the core);
+
 - a progressive decline in LD toward `varLD12`, including weak pairs with `r2 < 0.2` and pairs reaching `r2 = 0`.
 
 Check the retained variants before interpreting the heatmap:
 
 ```{r}
+
 ld_gradient$variants
+
 ```
 
 The first six variants remain inside GeneA and use the same genotype pattern required by the GeneA haplotype demo. The six added variants lie downstream of the GeneA gene body, so they increase LD-plot density without changing the 11-variant GeneA haplotype definition.
@@ -2595,50 +2645,79 @@ The first six variants remain inside GeneA and use the same genotype pattern req
 `LDTrack` keeps the complete state of an LD calculation:
 
 ```{r}
+
 names(ld_gradient)
+
 ```
 
 The main components are:
 
 | Component | Content | Typical use |
+
 | --- | --- | --- |
+
 | `data` | one row per unique variant pair | inspect `r2`, `Dprime`, distance, sample number, and allele frequencies |
+
 | `matrix` | symmetric matrix of the selected LD metric | matrix-based inspection or export |
+
 | `variants` | ordered metadata for retained variants | confirm positions and IDs |
+
 | `region` | chromosome and queried boundaries | record the analyzed interval |
+
 | `genotype` | optional variant-by-sample dosage matrix | detailed QC when explicitly retained |
+
 | `figure` | figure created by `plot_ld_block()` | plotting/export |
+
 | `meta` | method, sample count, ploidy, and calculation notes | reproduce the analysis settings |
 
 Inspect the pairwise table directly:
 
 ```{r}
+
 ld_gradient$data[, .(
+
   variant_i,
+
   variant_j,
+
   distance_bp,
+
   n_samples,
+
   r,
+
   r2,
+
   Dprime,
+
   ld
+
 )]
+
 ```
 
 Important columns are:
 
 - `distance_bp`: physical distance between the two variants;
+
 - `n_samples`: paired non-missing sample number used for that comparison;
+
 - `r`: dosage correlation;
+
 - `r2`: squared dosage correlation;
+
 - `Dprime`: dosage-based D-prime approximation;
+
 - `ld`: the metric selected by `method`; for `method = "r2"`, `ld` is identical to `r2`.
 
 The region and settings used for calculation are preserved in the object:
 
 ```{r}
+
 ld_gradient$region
+
 ld_gradient$meta
+
 ```
 
 ### Step 4. Inspect the LD matrix and quantify the LD gradient
@@ -2646,7 +2725,9 @@ ld_gradient$meta
 The symmetric LD matrix uses variant IDs as row and column names and contains 1 on the diagonal:
 
 ```{r}
+
 round(ld_gradient$matrix, 3)
+
 ```
 
 Unlike the previous all-identical six-variant example, the new matrix is intentionally heterogeneous. The upper-left core is strongly linked, whereas LD decreases as progressively decorrelated downstream variants are compared with the core.
@@ -2654,20 +2735,29 @@ Unlike the previous all-identical six-variant example, the new matrix is intenti
 Summarize the distribution directly:
 
 ```{r}
+
 range(ld_gradient$data$r2, na.rm = TRUE)
+
 summary(ld_gradient$data$r2)
+
 ```
 
 Define descriptive groups explicitly when useful:
 
 ```{r}
+
 ld_pair_summary <- ld_gradient$data[, .(
+
   high_ld = sum(r2 >= 0.8, na.rm = TRUE),
+
   intermediate_ld = sum(r2 >= 0.2 & r2 < 0.8, na.rm = TRUE),
+
   low_ld = sum(r2 < 0.2, na.rm = TRUE)
+
 )]
 
 ld_pair_summary
+
 ```
 
 For the deterministic demo, 15 pairs have `r2 >= 0.8` and 16 pairs have `r2 < 0.2`. The remaining pairs form the intermediate gradient.
@@ -2679,15 +2769,23 @@ GeneTrackR calculates pairwise LD but does **not** automatically call biological
 `plot_ld_block()` now defaults to the sequential `Reds` palette, which is well suited to an `r2` scale from 0 to 1:
 
 ```{r}
+
 ld_gradient <- plot_ld_block(
+
   ld_gradient,
+
   label_by = "variant_id",
+
   show_variant_labels = TRUE,
+
   show_region = FALSE,
+
   return_object = TRUE
+
 )
 
 ld_gradient$figure
+
 ```
 
 The default color interpretation is straightforward: pale cells indicate low LD and progressively darker red cells indicate stronger LD.
@@ -2695,14 +2793,21 @@ The default color interpretation is straightforward: pale cells indicate low LD 
 The palette can still be changed explicitly when needed:
 
 ```{r}
+
 ld_gradient_paired <- plot_ld_block(
+
   ld_gradient,
-  color_palette = "Paired",
+
+  color_palette = "Reds",
+
   show_variant_labels = FALSE,
+
   return_object = TRUE
+
 )
 
 ld_gradient_paired$figure
+
 ```
 
 `plot_ld_block()` returns the updated `LDTrack` by default. The calculation results remain unchanged and the generated ggplot/patchwork figure is stored in `$figure`.
@@ -2712,27 +2817,43 @@ ld_gradient_paired$figure
 For locus interpretation, add the compact genomic region track above the triangular heatmap:
 
 ```{r}
+
 ld_gradient_region <- plot_ld_block(
+
   ld_gradient,
+
   show_region = TRUE,
+
   annotation = gp,
+
   connect_region = TRUE,
+
   show_variant_marker = TRUE,
+
   variant_marker_size = 3,
+
   label_by = "variant_id",
+
   show_variant_labels = TRUE,
+
   region_height = 1.25,
+
   connector_height = 0.35,
+
   return_object = TRUE
+
 )
 
 ld_gradient_region$figure
+
 ```
 
 The combined plot contains three aligned components when `connect_region = TRUE`:
 
 1. compact gene/variant region track;
+
 2. connector lines from genomic variant positions to LD columns;
+
 3. triangular LD heatmap.
 
 With 12 variants, the region panel is now dense enough to show the relationship between physical position and the LD gradient. Variant triangle markers can be hidden with `show_variant_marker = FALSE`, or resized with `variant_marker_size`.
@@ -2742,78 +2863,121 @@ With 12 variants, the region panel is now dense enough to show the relationship 
 The dedicated low-LD interval remains useful as an extreme comparison:
 
 ```{r}
+
 ld_low <- compute_ld_block(
+
   vcf,
+
   chrom = "chr2",
+
   start = 1999000,
+
   end = 2008500,
+
   method = "r2",
+
   verbose = FALSE
+
 )
 
 ld_low$data[, .(
+
   variant_i,
+
   variant_j,
+
   distance_bp,
+
   r2
+
 )]
+
 ```
 
 The six pairwise values are designed so that most are zero and the maximum is approximately `1 / 9`:
 
 ```{r}
+
 range(ld_low$data$r2, na.rm = TRUE)
+
 max(ld_low$data$r2, na.rm = TRUE)
+
 ```
 
 Plot it using the same default `Reds` scale:
 
 ```{r}
+
 ld_low <- plot_ld_block(
+
   ld_low,
+
   label_by = "variant_id",
+
   return_object = TRUE
+
 )
 
 ld_low$figure
+
 ```
 
 The two-variant demo region contains exactly one pairwise comparison:
 
 ```{r}
+
 ld_pair <- compute_ld_block(
+
   vcf,
+
   chrom = "chr2",
+
   start = 16995001,
+
   end = 17006000,
+
   method = "r2",
+
   verbose = FALSE
+
 )
 
 ld_pair$data
+
 ```
 
 `plot_ld_block()` draws this case as one centered diamond:
 
 ```{r}
+
 ld_pair <- plot_ld_block(
+
   ld_pair,
+
   label_by = "variant_id",
+
   return_object = TRUE
+
 )
 
 ld_pair$figure
+
 ```
 
 When only the figure is needed for a temporary plotting call, compatibility mode can return it directly:
 
 ```{r}
+
 pair_figure <- plot_ld_block(
+
   ld_pair,
+
   return_object = FALSE
+
 )
 
 pair_figure
+
 ```
 
 ### Step 8. Control samples, variant types, LD methods, and genotype retention
@@ -2823,21 +2987,33 @@ pair_figure
 LD is population dependent. Use `samples` when LD should be estimated in a defined population subset:
 
 ```{r}
+
 subset_samples <- sprintf("S%02d", 1:24)
 
 ld_subset <- compute_ld_block(
+
   vcf,
+
   chrom = "chr1",
+
   start = 12342620,
+
   end = 12355500,
+
   variant_type = "snp",
+
   samples = subset_samples,
+
   min_pair_samples = 10,
+
   method = "r2",
+
   verbose = FALSE
+
 )
 
 ld_subset$meta$sample_n
+
 ```
 
 #### Select variant types
@@ -2845,15 +3021,25 @@ ld_subset$meta$sample_n
 `variant_type` controls the records retained before pairwise calculation. It is important in the primary demo because the genomic interval also contains GeneA indels that are not part of the 12-SNP LD truth set:
 
 ```{r}
+
 ld_snp <- compute_ld_block(
+
   vcf,
+
   chrom = "chr1",
+
   start = 12342620,
+
   end = 12355500,
+
   variant_type = "snp",
+
   method = "r2",
+
   verbose = FALSE
+
 )
+
 ```
 
 Available choices are `both`, `snp`, and `ind`. At least two retained variants are required.
@@ -2863,19 +3049,31 @@ Available choices are `both`, `snp`, and `ind`. At least two retained variants a
 The genotype dosage matrix is omitted by default to reduce object size. Retain it only when detailed genotype QC or downstream matrix analysis is needed:
 
 ```{r}
+
 ld_with_gt <- compute_ld_block(
+
   vcf,
+
   chrom = "chr1",
+
   start = 12342620,
+
   end = 12355500,
+
   variant_type = "snp",
+
   method = "r2",
+
   keep_genotype_matrix = TRUE,
+
   verbose = FALSE
+
 )
 
 dim(ld_with_gt$genotype)
+
 ld_with_gt$genotype[, 1:6, drop = FALSE]
+
 ```
 
 For the demo, the retained genotype matrix is `12 x 36`.
@@ -2885,22 +3083,37 @@ For the demo, the retained genotype matrix is `12 x 36`.
 `method = "Dprime"` is also available:
 
 ```{r}
+
 ld_dprime <- compute_ld_block(
+
   vcf,
+
   chrom = "chr2",
+
   start = 1999000,
+
   end = 2008500,
+
   method = "Dprime",
+
   verbose = FALSE
+
 )
 
 ld_dprime$data[, .(
+
   variant_i,
+
   variant_j,
+
   r2,
+
   Dprime,
+
   ld
+
 )]
+
 ```
 
 The current `Dprime` implementation is a **dosage-based approximation for unphased VCF genotypes**. It should not be described as an exact haplotype-based D-prime estimate. For ordinary unphased genotype VCF workflows, `r2` is the recommended primary GeneTrackR LD metric.
@@ -2912,27 +3125,43 @@ LD measures statistical association between variants; it does not by itself iden
 Once an interval has been selected biologically, the same region can be passed to the haplotype workflow. To reproduce the 12-SNP LD definition, retain SNPs only:
 
 ```{r}
+
 hap_ld_region <- hap_region_variant(
+
   vcf,
+
   chrom = "chr1",
+
   start = 12342620,
+
   end = 12355500,
+
   variant_type = "SNP",
+
   genotype_mode = "string"
+
 )
 
 hap_ld_region
+
 ```
 
 This keeps the analysis chain explicit:
 
 ```text
+
 VCF genotypes
+
     -> pairwise LD calculation
+
     -> inspect the LD gradient and regional gene context
+
     -> define the biological interval of interest
+
     -> construct regional haplotypes
+
     -> phenotype/refinement analysis if appropriate
+
 ```
 
 For real GWAS loci, it is usually preferable to define the LD query around a lead SNP or candidate interval first, inspect the pairwise pattern, and only then decide which linked variants or genes should move into the haplotype analysis.
@@ -2943,14 +3172,14 @@ For real GWAS loci, it is usually preferable to define the LD query around a lea
 
 This module uses the same `GeneA` haplotypes created in the haplotype workflow and the same phenotype table used in the phenotype workflow. The demo is deliberately structured so that the refinement behavior can be checked against known expectations:
 
-- `protein_content`: the four GeneA haplotypes form **two phenotype groups** and provide the main 4 -> 2 refinement example;
-- `seed_weight`: all four GeneA haplotypes are strongly separated and therefore should remain distinct;
+- `protein_content`: the genotype-nearest pair `Hap1/Hap2` shares the low phenotype class and the genotype-nearest pair `Hap3/Hap4` shares the high phenotype class, providing the main 4 -> 2 refinement example;
+- `seed_weight`: all four haplotypes retain distinct means, but genotype-nearest haplotypes remain phenotypically closer than cross-cluster haplotypes;
 - `flowering_time`: no GeneA haplotype effect was designed, so the four haplotypes can collapse into one phenotype group under the default significance criterion.
 
 The workflow follows nine steps:
 
 1. prepare the original haplotypes and phenotype data;
-2. inspect the phenotype pattern before refinement;
+2. inspect genotype similarity and phenotype correspondence before refinement;
 3. refine GeneA haplotypes using `protein_content`;
 4. inspect the `HapRefined` result object;
 5. inspect pairwise tests and the original-to-refined mapping;
@@ -3027,9 +3256,48 @@ For the bundled demo, the expected starting point is:
 
 Refinement is therefore performed on a fixed biological definition of the original haplotypes. Do not silently change the gene region, variant filter, missing-data rule, or sample set immediately before refinement, because those changes would redefine the groups being compared.
 
-### Step 2. Inspect the phenotype pattern before refinement
+### Step 2. Inspect genotype similarity and phenotype correspondence before refinement
 
-Before grouping haplotypes, first confirm what phenotype structure is present in the original groups. The main refinement example uses `protein_content`:
+Refinement is easiest to interpret when the phenotype grouping is compatible with the underlying genotype geometry. First calculate the number of allele-state differences between the four original GeneA haplotypes:
+
+```{r}
+hap_variant_ids <- as.character(hap_gene$variants$variant_id)
+
+hap_alleles <- as.matrix(
+  hap_gene$haplotypes[, ..hap_variant_ids]
+)
+
+hap_ids <- as.character(hap_gene$haplotypes$hap_id)
+
+hap_distance <- outer(
+  seq_along(hap_ids),
+  seq_along(hap_ids),
+  Vectorize(function(i, j) {
+    sum(hap_alleles[i, ] != hap_alleles[j, ])
+  })
+)
+
+dimnames(hap_distance) <- list(hap_ids, hap_ids)
+hap_distance
+```
+
+The deterministic GeneA design is hierarchical:
+
+```text
+          Hap1  Hap2  Hap3  Hap4
+Hap1         0     1     9    11
+Hap2         1     0    10    10
+Hap3         9    10     0     2
+Hap4        11    10     2     0
+```
+
+Therefore:
+
+- `Hap1` and `Hap2` are the closest genotype pair and differ at only one of the 11 GeneA variants;
+- `Hap3` and `Hap4` are the second closest pair and differ at only two variants;
+- comparisons between these two clusters differ at 9-11 variants.
+
+The phenotype design follows the same structure. Inspect `protein_content` before refinement:
 
 ```{r}
 protein_before <- plot_hap_pheno(
@@ -3049,12 +3317,24 @@ protein_before$summary
 protein_before$pvalue
 ```
 
-The demo was designed so that the four GeneA haplotypes occur in two `protein_content` classes:
+The expected phenotype means are:
 
-- one pair has a mean near 44;
-- the other pair has a mean near 38.
+```text
+Hap1 ≈ 38
+Hap2 ≈ 38
+Hap3 ≈ 44
+Hap4 ≈ 44
+```
 
-Within each pair, the phenotype distributions are intentionally very similar. Between the two pairs, the difference is large. This structure is appropriate for demonstrating refinement because the phenotype contains less group complexity than the original 11-variant haplotype definition.
+This correspondence is intentional:
+
+```text
+genotype-nearest pair        phenotype class
+Hap1 + Hap2                  low protein_content
+Hap3 + Hap4                  high protein_content
+```
+
+`varA03` follows the same cluster split: `Hap1/Hap2` carry the REF class and `Hap3/Hap4` carry the ALT class. The main refinement example therefore groups haplotypes that are similar in both multi-variant genotype structure and phenotype, rather than joining genetically distant haplotypes only because their phenotype means happen to match.
 
 ### Step 3. Refine haplotypes using `protein_content`
 
@@ -3076,7 +3356,14 @@ refined_protein
 refined_protein$refined_haplotypes
 ```
 
-The expected demo result is **4 original haplotypes -> 2 refined haplotypes**, with 18 samples in each refined group.
+The expected demo result is **4 original haplotypes -> 2 refined haplotypes**, with 18 samples in each refined group:
+
+```text
+Hap1 + Hap2  -> one refined group
+Hap3 + Hap4  -> one refined group
+```
+
+This is the key truth condition for the example: refinement follows the two nearest genotype clusters rather than crossing between them.
 
 The two refinement criteria have different roles:
 
@@ -3140,14 +3427,14 @@ refined_protein$pairwise_test[, c(
 )]
 ```
 
-For the `protein_content` demo, two original-haplotype pairs are expected to have:
+For the `protein_content` demo, the two mergeable comparisons are expected to be `Hap1` versus `Hap2` and `Hap3` versus `Hap4`. Both pairs have:
 
 - nearly identical means;
 - adjusted P values greater than 0.05;
 - `abs_mean_diff <= 0.5`;
 - `can_merge = TRUE`.
 
-The remaining cross-class comparisons have a large phenotype difference and should not be merged.
+All comparisons between the `Hap1/Hap2` and `Hap3/Hap4` genotype clusters have a large phenotype difference and should not be merged.
 
 The trait-specific grouping can be inspected separately:
 
@@ -3253,7 +3540,7 @@ Refinement is **trait dependent**. The same original haplotypes can produce very
 
 #### A strongly haplotype-associated trait may preserve all groups
 
-`seed_weight` was designed to distinguish all four GeneA haplotypes. Refinement therefore should not collapse them under the standard cutoff:
+`seed_weight` was designed with four distinct means while preserving the same genotype hierarchy: `Hap1/Hap2` remain closer to one another than to `Hap3/Hap4`, and the same is true within the second pair. The within-pair mean differences are nevertheless larger than `effect_threshold = 0.5`, so refinement should retain all four groups:
 
 ```{r}
 refined_seed_weight <- refine_haplotype(
@@ -3337,7 +3624,7 @@ refined_protein$haplotype_map
 refined_protein$refined_haplotypes
 ```
 
-For the `protein_content` demo, the two refined groups are expected to retain the allele class at the designed `varA03` effect locus while several other variants become heterogeneous (`mixed`) within the refined groups. This is exactly the pattern refinement is intended to expose: several distinct multi-variant haplotypes can represent the same phenotype class, while a smaller subset of variants remains consistent with the phenotype separation.
+For the `protein_content` demo, the final grouping is expected to be `Hap1/Hap2` versus `Hap3/Hap4`. The two groups retain different allele classes at `varA03` and at the broader `p13` cluster, including `varA01`, `varLD01`-`varLD06`, and `varA04`. Within the low group, `varA02` is heterogeneous; within the high group, `varA02` and `varA05` are heterogeneous. These positions appear as `mixed` in the collapsed view. This is the intended refinement logic: genetically close haplotypes with the same phenotype class are combined, while the variants that consistently separate the two genotype/phenotype clusters remain visible.
 
 The refined object can be passed directly to the refined plotting wrappers, while the **original** `hap_gene` remains the preferred input for variant-level effect prioritization:
 
@@ -3369,7 +3656,7 @@ This preserves the evidence needed to explain why each original haplotype was or
 
 ## Variant effect prioritization
 
-`protein_content` was designed around `varA03`, providing a deterministic positive-effect example for `plot_variant_effect()`.
+`protein_content` was designed around `varA03`, which separates the `Hap1/Hap2` and `Hap3/Hap4` genotype clusters and provides a deterministic positive-effect example for `plot_variant_effect()`.
 
 ```{r}
 effect_res <- plot_variant_effect(
@@ -3509,8 +3796,9 @@ ld$figure
 refined <- refine_haplotype(
   hap,
   phenotype = pheno,
-  traits = "seed_weight",
-  min_hap_samples = 3
+  traits = "protein_content",
+  min_hap_samples = 3,
+  effect_threshold = 0.5
 )
 refined$refined_haplotypes
 

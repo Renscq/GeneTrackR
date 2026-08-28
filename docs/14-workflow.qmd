@@ -92,8 +92,9 @@ ld$figure
 refined <- refine_haplotype(
   hap,
   phenotype = pheno,
-  traits = "seed_weight",
-  min_hap_samples = 3
+  traits = "protein_content",
+  min_hap_samples = 3,
+  effect_threshold = 0.5
 )
 refined$refined_haplotypes
 

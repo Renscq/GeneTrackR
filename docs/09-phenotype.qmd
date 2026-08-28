@@ -17,9 +17,9 @@ The bundled phenotype data contain four numeric traits and one categorical trait
 
 | Trait | Type | Demo role |
 | --- | --- | --- |
-| `seed_weight` | numeric | strong GeneA haplotype effect |
-| `plant_height` | numeric | moderate GeneA haplotype effect |
-| `protein_content` | numeric | strong `varA03` effect |
+| `seed_weight` | numeric | strong four-level GeneA haplotype effect with nearest genotype pairs remaining phenotypically closer |
+| `plant_height` | numeric | moderate four-level GeneA haplotype effect with the same hierarchical ordering |
+| `protein_content` | numeric | strong `varA03` effect aligned with the `Hap1/Hap2` versus `Hap3/Hap4` genotype split |
 | `flowering_time` | numeric | negative control for GeneA haplotypes |
 | `flower_color` | categorical | categorical phenotype example |
 
@@ -201,8 +201,8 @@ Haplotype groups are ordered by retained sample number. The x-axis label include
 
 The demo provides three useful haplotype-level behaviors in one dataset:
 
-- `seed_weight`: strong designed haplotype differences;
-- `plant_height`: moderate designed haplotype differences;
+- `seed_weight`: strong four-level differences, while the genotype-nearest pairs remain phenotypically closer than cross-cluster pairs;
+- `plant_height`: the same hierarchical pattern with a more moderate effect scale;
 - `flowering_time`: negative control without a designed GeneA haplotype effect.
 
 Plot them together while preserving the requested trait order:
@@ -310,7 +310,7 @@ Use fixed haplotype colors only after confirming the actual `hap_id` values in `
 
 ### Step 7. Test a single variant against phenotype
 
-`plot_variant_pheno()` is the single-variant counterpart of `plot_hap_pheno()`. The demo variant `varA03` is designed so that ALT carriers have higher `protein_content` values.
+`plot_variant_pheno()` is the single-variant counterpart of `plot_hap_pheno()`. The demo variant `varA03` follows the same genotype-cluster split used by refinement: `Hap1/Hap2` carry the REF class, `Hap3/Hap4` carry the ALT class, and ALT carriers have higher `protein_content` values.
 
 Select the variant by ID and use the compact binary REF/ALT representation:
 
