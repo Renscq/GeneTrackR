@@ -31,7 +31,12 @@ export_dirs <- file.path(
   c("tracks", "figures", "tables", "objects")
 )
 
-invisible(lapply(export_dirs, dir.create, recursive = TRUE, showWarnings = FALSE))
+invisible(lapply(
+  export_dirs,
+  dir.create,
+  recursive = TRUE,
+  showWarnings = FALSE
+))
 
 track_dir <- export_dirs[1]
 figure_dir <- export_dirs[2]
@@ -227,7 +232,14 @@ Use the actual figure object rather than passing an entire GeneTrackR result cla
 Define a small local helper when both PDF and PNG are required:
 
 ```{r}
-save_gtr_figure <- function(plot, stem, outdir, width = 8, height = 6, dpi = 300) {
+save_gtr_figure <- function(
+  plot,
+  stem,
+  outdir,
+  width = 8,
+  height = 6,
+  dpi = 300
+) {
   ggplot2::ggsave(
     filename = file.path(outdir, paste0(stem, ".pdf")),
     plot = plot,

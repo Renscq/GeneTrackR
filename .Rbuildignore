@@ -3,3 +3,6 @@
 ^dev$
 ^README\.qmd$
 ^docs$
+^_pkgdown\.yml$
+^pkgdown-site$
+^\.github$

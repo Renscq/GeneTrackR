@@ -1,3 +1,11 @@
+# GeneTrackR 0.6.0
+
+- Initialized the GeneTrackR package website with `pkgdown`, replacing the abandoned MkDocs migration plan with an R-native documentation architecture.
+- Added `_pkgdown.yml` with the canonical GitHub Pages URL, Bootstrap 5, the existing workflow vignettes, and a temporary `pkgdown-site/` output directory.
+- Added a GitHub Actions workflow to build the package website on pushes, pull requests, releases, and manual dispatches, and to deploy non-PR builds to the `gh-pages` branch.
+- Added package website and issue-tracker metadata to `DESCRIPTION`, together with the website-only `pkgdown` dependency declaration.
+- Preserved the existing `docs/*.qmd` documentation sources during staged migration; they remain the source material used by `README.qmd` and are not overwritten by pkgdown in this release.
+
 # GeneTrackR 0.5.37
 
 - Fixed haplotype allele fill color helpers so the stable `A`, `T`, `C`, `G`, and `indel` mapping retains its names after alpha adjustment.

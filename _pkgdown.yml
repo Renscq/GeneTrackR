@@ -1,0 +1,12 @@
+url: https://renscq.github.io/GeneTrackR/
+destination: pkgdown-site
+
+template:
+  bootstrap: 5
+
+articles:
+  - title: Workflows
+    navbar: Workflows
+    contents:
+      - core-workflows
+      - signal-tracks

@@ -1,7 +1,7 @@
 Package: GeneTrackR
 Type: Package
 Title: GenePred Gene Model and Genomic Signal Track Visualization
-Version: 0.5.37
+Version: 0.6.0
 Authors@R: person("Rensc", role = c("aut", "cre"), email = "rensc0718@163.com")
 Description: Provides lightweight tools to read, validate, summarize, slice, merge,
     write, and visualize GenePred annotations and genomic signal tracks from
@@ -9,6 +9,8 @@ Description: Provides lightweight tools to read, validate, summarize, slice, mer
     transcript plots, regional plots, signal coverage plots, and combined
     genome-browser-like track visualization.
 License: GPL + file LICENSE
+URL: https://renscq.github.io/GeneTrackR/, https://github.com/Renscq/GeneTrackR
+BugReports: https://github.com/Renscq/GeneTrackR/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 Depends: R (>= 4.2.0)
@@ -19,6 +21,7 @@ Suggests: testthat (>= 3.0.0), roxygen2, knitr, rmarkdown, Rsamtools
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.0.0
+Config/Needs/website: pkgdown
 NeedsCompilation: yes
 Packaged: 2026-07-01 07:52:38 UTC; rensc
 Author: Rensc [aut, cre]
