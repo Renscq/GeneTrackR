@@ -1,3 +1,11 @@
+# GeneTrackR 0.5.30
+
+- Rebuilt `docs/11-haplotype-refinement.qmd` as a phenotype-guided refinement workflow.
+- Changed the primary demo refinement trait to `protein_content`, which deterministically refines four GeneA haplotypes into two phenotype groups.
+- Added explicit inspection of pairwise tests, merge decisions, trait-specific groups, original-to-refined mappings, grouped/collapsed refined variant plots, and refined phenotype plots.
+- Added guidance on `effect_threshold`, trait dependence, negative-control refinement, and multi-trait refinement.
+- Added documentation regression coverage for the designed 4 -> 2, 4 -> 4, and 4 -> 1 refinement outcomes.
+
 # GeneTrackR 0.5.29
 
 - Reorganized `docs/09-phenotype.qmd` into a self-contained phenotype-association workflow covering phenotype QC, sample matching, haplotype association, multiple testing, single-variant association, result objects, and downstream reuse.

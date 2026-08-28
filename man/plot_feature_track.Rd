@@ -32,9 +32,7 @@ plot_feature_track(
 
 \item{mode}{\code{overlap}, \code{within}, or \code{trim}.}
 
-\item{color_by}{Column used for fill colors. Use \code{auto} to choose a compact,
-informative grouping automatically. Common manual choices are \code{feature_group},
-\code{type}, \code{source}, \code{name}, and \code{strand}.}
+\item{color_by}{Column used for fill colors. Use \code{auto} to choose a compact, informative grouping automatically. Common manual choices are \code{feature_group}, \code{type}, \code{source}, \code{name}, and \code{strand}.}
 
 \item{label_by}{Column used for labels. Use \code{none} to hide labels.}
 
@@ -44,8 +42,7 @@ informative grouping automatically. Common manual choices are \code{feature_grou
 
 \item{feature_border_color}{Rectangle border color. Use NA to hide borders.}
 
-\item{max_legend_levels}{Maximum number of displayed legend groups when the
-selected color attribute contains many categories.}
+\item{max_legend_levels}{Maximum number of displayed legend groups when the selected color attribute contains many categories.}
 
 \item{text_size}{Text size.}
 

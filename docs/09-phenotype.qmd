@@ -386,8 +386,9 @@ Keep the same `hap_gene` and `pheno` objects for phenotype-guided refinement and
 # refined <- refine_haplotype(
 #   hap_gene,
 #   phenotype = pheno,
-#   traits = "seed_weight",
-#   min_hap_samples = 3
+#   traits = "protein_content",
+#   min_hap_samples = 3,
+#   effect_threshold = 0.5
 # )
 
 # Variant-effect prioritization (12-variant-effect.qmd)

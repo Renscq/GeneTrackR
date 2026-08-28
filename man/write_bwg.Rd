@@ -29,6 +29,7 @@ a data.frame/data.table with two columns: chromosome and size.}
 \item{overwrite}{Whether to overwrite existing files.}
 
 \item{compress}{Whether to gzip-compress bedGraph or wig output.}
+
 }
 \value{
 Invisibly returns a data.table containing sample IDs and output files.

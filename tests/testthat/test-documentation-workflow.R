@@ -403,3 +403,108 @@ test_that("phenotype documentation workflow preserves sample matching and result
     "varA03"
   )
 })
+
+test_that("haplotype refinement documentation workflow has deterministic demo outcomes", {
+  gp <- read_genepred(
+    gtr_extdata("gtr_demo.genePredExt"),
+    format = "genePredExt",
+    verbose = FALSE,
+    progress = FALSE
+  )
+  vcf <- read_vcf(
+    gtr_extdata("gtr_demo_variants.vcf"),
+    mode = "memory",
+    keep_genotype = TRUE,
+    verbose = FALSE,
+    progress = FALSE
+  )
+  pheno <- read_pheno(
+    gtr_extdata("gtr_demo_pheno.tsv"),
+    verbose = FALSE,
+    progress = FALSE
+  )
+  hap_gene <- hap_gene_variant(
+    vcf,
+    annotation = gp,
+    gene_id = "GeneA",
+    genotype_mode = "string"
+  )
+
+  refined_protein <- refine_haplotype(
+    hap_gene,
+    phenotype = pheno,
+    traits = "protein_content",
+    min_hap_samples = 3,
+    test_method = "t.test",
+    p_adjust = "BH",
+    alpha = 0.05,
+    effect_threshold = 0.5
+  )
+  expect_s3_class(refined_protein, "HapRefined")
+  expect_equal(nrow(refined_protein$refined_haplotypes), 2L)
+  expect_equal(sort(refined_protein$refined_haplotypes$sample_n), c(18L, 18L))
+  expect_equal(sum(refined_protein$pairwise_test$can_merge, na.rm = TRUE), 2L)
+
+  grouped_members <- refined_protein$haplotype_map[, .(
+    original_haps = paste(sort(hap_id), collapse = ";")
+  ), by = refined_hap_id]
+  expect_setequal(
+    grouped_members$original_haps,
+    c("Hap1;Hap3", "Hap2;Hap4")
+  )
+  expect_setequal(
+    as.character(refined_protein$refined_haplotypes$varA03),
+    c("C", "G")
+  )
+
+  grouped_plot <- plot_refined_hap_variant(
+    refined_protein,
+    annotation = gp,
+    min_hap_samples = 3,
+    collapse_refined = FALSE
+  )
+  collapsed_plot <- plot_refined_hap_variant(
+    refined_protein,
+    annotation = gp,
+    min_hap_samples = 3,
+    collapse_refined = TRUE
+  )
+  expect_true(inherits(grouped_plot, "patchwork") || inherits(grouped_plot, "ggplot"))
+  expect_true(inherits(collapsed_plot, "patchwork") || inherits(collapsed_plot, "ggplot"))
+
+  refined_pheno <- plot_refined_hap_pheno(
+    refined_protein,
+    phenotype = pheno,
+    traits = "protein_content",
+    min_hap_samples = 3,
+    p_value_type = "adjusted"
+  )
+  expect_s3_class(refined_pheno, "GeneTrackRPhenoPlot")
+
+  refined_seed_weight <- refine_haplotype(
+    hap_gene,
+    phenotype = pheno,
+    traits = "seed_weight",
+    min_hap_samples = 3,
+    effect_threshold = 0.5
+  )
+  expect_equal(nrow(refined_seed_weight$refined_haplotypes), 4L)
+
+  refined_flowering <- refine_haplotype(
+    hap_gene,
+    phenotype = pheno,
+    traits = "flowering_time",
+    min_hap_samples = 3,
+    effect_threshold = 0.5
+  )
+  expect_equal(nrow(refined_flowering$refined_haplotypes), 1L)
+
+  refined_multi_trait <- refine_haplotype(
+    hap_gene,
+    phenotype = pheno,
+    traits = c("protein_content", "seed_weight"),
+    min_hap_samples = 3,
+    effect_threshold = 0.5
+  )
+  expect_equal(nrow(refined_multi_trait$refined_haplotypes), 4L)
+})
