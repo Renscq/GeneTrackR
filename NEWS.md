@@ -1,3 +1,12 @@
+# GeneTrackR 0.5.31
+
+- Rebuilt `docs/10-ld.qmd` as a complete LD calculation, inspection, visualization, and downstream handoff workflow.
+- Added deterministic high-LD, low-LD, and two-variant demo examples with explicit expected pairwise behavior.
+- Documented the `LDTrack` object contract, pairwise statistics, LD matrix, genotype retention, sample/variant filtering, and `plot_ld_block()` return semantics.
+- Clarified that GeneTrackR calculates pairwise LD but does not automatically call biological block boundaries from a fixed threshold.
+- Added guidance on dosage-based `Dprime` limitations for unphased VCF data and recommended `r2` as the primary generic metric.
+- Added documentation regression coverage for the designed LD truth sets.
+
 # GeneTrackR 0.5.30
 
 - Rebuilt `docs/11-haplotype-refinement.qmd` as a phenotype-guided refinement workflow.

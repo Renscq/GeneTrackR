@@ -39,3 +39,71 @@ test_that("two-variant LD geometry is a single diamond-shaped heatmap cell", {
   expect_equal(frame$x, c(1.5, 2, 1.5, 1, 1.5))
   expect_equal(frame$y, c(0, 0.5, 1, 0.5, 0))
 })
+
+test_that("demo LD truth sets distinguish high, low, and two-variant regions", {
+  vcf <- read_vcf(
+    gtr_extdata("gtr_demo_variants.vcf"),
+    mode = "memory",
+    keep_genotype = TRUE,
+    verbose = FALSE
+  )
+
+  high <- compute_ld_block(
+    vcf,
+    chrom = "chr1",
+    start = 12342620,
+    end = 12343180,
+    method = "r2",
+    verbose = FALSE
+  )
+  expect_equal(nrow(high$variants), 6L)
+  expect_equal(nrow(high$data), 15L)
+  expect_true(all(abs(high$data$r2 - 1) < 1e-12))
+  expect_equal(high$meta$sample_n, 36L)
+
+  low <- compute_ld_block(
+    vcf,
+    chrom = "chr2",
+    start = 1999000,
+    end = 2008500,
+    method = "r2",
+    verbose = FALSE
+  )
+  expect_equal(nrow(low$variants), 4L)
+  expect_equal(nrow(low$data), 6L)
+  expect_equal(max(low$data$r2, na.rm = TRUE), 1 / 9, tolerance = 1e-12)
+  expect_equal(sum(low$data$r2 < 1e-12, na.rm = TRUE), 5L)
+
+  pair <- compute_ld_block(
+    vcf,
+    chrom = "chr2",
+    start = 16995001,
+    end = 17006000,
+    method = "r2",
+    verbose = FALSE
+  )
+  expect_equal(nrow(pair$variants), 2L)
+  expect_equal(nrow(pair$data), 1L)
+  expect_equal(pair$data$r2, 1, tolerance = 1e-12)
+})
+
+test_that("LD workflow can retain the genotype dosage matrix", {
+  vcf <- read_vcf(
+    gtr_extdata("gtr_demo_variants.vcf"),
+    mode = "memory",
+    keep_genotype = TRUE,
+    verbose = FALSE
+  )
+  ld <- compute_ld_block(
+    vcf,
+    chrom = "chr1",
+    start = 12342620,
+    end = 12343180,
+    keep_genotype_matrix = TRUE,
+    verbose = FALSE
+  )
+
+  expect_true(is.matrix(ld$genotype))
+  expect_equal(dim(ld$genotype), c(6L, 36L))
+  expect_identical(rownames(ld$genotype), as.character(ld$variants$variant_id))
+})
