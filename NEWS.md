@@ -1,3 +1,12 @@
+# GeneTrackR 0.5.34
+
+- Rebuilt `docs/12-variant-effect.qmd` as a complete regional variant-effect prioritization workflow.
+- Added explicit guidance for binary genotype coding, absolute versus signed effects, adjusted P values, and multi-trait interpretation.
+- Documented the deterministic GeneA effect truth: the p13-linked variant set has an effect of approximately +6 on `protein_content`, `varA05` has an intermediate effect, and `varA02` is a zero-effect control.
+- Clarified that tied phenotype effects among linked variants do not identify a unique causal variant and should be interpreted together with LD, annotation, direct variant-phenotype plots, and refinement.
+- Added regression coverage for the redesigned variant-effect documentation workflow.
+- Bumped the package version to 0.5.34.
+
 # GeneTrackR 0.5.33
 
 - Replaced `docs/10-ld.qmd` with the user-updated LD workflow while restoring valid executable QMD syntax.

@@ -528,3 +528,82 @@ test_that("haplotype refinement documentation workflow has deterministic demo ou
   )
   expect_equal(nrow(refined_multi_trait$refined_haplotypes), 4L)
 })
+
+test_that("variant-effect documentation workflow follows deterministic GeneA truth", {
+  gp <- read_genepred(
+    gtr_extdata("gtr_demo.genePredExt"),
+    format = "genePredExt",
+    verbose = FALSE,
+    progress = FALSE
+  )
+  vcf <- read_vcf(
+    gtr_extdata("gtr_demo_variants.vcf"),
+    mode = "memory",
+    keep_genotype = TRUE,
+    verbose = FALSE,
+    progress = FALSE
+  )
+  pheno <- read_pheno(
+    gtr_extdata("gtr_demo_pheno.tsv"),
+    verbose = FALSE,
+    progress = FALSE
+  )
+
+  hap_effect <- hap_gene_variant(
+    vcf,
+    annotation = gp,
+    gene_id = "GeneA",
+    genotype_mode = "code"
+  )
+
+  effect_protein <- plot_variant_effect(
+    hap_effect,
+    phenotype = pheno,
+    traits = "protein_content",
+    min_group_samples = 3,
+    effect_type = "absolute",
+    x_axis = "position"
+  )
+
+  expect_s3_class(effect_protein, "GeneTrackRVariantEffectPlot")
+  expect_true(all(c("figure", "effect", "plot_data") %in% names(effect_protein)))
+
+  effect_dt <- data.table::as.data.table(effect_protein$effect)
+  expect_equal(effect_dt[variant_id == "varA03", effect], 6, tolerance = 1e-8)
+  expect_equal(effect_dt[variant_id == "varA05", effect], 4, tolerance = 1e-8)
+  expect_equal(effect_dt[variant_id == "varA02", effect], 0, tolerance = 1e-8)
+
+  expected_top <- c(
+    "varA01", "varA03",
+    "varLD01", "varLD02", "varLD03",
+    "varLD04", "varLD05", "varLD06",
+    "varA04"
+  )
+  expect_setequal(
+    effect_dt[abs_effect >= 5.9, variant_id],
+    expected_top
+  )
+
+  effect_multi <- plot_variant_effect(
+    hap_effect,
+    phenotype = pheno,
+    traits = c(
+      "protein_content",
+      "seed_weight",
+      "plant_height",
+      "flowering_time"
+    ),
+    min_group_samples = 3,
+    effect_type = "absolute",
+    top_n = 0,
+    x_axis = "position"
+  )
+  multi_dt <- data.table::as.data.table(effect_multi$effect)
+  varA03_effect <- multi_dt[variant_id == "varA03", .(effect = effect[1L]), by = trait]
+  expected <- data.table::data.table(
+    trait = c("protein_content", "seed_weight", "plant_height", "flowering_time"),
+    expected_effect = c(6, 8, 6, 0)
+  )
+  observed <- merge(varA03_effect, expected, by = "trait", all = TRUE)
+  expect_equal(observed$effect, observed$expected_effect, tolerance = 1e-8)
+})
