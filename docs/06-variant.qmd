@@ -1,23 +1,89 @@
-## Variant track module
+## VCF variant tracks
 
-### Read VCF into memory
+GeneTrackR stores VCF records in a `VariantTrack` object. This module follows one continuous workflow for the demo VCF:
+
+1. read VCF data and inspect the `VariantTrack` object;
+2. validate and summarize variants;
+3. retrieve variants from a genomic region;
+4. retrieve variants by gene or transcript;
+5. filter variants by ID, type, or text pattern;
+6. plot variant tracks.
+
+The examples use the same `GeneA` / `TxA1` locus used elsewhere in the documentation so that variant, haplotype, LD, phenotype, and signal examples can be compared directly.
+
+### Step 1. Read VCF data
+
+Locate the demo VCF and annotation files:
 
 ```{r}
-vcf <- read_vcf(vcf_file, mode = "memory")
-vcf
-summary_vcf(vcf)
+vcf_file <- system.file(
+  "extdata",
+  "gtr_demo_variants.vcf",
+  package = "GeneTrackR"
+)
+
+gp_file <- system.file(
+  "extdata",
+  "gtr_demo.genePredExt",
+  package = "GeneTrackR"
+)
+
+gp <- read_genepred(
+  gp_file,
+  format = "genePredExt",
+  verbose = FALSE,
+  progress = FALSE
+)
 ```
 
-### Lazy indexed VCF access
-
-For large `vcf.gz` files with `.tbi` or `.csi` indexes, use lazy mode. This reads the header and sample names first, then reads variants only for requested regions.
+Read the complete demo VCF into memory:
 
 ```{r}
-large_vcf <- "/path/to/large.vcf.gz"
+vcf <- read_vcf(
+  vcf_file,
+  mode = "memory",
+  keep_genotype = TRUE,
+  verbose = FALSE,
+  progress = FALSE
+)
 
-# For a real bgzip-compressed VCF with a .tbi/.csi index:
-# vcf_lazy <- read_vcf(large_vcf, mode = "lazy")
-# vcf_region <- retrieve_vcf(
+vcf
+
+summary_vcf(vcf, chrom = 'chr1', start = 1000000, end = 8002500)
+```
+
+`read_vcf()` returns a `VariantTrack`. Standard VCF fields are normalized internally to columns such as `chrom`, `pos`, `variant_id`, `ref`, `alt`, `qual`, `filter`, `info`, and `variant_type`. Genotype columns are retained when `keep_genotype = TRUE`.
+
+```{r}
+head(vcf$data[, c(
+  "chrom",
+  "pos",
+  "variant_id",
+  "ref",
+  "alt",
+  "variant_type"
+)])
+
+vcf$meta$sample_names
+```
+
+Coordinates inside `VariantTrack` use **1-based genomic positions**, consistent with the VCF specification.
+
+#### Large indexed VCF files
+
+For a bgzip-compressed VCF with a `.tbi` or `.csi` index, `mode = "auto"` or `mode = "lazy"` avoids loading all records into memory. A lazy `VariantTrack` stores the source file and sample metadata first; variants are loaded only when a genomic region is requested.
+
+```{r}
+# large_vcf <- "/path/to/large.vcf.gz"
+#
+# vcf_lazy <- read_vcf(
+#   large_vcf,
+#   mode = "lazy"
+# )
+#
+# vcf_lazy
+#
+# vcf_lazy_region <- retrieve_vcf(
 #   vcf_lazy,
 #   chrom = "chr1",
 #   start = 12339001,
@@ -26,29 +92,235 @@ large_vcf <- "/path/to/large.vcf.gz"
 # )
 ```
 
-If no index is available, use memory mode or create a tabix index before lazy retrieval.
+Lazy regional queries require an indexed VCF and `Rsamtools`. For small files such as the bundled demo VCF, memory mode is simpler.
 
-### Retrieve and plot variants
+### Step 2. Validate and summarize variants
+
+Use `validate_vcf()` to check required fields, coordinates, allele fields, duplicated variant IDs, and consistency between `pos`, `start`, and `end`:
 
 ```{r}
-vcf_region <- retrieve_vcf(
-  vcf,
-  chrom = "chr1",
-  start = 12339001,
-  end = 12374500,
-  as = "VariantTrack"
-)
+vcf_validation <- validate_vcf(vcf)
 
-vcf_region
-head(vcf_region$data)
-
-plot_variant(
-  vcf,
-  chrom = "chr1",
-  start = 12339001,
-  end = 12374500,
-  color_by = "variant_type"
-)
+vcf_validation$invalid_summary
+vcf_validation$warnings
 ```
 
-`retrieve_vcf()` returns a `data.table` by default. Set `as = "VariantTrack"` when the retrieved subset itself should be passed to functions that require a `VariantTrack`.
+The validation result contains:
+
+- `invalid_records`: individual records that failed a check;
+- `invalid_summary`: number of invalid records by reason;
+- `warnings`: non-record-specific validation messages.
+
+Use `summary_vcf()` to summarize the current variant collection. By default, variants are counted by chromosome and inferred variant type:
+
+```{r}
+vcf_summary <- summary_vcf(vcf)
+vcf_summary
+```
+
+The demo VCF intentionally contains SNPs and indels so the same file can be reused for variant visualization, haplotype analysis, and LD analysis.
+
+### Step 3. Retrieve variants from a genomic region
+
+`retrieve_vcf()` can return either a plain `data.table` or a new `VariantTrack`.
+
+Retrieve the broader `GeneA` / `GeneB` / `GeneC` demonstration region as a table:
+
+```{r}
+region_table <- retrieve_vcf(
+  vcf,
+  chrom = "chr1",
+  start = 12339001,
+  end = 12374500,
+  as = "data.table",
+  verbose = FALSE
+)
+
+region_table[, .(
+  chrom,
+  pos,
+  variant_id,
+  ref,
+  alt,
+  variant_type
+)]
+```
+
+Use `as = "VariantTrack"` when the subset will be passed to another GeneTrackR function:
+
+```{r}
+region_variants <- retrieve_vcf(
+  vcf,
+  chrom = "chr1",
+  start = 12339001,
+  end = 12374500,
+  as = "VariantTrack",
+  verbose = FALSE
+)
+
+region_variants
+```
+
+The distinction is important:
+
+- `as = "data.table"` is convenient for inspection, filtering, and tabular analysis;
+- `as = "VariantTrack"` preserves the GeneTrackR object interface for downstream plotting and analysis.
+
+### Step 4. Retrieve variants by gene or transcript
+
+When annotation is available, `retrieve_vcf()` can resolve genomic coordinates directly from a gene or transcript ID.
+
+Retrieve variants inside the `GeneA` gene body:
+
+```{r}
+genea_variants <- retrieve_vcf(
+  vcf,
+  annotation = gp,
+  gene_id = "GeneA",
+  as = "VariantTrack",
+  verbose = FALSE
+)
+
+genea_variants
+```
+
+The canonical demo design contains **11 variants within the GeneA gene body**.
+
+Upstream and downstream flanking regions can be added explicitly:
+
+```{r}
+genea_extended <- retrieve_vcf(
+  vcf,
+  annotation = gp,
+  gene_id = "GeneA",
+  upstream = 1000,
+  downstream = 500,
+  strand_aware = TRUE,
+  as = "VariantTrack",
+  verbose = FALSE
+)
+
+genea_extended
+```
+
+For `GeneA`, the upstream extension additionally includes `varAup01`, which is intentionally designed with missing and heterozygous genotypes for edge-case testing.
+
+Transcript-aware retrieval uses the same interface:
+
+```{r}
+txa1_variants <- retrieve_vcf(
+  vcf,
+  annotation = gp,
+  transcript_id = "TxA1",
+  as = "VariantTrack",
+  verbose = FALSE
+)
+
+txa1_variants
+```
+
+For negative-strand genes or transcripts, `strand_aware = TRUE` makes `upstream` and `downstream` follow transcriptional direction rather than simply subtracting or adding genomic coordinates.
+
+### Step 5. Filter variants by ID, type, or pattern
+
+Retrieve one or more known variant IDs:
+
+```{r}
+selected_variants <- retrieve_vcf(
+  vcf,
+  variant_id = c("varA03", "varA04", "varA05"),
+  as = "data.table",
+  verbose = FALSE
+)
+
+selected_variants[, .(
+  chrom,
+  pos,
+  variant_id,
+  ref,
+  alt,
+  variant_type
+)]
+```
+
+Filter by inferred variant type:
+
+```{r}
+genea_indels <- retrieve_vcf(
+  genea_variants,
+  variant_type = c("INS", "DEL"),
+  as = "data.table",
+  verbose = FALSE
+)
+
+genea_indels[, .(
+  pos,
+  variant_id,
+  ref,
+  alt,
+  variant_type
+)]
+```
+
+`pattern` searches `variant_id`, `REF`, `ALT`, `INFO`, and `variant_type`. For example, the demo high-LD variants contain `high_ld` in the INFO role field:
+
+```{r}
+high_ld_variants <- retrieve_vcf(
+  vcf,
+  pattern = "high_ld",
+  fixed = TRUE,
+  as = "VariantTrack",
+  verbose = FALSE
+)
+
+high_ld_variants
+```
+
+These filters can be combined with genomic, gene, or transcript queries when a more specific subset is needed.
+
+### Step 6. Plot variant tracks
+
+`plot_variant()` returns a ggplot object directly. The GeneA region contains SNP, insertion, and deletion examples, so it is useful for demonstrating variant-type colors.
+
+```{r}
+p_genea_variants <- plot_variant(
+  genea_variants,
+  color_by = "variant_type",
+  label_by = "variant_id",
+  variant_shape = "lollipop",
+  variant_palette = "Set1",
+  point_size = 2.5,
+  text_size = 12
+)
+
+p_genea_variants
+```
+
+For a broader genomic region, use the previously retrieved `VariantTrack`:
+
+```{r}
+p_region_variants <- plot_variant(
+  region_variants,
+  chrom = "chr1",
+  start = 12339001,
+  end = 12374500,
+  color_by = "variant_type",
+  label_by = "none",
+  variant_shape = "rug",
+  variant_palette = "Set1",
+  text_size = 12
+)
+
+p_region_variants
+```
+
+The main plotting controls are:
+
+- `color_by`: `"variant_type"`, `"filter"`, or `"none"`;
+- `label_by`: variant ID, type, REF, ALT, or no labels;
+- `variant_shape`: `"lollipop"`, `"point"`, or `"rug"`;
+- `variant_palette` / `variant_colors`: automatic palette or explicit colors.
+
+Variant subsets created here are reused directly by the later haplotype, phenotype, LD, and integrated-track modules.
+
+VCF export is covered separately in the **Export variants and analysis results** module. The current `write_vcf()` interface writes standardized site-level VCF fields; the original genotype-containing VCF should be retained as the archival source when genotype round-trip preservation is required.

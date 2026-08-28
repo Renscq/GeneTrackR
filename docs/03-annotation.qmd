@@ -23,10 +23,18 @@ Coordinate conventions are handled at the file boundary:
 The built-in annotation files describe the same demo genome:
 
 ```{r}
-gp_file <- system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR")
+gp_file <- system.file(
+  "extdata",
+  "gtr_demo.genePredExt",
+  package = "GeneTrackR"
+)
 gtf_file <- system.file("extdata", "gtr_demo.gtf", package = "GeneTrackR")
 gff_file <- system.file("extdata", "gtr_demo.gff3", package = "GeneTrackR")
-bed_file <- system.file("extdata", "gtr_demo_features.bed", package = "GeneTrackR")
+bed_file <- system.file(
+  "extdata",
+  "gtr_demo_features.bed",
+  package = "GeneTrackR"
+)
 ```
 
 ### GenePred and GenePredExt
