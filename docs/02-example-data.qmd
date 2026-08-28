@@ -3,18 +3,10 @@
 GeneTrackR ships with one deterministic demo genome in `inst/extdata`. The dataset is compact but intentionally designed to exercise the major modules without external files.
 
 ```{r}
-gp_file <- system.file(
-  "extdata",
-  "gtr_demo.genePredExt",
-  package = "GeneTrackR"
-)
+gp_file <- system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR")
 gtf_file <- system.file("extdata", "gtr_demo.gtf", package = "GeneTrackR")
 gff_file <- system.file("extdata", "gtr_demo.gff3", package = "GeneTrackR")
-bed_file <- system.file(
-  "extdata",
-  "gtr_demo_features.bed",
-  package = "GeneTrackR"
-)
+bed_file <- system.file("extdata", "gtr_demo_features.bed", package = "GeneTrackR")
 
 rnaseq_files <- system.file(
   "extdata",
@@ -28,16 +20,8 @@ riboseq_files <- system.file(
   package = "GeneTrackR"
 )
 
-vcf_file <- system.file(
-  "extdata",
-  "gtr_demo_variants.vcf",
-  package = "GeneTrackR"
-)
-pheno_file <- system.file(
-  "extdata",
-  "gtr_demo_pheno.tsv",
-  package = "GeneTrackR"
-)
+vcf_file <- system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")
+pheno_file <- system.file("extdata", "gtr_demo_pheno.tsv", package = "GeneTrackR")
 ```
 
 The deterministic demo genome contains 2 chromosomes, 20 genes, 24 transcripts, 36 samples, 50 designed variants, strand-specific RNA-seq/Ribo-seq tracks, four balanced GeneA haplotype groups, and phenotype traits with known positive and negative-control associations. All protein-coding demo transcripts use CDS lengths divisible by three. The Ribo-seq tracks contain moderately dense heterogeneous integer P-site-like counts with designed frame0/frame1/frame2 total-count proportions of approximately 80%/10%/10%. Frame 0 is broadly occupied and variable, while frame 1 and frame 2 use different subsets of codons with lower irregular counts. Initiation and termination frame-0 counts are approximately two times the internal frame-0 mean.

@@ -48,8 +48,6 @@ vcf <- read_vcf(
 )
 
 vcf
-
-summary_vcf(vcf, chrom = 'chr1', start = 1000000, end = 8002500)
 ```
 
 `read_vcf()` returns a `VariantTrack`. Standard VCF fields are normalized internally to columns such as `chrom`, `pos`, `variant_id`, `ref`, `alt`, `qual`, `filter`, `info`, and `variant_type`. Genotype columns are retained when `keep_genotype = TRUE`.
@@ -111,11 +109,18 @@ The validation result contains:
 - `invalid_summary`: number of invalid records by reason;
 - `warnings`: non-record-specific validation messages.
 
-Use `summary_vcf()` to summarize the current variant collection. By default, variants are counted by chromosome and inferred variant type:
+Use `summary_vcf()` to summarize the current variant collection. A genomic region is **not required** for an in-memory `VariantTrack`; with no range supplied, the complete object is summarized. By default, variants are counted by chromosome and inferred variant type:
 
 ```{r}
 vcf_summary <- summary_vcf(vcf)
 vcf_summary
+```
+
+A chromosome or complete genomic range can still be supplied when only a subset should be summarized:
+
+```{r}
+chr1_summary <- summary_vcf(vcf, chrom = "chr1")
+chr1_summary
 ```
 
 The demo VCF intentionally contains SNPs and indels so the same file can be reused for variant visualization, haplotype analysis, and LD analysis.
@@ -222,6 +227,8 @@ txa1_variants
 For negative-strand genes or transcripts, `strand_aware = TRUE` makes `upstream` and `downstream` follow transcriptional direction rather than simply subtracting or adding genomic coordinates.
 
 ### Step 5. Filter variants by ID, type, or pattern
+
+These filters do not require a genomic region for an in-memory `VariantTrack`; they can be used independently or combined with region/gene/transcript filters.
 
 Retrieve one or more known variant IDs:
 

@@ -15,11 +15,11 @@ summary_vcf(
 \arguments{
 \item{object}{A VariantTrack object.}
 
-\item{chrom}{Optional chromosome filter.}
+\item{chrom}{Optional chromosome filter. May be used without \code{start}/\code{end}.}
 
-\item{start}{Optional start coordinate.}
+\item{start}{Optional 1-based start coordinate. Must be paired with \code{end}.}
 
-\item{end}{Optional end coordinate.}
+\item{end}{Optional 1-based end coordinate. Must be paired with \code{start}.}
 
 \item{by}{Grouping columns. Default \code{c("chrom", "variant_type")}.}
 }
@@ -28,5 +28,13 @@ A data.table summary.
 }
 \description{
 \code{summary_vcf()} is the unified summary API for VCF-derived VariantTrack
-objects.
+objects. When no genomic range is supplied, the full in-memory object is
+summarized. For lazy tracks, an omitted range causes the source VCF to be
+read before summarization.
+}
+\examples{
+vcf_file <- system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")
+vcf <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
+summary_vcf(vcf)
+summary_vcf(vcf, chrom = "chr1")
 }

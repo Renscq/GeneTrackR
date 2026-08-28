@@ -31,11 +31,11 @@ retrieve_vcf(
 
 \item{pattern}{Optional text pattern matched against variant ID, REF, ALT, INFO, and variant type.}
 
-\item{chrom}{Optional chromosome name. Required for indexed file region queries unless \code{gene_id} or \code{transcript_id} is supplied.}
+\item{chrom}{Optional chromosome name or names. May be used alone as a chromosome filter. Required when \code{start} and \code{end} are supplied.}
 
-\item{start}{Optional 1-based region start.}
+\item{start}{Optional 1-based region start. Must be supplied together with \code{end}.}
 
-\item{end}{Optional 1-based region end.}
+\item{end}{Optional 1-based region end. Must be supplied together with \code{start}.}
 
 \item{annotation}{Optional GenePred/Feature annotation object used for gene/transcript-aware retrieval.}
 
@@ -69,10 +69,12 @@ retrieve_vcf(
 A data.table or VariantTrack object.
 }
 \description{
-Retrieves VCF records by genomic region, variant ID, type, or text pattern.
-For large bgzip-compressed VCF files with a tabix index, \code{object} can be a
-file path and the function will query only the requested region using
-\code{Rsamtools::scanTabix()}.
+Retrieves VCF records by optional genomic region, gene/transcript locator,
+variant ID, type, or text pattern. With an in-memory \code{VariantTrack}, all
+location arguments may be omitted to query the full object. For large
+bgzip-compressed VCF files with a tabix index, a complete genomic region is
+queried with \code{Rsamtools::scanTabix()}; non-regional filters require reading
+the full file before filtering.
 }
 \examples{
 vcf_file <- system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")

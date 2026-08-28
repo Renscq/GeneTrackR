@@ -1,3 +1,17 @@
+# GeneTrackR 0.5.23
+
+- Fix `summary_vcf()` so an in-memory `VariantTrack` can be summarized without supplying a genomic region.
+- Fix `retrieve_vcf()` so region, gene, and transcript filters are optional for in-memory/full-file queries; ID, type, and pattern filters can now be used independently as documented.
+- Add validation for incomplete direct regions and flank arguments used without a gene/transcript locator.
+- Add regression tests for whole-object summaries and non-regional VCF retrieval.
+
+# GeneTrackR 0.5.22
+
+- Reorganized `docs/06-variant.qmd` into a continuous VCF workflow covering reading, validation, summaries, region/gene/transcript retrieval, ID/type/pattern filtering, and plotting.
+- Clarified `VariantTrack` versus `data.table` return semantics for `retrieve_vcf()`.
+- Added explicit guidance for indexed lazy VCF access and strand-aware gene/transcript retrieval.
+- Documented the current site-level scope of `write_vcf()` to avoid implying genotype-preserving round-trip export.
+
 # GeneTrackR 0.5.21
 
 - Changed discrete signal palette assignment so sample, group, and frame levels use RColorBrewer class colors in strict level order instead of interpolating between palette endpoints; this also fixes `plot_signal_region()` color ordering.

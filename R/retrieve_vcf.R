@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-31
-# Version: dev002
+# Version: dev003
 # Function: Retrieve variants from VariantTrack objects or indexed VCF files
 # Input: VariantTrack object or VCF path and filters
 # Output: data.table or VariantTrack object
@@ -8,16 +8,18 @@
 #' Retrieve variants from a VariantTrack or an indexed VCF file
 #'
 #' @description
-#' Retrieves VCF records by genomic region, variant ID, type, or text pattern.
-#' For large bgzip-compressed VCF files with a tabix index, `object` can be a
-#' file path and the function will query only the requested region using
-#' `Rsamtools::scanTabix()`.
+#' Retrieves VCF records by optional genomic region, gene/transcript locator,
+#' variant ID, type, or text pattern. With an in-memory `VariantTrack`, all
+#' location arguments may be omitted to query the full object. For large
+#' bgzip-compressed VCF files with a tabix index, a complete genomic region is
+#' queried with `Rsamtools::scanTabix()`; non-regional filters require reading
+#' the full file before filtering.
 #'
 #' @param object A VariantTrack object or a path to a VCF/VCF.GZ file.
 #' @param pattern Optional text pattern matched against variant ID, REF, ALT, INFO, and variant type.
-#' @param chrom Optional chromosome name. Required for indexed file region queries unless `gene_id` or `transcript_id` is supplied.
-#' @param start Optional 1-based region start.
-#' @param end Optional 1-based region end.
+#' @param chrom Optional chromosome name or names. May be used alone as a chromosome filter. Required when `start` and `end` are supplied.
+#' @param start Optional 1-based region start. Must be supplied together with `end`.
+#' @param end Optional 1-based region end. Must be supplied together with `start`.
 #' @param annotation Optional GenePred/Feature annotation object used for gene/transcript-aware retrieval.
 #' @param gene_id Optional gene ID. When supplied, `annotation` is used to resolve the gene range.
 #' @param transcript_id Optional transcript ID. When supplied, `annotation` is used to resolve the transcript range.
@@ -64,7 +66,7 @@ retrieve_vcf <- function(object,
   as <- match.arg(as)
   verbose <- isTRUE(verbose)
 
-  region <- resolve_retrieve_gene_region(
+  location <- resolve_optional_vcf_location(
     annotation = annotation,
     gene_id = gene_id,
     transcript_id = transcript_id,
@@ -75,9 +77,9 @@ retrieve_vcf <- function(object,
     downstream = downstream,
     strand_aware = strand_aware
   )
-  chrom <- region$chrom
-  start <- region$start
-  end <- region$end
+  chrom <- location$chrom
+  start <- location$start
+  end <- location$end
 
   if (is.character(object) && length(object) == 1L && file.exists(object)) {
     vt <- retrieve_vcf_file(
@@ -92,7 +94,6 @@ retrieve_vcf <- function(object,
   } else {
     stop_if_not(inherits(object, "VariantTrack"), "`object` must be a VariantTrack object or a VCF file path.")
     if (is_lazy_variant_track(object)) {
-      stop_if_not(!is.null(chrom) && !is.null(start) && !is.null(end), "Lazy VariantTrack queries require `chrom`, `start`, and `end`.")
       vt <- retrieve_vcf_file(
         file = object$meta$source_file,
         chrom = chrom,
@@ -150,6 +151,83 @@ retrieve_vcf <- function(object,
 
   if (as == "data.table") return(dt[])
   VariantTrack(dt, meta = vt$meta)
+}
+
+
+resolve_optional_vcf_location <- function(annotation = NULL,
+                                          gene_id = NULL,
+                                          transcript_id = NULL,
+                                          chrom = NULL,
+                                          start = NULL,
+                                          end = NULL,
+                                          upstream = 0L,
+                                          downstream = 0L,
+                                          strand_aware = TRUE) {
+  has_gene <- !is.null(gene_id)
+  has_tx <- !is.null(transcript_id)
+  has_direct <- !is.null(chrom) || !is.null(start) || !is.null(end)
+
+  if (has_gene || has_tx) {
+    stop_if_not(!has_direct, "Do not mix `gene_id`/`transcript_id` with direct `chrom`/`start`/`end` region arguments.")
+    return(resolve_haplotype_gene_region(
+      annotation = annotation,
+      gene_id = gene_id,
+      transcript_id = transcript_id,
+      upstream = upstream,
+      downstream = downstream,
+      strand_aware = strand_aware
+    ))
+  }
+
+  upstream <- as.integer(upstream)[1L]
+  downstream <- as.integer(downstream)[1L]
+  stop_if_not(
+    !is.na(upstream) && !is.na(downstream) && upstream >= 0L && downstream >= 0L,
+    "`upstream` and `downstream` must be non-negative integers."
+  )
+  stop_if_not(
+    upstream == 0L && downstream == 0L,
+    "`upstream` and `downstream` require `gene_id` or `transcript_id`."
+  )
+
+  if (!has_direct) {
+    return(list(
+      locator = "all",
+      chrom = NULL,
+      start = NULL,
+      end = NULL
+    ))
+  }
+
+  stop_if_not(!is.null(chrom), "`chrom` is required when `start` or `end` is supplied.")
+  has_start <- !is.null(start)
+  has_end <- !is.null(end)
+  stop_if_not(
+    identical(has_start, has_end),
+    "Supply both `start` and `end`, or neither, for a direct chromosome query."
+  )
+
+  chrom <- as.character(chrom)
+  chrom <- chrom[!is.na(chrom) & nzchar(chrom)]
+  stop_if_not(length(chrom) > 0L, "`chrom` must contain at least one non-empty chromosome name.")
+
+  if (!has_start) {
+    return(list(
+      locator = "chrom",
+      chrom = chrom,
+      start = NULL,
+      end = NULL
+    ))
+  }
+
+  stop_if_not(length(chrom) == 1L, "A coordinate range can be queried for exactly one chromosome at a time.")
+  check_region(chrom, start, end)
+  list(
+    locator = "region",
+    chrom = chrom[1L],
+    start = as.integer(start)[1L],
+    end = as.integer(end)[1L]
+  )
 }
 
 retrieve_vcf_file <- function(file,

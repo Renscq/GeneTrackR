@@ -33,3 +33,65 @@ test_that("variant plotting returns ggplot objects", {
   p <- plot_variant(vcf, chrom = "chr1", start = 12339700, end = 12343200)
   expect_s3_class(p, "ggplot")
 })
+
+
+
+test_that("retrieve_vcf supports whole-object and non-regional filters", {
+  vcf <- read_vcf(
+    gtr_extdata("gtr_demo_variants.vcf"),
+    mode = "memory",
+    verbose = FALSE
+  )
+
+  all_variants <- retrieve_vcf(vcf, verbose = FALSE)
+  expect_equal(nrow(all_variants), nrow(vcf$data))
+
+  snps <- retrieve_vcf(vcf, variant_type = "SNP", verbose = FALSE)
+  expect_gt(nrow(snps), 0L)
+  expect_true(all(snps$variant_type == "SNP"))
+
+  selected <- retrieve_vcf(
+    vcf,
+    variant_id = c("varA03", "varA04"),
+    verbose = FALSE
+  )
+  expect_setequal(selected$variant_id, c("varA03", "varA04"))
+
+  patterned <- retrieve_vcf(vcf, pattern = "high_ld", fixed = TRUE, verbose = FALSE)
+  expect_gt(nrow(patterned), 0L)
+
+  chr1 <- retrieve_vcf(vcf, chrom = "chr1", verbose = FALSE)
+  expect_gt(nrow(chr1), 0L)
+  expect_true(all(chr1$chrom == "chr1"))
+
+  expect_error(
+    retrieve_vcf(vcf, chrom = "chr1", start = 12340000L, verbose = FALSE),
+    "both `start` and `end`"
+  )
+  expect_error(
+    retrieve_vcf(vcf, upstream = 1000L, verbose = FALSE),
+    "require `gene_id` or `transcript_id`"
+  )
+})
+
+
+test_that("summary_vcf summarizes the full VariantTrack without a region", {
+  vcf <- read_vcf(
+    gtr_extdata("gtr_demo_variants.vcf"),
+    mode = "memory",
+    verbose = FALSE
+  )
+
+  whole <- summary_vcf(vcf)
+  expect_gt(nrow(whole), 0L)
+  expect_equal(sum(whole$n_variants), nrow(vcf$data))
+
+  chr1 <- summary_vcf(vcf, chrom = "chr1")
+  expect_gt(nrow(chr1), 0L)
+  expect_equal(
+    sum(chr1$n_variants),
+    sum(vcf$data$chrom == "chr1")
+  )
+
+  expect_equal(summary(vcf), whole)
+})
