@@ -1,70 +1,349 @@
 ## Browser-like combined tracks
 
-`plot_tracks()` combines gene models, signal tracks, BED feature tracks, and VCF variant tracks.
-It returns the assembled ggplot/patchwork figure directly rather than wrapping it in a result list.
+`plot_tracks()` assembles gene models, genomic signal, interval features, and variants into one genome-browser-like figure with a shared genomic x-axis. It is intended for integrated inspection of a locus rather than for replacing the dedicated plotting functions for each data type.
+
+This module follows one continuous workflow:
+
+1. prepare annotation, signal, feature, and variant tracks;
+2. build a gene-centered browser view;
+3. build a transcript-centered browser view;
+4. inspect an explicit genomic region;
+5. add BED features and VCF variants;
+6. control layout, panel heights, highlighting, and styling;
+7. choose an appropriate browser workflow for large real-world datasets.
+
+The examples use the same `GeneA` / `TxA1` region used throughout the other GeneTrackR modules.
+
+### Step 1. Prepare browser-track inputs
+
+Locate the bundled demo files:
 
 ```{r}
-plot_tracks(
-  annotation = gp,
-  signal = rnaseq,
-  gene_id = "GeneA",
-  signal_type = "bar"
+gp_file <- system.file(
+  "extdata",
+  "gtr_demo.genePredExt",
+  package = "GeneTrackR"
+)
+
+signal_files <- system.file(
+  "extdata",
+  c(
+    "gtr_demo_rnaseq_plus.bedgraph",
+    "gtr_demo_rnaseq_minus.bedgraph",
+    "gtr_demo_riboseq_plus.bedgraph",
+    "gtr_demo_riboseq_minus.bedgraph"
+  ),
+  package = "GeneTrackR"
+)
+
+feature_file <- system.file(
+  "extdata",
+  "gtr_demo_features.bed",
+  package = "GeneTrackR"
+)
+
+vcf_file <- system.file(
+  "extdata",
+  "gtr_demo_variants.vcf",
+  package = "GeneTrackR"
 )
 ```
 
-Customize gene model colors in combined tracks:
+Read the annotation, four strand-specific signal tracks, BED features, and VCF variants:
 
 ```{r}
-plot_tracks(
-  annotation = gp,
-  signal = rnaseq,
-  gene_id = "GeneA",
-  signal_type = "bar",
-  gene_palette = "Set2",
-  gene_border_color = "black"
+gp <- read_genepred(
+  gp_file,
+  format = "genePredExt",
+  verbose = FALSE,
+  progress = FALSE
 )
 
-plot_tracks(
+signal_all <- read_bwg(
+  signal_files,
+  format = "bedgraph",
+  sample_names = c(
+    "RNA_seq_plus",
+    "RNA_seq_minus",
+    "Ribo_seq_plus",
+    "Ribo_seq_minus"
+  ),
+  strand = c("+", "-", "+", "-"),
+  mode = "memory",
+  verbose = FALSE
+)
+
+features <- read_bed(
+  feature_file,
+  verbose = FALSE,
+  progress = FALSE
+)
+
+variants <- read_vcf(
+  vcf_file,
+  mode = "memory",
+  keep_genotype = TRUE,
+  verbose = FALSE,
+  progress = FALSE
+)
+```
+
+The four inputs play different roles in `plot_tracks()`:
+
+- `annotation`: gene/transcript/exon structure used for the gene-model panel;
+- `signal`: optional `BwgTrack` containing one or more quantitative tracks;
+- `features`: optional `FeatureTrack` containing BED/GFF/GTF-style intervals;
+- `variants`: optional `VariantTrack` containing VCF-derived variants.
+
+`plot_tracks()` accepts **exactly one genomic locator** per call:
+
+- `gene_id`;
+- `transcript_id`;
+- or the complete `chrom` + `start` + `end` combination.
+
+Do not supply more than one locator type in the same call.
+
+### Step 2. Build a gene-centered browser view
+
+Start with the annotation alone. When `gene_id` is supplied, GeneTrackR derives the chromosome and plotting interval from the complete gene locus:
+
+```{r}
+p_browser_gene_model <- plot_tracks(
   annotation = gp,
-  signal = rnaseq,
   gene_id = "GeneA",
-  gene_colors = c(
-    CDS = "#1b9e77",
-    UTR = "#a6d854",
-    exon = "#7570b3"
+  gene_palette = "Paired",
+  direction_mode = "transcript"
+)
+
+p_browser_gene_model
+```
+
+Add RNA-seq and Ribo-seq signal over the same locus. `GeneA` is on the positive strand, so select the two positive-strand samples explicitly:
+
+```{r}
+p_browser_gene <- plot_tracks(
+  annotation = gp,
+  signal = signal_all,
+  gene_id = "GeneA",
+  samples = c("RNA_seq_plus", "Ribo_seq_plus"),
+  strand = "+",
+  signal_type = "bar",
+  signal_palette = "Dark2",
+  signal_palette_direction = 1,
+  signal_y_scale = "free",
+  signal_y_ticks = "pretty",
+  heights = c(
+    signal = 4,
+    gene = 1,
+    feature = 0.8,
+    variant = 0.7
   )
 )
+
+p_browser_gene
 ```
 
-Control the complete track style with standardized parameters:
+For discrete signal tracks, colors follow the selected sample/group order and the standard palette order. For example, with `signal_palette = "Dark2"`, the first selected sample receives the first `Dark2` color and the second sample receives the second color.
+
+Unlike `plot_signal_gene()`, `plot_tracks()` does not use `strand = "auto"`. Use `+` or `-` when a strand-specific locus is known, `both` when both strand classes should be shown, or `ignore` when signal strand metadata should not be used for filtering.
+
+### Step 3. Build a transcript-centered browser view
+
+Use `transcript_id` when the plotting interval should correspond to one transcript rather than the complete gene locus:
 
 ```{r}
-plot_tracks(
+p_browser_transcript <- plot_tracks(
   annotation = gp,
-  signal = rnaseq,
-  gene_id = "GeneA",
+  signal = signal_all,
+  transcript_id = "TxA1",
+  samples = c("RNA_seq_plus", "Ribo_seq_plus"),
+  strand = "+",
   signal_type = "bar",
-  signal_transform = "sqrt",
-  signal_y_scale = "fixed",
-  signal_y_limits = c(0, 20),
-  signal_alpha = 0.80,
-  signal_bar_width = 0.85,
-  plot_theme = "classic",
-  show_panel_border = FALSE
+  signal_palette = "Set1",
+  signal_y_scale = "free",
+  collapse = "none",
+  direction_mode = "transcript",
+  heights = c(
+    signal = 4,
+    gene = 1,
+    feature = 0.8,
+    variant = 0.7
+  )
 )
+
+p_browser_transcript
 ```
 
-Add feature and variant tracks:
+The signal panel remains in **genomic coordinates** so that it stays aligned with the other browser tracks. For transcript-coordinate signal visualization or Ribo-seq reading-frame analysis, use `plot_signal_transcript()` instead. In particular, `plot_tracks()` supports `bar`, `line`, and `heatmap` signal panels; the dedicated Ribo-seq `frame` view belongs to `plot_signal_transcript()`.
+
+### Step 4. Inspect an explicit genomic region
+
+For a multi-gene interval or a locus not defined by one annotation ID, provide explicit genomic coordinates. The demo interval below contains `GeneA`, `GeneB`, and `GeneC` and therefore includes both positive- and negative-strand signal:
 
 ```{r}
-plot_tracks(
+browser_chrom <- "chr1"
+browser_start <- 12339001
+browser_end <- 12374500
+
+p_browser_region <- plot_tracks(
+  annotation = gp,
+  signal = signal_all,
+  chrom = browser_chrom,
+  start = browser_start,
+  end = browser_end,
+  samples = c(
+    "RNA_seq_plus",
+    "RNA_seq_minus",
+    "Ribo_seq_plus",
+    "Ribo_seq_minus"
+  ),
+  strand = "both",
+  signal_type = "bar",
+  signal_palette = "Set1",
+  signal_y_scale = "free",
+  signal_y_ticks = "pretty",
+  collapse = "none",
+  direction_mode = "gene",
+  heights = c(
+    signal = 5,
+    gene = 1.2,
+    feature = 0.8,
+    variant = 0.7
+  )
+)
+
+p_browser_region
+```
+
+Use `signal_y_scale = "free"` when assays have substantially different count ranges, as in the RNA-seq and Ribo-seq demo. Use `fixed` when the signal panels should share the same y-axis range for direct quantitative comparison.
+
+### Step 5. Add BED features and VCF variants
+
+Pass `FeatureTrack` and `VariantTrack` objects directly to `features` and `variants`. `plot_tracks()` retrieves only records overlapping the selected browser interval:
+
+```{r}
+p_browser_complete <- plot_tracks(
   annotation = gp,
   signal = signal_all,
   features = features,
-  variants = vcf,
-  chrom = "chr1",
-  start = 12339001,
-  end = 12374500,
-  signal_type = "bar"
+  variants = variants,
+  chrom = browser_chrom,
+  start = browser_start,
+  end = browser_end,
+  samples = c("RNA_seq_plus", "Ribo_seq_plus"),
+  strand = "+",
+  signal_type = "bar",
+  signal_palette = "Dark2",
+  signal_y_scale = "free",
+  signal_y_ticks = "pretty",
+  gene_palette = "Paired",
+  direction_mode = "gene",
+  heights = c(
+    signal = 4,
+    gene = 1.2,
+    feature = 0.9,
+    variant = 0.8
+  )
 )
+
+p_browser_complete
 ```
+
+The combined figure uses the following default panel order when `layout = "signal_top"`:
+
+1. signal;
+2. feature track(s);
+3. variant track(s);
+4. gene model.
+
+With `layout = "gene_top"`, the gene model is moved to the top, followed by signal, feature, and variant panels.
+
+`features` and `variants` can also be named lists when several independent interval or variant collections should be drawn as separate panels:
+
+```{r}
+# feature_tracks <- list(
+#   Regulatory = regulatory_features,
+#   QTL = qtl_features
+# )
+#
+# variant_tracks <- list(
+#   Natural = natural_variants,
+#   Candidate = candidate_variants
+# )
+#
+# plot_tracks(
+#   annotation = gp,
+#   features = feature_tracks,
+#   variants = variant_tracks,
+#   chrom = browser_chrom,
+#   start = browser_start,
+#   end = browser_end
+# )
+```
+
+Each list entry becomes a separate panel. The `feature` and `variant` entries of `heights` are reused for every panel of the corresponding class.
+
+### Step 6. Control layout, heights, highlighting, and style
+
+Panel proportions are controlled through the named `heights` vector. Increase `signal` when quantitative tracks need more vertical space, or increase `gene`, `feature`, and `variant` when structural tracks are crowded.
+
+The following example moves the gene model to the top and highlights the small LD demonstration interval shared with the LD workflow:
+
+```{r}
+ld_highlight <- data.frame(
+  start = 12342620,
+  end = 12343180
+)
+
+p_browser_styled <- plot_tracks(
+  annotation = gp,
+  signal = signal_all,
+  features = features,
+  variants = variants,
+  chrom = browser_chrom,
+  start = browser_start,
+  end = browser_end,
+  samples = c("RNA_seq_plus", "Ribo_seq_plus"),
+  strand = "+",
+  signal_type = "bar",
+  signal_palette = "Set1",
+  signal_transform = "sqrt",
+  signal_y_scale = "free",
+  signal_y_ticks = "pretty",
+  signal_alpha = 0.85,
+  signal_bar_width = 0.9,
+  gene_palette = "Set2",
+  gene_border_color = "black",
+  highlight = ld_highlight,
+  layout = "gene_top",
+  heights = c(
+    signal = 4,
+    gene = 1.5,
+    feature = 0.9,
+    variant = 0.8
+  ),
+  plot_theme = "classic",
+  show_panel_border = FALSE,
+  text_size = 14
+)
+
+p_browser_styled
+```
+
+`highlight` uses genomic coordinates and is currently applied to the signal and gene-model panels. It is useful for marking a candidate interval while preserving the common browser x-axis.
+
+Gene-model styling is controlled by `gene_palette`, `gene_colors`, `gene_border_color`, `cds_height`, `utr_height`, `direction_mode`, `label_position`, and `label_by`. Signal styling is controlled by the corresponding `signal_*` arguments.
+
+The integrated browser intentionally uses simplified feature and variant rendering with labels hidden. When detailed interval labels, variant labels, or feature/variant-specific color controls are required, first inspect them with `plot_feature_track()` or `plot_variant()`, then use `plot_tracks()` for the compact integrated overview.
+
+### Step 7. Use browser tracks efficiently on real datasets
+
+For large datasets, avoid loading genome-wide signal or VCF records when regional access is available:
+
+- use lazy `BwgTrack` access for indexed bigWig or supported large signal inputs;
+- use `read_vcf(mode = "lazy")` with a bgzip-compressed, indexed VCF for regional variant retrieval;
+- keep the browser interval biologically focused rather than plotting an entire chromosome with base-level Ribo-seq or dense variants;
+- preselect relevant signal samples with `samples` before plotting;
+- use dedicated functions such as `plot_signal_transcript()`, `plot_variant()`, or `plot_feature_track()` when one track requires detailed analysis beyond the compact browser representation.
+
+`plot_tracks()` returns the assembled ggplot/patchwork figure directly. Figure export is covered in the export workflow rather than duplicated here.
