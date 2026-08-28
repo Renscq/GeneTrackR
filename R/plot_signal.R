@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-27
-# Version: dev005
+# Version: dev006
 # Function: Plot signal tracks for transcripts, genes, and genomic regions
 # Input: BwgTrack and optional GenePred objects
 # Output: ggplot signal figures
@@ -24,7 +24,7 @@
 #' @param gene_track_height Relative height of the gene model panel when it is shown. Default 1.
 #' @param signal_palette Signal color palette. Any palette name from `RColorBrewer::brewer.pal.info` can be used, such as `Blues`, `Reds`, `RdBu`, `Paired`, `Set1`, `Dark2`, `YlGnBu`, or `Spectral`. Discrete sample/group colors are assigned in the standard RColorBrewer class order; heatmaps use the corresponding continuous gradient.
 #' @param signal_palette_direction Direction for generated signal colors. Use `1` for the standard palette order and `-1` for the reversed palette order. Discrete sample/group colors preserve level-to-color order; heatmap gradients reverse continuously.
-#' @param frame_palette RColorBrewer palette for CDS frame colors when `plot_type = "frame"`. Default is `Set1`. Colors are assigned in order to `frame0`, `frame1`, and `frame2`.
+#' @param frame_palette RColorBrewer palette for CDS frame colors when `plot_type = "frame"`. Default is `Paired`. Colors are assigned in order to `frame0`, `frame1`, and `frame2`.
 #' @param frame_colors Optional named colors for `frame0`, `frame1`, and `frame2`.
 #' @param signal_colors Optional named or unnamed vector of explicit colors for samples. If supplied, it overrides `signal_palette`; explicit colors are not modified by `signal_palette_direction`.
 #' @param signal_transform Signal-axis transformation. Use `none`, `log2`, `log10`, or `sqrt`. Log transforms use signed log1p-style transformation to tolerate zero values.
@@ -92,10 +92,10 @@ plot_signal_transcript <- function(
   show_gene_model = TRUE,
   signal_track_height = 3,
   gene_track_height = 1,
-  signal_palette = "Blues",
+  signal_palette = "Paired",
   signal_palette_direction = 1,
   signal_colors = NULL,
-  frame_palette = "Set1",
+  frame_palette = "Paired",
   frame_colors = NULL,
   signal_transform = c("none", "log2", "log10", "sqrt"),
   signal_y_scale = c("free", "fixed"),
@@ -367,7 +367,7 @@ plot_signal_transcript <- function(
 #'   annotation = gp,
 #'   gene_id = "GeneA",
 #'   plot_type = "bar",
-#'   signal_palette = "Blues",
+#'   signal_palette = "Paired",
 #'   signal_palette_direction = -1,
 #'   signal_y_scale = "fixed",
 #'   signal_y_ticks = "pretty",
@@ -391,7 +391,7 @@ plot_signal_gene <- function(
   show_gene_model = TRUE,
   signal_track_height = 3,
   gene_track_height = 1,
-  signal_palette = "Blues",
+  signal_palette = "Paired",
   signal_palette_direction = 1,
   signal_colors = NULL,
   signal_transform = c("none", "log2", "log10", "sqrt"),
@@ -638,7 +638,7 @@ plot_signal_region <- function(
   show_gene_model = TRUE,
   signal_track_height = 3,
   gene_track_height = 1,
-  signal_palette = "Blues",
+  signal_palette = "Paired",
   signal_palette_direction = 1,
   signal_colors = NULL,
   signal_transform = c("none", "log2", "log10", "sqrt"),
@@ -1115,7 +1115,7 @@ build_transcript_frame_annotation <- function(
   anno[]
 }
 
-make_frame_colors <- function(frame_palette = "Set1", frame_colors = NULL) {
+make_frame_colors <- function(frame_palette = "Paired", frame_colors = NULL) {
   frame_levels <- c("frame0", "frame1", "frame2")
   if (!is.null(frame_colors)) {
     frame_colors <- as.character(frame_colors)
@@ -1151,7 +1151,7 @@ plot_signal_frame_core <- function(
   signal_y_limits = NULL,
   signal_alpha = 0.85,
   signal_bar_width = 1,
-  frame_palette = "Set1",
+  frame_palette = "Paired",
   frame_colors = NULL,
   x_label = "Transcript coordinate",
   text_color = "black",
@@ -1378,7 +1378,7 @@ plot_signal_core <- function(
   plot_type = c("bar", "line", "heatmap"),
   highlight = NULL,
   x_label = "Genomic coordinate",
-  signal_palette = "Blues",
+  signal_palette = "Paired",
   signal_palette_direction = 1,
   signal_colors = NULL,
   sample_groups = NULL,
@@ -1981,7 +1981,7 @@ transform_signal_value <- function(
 
 make_signal_palette <- function(
   n,
-  signal_palette = "Blues",
+  signal_palette = "Paired",
   signal_palette_direction = 1
 ) {
   n <- max(1L, as.integer(n))
@@ -1990,7 +1990,7 @@ make_signal_palette <- function(
   )
   signal_palette <- as.character(signal_palette)[1L]
   if (is.na(signal_palette) || !nzchar(signal_palette)) {
-    signal_palette <- "Blues"
+    signal_palette <- "Paired"
   }
 
   if (
@@ -2021,6 +2021,7 @@ make_signal_palette <- function(
   }
 
   predefined <- list(
+    Paired = c("#A6CEE3", "#1F78B4", "#B2DF8A", "#33A02C", "#FB9A99", "#E31A1C", "#FDBF6F", "#FF7F00", "#CAB2D6", "#6A3D9A", "#FFFF99", "#B15928"),
     Blues = c("#DEEBF7", "#9ECAE1", "#3182BD", "#08519C"),
     Reds = c("#FEE0D2", "#FC9272", "#DE2D26", "#A50F15"),
     RdBu = c("#B2182B", "#EF8A62", "#FDDDBC", "#D1E5F0", "#67A9CF", "#2166AC")
@@ -2029,12 +2030,12 @@ make_signal_palette <- function(
   if (is.null(base)) {
     warning(
       sprintf(
-        "Unknown `signal_palette`: %s. Falling back to 'Blues'.",
+        "Unknown `signal_palette`: %s. Falling back to 'Paired'.",
         signal_palette
       ),
       call. = FALSE
     )
-    base <- predefined[["Blues"]]
+    base <- predefined[["Paired"]]
   }
   if (signal_palette_direction == -1L) {
     base <- rev(base)
@@ -2047,7 +2048,7 @@ make_signal_palette <- function(
 
 make_signal_continuous_palette <- function(
   n = 256L,
-  signal_palette = "Blues",
+  signal_palette = "Paired",
   signal_palette_direction = 1
 ) {
   n <- max(2L, as.integer(n))
@@ -2056,7 +2057,7 @@ make_signal_continuous_palette <- function(
   )
   signal_palette <- as.character(signal_palette)[1L]
   if (is.na(signal_palette) || !nzchar(signal_palette)) {
-    signal_palette <- "Blues"
+    signal_palette <- "Paired"
   }
 
   if (
@@ -2069,6 +2070,7 @@ make_signal_continuous_palette <- function(
     base <- RColorBrewer::brewer.pal(max_colors, signal_palette)
   } else {
     predefined <- list(
+      Paired = c("#A6CEE3", "#1F78B4", "#B2DF8A", "#33A02C", "#FB9A99", "#E31A1C", "#FDBF6F", "#FF7F00", "#CAB2D6", "#6A3D9A", "#FFFF99", "#B15928"),
       Blues = c("#DEEBF7", "#9ECAE1", "#3182BD", "#08519C"),
       Reds = c("#FEE0D2", "#FC9272", "#DE2D26", "#A50F15"),
       RdBu = c("#B2182B", "#EF8A62", "#FDDDBC", "#D1E5F0", "#67A9CF", "#2166AC")
@@ -2077,12 +2079,12 @@ make_signal_continuous_palette <- function(
     if (is.null(base)) {
       warning(
         sprintf(
-          "Unknown `signal_palette`: %s. Falling back to 'Blues'.",
+          "Unknown `signal_palette`: %s. Falling back to 'Paired'.",
           signal_palette
         ),
         call. = FALSE
       )
-      base <- predefined[["Blues"]]
+      base <- predefined[["Paired"]]
     }
   }
 
@@ -2106,7 +2108,7 @@ normalize_palette_direction <- function(direction = 1) {
 
 normalize_signal_colors <- function(
   sample_ids,
-  signal_palette = "Blues",
+  signal_palette = "Paired",
   signal_palette_direction = 1,
   signal_colors = NULL
 ) {
@@ -2137,7 +2139,7 @@ normalize_signal_colors <- function(
 }
 
 apply_signal_continuous_fill_scale <- function(
-  signal_palette = "Blues",
+  signal_palette = "Paired",
   signal_palette_direction = 1,
   signal_colors = NULL
 ) {

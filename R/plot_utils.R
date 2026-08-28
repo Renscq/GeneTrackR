@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-27
-# Version: dev002
+# Version: dev003
 # Function: Internal plotting utilities for gene models and signal tracks
 # Input: Annotation and signal tables
 # Output: ggplot objects and transformed plotting tables
@@ -476,7 +476,7 @@ normalize_variant_marker_type <- function(variant_type) {
   out
 }
 
-make_variant_marker_fill_colors <- function(variant_palette = "Set1",
+make_variant_marker_fill_colors <- function(variant_palette = "Paired",
                                             variant_colors = NULL,
                                             variant_types = NULL,
                                             alpha = 0.6) {
@@ -543,7 +543,7 @@ make_variant_marker_fill_colors <- function(variant_palette = "Set1",
 
 
 resolve_variant_marker_colors <- function(variant_types,
-                                          variant_palette = "Set1",
+                                          variant_palette = "Paired",
                                           variant_colors = NULL,
                                           alpha = 0.6) {
   labels <- normalize_variant_marker_type(variant_types)
@@ -563,7 +563,7 @@ resolve_variant_marker_colors <- function(variant_types,
 
 apply_variant_marker_color_scale <- function(p,
                                              variant_types,
-                                             variant_palette = "Set1",
+                                             variant_palette = "Paired",
                                              variant_colors = NULL,
                                              alpha = 0.6,
                                              name = "Variant type",

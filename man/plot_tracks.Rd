@@ -19,19 +19,21 @@ plot_tracks(
   signal_color_by = c("sample", "group"),
   signal_summary = c("none", "mean", "median", "sum"),
   signal_type = c("bar", "line", "heatmap"),
-  signal_palette = "Blues",
+  signal_palette = "Paired",
   signal_palette_direction = 1,
   signal_colors = NULL,
   gene_palette = "Paired",
   gene_colors = NULL,
   gene_border_color = NA,
   feature_color_by = "auto",
-  feature_palette = "Set2",
+  feature_palette = "Paired",
   feature_colors = NULL,
   feature_border_color = NA,
   feature_max_legend_levels = 5,
+  variant_palette = "Paired",
+  variant_colors = NULL,
   ribo_signal_type = c("auto", "bar", "frame"),
-  frame_palette = "Set1",
+  frame_palette = "Paired",
   frame_colors = NULL,
   signal_transform = c("none", "log2", "log10", "sqrt"),
   signal_y_scale = c("free", "fixed"),
@@ -108,6 +110,10 @@ plot_tracks(
 \item{feature_border_color}{Optional rectangle border color for feature tracks. Use \code{NA} to hide borders.}
 
 \item{feature_max_legend_levels}{Maximum number of legend groups shown for each feature track.}
+
+\item{variant_palette}{RColorBrewer palette name used for variant-track colors.}
+
+\item{variant_colors}{Optional named or unnamed explicit colors passed to \code{plot_variant()}. Named vectors are recommended when stable SNP/INS/DEL colors are required.}
 
 \item{ribo_signal_type}{How Ribo-seq samples should be displayed in transcript-centered browser plots. \code{auto} uses \code{frame} for samples whose IDs look like Ribo-seq/RPF tracks when \code{transcript_id} is supplied, otherwise it falls back to standard genomic signal tracks. \code{bar} always uses the standard signal geometry, and \code{frame} forces frame rendering when transcript-centered plotting is possible.}
 

@@ -11,7 +11,7 @@ plot_ld_block(
   end = NULL,
   variant_type = c("both", "snp", "ind"),
   method = c("r2", "Dprime"),
-  color_palette = "Reds",
+  color_palette = "Paired",
   font = 14,
   title = NULL,
   label_by = c("pos", "variant_id"),
@@ -40,7 +40,7 @@ plot_ld_block(
 
 \item{method}{LD method used when computing from VCF.}
 
-\item{color_palette}{RColorBrewer sequential palette name. Default \code{Reds}.}
+\item{color_palette}{RColorBrewer palette name used to generate the continuous LD heatmap gradient. Default \code{Paired}.}
 
 \item{font}{Base font size. Font color is always black.}
 

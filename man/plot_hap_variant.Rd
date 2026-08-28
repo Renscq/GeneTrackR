@@ -28,11 +28,11 @@ plot_hap_variant(
   gene_palette = "Paired",
   gene_colors = NULL,
   gene_border_color = NA,
-  table_palette = "RdBu",
+  table_palette = "Paired",
   table_colors = NULL,
   table_alpha = 0.6,
   reference_fill = "white",
-  variant_palette = "Set1",
+  variant_palette = "Paired",
   variant_colors = NULL,
   variant_alpha = 0.6,
   show_variant_marker = TRUE,
@@ -131,6 +131,6 @@ plot_hap_variant(
   annotation = anno,
   min_hap_samples = 1,
   table_x_angle = 90,
-  table_palette = "RdBu"
+  table_palette = "Paired"
 )
 }

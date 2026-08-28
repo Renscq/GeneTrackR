@@ -1408,6 +1408,8 @@ The four inputs play different roles in `plot_tracks()`:
 - `features`: optional `FeatureTrack` containing BED/GFF/GTF-style intervals;
 - `variants`: optional `VariantTrack` containing VCF-derived variants.
 
+All GeneTrackR plotting palette arguments now default to `"Paired"`. This includes gene, signal, frame, feature, variant, LD, haplotype-table, and phenotype-fill palettes. Supply another RColorBrewer palette explicitly only when a different color scheme is required.
+
 `plot_tracks()` accepts **exactly one genomic locator** per call:
 
 - `gene_id`;
@@ -1441,7 +1443,7 @@ p_browser_gene <- plot_tracks(
   samples = c("RNA_seq_plus", "Ribo_seq_plus"),
   strand = "+",
   signal_type = "bar",
-  signal_palette = "Dark2",
+  signal_palette = "Paired",
   signal_palette_direction = 1,
   signal_y_scale = "free",
   signal_y_ticks = "pretty",
@@ -1456,9 +1458,7 @@ p_browser_gene <- plot_tracks(
 p_browser_gene
 ```
 
-For discrete signal tracks, colors follow the selected sample/group order and the standard palette order. For example, with `signal_palette = "Dark2"`, the first selected sample receives the first `Dark2` color and the second sample receives the second color.
-
-Unlike `plot_signal_gene()`, `plot_tracks()` does not use `strand = "auto"`. Use `+` or `-` when a strand-specific locus is known, `both` when both strand classes should be shown, or `ignore` when signal strand metadata should not be used for filtering.
+For discrete signal tracks, colors follow the selected sample/group order and the standard palette order. Unlike `plot_signal_gene()`, `plot_tracks()` does not use `strand = "auto"`. Use `+` or `-` when a strand-specific locus is known, `both` when both strand classes should be shown, or `ignore` when signal strand metadata should not be used for filtering.
 
 ### Step 3. Build a transcript-centered browser view
 
@@ -1472,7 +1472,8 @@ p_browser_transcript <- plot_tracks(
   samples = c("RNA_seq_plus", "Ribo_seq_plus"),
   strand = "+",
   signal_type = "bar",
-  signal_palette = "Set1",
+  ribo_signal_type = "auto",
+  frame_palette = "Paired",
   signal_y_scale = "free",
   collapse = "none",
   direction_mode = "transcript",
@@ -1487,7 +1488,9 @@ p_browser_transcript <- plot_tracks(
 p_browser_transcript
 ```
 
-The signal panel remains in **genomic coordinates** so that it stays aligned with the other browser tracks. For transcript-coordinate signal visualization or Ribo-seq reading-frame analysis, use `plot_signal_transcript()` instead. In particular, `plot_tracks()` supports `bar`, `line`, and `heatmap` signal panels; the dedicated Ribo-seq `frame` view belongs to `plot_signal_transcript()`.
+When `transcript_id` is supplied, `ribo_signal_type = "auto"` detects Ribo-seq/RPF-like sample IDs and renders those panels in `frame` mode by default, while RNA-seq panels remain standard browser signal tracks. This makes the difference between RNA-seq coverage and Ribo-seq frame periodicity more obvious without requiring a separate manual step.
+
+The signal panel remains in **genomic coordinates** so that it stays aligned with the other browser tracks. For region-level browser plots, Ribo-seq defaults back to standard genomic signal tracks because frame rendering requires one specific transcript model.
 
 ### Step 4. Inspect an explicit genomic region
 
@@ -1512,7 +1515,7 @@ p_browser_region <- plot_tracks(
   ),
   strand = "both",
   signal_type = "bar",
-  signal_palette = "Set1",
+  signal_palette = "Paired",
   signal_y_scale = "free",
   signal_y_ticks = "pretty",
   collapse = "none",
@@ -1546,10 +1549,18 @@ p_browser_complete <- plot_tracks(
   samples = c("RNA_seq_plus", "Ribo_seq_plus"),
   strand = "+",
   signal_type = "bar",
-  signal_palette = "Dark2",
+  signal_palette = "Paired",
   signal_y_scale = "free",
   signal_y_ticks = "pretty",
   gene_palette = "Paired",
+  feature_color_by = "auto",
+  feature_max_legend_levels = 5,
+  variant_palette = "Paired",
+  variant_colors = c(
+    SNP = "#1F78B4",
+    INS = "#33A02C",
+    DEL = "#E31A1C"
+  ),
   direction_mode = "gene",
   heights = c(
     signal = 4,
@@ -1561,6 +1572,10 @@ p_browser_complete <- plot_tracks(
 
 p_browser_complete
 ```
+
+For BED-like interval tracks, `feature_color_by = "auto"` tries to choose a compact and informative attribute for the legend. In the bundled demo BED file, names such as `GeneA_promoter|promoter` and `GeneB_enhancer|enhancer` are simplified to a small set of feature groups (for example promoter, enhancer, candidate region, and QTL-like intervals), and the legend is automatically capped to at most five groups. This is usually more informative than a single `BED` legend entry, while still keeping the browser legend manageable.
+
+Variant colors are controlled independently with `variant_palette` and `variant_colors`. `variant_palette = "Paired"` is the default. For stable biological categories, a named vector such as `c(SNP = ..., INS = ..., DEL = ...)` is preferable because the same variant type then retains the same color across browser regions.
 
 The combined figure uses the following default panel order when `layout = "signal_top"`:
 
@@ -1619,14 +1634,16 @@ p_browser_styled <- plot_tracks(
   samples = c("RNA_seq_plus", "Ribo_seq_plus"),
   strand = "+",
   signal_type = "bar",
-  signal_palette = "Set1",
+  signal_palette = "Paired",
   signal_transform = "sqrt",
   signal_y_scale = "free",
   signal_y_ticks = "pretty",
   signal_alpha = 0.85,
   signal_bar_width = 0.9,
-  gene_palette = "Set2",
+  gene_palette = "Paired",
   gene_border_color = "black",
+  feature_color_by = "auto",
+  feature_max_legend_levels = 5,
   highlight = ld_highlight,
   layout = "gene_top",
   heights = c(
@@ -1645,9 +1662,9 @@ p_browser_styled
 
 `highlight` uses genomic coordinates and is currently applied to the signal and gene-model panels. It is useful for marking a candidate interval while preserving the common browser x-axis.
 
-Gene-model styling is controlled by `gene_palette`, `gene_colors`, `gene_border_color`, `cds_height`, `utr_height`, `direction_mode`, `label_position`, and `label_by`. Signal styling is controlled by the corresponding `signal_*` arguments.
+Gene-model styling is controlled by `gene_palette`, `gene_colors`, `gene_border_color`, `cds_height`, `utr_height`, `direction_mode`, `label_position`, and `label_by`. Signal styling is controlled by the corresponding `signal_*` arguments. Feature styling is controlled by `feature_color_by`, `feature_palette`, `feature_colors`, `feature_border_color`, and `feature_max_legend_levels`. Variant styling in the integrated browser is controlled by `variant_palette` and `variant_colors`.
 
-The integrated browser intentionally uses simplified feature and variant rendering with labels hidden. When detailed interval labels, variant labels, or feature/variant-specific color controls are required, first inspect them with `plot_feature_track()` or `plot_variant()`, then use `plot_tracks()` for the compact integrated overview.
+The integrated browser intentionally uses simplified feature and variant rendering with labels hidden. When detailed interval labels, variant labels, or more detailed track-specific customization are required, first inspect them with `plot_feature_track()`, `plot_variant()`, or `plot_signal_transcript()`, then use `plot_tracks()` for the compact integrated overview.
 
 ### Step 7. Use browser tracks efficiently on real datasets
 

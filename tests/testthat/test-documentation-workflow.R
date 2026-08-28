@@ -244,6 +244,8 @@ test_that("browser-track documentation workflow uses current public APIs", {
     samples = c("RNA_seq_plus", "Ribo_seq_plus"),
     strand = "+",
     signal_type = "bar",
+    variant_palette = "Paired",
+    variant_colors = c(SNP = "#1F78B4", INS = "#33A02C", DEL = "#E31A1C"),
     highlight = data.frame(start = 12342620, end = 12343180),
     layout = "gene_top",
     heights = c(signal = 4, gene = 1.5, feature = 0.9, variant = 0.8)

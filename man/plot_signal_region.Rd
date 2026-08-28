@@ -21,7 +21,7 @@ plot_signal_region(
   show_gene_model = TRUE,
   signal_track_height = 3,
   gene_track_height = 1,
-  signal_palette = "Blues",
+  signal_palette = "Paired",
   signal_palette_direction = 1,
   signal_colors = NULL,
   signal_transform = c("none", "log2", "log10", "sqrt"),

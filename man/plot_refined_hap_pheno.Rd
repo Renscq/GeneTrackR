@@ -19,7 +19,7 @@ plot_refined_hap_pheno(
   show_signif_only = TRUE,
   show_points = FALSE,
   show_outliers = FALSE,
-  fill_palette = "RdBu",
+  fill_palette = "Paired",
   fill_colors = NULL,
   fill_alpha = 0.75,
   violin_width = 0.9,

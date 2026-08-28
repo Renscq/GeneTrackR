@@ -412,3 +412,54 @@ test_that("feature browser tracks use compact automatic legend groups", {
   )
   expect_s3_class(p, "ggplot")
 })
+
+test_that("all exported plotting palette defaults are Paired", {
+  plot_functions <- grep(
+    "^plot_",
+    getNamespaceExports("GeneTrackR"),
+    value = TRUE
+  )
+
+  for (fn_name in plot_functions) {
+    fn <- getExportedValue("GeneTrackR", fn_name)
+    defaults <- formals(fn)
+    palette_args <- grep("palette$", names(defaults), value = TRUE)
+    for (arg_name in palette_args) {
+      expect_identical(
+        defaults[[arg_name]],
+        "Paired",
+        info = paste(fn_name, arg_name, "should default to Paired")
+      )
+    }
+  }
+})
+
+test_that("plot_tracks forwards variant palette and explicit colors", {
+  variants <- read_vcf(
+    gtr_extdata("gtr_demo_variants.vcf"),
+    mode = "memory",
+    verbose = FALSE,
+    progress = FALSE
+  )
+  variant_colors <- c(
+    SNP = "#1F78B4",
+    INS = "#33A02C",
+    DEL = "#E31A1C"
+  )
+
+  plots <- make_variant_track_plots(
+    variants,
+    chrom = "chr1",
+    start = 12339001,
+    end = 12374500,
+    variant_palette = "Paired",
+    variant_colors = variant_colors
+  )
+  expect_length(plots, 1L)
+  expect_s3_class(plots[[1L]], "ggplot")
+
+  built <- ggplot2::ggplot_build(plots[[1L]])
+  observed <- unique(unlist(lapply(built$data, function(x) x$colour), use.names = FALSE))
+  observed <- observed[!is.na(observed)]
+  expect_true(all(observed %in% unname(variant_colors)))
+})

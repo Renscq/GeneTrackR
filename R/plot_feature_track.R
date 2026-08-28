@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-28
-# Version: dev002
+# Version: dev003
 # Function: Plot generic feature and variant tracks
 # Input: FeatureTrack or VariantTrack objects
 # Output: ggplot track panels
@@ -37,7 +37,7 @@ plot_feature_track <- function(track,
                                mode = c("overlap", "within", "trim"),
                                color_by = "auto",
                                label_by = c("none", "name", "feature_id", "type"),
-                               feature_palette = "Set2",
+                               feature_palette = "Paired",
                                feature_colors = NULL,
                                feature_border_color = NA,
                                max_legend_levels = 5,

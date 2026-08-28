@@ -1,3 +1,9 @@
+# GeneTrackR 0.5.27
+
+- Added `variant_palette` and `variant_colors` controls to `plot_tracks()` and forwarded them to integrated variant panels.
+- Standardized all plotting palette defaults to `Paired`, including signal, frame, feature, variant, LD, haplotype-table, and phenotype fill palettes.
+- Updated browser-track documentation and regression tests for variant color control and package-wide palette defaults.
+
 # GeneTrackR 0.5.26
 
 - Improved browser-track feature legends by adding automatic compact feature grouping in `plot_tracks()` and `plot_feature_track()`.

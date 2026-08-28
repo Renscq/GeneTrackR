@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-07-30
-# Version: dev004
+# Version: dev005
 # Function: Refine haplotypes and prioritize phenotype-associated variant effects
 # Input: HapVariant objects and phenotype tables
 # Output: Refined haplotype objects, variant-effect tables, and ggplot figures
@@ -286,7 +286,7 @@ plot_refined_hap_pheno <- function(refined_hap,
                                    show_signif_only = TRUE,
                                    show_points = FALSE,
                                    show_outliers = FALSE,
-                                   fill_palette = "RdBu",
+                                   fill_palette = "Paired",
                                    fill_colors = NULL,
                                    fill_alpha = 0.75,
                                    violin_width = 0.9,
@@ -433,11 +433,11 @@ plot_refined_hap_variant <- function(refined_hap,
                                      gene_palette = "Paired",
                                      gene_colors = NULL,
                                      gene_border_color = NA,
-                                     table_palette = "RdBu",
+                                     table_palette = "Paired",
                                      table_colors = NULL,
                                      table_alpha = 0.6,
                                      reference_fill = "white",
-                                     variant_palette = "Set1",
+                                     variant_palette = "Paired",
                                      variant_colors = NULL) {
   if (!inherits(refined_hap, "HapRefined") || isTRUE(collapse_refined)) {
     hap_obj <- get_refined_hap_variant(refined_hap)

@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-07-30
-# Version: dev005
+# Version: dev006
 # Function: Plot haplotype-variant and haplotype-phenotype figures
 # Input: HapVariant and phenotype objects
 # Output: ggplot or patchwork figures
@@ -64,7 +64,7 @@
 #'   annotation = anno,
 #'   min_hap_samples = 1,
 #'   table_x_angle = 90,
-#'   table_palette = "RdBu"
+#'   table_palette = "Paired"
 #' )
 #' @export
 plot_hap_variant <- function(hap,
@@ -90,11 +90,11 @@ plot_hap_variant <- function(hap,
                              gene_palette = "Paired",
                              gene_colors = NULL,
                              gene_border_color = NA,
-                             table_palette = "RdBu",
+                             table_palette = "Paired",
                              table_colors = NULL,
                              table_alpha = 0.6,
                              reference_fill = "white",
-                             variant_palette = "Set1",
+                             variant_palette = "Paired",
                              variant_colors = NULL,
                              variant_alpha = 0.6,
                              show_variant_marker = TRUE,
@@ -622,7 +622,7 @@ draw_hap_gene_track <- function(gene_data,
                                 gene_palette = "Paired",
                                 gene_colors = NULL,
                                 gene_border_color = NA,
-                                variant_palette = "Set1",
+                                variant_palette = "Paired",
                                 variant_colors = NULL,
                                 variant_alpha = 0.6,
                                 show_variant_marker = TRUE,
@@ -912,7 +912,7 @@ make_hap_direction_arrows <- function(tx,
 
 apply_hap_table_fill_scale <- function(p,
                                        values,
-                                       table_palette = "RdBu",
+                                       table_palette = "Paired",
                                        table_colors = NULL,
                                        table_alpha = 0.6,
                                        fixed_allele_classes = FALSE) {
@@ -982,7 +982,7 @@ normalize_hap_table_fill_class <- function(genotype_label,
   out
 }
 
-make_hap_table_fill_colors <- function(table_palette = "RdBu",
+make_hap_table_fill_colors <- function(table_palette = "Paired",
                                        table_colors = NULL,
                                        table_alpha = 0.6) {
   levels <- hap_table_fill_levels()
@@ -1111,7 +1111,7 @@ make_hap_variant_fill_scale <- function(gene_features,
                                         variant_types,
                                         gene_palette = "Paired",
                                         gene_colors = NULL,
-                                        variant_palette = "Set1",
+                                        variant_palette = "Paired",
                                         variant_colors = NULL,
                                         variant_alpha = 0.6) {
   gene_features <- unique(normalize_gene_model_feature(gene_features))
@@ -1207,7 +1207,7 @@ plot_hap_pheno <- function(hap,
                            show_signif_only = TRUE,
                            show_points = FALSE,
                            show_outliers = FALSE,
-                           fill_palette = "RdBu",
+                           fill_palette = "Paired",
                            fill_colors = NULL,
                            fill_alpha = 0.75,
                            violin_width = 0.9,
@@ -1483,7 +1483,7 @@ wrap_strip_labels <- function(labels, width = 24) {
 }
 
 make_hap_pheno_fill_table <- function(summary_dt,
-                                      fill_palette = "RdBu",
+                                      fill_palette = "Paired",
                                       fill_colors = NULL,
                                       alpha = 0.75) {
   dt <- data.table::copy(summary_dt)

@@ -20,10 +20,10 @@ plot_signal_transcript(
   show_gene_model = TRUE,
   signal_track_height = 3,
   gene_track_height = 1,
-  signal_palette = "Blues",
+  signal_palette = "Paired",
   signal_palette_direction = 1,
   signal_colors = NULL,
-  frame_palette = "Set1",
+  frame_palette = "Paired",
   frame_colors = NULL,
   signal_transform = c("none", "log2", "log10", "sqrt"),
   signal_y_scale = c("free", "fixed"),
@@ -81,7 +81,7 @@ plot_signal_transcript(
 
 \item{signal_colors}{Optional named or unnamed vector of explicit colors for samples. If supplied, it overrides \code{signal_palette}; explicit colors are not modified by \code{signal_palette_direction}.}
 
-\item{frame_palette}{RColorBrewer palette for CDS frame colors when \code{plot_type = "frame"}. Default is \code{Set1}. Colors are assigned in order to \code{frame0}, \code{frame1}, and \code{frame2}.}
+\item{frame_palette}{RColorBrewer palette for CDS frame colors when \code{plot_type = "frame"}. Default is \code{Paired}. Colors are assigned in order to \code{frame0}, \code{frame1}, and \code{frame2}.}
 
 \item{frame_colors}{Optional named colors for \code{frame0}, \code{frame1}, and \code{frame2}.}
 

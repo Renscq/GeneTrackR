@@ -34,11 +34,11 @@ plot_refined_hap_variant(
   gene_palette = "Paired",
   gene_colors = NULL,
   gene_border_color = NA,
-  table_palette = "RdBu",
+  table_palette = "Paired",
   table_colors = NULL,
   table_alpha = 0.6,
   reference_fill = "white",
-  variant_palette = "Set1",
+  variant_palette = "Paired",
   variant_colors = NULL
 )
 }

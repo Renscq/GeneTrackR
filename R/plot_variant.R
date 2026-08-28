@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-29
-# Version: dev001
+# Version: dev002
 # Function: Plot variant records from VariantTrack objects
 # Input: VariantTrack objects and genomic regions
 # Output: ggplot variant figures
@@ -38,7 +38,7 @@ plot_variant <- function(variant,
                          color_by = c("variant_type", "filter", "none"),
                          label_by = c("none", "variant_id", "variant_type", "ref", "alt"),
                          variant_shape = c("lollipop", "point", "rug"),
-                         variant_palette = "Set1",
+                         variant_palette = "Paired",
                          variant_colors = NULL,
                          point_size = 2,
                          line_width = 0.35,
@@ -188,7 +188,7 @@ plot_variant_track <- function(track,
                                end,
                                color_by = c("variant_type", "filter", "none"),
                                label_by = c("none", "variant_id", "variant_type", "ref", "alt"),
-                               variant_palette = "Set1",
+                               variant_palette = "Paired",
                                variant_colors = NULL,
                                text_size = 14,
                                plot_theme = c("bw", "classic", "light", "minimal"),
@@ -208,7 +208,7 @@ plot_variant_track <- function(track,
   )
 }
 
-make_variant_palette <- function(keys, palette = "Set2", colors = NULL) {
+make_variant_palette <- function(keys, palette = "Paired", colors = NULL) {
   keys <- as.character(keys)
   keys <- keys[!is.na(keys) & nzchar(keys)]
   if (length(keys) == 0L) return(character())

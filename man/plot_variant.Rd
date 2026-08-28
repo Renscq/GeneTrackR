@@ -13,7 +13,7 @@ plot_variant(
   color_by = c("variant_type", "filter", "none"),
   label_by = c("none", "variant_id", "variant_type", "ref", "alt"),
   variant_shape = c("lollipop", "point", "rug"),
-  variant_palette = "Set1",
+  variant_palette = "Paired",
   variant_colors = NULL,
   point_size = 2,
   line_width = 0.35,

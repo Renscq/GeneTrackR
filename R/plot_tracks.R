@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-27
-# Version: dev006
+# Version: dev007
 # Function: Combined genome-browser-like track plotting
 # Input: GenePred and BwgTrack objects
 # Output: Combined patchwork track figure
@@ -38,6 +38,8 @@
 #' @param feature_colors Optional explicit feature-track fill colors.
 #' @param feature_border_color Optional rectangle border color for feature tracks. Use `NA` to hide borders.
 #' @param feature_max_legend_levels Maximum number of legend groups shown for each feature track.
+#' @param variant_palette RColorBrewer palette name used for variant-track colors.
+#' @param variant_colors Optional named or unnamed explicit colors passed to `plot_variant()`. Named vectors are recommended when stable SNP/INS/DEL colors are required.
 #' @param ribo_signal_type How Ribo-seq samples should be displayed in transcript-centered browser plots. `auto` uses `frame` for samples whose IDs look like Ribo-seq/RPF tracks when `transcript_id` is supplied, otherwise it falls back to standard genomic signal tracks. `bar` always uses the standard signal geometry, and `frame` forces frame rendering when transcript-centered plotting is possible.
 #' @param frame_palette RColorBrewer palette name used for Ribo-seq frame plots.
 #' @param frame_colors Optional explicit colors for `frame0`, `frame1`, and `frame2`.
@@ -78,19 +80,21 @@ plot_tracks <- function(annotation,
                         signal_color_by = c("sample", "group"),
                         signal_summary = c("none", "mean", "median", "sum"),
                         signal_type = c("bar", "line", "heatmap"),
-                        signal_palette = "Blues",
+                        signal_palette = "Paired",
                         signal_palette_direction = 1,
                         signal_colors = NULL,
                         gene_palette = "Paired",
                         gene_colors = NULL,
                         gene_border_color = NA,
                         feature_color_by = "auto",
-                        feature_palette = "Set2",
+                        feature_palette = "Paired",
                         feature_colors = NULL,
                         feature_border_color = NA,
                         feature_max_legend_levels = 5,
+                        variant_palette = "Paired",
+                        variant_colors = NULL,
                         ribo_signal_type = c("auto", "bar", "frame"),
-                        frame_palette = "Set1",
+                        frame_palette = "Paired",
                         frame_colors = NULL,
                         signal_transform = c("none", "log2", "log10", "sqrt"),
                         signal_y_scale = c("free", "fixed"),
@@ -296,6 +300,8 @@ plot_tracks <- function(annotation,
     chrom = chrom_value,
     start = start_value,
     end = end_value,
+    variant_palette = variant_palette,
+    variant_colors = variant_colors,
     plot_theme = plot_theme,
     show_panel_border = show_panel_border,
     text_size = text_size
@@ -336,10 +342,10 @@ make_browser_signal_plot <- function(signal,
                                      strand = c("ignore", "+", "-", "both"),
                                      bin_size = NULL,
                                      highlight = NULL,
-                                     signal_palette = "Blues",
+                                     signal_palette = "Paired",
                                      signal_palette_direction = 1,
                                      signal_colors = NULL,
-                                     frame_palette = "Set1",
+                                     frame_palette = "Paired",
                                      frame_colors = NULL,
                                      signal_transform = c("none", "log2", "log10", "sqrt"),
                                      signal_y_scale = c("free", "fixed"),
@@ -501,7 +507,7 @@ make_feature_track_plots <- function(features,
                                      start,
                                      end,
                                      color_by = "auto",
-                                     feature_palette = "Set2",
+                                     feature_palette = "Paired",
                                      feature_colors = NULL,
                                      feature_border_color = NA,
                                      feature_max_legend_levels = 5,
@@ -535,7 +541,7 @@ make_feature_track_plots <- function(features,
   out
 }
 
-make_variant_track_plots <- function(variants, chrom, start, end, plot_theme = "bw", show_panel_border = NULL, text_size = 14) {
+make_variant_track_plots <- function(variants, chrom, start, end, variant_palette = "Paired", variant_colors = NULL, plot_theme = "bw", show_panel_border = NULL, text_size = 14) {
   if (is.null(variants)) return(list())
   if (inherits(variants, "VariantTrack")) variants <- list(Variant = variants)
   stop_if_not(is.list(variants), "`variants` must be a VariantTrack object or a list of VariantTrack objects.")
@@ -549,6 +555,8 @@ make_variant_track_plots <- function(variants, chrom, start, end, plot_theme = "
       start = start,
       end = end,
       label_by = "none",
+      variant_palette = variant_palette,
+      variant_colors = variant_colors,
       plot_theme = plot_theme,
       show_panel_border = show_panel_border,
       text_size = text_size

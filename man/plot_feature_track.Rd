@@ -12,7 +12,7 @@ plot_feature_track(
   mode = c("overlap", "within", "trim"),
   color_by = "auto",
   label_by = c("none", "name", "feature_id", "type"),
-  feature_palette = "Set2",
+  feature_palette = "Paired",
   feature_colors = NULL,
   feature_border_color = NA,
   max_legend_levels = 5,

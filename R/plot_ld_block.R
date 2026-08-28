@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-07-02
-# Version: dev006
+# Version: dev007
 # Function: Plot LD block triangular heatmaps
 # Input: LDTrack objects, VariantTrack objects, or VCF paths
 # Output: LDTrack objects with stored figures
@@ -23,7 +23,7 @@
 #' @param chrom,start,end Optional region used when `object` is not an `LDTrack`.
 #' @param variant_type One of `both`, `snp`, or `ind` when computing from VCF.
 #' @param method LD method used when computing from VCF.
-#' @param color_palette RColorBrewer sequential palette name. Default `Reds`.
+#' @param color_palette RColorBrewer palette name used to generate the continuous LD heatmap gradient. Default `Paired`.
 #' @param font Base font size. Font color is always black.
 #' @param title Plot title. Default is `chrom:start-end LD`.
 #' @param label_by Variant label column, either `pos`, `variant_id`, or another
@@ -69,7 +69,7 @@ plot_ld_block <- function(object,
                           end = NULL,
                           variant_type = c("both", "snp", "ind"),
                           method = c("r2", "Dprime"),
-                          color_palette = "Reds",
+                          color_palette = "Paired",
                           font = 14,
                           title = NULL,
                           label_by = c("pos", "variant_id"),
@@ -207,7 +207,7 @@ plot_ld_block <- function(object,
 draw_ld_triangle_heatmap <- function(ld,
                                      variants,
                                      pair_dt,
-                                     color_palette = "Reds",
+                                     color_palette = "Paired",
                                      font = 14,
                                      title = NULL,
                                      show_variant_labels = TRUE,
@@ -309,9 +309,9 @@ make_ld_triangle_frame <- function(n_var) {
   )
 }
 
-make_ld_continuous_palette <- function(color_palette = "Reds") {
+make_ld_continuous_palette <- function(color_palette = "Paired") {
   color_palette <- as.character(color_palette)[1L]
-  if (is.na(color_palette) || !nzchar(color_palette)) color_palette <- "Reds"
+  if (is.na(color_palette) || !nzchar(color_palette)) color_palette <- "Paired"
   if (requireNamespace("RColorBrewer", quietly = TRUE) &&
       color_palette %in% rownames(RColorBrewer::brewer.pal.info)) {
     pal_info <- RColorBrewer::brewer.pal.info[color_palette, , drop = FALSE]
@@ -319,8 +319,8 @@ make_ld_continuous_palette <- function(color_palette = "Reds") {
     base <- RColorBrewer::brewer.pal(max(3L, max_colors), color_palette)
     return(grDevices::colorRampPalette(base)(100L))
   }
-  warning(sprintf("Unknown `color_palette`: %s. Falling back to 'Reds'.", color_palette), call. = FALSE)
-  base <- RColorBrewer::brewer.pal(9L, "Reds")
+  warning(sprintf("Unknown `color_palette`: %s. Falling back to 'Paired'.", color_palette), call. = FALSE)
+  base <- RColorBrewer::brewer.pal(12L, "Paired")
   grDevices::colorRampPalette(base)(100L)
 }
 
@@ -370,7 +370,7 @@ draw_ld_region_track <- function(ld,
       gene_palette = "Paired",
       gene_colors = NULL,
       gene_border_color = NA,
-      variant_palette = "Set1",
+      variant_palette = "Paired",
       variant_colors = NULL,
       variant_alpha = 0.6,
       show_variant_marker = show_variant_marker,
@@ -402,7 +402,7 @@ draw_ld_region_track <- function(ld,
     p <- apply_variant_marker_color_scale(
       p,
       variant_types = vars$variant_type_label,
-      variant_palette = "Set1",
+      variant_palette = "Paired",
       variant_colors = NULL,
       alpha = 0.6,
       name = "Variant type",

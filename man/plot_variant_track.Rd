@@ -11,7 +11,7 @@ plot_variant_track(
   end,
   color_by = c("variant_type", "filter", "none"),
   label_by = c("none", "variant_id", "variant_type", "ref", "alt"),
-  variant_palette = "Set1",
+  variant_palette = "Paired",
   variant_colors = NULL,
   text_size = 14,
   plot_theme = c("bw", "classic", "light", "minimal"),

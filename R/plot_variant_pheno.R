@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-08-19
-# Version: dev002
+# Version: dev003
 # Function: Plot phenotype distributions grouped by a single variant genotype
 # Input: VariantTrack/VCF/HapVariant objects and phenotype tables
 # Output: ggplot figures with pairwise test annotations
@@ -88,7 +88,7 @@ plot_variant_pheno <- function(variant,
                                show_signif_only = TRUE,
                                show_points = FALSE,
                                show_outliers = FALSE,
-                               fill_palette = "RdBu",
+                               fill_palette = "Paired",
                                fill_colors = NULL,
                                fill_alpha = 0.75,
                                violin_width = 0.9,
