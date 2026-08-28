@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-27
-# Version: dev005
+# Version: dev006
 # Function: Combined genome-browser-like track plotting
 # Input: GenePred and BwgTrack objects
 # Output: Combined patchwork track figure
@@ -9,14 +9,14 @@
 #'
 #' @description
 #' Draw a genome-browser-like figure containing a gene model track alone or a
-#' signal track combined with a gene model track. The genomic interval can be
-#' specified in three ways: by `gene_id`, by `transcript_id`, or by explicit
-#' `chrom`, `start`, and `end` coordinates.
+#' signal track combined with gene, feature, and variant tracks. The genomic
+#' interval can be specified in three ways: by `gene_id`, by `transcript_id`,
+#' or by explicit `chrom`, `start`, and `end` coordinates.
 #'
 #' @param annotation A GenePred object or a standardized Feature object with transcript/exon records.
 #' @param signal Optional BwgTrack object. If NULL, only annotation/feature/variant tracks are drawn.
 #' @param features Optional FeatureTrack object or named list of FeatureTrack objects from `read_bed()`, `read_gff()`, or `read_gtf()`.
-#' @param variants Optional VariantTrack object or named list of VariantTrack objects from `read_vcf_track()`.
+#' @param variants Optional VariantTrack object or named list of VariantTrack objects from `read_vcf()`.
 #' @param chrom Chromosome name. Required when `gene_id` and `transcript_id` are not supplied.
 #' @param start Region start in 1-based closed coordinates. Required with `chrom`/`end`.
 #' @param end Region end in 1-based closed coordinates. Required with `chrom`/`start`.
@@ -26,13 +26,21 @@
 #' @param sample_groups Optional sample group mapping for group-level coloring or replicate summaries. Use a named character vector, a data frame with `sample_id` and `group`, or an unnamed vector with one group per selected sample.
 #' @param signal_color_by Color signal tracks by `sample` or `group`.
 #' @param signal_summary Replicate summary mode. Use `none` to plot individual samples, or `mean`, `median`, or `sum` to summarize samples within each group.
-#' @param signal_type Signal plot type.
+#' @param signal_type Signal plot type for non-Ribo-seq browser signal tracks.
 #' @param signal_palette Signal color palette for signal tracks. Any palette name from `RColorBrewer::brewer.pal.info` can be used. Discrete signal sample/group colors follow the standard RColorBrewer class order; heatmaps use the corresponding continuous gradient.
 #' @param signal_palette_direction Direction for generated signal colors. Use `1` for the standard palette order and `-1` for the reversed palette order. Discrete sample/group colors preserve level-to-color order; heatmap gradients reverse continuously.
 #' @param signal_colors Optional named or unnamed vector of explicit colors for signal samples. Explicit colors override `signal_palette` and are not modified by `signal_palette_direction`.
 #' @param gene_palette RColorBrewer palette name used for gene model feature fills.
 #' @param gene_colors Optional custom fill colors for gene model features. Use a named vector such as `c(UTR = "#b2df8a", CDS = "#33a02c", exon = "#fb9a99")`.
 #' @param gene_border_color Optional rectangle border color for gene model features. Use `NA` to hide borders.
+#' @param feature_color_by Feature-track color grouping. `auto` chooses a compact grouping automatically; other common choices are `feature_group`, `type`, `source`, `name`, and `strand`.
+#' @param feature_palette RColorBrewer palette name used for feature-track fills.
+#' @param feature_colors Optional explicit feature-track fill colors.
+#' @param feature_border_color Optional rectangle border color for feature tracks. Use `NA` to hide borders.
+#' @param feature_max_legend_levels Maximum number of legend groups shown for each feature track.
+#' @param ribo_signal_type How Ribo-seq samples should be displayed in transcript-centered browser plots. `auto` uses `frame` for samples whose IDs look like Ribo-seq/RPF tracks when `transcript_id` is supplied, otherwise it falls back to standard genomic signal tracks. `bar` always uses the standard signal geometry, and `frame` forces frame rendering when transcript-centered plotting is possible.
+#' @param frame_palette RColorBrewer palette name used for Ribo-seq frame plots.
+#' @param frame_colors Optional explicit colors for `frame0`, `frame1`, and `frame2`.
 #' @param signal_transform Signal-axis transformation. Use `none`, `log2`, `log10`, or `sqrt`.
 #' @param signal_y_scale Signal y-axis scale mode. Use `free` for independent sample-specific y-axis ranges or `fixed` for a shared y-axis range across samples.
 #' @param signal_y_ticks Signal y-axis tick mode. Use `range` to show only integer minimum and maximum limits or `pretty` for default-style breaks.
@@ -55,47 +63,6 @@
 #' @param text_size Text size in points for axis text, axis titles, legends, and facet labels.
 #'
 #' @return A patchwork object or ggplot object.
-#'
-#' @examples
-#' \dontrun{
-#' gp <- read_genepred(
-#'   system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR"),
-#'   format = "genePredExt",
-#'   verbose = FALSE
-#' )
-#' signal_all <- read_bwg(
-#'   system.file(
-#'     "extdata",
-#'     c(
-#'       "gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph",
-#'       "gtr_demo_riboseq_plus.bedgraph", "gtr_demo_riboseq_minus.bedgraph"
-#'     ),
-#'     package = "GeneTrackR"
-#'   ),
-#'   format = "bedgraph",
-#'   sample_names = c("RNA_seq_plus", "RNA_seq_minus", "Ribo_seq_plus", "Ribo_seq_minus"),
-#'   strand = c("+", "-", "+", "-"),
-#'   mode = "memory"
-#' )
-#' peaks <- read_bed(
-#'   system.file("extdata", "gtr_demo_features.bed", package = "GeneTrackR")
-#' )
-#' vars <- read_vcf_track(
-#'   system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")
-#' )
-#'
-#' plot_tracks(annotation = gp, signal = signal_all, gene_id = "GeneA")
-#' plot_tracks(
-#'   annotation = gp,
-#'   signal = signal_all,
-#'   features = peaks,
-#'   variants = vars,
-#'   chrom = "chr1",
-#'   start = 12339001,
-#'   end = 12374500,
-#'   strand = "both"
-#' )
-#' }
 #' @export
 plot_tracks <- function(annotation,
                         signal = NULL,
@@ -117,6 +84,14 @@ plot_tracks <- function(annotation,
                         gene_palette = "Paired",
                         gene_colors = NULL,
                         gene_border_color = NA,
+                        feature_color_by = "auto",
+                        feature_palette = "Set2",
+                        feature_colors = NULL,
+                        feature_border_color = NA,
+                        feature_max_legend_levels = 5,
+                        ribo_signal_type = c("auto", "bar", "frame"),
+                        frame_palette = "Set1",
+                        frame_colors = NULL,
                         signal_transform = c("none", "log2", "log10", "sqrt"),
                         signal_y_scale = c("free", "fixed"),
                         signal_y_ticks = c("range", "pretty"),
@@ -148,6 +123,7 @@ plot_tracks <- function(annotation,
   collapse <- match.arg(collapse)
   strand <- match.arg(strand)
   layout <- match.arg(layout)
+  ribo_signal_type <- match.arg(ribo_signal_type)
   signal_transform <- match.arg(signal_transform)
   signal_y_ticks <- match.arg(signal_y_ticks)
   signal_y_limits <- normalize_signal_y_limits(signal_y_limits)
@@ -161,10 +137,8 @@ plot_tracks <- function(annotation,
   label_position <- match.arg(label_position)
   label_by <- match.arg(label_by)
   signal_palette_direction <- normalize_palette_direction(signal_palette_direction)
-  text_color <- "black"
-  grid_linewidth <- NULL
-
   gene_border_color <- normalize_border_color(gene_border_color)
+  feature_border_color <- normalize_border_color(feature_border_color)
 
   has_gene_id <- !is.null(gene_id)
   has_transcript_id <- !is.null(transcript_id)
@@ -173,6 +147,7 @@ plot_tracks <- function(annotation,
   stop_if_not(n_locator == 1L, "Specify exactly one locator: `gene_id`, `transcript_id`, or `chrom` + `start` + `end`.")
 
   tx_all <- data.table::as.data.table(annotation$transcripts)
+  transcript_id_value <- NULL
 
   if (has_gene_id) {
     gene_id_value <- as.character(gene_id)[1L]
@@ -257,24 +232,27 @@ plot_tracks <- function(annotation,
 
   if (!is.null(signal)) {
     stop_if_not(inherits(signal, "BwgTrack"), "`signal` must be a BwgTrack object.")
-    p_signal <- plot_signal_region(
+    p_signal <- make_browser_signal_plot(
       signal = signal,
+      annotation = annotation,
       chrom = chrom_value,
       start = start_value,
       end = end_value,
+      transcript_id = transcript_id_value,
       samples = samples,
       sample_groups = sample_groups,
       signal_color_by = signal_color_by,
       signal_summary = signal_summary,
-      plot_type = signal_type,
+      signal_type = signal_type,
+      ribo_signal_type = ribo_signal_type,
       strand = strand,
       bin_size = bin_size,
       highlight = highlight,
-      annotation = NULL,
-      show_gene_model = FALSE,
       signal_palette = signal_palette,
       signal_palette_direction = signal_palette_direction,
       signal_colors = signal_colors,
+      frame_palette = frame_palette,
+      frame_colors = frame_colors,
       signal_transform = signal_transform,
       signal_y_scale = signal_y_scale,
       signal_y_ticks = signal_y_ticks,
@@ -297,6 +275,11 @@ plot_tracks <- function(annotation,
     chrom = chrom_value,
     start = start_value,
     end = end_value,
+    color_by = feature_color_by,
+    feature_palette = feature_palette,
+    feature_colors = feature_colors,
+    feature_border_color = feature_border_color,
+    feature_max_legend_levels = feature_max_legend_levels,
     plot_theme = plot_theme,
     show_panel_border = show_panel_border,
     text_size = text_size
@@ -338,7 +321,193 @@ plot_tracks <- function(annotation,
   patchwork::wrap_plots(plot_list, ncol = 1) + patchwork::plot_layout(heights = unname(height_list))
 }
 
-make_feature_track_plots <- function(features, chrom, start, end, plot_theme = "bw", show_panel_border = NULL, text_size = 14) {
+make_browser_signal_plot <- function(signal,
+                                     annotation,
+                                     chrom,
+                                     start,
+                                     end,
+                                     transcript_id = NULL,
+                                     samples = NULL,
+                                     sample_groups = NULL,
+                                     signal_color_by = c("sample", "group"),
+                                     signal_summary = c("none", "mean", "median", "sum"),
+                                     signal_type = c("bar", "line", "heatmap"),
+                                     ribo_signal_type = c("auto", "bar", "frame"),
+                                     strand = c("ignore", "+", "-", "both"),
+                                     bin_size = NULL,
+                                     highlight = NULL,
+                                     signal_palette = "Blues",
+                                     signal_palette_direction = 1,
+                                     signal_colors = NULL,
+                                     frame_palette = "Set1",
+                                     frame_colors = NULL,
+                                     signal_transform = c("none", "log2", "log10", "sqrt"),
+                                     signal_y_scale = c("free", "fixed"),
+                                     signal_y_ticks = c("range", "pretty"),
+                                     signal_y_limits = NULL,
+                                     signal_alpha = 0.85,
+                                     signal_bar_width = 1,
+                                     plot_theme = c("bw", "classic", "light", "minimal"),
+                                     show_panel_border = NULL,
+                                     heatmap_bin_size = NULL,
+                                     heatmap_max_bins = 800L,
+                                     heatmap_summary = c("mean", "max", "sum", "median"),
+                                     text_size = 14) {
+  signal_type <- match.arg(signal_type)
+  ribo_signal_type <- match.arg(ribo_signal_type)
+  strand <- match.arg(strand)
+  signal_color_by <- match.arg(signal_color_by)
+  signal_summary <- match.arg(signal_summary)
+  signal_transform <- match.arg(signal_transform)
+  signal_y_ticks <- match.arg(signal_y_ticks)
+  plot_theme <- normalize_plot_theme(plot_theme)
+  show_panel_border <- normalize_show_panel_border(show_panel_border)
+  heatmap_summary <- match.arg(heatmap_summary)
+
+  region_plot <- plot_signal_region(
+    signal = signal,
+    chrom = chrom,
+    start = start,
+    end = end,
+    samples = samples,
+    sample_groups = sample_groups,
+    signal_color_by = signal_color_by,
+    signal_summary = signal_summary,
+    plot_type = signal_type,
+    strand = strand,
+    bin_size = bin_size,
+    highlight = highlight,
+    annotation = NULL,
+    show_gene_model = FALSE,
+    signal_palette = signal_palette,
+    signal_palette_direction = signal_palette_direction,
+    signal_colors = signal_colors,
+    signal_transform = signal_transform,
+    signal_y_scale = signal_y_scale,
+    signal_y_ticks = signal_y_ticks,
+    signal_y_limits = signal_y_limits,
+    signal_alpha = signal_alpha,
+    signal_bar_width = signal_bar_width,
+    plot_theme = plot_theme,
+    show_panel_border = show_panel_border,
+    heatmap_bin_size = heatmap_bin_size,
+    heatmap_max_bins = heatmap_max_bins,
+    heatmap_summary = heatmap_summary,
+    text_size = text_size
+  )
+
+  if (is.null(transcript_id)) {
+    if (identical(ribo_signal_type, "frame")) {
+      message("[GeneTrackR] `ribo_signal_type = 'frame'` requires `transcript_id`; falling back to standard genomic browser signal tracks.")
+    }
+    return(region_plot)
+  }
+
+  selected_samples <- get_expected_signal_samples(
+    signal,
+    samples = samples,
+    strand = strand
+  )
+  ribo_samples <- detect_ribo_signal_samples(selected_samples)
+  if (length(ribo_samples) == 0L || identical(ribo_signal_type, "bar")) {
+    return(region_plot)
+  }
+
+  non_ribo_samples <- setdiff(selected_samples, ribo_samples)
+  plot_list <- list()
+  height_list <- numeric()
+
+  if (length(non_ribo_samples) > 0L) {
+    plot_list$signal_non_ribo <- plot_signal_transcript(
+      signal = signal,
+      annotation = annotation,
+      transcript_id = transcript_id,
+      samples = non_ribo_samples,
+      sample_groups = sample_groups,
+      signal_color_by = signal_color_by,
+      signal_summary = signal_summary,
+      coordinate = "genomic",
+      plot_type = signal_type,
+      strand = strand,
+      bin_size = bin_size,
+      highlight = highlight,
+      show_gene_model = FALSE,
+      signal_palette = signal_palette,
+      signal_palette_direction = signal_palette_direction,
+      signal_colors = signal_colors,
+      signal_transform = signal_transform,
+      signal_y_scale = signal_y_scale,
+      signal_y_ticks = signal_y_ticks,
+      heatmap_bin_size = heatmap_bin_size,
+      heatmap_max_bins = heatmap_max_bins,
+      heatmap_summary = heatmap_summary,
+      text_size = text_size,
+      signal_y_limits = signal_y_limits,
+      signal_alpha = signal_alpha,
+      signal_bar_width = signal_bar_width,
+      plot_theme = plot_theme,
+      show_panel_border = show_panel_border
+    )
+    height_list <- c(height_list, max(1, length(non_ribo_samples)))
+  }
+
+  plot_list$signal_ribo <- plot_signal_transcript(
+    signal = signal,
+    annotation = annotation,
+    transcript_id = transcript_id,
+    samples = ribo_samples,
+    sample_groups = sample_groups,
+    signal_color_by = signal_color_by,
+    signal_summary = signal_summary,
+    coordinate = "genomic",
+    plot_type = "frame",
+    strand = strand,
+    bin_size = NULL,
+    highlight = highlight,
+    show_gene_model = FALSE,
+    signal_palette = signal_palette,
+    signal_palette_direction = signal_palette_direction,
+    signal_colors = signal_colors,
+    frame_palette = frame_palette,
+    frame_colors = frame_colors,
+    signal_transform = signal_transform,
+    signal_y_scale = signal_y_scale,
+    signal_y_ticks = signal_y_ticks,
+    heatmap_bin_size = heatmap_bin_size,
+    heatmap_max_bins = heatmap_max_bins,
+    heatmap_summary = heatmap_summary,
+    text_size = text_size,
+    signal_y_limits = signal_y_limits,
+    signal_alpha = signal_alpha,
+    signal_bar_width = signal_bar_width,
+    plot_theme = plot_theme,
+    show_panel_border = show_panel_border
+  )
+  height_list <- c(height_list, max(1, length(ribo_samples)))
+
+  if (length(plot_list) == 1L) {
+    return(plot_list[[1L]])
+  }
+  patchwork::wrap_plots(plot_list, ncol = 1) + patchwork::plot_layout(heights = unname(height_list))
+}
+
+detect_ribo_signal_samples <- function(sample_ids) {
+  sample_ids <- unique(as.character(sample_ids))
+  sample_ids[grepl("ribo|rpf|footprint", sample_ids, ignore.case = TRUE)]
+}
+
+make_feature_track_plots <- function(features,
+                                     chrom,
+                                     start,
+                                     end,
+                                     color_by = "auto",
+                                     feature_palette = "Set2",
+                                     feature_colors = NULL,
+                                     feature_border_color = NA,
+                                     feature_max_legend_levels = 5,
+                                     plot_theme = "bw",
+                                     show_panel_border = NULL,
+                                     text_size = 14) {
   if (is.null(features)) return(list())
   if (inherits(features, "FeatureTrack")) features <- list(Feature = features)
   stop_if_not(is.list(features), "`features` must be a FeatureTrack object or a list of FeatureTrack objects.")
@@ -352,7 +521,12 @@ make_feature_track_plots <- function(features, chrom, start, end, plot_theme = "
       start = start,
       end = end,
       mode = "trim",
+      color_by = color_by,
       label_by = "none",
+      feature_palette = feature_palette,
+      feature_colors = feature_colors,
+      feature_border_color = feature_border_color,
+      max_legend_levels = feature_max_legend_levels,
       plot_theme = plot_theme,
       show_panel_border = show_panel_border,
       text_size = text_size
@@ -382,7 +556,6 @@ make_variant_track_plots <- function(variants, chrom, start, end, plot_theme = "
   }
   out
 }
-
 
 get_track_height <- function(heights, name, default) {
   if (is.null(heights) || is.null(names(heights)) || !name %in% names(heights)) {

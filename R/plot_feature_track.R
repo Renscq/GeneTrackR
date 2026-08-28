@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-28
-# Version: dev001
+# Version: dev002
 # Function: Plot generic feature and variant tracks
 # Input: FeatureTrack or VariantTrack objects
 # Output: ggplot track panels
@@ -16,11 +16,15 @@
 #' @param start Region start.
 #' @param end Region end.
 #' @param mode `overlap`, `within`, or `trim`.
-#' @param color_by Column used for fill colors. Usually `type`, `source`, or `name`.
+#' @param color_by Column used for fill colors. Use `auto` to choose a compact,
+#' informative grouping automatically. Common manual choices are `feature_group`,
+#' `type`, `source`, `name`, and `strand`.
 #' @param label_by Column used for labels. Use `none` to hide labels.
 #' @param feature_palette RColorBrewer palette name for feature fills.
 #' @param feature_colors Optional named or unnamed feature fill color vector.
 #' @param feature_border_color Rectangle border color. Use NA to hide borders.
+#' @param max_legend_levels Maximum number of displayed legend groups when the
+#' selected color attribute contains many categories.
 #' @param plot_theme Base ggplot2 theme. Use `bw`, `classic`, `light`, or `minimal`.
 #' @param show_panel_border Whether to draw the panel border. `NULL` preserves the selected theme default.
 #' @param text_size Text size.
@@ -31,17 +35,17 @@ plot_feature_track <- function(track,
                                start,
                                end,
                                mode = c("overlap", "within", "trim"),
-                               color_by = c("type", "source", "name"),
+                               color_by = "auto",
                                label_by = c("none", "name", "feature_id", "type"),
                                feature_palette = "Set2",
                                feature_colors = NULL,
                                feature_border_color = NA,
+                               max_legend_levels = 5,
                                text_size = 14,
                                plot_theme = c("bw", "classic", "light", "minimal"),
                                show_panel_border = NULL) {
   stop_if_not(inherits(track, "FeatureTrack"), "`track` must be a FeatureTrack object.")
   mode <- match.arg(mode)
-  color_by <- match.arg(color_by)
   label_by <- match.arg(label_by)
   plot_theme <- normalize_plot_theme(plot_theme)
   show_panel_border <- normalize_show_panel_border(show_panel_border)
@@ -103,7 +107,12 @@ plot_feature_track <- function(track,
   ft[, "y" := seq_len(.N)]
   ft[, "ymin" := as.numeric(ft[["y"]]) - 0.30]
   ft[, "ymax" := as.numeric(ft[["y"]]) + 0.30]
-  ft[, "fill_group" := as.character(ft[[color_by]])]
+
+  feature_color_column <- resolve_feature_color_column(ft, color_by = color_by)
+  ft[, "fill_group" := compact_feature_levels(
+    values = ft[[feature_color_column]],
+    max_legend_levels = max_legend_levels
+  )]
   ft[, "label" := if (label_by == "none") "" else as.character(ft[[label_by]])]
 
   p <- ggplot2::ggplot(ft) +
@@ -148,4 +157,62 @@ plot_feature_track <- function(track,
     )
   }
   p
+}
+
+resolve_feature_color_column <- function(ft, color_by = "auto") {
+  color_by <- as.character(color_by)[1L]
+  if (is.na(color_by) || !nzchar(color_by)) {
+    color_by <- "auto"
+  }
+  if (!"feature_group" %in% names(ft)) {
+    ft[, "feature_group" := extract_feature_group_from_name(name)]
+  }
+  if (!identical(color_by, "auto")) {
+    stop_if_not(
+      color_by %in% names(ft),
+      paste0("`color_by` column was not found in feature data: ", color_by)
+    )
+    return(color_by)
+  }
+
+  candidate_cols <- c("feature_group", "type", "source", "strand", "name")
+  for (col in candidate_cols) {
+    if (!col %in% names(ft)) next
+    values <- as.character(ft[[col]])
+    values <- values[!is.na(values) & nzchar(values)]
+    values <- unique(values)
+    if (length(values) >= 2L) {
+      return(col)
+    }
+  }
+  "type"
+}
+
+compact_feature_levels <- function(values, max_legend_levels = 5, other_label = "Other") {
+  x <- as.character(values)
+  x[is.na(x) | !nzchar(x)] <- "unknown"
+  observed <- unique(x)
+  max_legend_levels <- suppressWarnings(as.integer(max_legend_levels)[1L])
+  if (!is.finite(max_legend_levels) || max_legend_levels < 2L) {
+    max_legend_levels <- 5L
+  }
+  if (length(observed) <= max_legend_levels) {
+    return(factor(x, levels = observed))
+  }
+
+  freq <- sort(table(x), decreasing = TRUE)
+  keep_n <- max_legend_levels - 1L
+  keep <- names(freq)[seq_len(min(keep_n, length(freq)))]
+  keep <- observed[observed %in% keep]
+  out <- ifelse(x %in% keep, x, other_label)
+  factor(out, levels = c(keep, other_label))
+}
+
+extract_feature_group_from_name <- function(name) {
+  x <- as.character(name)
+  out <- rep(NA_character_, length(x))
+  has_pipe <- grepl("|", x, fixed = TRUE)
+  out[has_pipe] <- sub("^.*\\|", "", x[has_pipe])
+  out[is.na(out) | !nzchar(out)] <- NA_character_
+  out
 }

@@ -10,11 +10,12 @@ plot_feature_track(
   start,
   end,
   mode = c("overlap", "within", "trim"),
-  color_by = c("type", "source", "name"),
+  color_by = "auto",
   label_by = c("none", "name", "feature_id", "type"),
   feature_palette = "Set2",
   feature_colors = NULL,
   feature_border_color = NA,
+  max_legend_levels = 5,
   text_size = 14,
   plot_theme = c("bw", "classic", "light", "minimal"),
   show_panel_border = NULL
@@ -31,7 +32,9 @@ plot_feature_track(
 
 \item{mode}{\code{overlap}, \code{within}, or \code{trim}.}
 
-\item{color_by}{Column used for fill colors. Usually \code{type}, \code{source}, or \code{name}.}
+\item{color_by}{Column used for fill colors. Use \code{auto} to choose a compact,
+informative grouping automatically. Common manual choices are \code{feature_group},
+\code{type}, \code{source}, \code{name}, and \code{strand}.}
 
 \item{label_by}{Column used for labels. Use \code{none} to hide labels.}
 
@@ -40,6 +43,9 @@ plot_feature_track(
 \item{feature_colors}{Optional named or unnamed feature fill color vector.}
 
 \item{feature_border_color}{Rectangle border color. Use NA to hide borders.}
+
+\item{max_legend_levels}{Maximum number of displayed legend groups when the
+selected color attribute contains many categories.}
 
 \item{text_size}{Text size.}
 

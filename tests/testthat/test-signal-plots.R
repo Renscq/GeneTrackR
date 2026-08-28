@@ -373,3 +373,42 @@ test_that("signal plot wrappers accept explicit signal and gene track heights", 
   )
 })
 
+
+test_that("feature browser tracks use compact automatic legend groups", {
+  bed <- read_bed(gtr_extdata("gtr_demo_features.bed"), verbose = FALSE)
+  dt <- retrieve_feature(
+    bed,
+    chrom = "chr1",
+    start = 12339001,
+    end = 12374500,
+    mode = "trim",
+    level = "feature",
+    as = "data.table"
+  )
+
+  expect_identical(
+    extract_feature_group_from_name(c("GeneA_promoter|promoter", "QTL1|QTL", "plain_name")),
+    c("promoter", "QTL", NA_character_)
+  )
+
+  expect_identical(
+    resolve_feature_color_column(dt, color_by = "auto"),
+    "feature_group"
+  )
+
+  compact <- compact_feature_levels(
+    c("promoter", "enhancer", "candidate_region", "QTL", "repeat", "conserved_region"),
+    max_legend_levels = 5
+  )
+  expect_lte(length(levels(compact)), 5L)
+
+  p <- plot_feature_track(
+    bed,
+    chrom = "chr1",
+    start = 12339001,
+    end = 12374500,
+    color_by = "auto",
+    max_legend_levels = 5
+  )
+  expect_s3_class(p, "ggplot")
+})

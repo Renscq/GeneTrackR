@@ -173,3 +173,80 @@ test_that("documentation workflow uses current public object contracts", {
   expect_s3_class(effect, "GeneTrackRVariantEffectPlot")
   expect_true(all(c("figure", "effect", "plot_data") %in% names(effect)))
 })
+
+test_that("browser-track documentation workflow uses current public APIs", {
+  gp <- read_genepred(
+    gtr_extdata("gtr_demo.genePredExt"),
+    format = "genePredExt",
+    verbose = FALSE,
+    progress = FALSE
+  )
+  signal_all <- read_bwg(
+    gtr_extdata(c(
+      "gtr_demo_rnaseq_plus.bedgraph",
+      "gtr_demo_rnaseq_minus.bedgraph",
+      "gtr_demo_riboseq_plus.bedgraph",
+      "gtr_demo_riboseq_minus.bedgraph"
+    )),
+    format = "bedgraph",
+    sample_names = c(
+      "RNA_seq_plus",
+      "RNA_seq_minus",
+      "Ribo_seq_plus",
+      "Ribo_seq_minus"
+    ),
+    strand = c("+", "-", "+", "-"),
+    mode = "memory",
+    verbose = FALSE
+  )
+  features <- read_bed(
+    gtr_extdata("gtr_demo_features.bed"),
+    verbose = FALSE,
+    progress = FALSE
+  )
+  variants <- read_vcf(
+    gtr_extdata("gtr_demo_variants.vcf"),
+    mode = "memory",
+    keep_genotype = TRUE,
+    verbose = FALSE,
+    progress = FALSE
+  )
+
+  p_gene <- plot_tracks(
+    annotation = gp,
+    signal = signal_all,
+    gene_id = "GeneA",
+    samples = c("RNA_seq_plus", "Ribo_seq_plus"),
+    strand = "+",
+    signal_type = "bar"
+  )
+  expect_true(inherits(p_gene, "patchwork") || inherits(p_gene, "ggplot"))
+
+  p_transcript <- plot_tracks(
+    annotation = gp,
+    signal = signal_all,
+    transcript_id = "TxA1",
+    samples = c("RNA_seq_plus", "Ribo_seq_plus"),
+    strand = "+",
+    signal_type = "bar",
+    ribo_signal_type = "auto"
+  )
+  expect_true(inherits(p_transcript, "patchwork") || inherits(p_transcript, "ggplot"))
+
+  p_complete <- plot_tracks(
+    annotation = gp,
+    signal = signal_all,
+    features = features,
+    variants = variants,
+    chrom = "chr1",
+    start = 12339001,
+    end = 12374500,
+    samples = c("RNA_seq_plus", "Ribo_seq_plus"),
+    strand = "+",
+    signal_type = "bar",
+    highlight = data.frame(start = 12342620, end = 12343180),
+    layout = "gene_top",
+    heights = c(signal = 4, gene = 1.5, feature = 0.9, variant = 0.8)
+  )
+  expect_true(inherits(p_complete, "patchwork") || inherits(p_complete, "ggplot"))
+})

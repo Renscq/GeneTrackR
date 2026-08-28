@@ -25,6 +25,14 @@ plot_tracks(
   gene_palette = "Paired",
   gene_colors = NULL,
   gene_border_color = NA,
+  feature_color_by = "auto",
+  feature_palette = "Set2",
+  feature_colors = NULL,
+  feature_border_color = NA,
+  feature_max_legend_levels = 5,
+  ribo_signal_type = c("auto", "bar", "frame"),
+  frame_palette = "Set1",
+  frame_colors = NULL,
   signal_transform = c("none", "log2", "log10", "sqrt"),
   signal_y_scale = c("free", "fixed"),
   signal_y_ticks = c("range", "pretty"),
@@ -57,7 +65,7 @@ plot_tracks(
 
 \item{features}{Optional FeatureTrack object or named list of FeatureTrack objects from \code{read_bed()}, \code{read_gff()}, or \code{read_gtf()}.}
 
-\item{variants}{Optional VariantTrack object or named list of VariantTrack objects from \code{read_vcf_track()}.}
+\item{variants}{Optional VariantTrack object or named list of VariantTrack objects from \code{read_vcf()}.}
 
 \item{chrom}{Chromosome name. Required when \code{gene_id} and \code{transcript_id} are not supplied.}
 
@@ -77,7 +85,7 @@ plot_tracks(
 
 \item{signal_summary}{Replicate summary mode. Use \code{none} to plot individual samples, or \code{mean}, \code{median}, or \code{sum} to summarize samples within each group.}
 
-\item{signal_type}{Signal plot type.}
+\item{signal_type}{Signal plot type for non-Ribo-seq browser signal tracks.}
 
 \item{signal_palette}{Signal color palette for signal tracks. Any palette name from \code{RColorBrewer::brewer.pal.info} can be used. Discrete signal sample/group colors follow the standard RColorBrewer class order; heatmaps use the corresponding continuous gradient.}
 
@@ -90,6 +98,22 @@ plot_tracks(
 \item{gene_colors}{Optional custom fill colors for gene model features. Use a named vector such as \code{c(UTR = "#b2df8a", CDS = "#33a02c", exon = "#fb9a99")}.}
 
 \item{gene_border_color}{Optional rectangle border color for gene model features. Use \code{NA} to hide borders.}
+
+\item{feature_color_by}{Feature-track color grouping. \code{auto} chooses a compact grouping automatically; other common choices are \code{feature_group}, \code{type}, \code{source}, \code{name}, and \code{strand}.}
+
+\item{feature_palette}{RColorBrewer palette name used for feature-track fills.}
+
+\item{feature_colors}{Optional explicit feature-track fill colors.}
+
+\item{feature_border_color}{Optional rectangle border color for feature tracks. Use \code{NA} to hide borders.}
+
+\item{feature_max_legend_levels}{Maximum number of legend groups shown for each feature track.}
+
+\item{ribo_signal_type}{How Ribo-seq samples should be displayed in transcript-centered browser plots. \code{auto} uses \code{frame} for samples whose IDs look like Ribo-seq/RPF tracks when \code{transcript_id} is supplied, otherwise it falls back to standard genomic signal tracks. \code{bar} always uses the standard signal geometry, and \code{frame} forces frame rendering when transcript-centered plotting is possible.}
+
+\item{frame_palette}{RColorBrewer palette name used for Ribo-seq frame plots.}
+
+\item{frame_colors}{Optional explicit colors for \code{frame0}, \code{frame1}, and \code{frame2}.}
 
 \item{signal_transform}{Signal-axis transformation. Use \code{none}, \code{log2}, \code{log10}, or \code{sqrt}.}
 
@@ -136,48 +160,7 @@ A patchwork object or ggplot object.
 }
 \description{
 Draw a genome-browser-like figure containing a gene model track alone or a
-signal track combined with a gene model track. The genomic interval can be
-specified in three ways: by \code{gene_id}, by \code{transcript_id}, or by explicit
-\code{chrom}, \code{start}, and \code{end} coordinates.
-}
-\examples{
-\dontrun{
-gp <- read_genepred(
-  system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR"),
-  format = "genePredExt",
-  verbose = FALSE
-)
-signal_all <- read_bwg(
-  system.file(
-    "extdata",
-    c(
-      "gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph",
-      "gtr_demo_riboseq_plus.bedgraph", "gtr_demo_riboseq_minus.bedgraph"
-    ),
-    package = "GeneTrackR"
-  ),
-  format = "bedgraph",
-  sample_names = c("RNA_seq_plus", "RNA_seq_minus", "Ribo_seq_plus", "Ribo_seq_minus"),
-  strand = c("+", "-", "+", "-"),
-  mode = "memory"
-)
-peaks <- read_bed(
-  system.file("extdata", "gtr_demo_features.bed", package = "GeneTrackR")
-)
-vars <- read_vcf_track(
-  system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")
-)
-
-plot_tracks(annotation = gp, signal = signal_all, gene_id = "GeneA")
-plot_tracks(
-  annotation = gp,
-  signal = signal_all,
-  features = peaks,
-  variants = vars,
-  chrom = "chr1",
-  start = 12339001,
-  end = 12374500,
-  strand = "both"
-)
-}
+signal track combined with gene, feature, and variant tracks. The genomic
+interval can be specified in three ways: by \code{gene_id}, by \code{transcript_id},
+or by explicit \code{chrom}, \code{start}, and \code{end} coordinates.
 }
