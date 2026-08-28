@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-08-23
-# Version: dev007
+# Version: dev008
 # Function: Validate structural invariants and designed truth of the GeneTrackR demo dataset
 # Input: inst/scripts/demo_model/*.tsv and inst/extdata/gtr_demo_* files
 # Output: Validation messages; stops on any failed invariant
@@ -113,7 +113,7 @@ expect_true(nrow(chromosomes) == 2L, "Expected exactly 2 chromosomes.")
 expect_true(nrow(genes) == 20L, "Expected exactly 20 genes.")
 expect_true(nrow(transcripts) == 24L, "Expected exactly 24 transcripts.")
 expect_true(nrow(samples) == 36L, "Expected exactly 36 samples.")
-expect_true(nrow(variants) == 50L, "Expected exactly 50 variants.")
+expect_true(nrow(variants) == 56L, "Expected exactly 56 variants.")
 expect_true(nrow(signal_design) == 24L, "Expected one signal-design row per transcript.")
 expect_true(nrow(pheno) == 36L, "Expected exactly 36 phenotype rows.")
 expect_true(setequal(signal_design$transcript_id, transcripts$transcript_id), "Signal-design transcript IDs do not match the transcript model.")
@@ -144,9 +144,12 @@ expect_true(!anyDuplicated(variants$variant_id), "Duplicated variant IDs were fo
 hap_counts <- table(samples$core_haplotype)
 expect_true(length(hap_counts) == 4L && all(hap_counts == 9L), "Expected four balanced core haplotypes with 9 samples each.")
 
-ld_ids <- paste0("varLD", sprintf("%02d", 1:6))
+ld_ids <- paste0("varLD", sprintf("%02d", 1:12))
 ld <- variants[variants$variant_id %in% ld_ids, , drop = FALSE]
-expect_true(nrow(ld) == 6L && length(unique(ld$pattern)) == 1L && unique(ld$pattern) == "p13", "High-LD variants must share the p13 genotype pattern.")
+expect_true(nrow(ld) == 12L, "Expected exactly 12 variants in the primary LD-gradient example.")
+expect_true(all(ld$pattern[1:6] == "p13"), "varLD01-varLD06 must retain the perfect p13 LD core.")
+expect_true(identical(ld$pattern[7:12], c("ldgrad02", "ldgrad04", "ldgrad06", "ldgrad09", "ldgrad12", "ldgrad18")), "The downstream LD-gradient patterns are not in the designed order.")
+expect_true(all(ld$pos[7:12] > 12352000L & ld$pos[7:12] < 12356001L), "The added LD-gradient variants must remain outside the GeneA and GeneB gene bodies.")
 
 pair <- variants[variants$chrom == "chr2" & variants$pos >= 16995001L & variants$pos <= 17006000L, , drop = FALSE]
 expect_true(identical(pair$variant_id, c("varPair01", "varPair02")), "GeneT two-variant LD region must contain exactly varPair01 and varPair02.")

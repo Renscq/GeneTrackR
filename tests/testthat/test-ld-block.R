@@ -1,6 +1,6 @@
 test_that("compute_ld_block builds LDTrack from genotype-rich VCF", {
   vcf <- read_vcf(gtr_extdata("gtr_demo_variants.vcf"), mode = "memory", verbose = FALSE)
-  ld <- compute_ld_block(vcf, chrom = "chr1", start = 12342620, end = 12343180, min_pair_samples = 3, verbose = FALSE)
+  ld <- compute_ld_block(vcf, chrom = "chr1", start = 12342620, end = 12355500, variant_type = "snp", min_pair_samples = 3, verbose = FALSE)
 
   expect_s3_class(ld, "LDTrack")
   expect_gt(nrow(ld$variants), 1L)
@@ -12,7 +12,7 @@ test_that("compute_ld_block builds LDTrack from genotype-rich VCF", {
 
 test_that("plot_ld_block returns LDTrack with triangular LD figure", {
   vcf <- read_vcf(gtr_extdata("gtr_demo_variants.vcf"), mode = "memory", verbose = FALSE)
-  ld <- compute_ld_block(vcf, chrom = "chr1", start = 12342620, end = 12343180, min_pair_samples = 3, verbose = FALSE)
+  ld <- compute_ld_block(vcf, chrom = "chr1", start = 12342620, end = 12355500, variant_type = "snp", min_pair_samples = 3, verbose = FALSE)
   ld_with_figure <- plot_ld_block(ld, show_variant_labels = FALSE)
   expect_s3_class(ld_with_figure, "LDTrack")
   expect_true(inherits(ld_with_figure$figure, "ggplot") || inherits(ld_with_figure$figure, "patchwork"))
@@ -40,7 +40,7 @@ test_that("two-variant LD geometry is a single diamond-shaped heatmap cell", {
   expect_equal(frame$y, c(0, 0.5, 1, 0.5, 0))
 })
 
-test_that("demo LD truth sets distinguish high, low, and two-variant regions", {
+test_that("demo LD truth sets distinguish gradient, low, and two-variant regions", {
   vcf <- read_vcf(
     gtr_extdata("gtr_demo_variants.vcf"),
     mode = "memory",
@@ -52,13 +52,16 @@ test_that("demo LD truth sets distinguish high, low, and two-variant regions", {
     vcf,
     chrom = "chr1",
     start = 12342620,
-    end = 12343180,
+    end = 12355500,
+    variant_type = "snp",
     method = "r2",
     verbose = FALSE
   )
-  expect_equal(nrow(high$variants), 6L)
-  expect_equal(nrow(high$data), 15L)
-  expect_true(all(abs(high$data$r2 - 1) < 1e-12))
+  expect_equal(nrow(high$variants), 12L)
+  expect_equal(nrow(high$data), 66L)
+  expect_equal(sum(high$data$r2 >= 0.8, na.rm = TRUE), 15L)
+  expect_equal(sum(high$data$r2 < 0.2, na.rm = TRUE), 16L)
+  expect_equal(min(high$data$r2, na.rm = TRUE), 0, tolerance = 1e-12)
   expect_equal(high$meta$sample_n, 36L)
 
   low <- compute_ld_block(
@@ -98,12 +101,20 @@ test_that("LD workflow can retain the genotype dosage matrix", {
     vcf,
     chrom = "chr1",
     start = 12342620,
-    end = 12343180,
+    end = 12355500,
+    variant_type = "snp",
     keep_genotype_matrix = TRUE,
     verbose = FALSE
   )
 
   expect_true(is.matrix(ld$genotype))
-  expect_equal(dim(ld$genotype), c(6L, 36L))
+  expect_equal(dim(ld$genotype), c(12L, 36L))
   expect_identical(rownames(ld$genotype), as.character(ld$variants$variant_id))
+})
+
+
+test_that("plot_ld_block defaults to the Reds palette", {
+  expect_identical(formals(plot_ld_block)$color_palette, "Reds")
+  expect_identical(formals(GeneTrackR:::draw_ld_triangle_heatmap)$color_palette, "Reds")
+  expect_identical(formals(GeneTrackR:::make_ld_continuous_palette)$color_palette, "Reds")
 })

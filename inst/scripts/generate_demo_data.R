@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-08-23
-# Version: dev007
+# Version: dev008
 # Function: Generate the deterministic GeneTrackR demo dataset from canonical model tables
 # Input: inst/scripts/demo_model/*.tsv
 # Output: inst/extdata/gtr_demo_* example input files
@@ -220,7 +220,17 @@ pattern_gt <- function(pattern, sample_id, hap_group, within_group) {
   else if (pattern == "mod3") state <- sample_index %% 3L == 0L
   else if (pattern == "mod4") state <- sample_index %% 4L %in% c(1L, 2L)
   else if (pattern == "blocks3") state <- ((sample_index - 1L) %/% 3L) %% 2L == 1L
-  else if (pattern == "hetero_sparse") {
+  else if (grepl("^ldgrad[0-9]{2}$", pattern)) {
+    flip_n <- as.integer(sub("^ldgrad", "", pattern))
+    stopifnot(!is.na(flip_n), flip_n >= 0L, flip_n <= 36L)
+    state <- hap_group %in% c(3L, 4L)
+    flip_rank <- if (sample_index <= 18L) {
+      2L * sample_index - 1L
+    } else {
+      2L * (sample_index - 18L)
+    }
+    if (flip_rank <= flip_n) state <- !state
+  } else if (pattern == "hetero_sparse") {
     if (sample_index %in% c(5L, 14L, 23L, 32L)) return("0/1")
     state <- hap_group %in% c(2L, 4L)
   } else if (pattern == "mixed_missing") {
@@ -237,7 +247,7 @@ write_vcf <- function(variants, samples, chromosomes, file) {
   con <- file(file, open = "wt")
   on.exit(close(con), add = TRUE)
   writeLines("##fileformat=VCFv4.2", con)
-  writeLines("##source=GeneTrackR_demo_v0.5.5", con)
+  writeLines("##source=GeneTrackR_demo_v0.5.32", con)
   for (i in seq_len(nrow(chromosomes))) {
     writeLines(paste0("##contig=<ID=", chromosomes$chrom[i], ",length=", chromosomes$size[i], ">"), con)
   }

@@ -116,7 +116,8 @@ test_that("documentation workflow uses current public object contracts", {
     vcf,
     chrom = "chr1",
     start = 12342620,
-    end = 12343180,
+    end = 12355500,
+    variant_type = "snp",
     method = "r2",
     verbose = FALSE
   )

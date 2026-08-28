@@ -1,4 +1,4 @@
-# GeneTrackR demo data model (v0.5.21)
+# GeneTrackR demo data model (v0.5.32)
 
 This directory contains one deterministic demo genome shared across GeneTrackR examples.
 All `gtr_demo_*` files are generated from the canonical model tables in `inst/scripts/demo_model/`.
@@ -15,7 +15,7 @@ All `gtr_demo_*` files are generated from the canonical model tables in `inst/sc
 - Genes: 20.
 - Transcripts: 24.
 - Samples: 36 (`S01`-`S36`).
-- Variants: 50.
+- Variants: 56.
 - Primary gene: `GeneA` (`+` strand, two transcripts).
 - Negative-strand gene: `GeneB` (`-` strand, two transcripts).
 
@@ -23,7 +23,7 @@ All `gtr_demo_*` files are generated from the canonical model tables in `inst/sc
 
 `GeneA` contains four balanced genotype-defined design groups (9 samples each). `seed_weight` and `plant_height` have designed haplotype effects. `protein_content` is designed around `varA03`, whose ALT state is present in DesignHap2/DesignHap3. `flowering_time` is a negative-control phenotype with the same within-group value pattern in all four haplotypes.
 
-`varLD01`-`varLD06` share the same genotype pattern and therefore form a perfect high-LD block (`r2 = 1` in complete samples). The `GeneT` region (`chr2:16995001-17006000`) contains exactly `varPair01` and `varPair02`, providing a stable two-variant LD plotting case.
+The primary LD example now contains 12 SNPs (`varLD01`-`varLD12`). `varLD01`-`varLD06` retain the same `p13` genotype pattern and form a perfect high-LD core. `varLD07`-`varLD12` are placed immediately downstream of `GeneA` and progressively decorrelate from that core, producing a deterministic LD gradient with strong, intermediate, and weak pairwise `r2` values. The added variants remain outside the `GeneA` gene body, so the canonical 11-variant GeneA haplotype truth is unchanged. The `GeneT` region (`chr2:16995001-17006000`) still contains exactly `varPair01` and `varPair02`, providing a stable two-variant LD plotting case.
 
 The phenotype rows are deliberately stored in an order different from the VCF sample columns. Analyses must align samples by `sample_id`, not by row position.
 

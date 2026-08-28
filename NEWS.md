@@ -1,3 +1,10 @@
+# GeneTrackR 0.5.32
+
+- Expanded the primary LD demo from 6 to 12 natural SNPs while preserving the 11-variant GeneA haplotype truth.
+- Redesigned the primary LD demo to contain a perfect high-LD core plus progressively decorrelated downstream variants, producing a clear r2 gradient with both high- and low-LD pairs.
+- Changed the default `plot_ld_block()` heatmap palette from `Paired` to `Reds`.
+- Updated LD documentation, demo truth metadata, generated VCF data, and regression tests.
+
 # GeneTrackR 0.5.31
 
 - Rebuilt `docs/10-ld.qmd` as a complete LD calculation, inspection, visualization, and downstream handoff workflow.

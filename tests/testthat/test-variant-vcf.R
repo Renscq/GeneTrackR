@@ -2,7 +2,7 @@ test_that("VCF reader loads genotype-rich example VCF", {
   vcf <- read_vcf(gtr_extdata("gtr_demo_variants.vcf"), mode = "memory", verbose = FALSE)
 
   expect_s3_class(vcf, "VariantTrack")
-  expect_equal(nrow(vcf$data), 50L)
+  expect_equal(nrow(vcf$data), 56L)
   sample_names <- if (is.null(vcf$meta$sample_names)) character() else vcf$meta$sample_names
   expect_equal(length(sample_names), 36L)
   expect_true(all(c("chrom", "pos", "variant_id", "ref", "alt") %in% names(vcf$data)))

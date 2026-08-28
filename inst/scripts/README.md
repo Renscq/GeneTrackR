@@ -9,7 +9,7 @@ Files in `demo_model/` use 1-based closed coordinates. Format-specific coordinat
 - `genes.tsv`: expected gene-level intervals derived from the transcript model.
 - `transcripts.tsv`: canonical transcript, exon, and CDS definitions.
 - `samples.tsv`: 36 sample IDs and four balanced GeneA haplotype groups.
-- `variants.tsv`: 50 designed variants, functional demo roles, and deterministic genotype patterns.
+- `variants.tsv`: 56 designed variants, functional demo roles, and deterministic genotype patterns.
 - `features.tsv`: regulatory and interval feature definitions in canonical coordinates.
 - `signal_design.tsv`: transcript-level RNA-seq coverage weights, primary-transcript status, and Ribo-seq P-site count weights.
 - `truth.tsv`: stable dimensions and biological/statistical expectations used for documentation and regression tests.

@@ -11,7 +11,7 @@ test_that("new deterministic demo data has expected core dimensions", {
   expect_equal(nrow(gtf$transcripts), 24L)
   expect_equal(nrow(gff$genes), 20L)
   expect_equal(nrow(gff$transcripts), 24L)
-  expect_equal(nrow(vcf$data), 50L)
+  expect_equal(nrow(vcf$data), 56L)
   expect_equal(length(vcf$meta$sample_names), 36L)
   expect_equal(nrow(pheno), 36L)
   expect_setequal(pheno$sample_id, vcf$meta$sample_names)
@@ -36,19 +36,23 @@ test_that("GeneA demo locus contains four balanced designed haplotypes", {
 })
 
 
-test_that("demo LD truth includes perfect high-LD block and two-variant case", {
+test_that("demo LD truth includes a twelve-variant gradient and two-variant case", {
   vcf <- read_vcf(gtr_extdata("gtr_demo_variants.vcf"), mode = "memory", verbose = FALSE)
 
   ld_high <- compute_ld_block(
     vcf,
     chrom = "chr1",
     start = 12342620L,
-    end = 12343180L,
+    end = 12355500L,
+    variant_type = "snp",
     method = "r2",
     verbose = FALSE
   )
-  expect_equal(nrow(ld_high$variants), 6L)
-  expect_true(all(abs(ld_high$data$r2 - 1) < 1e-12, na.rm = TRUE))
+  expect_equal(nrow(ld_high$variants), 12L)
+  expect_equal(nrow(ld_high$data), 66L)
+  expect_equal(sum(ld_high$data$r2 >= 0.8, na.rm = TRUE), 15L)
+  expect_equal(sum(ld_high$data$r2 < 0.2, na.rm = TRUE), 16L)
+  expect_equal(min(ld_high$data$r2, na.rm = TRUE), 0, tolerance = 1e-12)
   expect_false(anyNA(ld_high$data$r2))
 
   ld_pair <- compute_ld_block(

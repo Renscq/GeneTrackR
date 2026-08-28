@@ -81,7 +81,8 @@ ld <- compute_ld_block(
   vcf,
   chrom = "chr1",
   start = 12342620,
-  end = 12343180,
+  end = 12355500,
+  variant_type = "snp",
   verbose = FALSE
 )
 ld <- plot_ld_block(ld, show_region = TRUE, annotation = gp, show_variant_labels = FALSE)

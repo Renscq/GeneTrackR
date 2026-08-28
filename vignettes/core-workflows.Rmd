@@ -39,7 +39,7 @@ vcf <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
 pheno <- read_pheno(pheno_file, verbose = FALSE)
 ```
 
-The three annotation formats describe the same canonical 20-gene, 24-transcript model. The VCF contains 50 designed variants in 36 samples. Phenotype row order is intentionally different from VCF sample order, so downstream analyses must align by `sample_id`.
+The three annotation formats describe the same canonical 20-gene, 24-transcript model. The VCF contains 56 designed variants in 36 samples. Phenotype row order is intentionally different from VCF sample order, so downstream analyses must align by `sample_id`.
 
 ## Object contracts used in the workflow
 
@@ -153,14 +153,15 @@ variant_pheno$pvalue
 
 ## Linkage disequilibrium
 
-`varLD01` through `varLD06` share the same genotype pattern and therefore provide a deterministic high-LD block.
+`varLD01` through `varLD12` provide a deterministic LD-gradient example with a six-variant perfect core and progressively weaker downstream linkage.
 
 ```{r ld-block}
 ld <- compute_ld_block(
   vcf,
   chrom = "chr1",
   start = 12342620,
-  end = 12343180,
+  end = 12355500,
+  variant_type = "snp",
   method = "r2",
   verbose = FALSE
 )

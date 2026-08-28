@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-07-02
-# Version: dev002
+# Version: dev003
 # Function: LD block calculation from VCF genotypes
 # Input: VariantTrack objects or VCF paths
 # Output: LDTrack objects
@@ -40,7 +40,8 @@
 #'   vcf,
 #'   chrom = "chr1",
 #'   start = 12342620,
-#'   end = 12343180,
+#'   end = 12355500,
+#'   variant_type = "snp",
 #'   method = "r2",
 #'   verbose = FALSE
 #' )
