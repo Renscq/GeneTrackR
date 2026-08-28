@@ -57,8 +57,37 @@ test_that("retrieve_vcf supports whole-object and non-regional filters", {
   )
   expect_setequal(selected$variant_id, c("varA03", "varA04"))
 
-  patterned <- retrieve_vcf(vcf, pattern = "high_ld", fixed = TRUE, verbose = FALSE)
-  expect_gt(nrow(patterned), 0L)
+  expect_warning(
+    patterned <- retrieve_vcf(
+      vcf,
+      pattern = "high_ld",
+      fixed = TRUE,
+      verbose = FALSE
+    ),
+    NA
+  )
+  expect_equal(nrow(patterned), 7L)
+
+  expect_warning(
+    patterned_upper <- retrieve_vcf(
+      vcf,
+      pattern = "HIGH_LD",
+      fixed = TRUE,
+      ignore_case = TRUE,
+      verbose = FALSE
+    ),
+    NA
+  )
+  expect_setequal(patterned_upper$variant_id, patterned$variant_id)
+
+  patterned_case_sensitive <- retrieve_vcf(
+    vcf,
+    pattern = "HIGH_LD",
+    fixed = TRUE,
+    ignore_case = FALSE,
+    verbose = FALSE
+  )
+  expect_equal(nrow(patterned_case_sensitive), 0L)
 
   chr1 <- retrieve_vcf(vcf, chrom = "chr1", verbose = FALSE)
   expect_gt(nrow(chr1), 0L)

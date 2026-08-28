@@ -1248,7 +1248,7 @@ genea_indels[, .(
 )]
 ```
 
-`pattern` searches `variant_id`, `REF`, `ALT`, `INFO`, and `variant_type`. For example, the demo high-LD variants contain `high_ld` in the INFO role field:
+`pattern` searches `variant_id`, `REF`, `ALT`, `INFO`, and `variant_type`. Fixed-string matching supports `ignore_case = TRUE` without regular-expression interpretation. For example, the demo high-LD variants contain `high_ld` in the INFO role field:
 
 ```{r}
 high_ld_variants <- retrieve_vcf(

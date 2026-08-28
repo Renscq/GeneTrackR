@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-28
-# Version: dev001
+# Version: dev002
 # Function: Internal helpers for retrieve APIs
 # Input: data.table-like genomic records
 # Output: Filtered records
@@ -15,7 +15,25 @@ match_pattern_internal <- function(dt, pattern = NULL, fields = NULL,
   if (length(fields) == 0L || nrow(dt) == 0L) return(dt[0])
   hit <- rep(FALSE, nrow(dt))
   for (field in fields) {
-    hit <- hit | grepl(pattern, as.character(dt[[field]]), ignore.case = ignore_case, fixed = fixed)
+    values <- as.character(dt[[field]])
+    if (isTRUE(fixed)) {
+      if (isTRUE(ignore_case)) {
+        field_hit <- grepl(
+          tolower(pattern),
+          tolower(values),
+          fixed = TRUE
+        )
+      } else {
+        field_hit <- grepl(pattern, values, fixed = TRUE)
+      }
+    } else {
+      field_hit <- grepl(
+        pattern,
+        values,
+        ignore.case = isTRUE(ignore_case)
+      )
+    }
+    hit <- hit | field_hit
   }
   dt[hit]
 }

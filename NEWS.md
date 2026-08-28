@@ -1,3 +1,9 @@
+# GeneTrackR 0.5.24
+
+- Fix fixed-string pattern filtering so `fixed = TRUE` no longer passes the incompatible `ignore.case` argument to `grepl()`.
+- Preserve case-insensitive fixed-string matching by normalizing both the pattern and candidate fields before matching.
+- Add regression tests for warning-free fixed matching and case-insensitive fixed-string VCF retrieval.
+
 # GeneTrackR 0.5.23
 
 - Fix `summary_vcf()` so an in-memory `VariantTrack` can be summarized without supplying a genomic region.
