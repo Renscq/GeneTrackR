@@ -1,3 +1,10 @@
+# GeneTrackR 0.5.29
+
+- Reorganized `docs/09-phenotype.qmd` into a self-contained phenotype-association workflow covering phenotype QC, sample matching, haplotype association, multiple testing, single-variant association, result objects, and downstream reuse.
+- Documented the designed demo phenotype roles for `seed_weight`, `plant_height`, `protein_content`, `flowering_time`, and `flower_color`.
+- Clarified numeric versus categorical phenotype support and the relationship among raw p-values, adjusted p-values, and displayed significance brackets.
+- Added documentation regression checks for sample-ID matching and the phenotype workflow.
+
 # GeneTrackR 0.5.28
 
 - Reorganized `docs/08-haplotype.qmd` into a self-contained, stepwise haplotype workflow from VCF input through downstream analysis handoff.

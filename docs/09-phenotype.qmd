@@ -1,98 +1,406 @@
-## Phenotype input and summary
+## Phenotype association workflow
 
-The phenotype table should contain sample/taxa IDs in the first column or a named sample column. Each additional column is treated as one trait.
+GeneTrackR keeps phenotype data as a simple sample-level table and joins it to haplotype or variant genotypes by `sample_id`. The recommended workflow is to inspect phenotype quality first, verify sample matching explicitly, then perform haplotype- or variant-based association tests and keep the returned statistical tables together with the figure.
+
+This module follows one continuous workflow:
+
+1. prepare phenotype, VCF, annotation, and the standard GeneA haplotypes;
+2. summarize phenotype types, missingness, and distributions;
+3. verify sample matching before association analysis;
+4. test haplotype-phenotype associations;
+5. inspect multiple traits and statistical-test settings;
+6. control phenotype-association plot appearance;
+7. test a single variant against phenotype;
+8. pass the same phenotype and haplotype objects to refinement and variant-effect workflows.
+
+The bundled phenotype data contain four numeric traits and one categorical trait. Their designed roles are:
+
+| Trait | Type | Demo role |
+| --- | --- | --- |
+| `seed_weight` | numeric | strong GeneA haplotype effect |
+| `plant_height` | numeric | moderate GeneA haplotype effect |
+| `protein_content` | numeric | strong `varA03` effect |
+| `flowering_time` | numeric | negative control for GeneA haplotypes |
+| `flower_color` | categorical | categorical phenotype example |
+
+### Step 1. Prepare phenotype and genotype inputs
+
+Locate the bundled phenotype, VCF, and annotation files:
 
 ```{r}
-pheno <- read_pheno(pheno_file)
+pheno_file <- system.file(
+  "extdata",
+  "gtr_demo_pheno.tsv",
+  package = "GeneTrackR"
+)
 
-summary_pheno(pheno)
+vcf_file <- system.file(
+  "extdata",
+  "gtr_demo_variants.vcf",
+  package = "GeneTrackR"
+)
 
-plot_pheno(
+gp_file <- system.file(
+  "extdata",
+  "gtr_demo.genePredExt",
+  package = "GeneTrackR"
+)
+```
+
+Read the three inputs and reconstruct the same GeneA gene-body haplotypes used in the haplotype workflow:
+
+```{r}
+pheno <- read_pheno(
+  pheno_file,
+  verbose = FALSE,
+  progress = FALSE
+)
+
+vcf <- read_vcf(
+  vcf_file,
+  mode = "memory",
+  keep_genotype = TRUE,
+  verbose = FALSE,
+  progress = FALSE
+)
+
+gp <- read_genepred(
+  gp_file,
+  format = "genePredExt",
+  verbose = FALSE,
+  progress = FALSE
+)
+
+hap_gene <- hap_gene_variant(
+  vcf = vcf,
+  annotation = gp,
+  gene_id = "GeneA",
+  genotype_mode = "string"
+)
+```
+
+`read_pheno()` returns a `data.table`. By default, the first column is treated as the sample column and renamed to `sample_id`. If another column stores sample IDs, specify it explicitly:
+
+```{r}
+# pheno <- read_pheno(
+#   "phenotype.tsv",
+#   sample_col = "Taxa"
+# )
+```
+
+Sample IDs must be unique. Duplicate IDs are rejected because they would make genotype-phenotype matching ambiguous.
+
+### Step 2. Summarize phenotype quality and distributions
+
+Start with `summary_pheno()` before any association test:
+
+```{r}
+pheno_summary <- summary_pheno(pheno)
+pheno_summary
+```
+
+The summary reports:
+
+- numeric versus categorical trait type;
+- total sample number;
+- missing number and missing rate;
+- number of unique non-missing values;
+- minimum, mean, median, and maximum for numeric traits.
+
+Plot numeric and categorical phenotype distributions directly from the phenotype table:
+
+```{r}
+pheno_figure <- plot_pheno(
   pheno,
-  traits = c("plant_height", "seed_weight")
-)
-```
-
-`read_pheno()` returns a `data.table`; `plot_pheno()` returns a figure directly.
-
-## Haplotype-phenotype association
-
-`plot_hap_pheno()` compares phenotype distributions among haplotype groups. It returns both the figure and the p-value table.
-
-```{r}
-hap_res <- plot_hap_pheno(
-  hap = hap_gene,
-  phenotype = pheno,
-  traits = "plant_height",
-  min_hap_samples = 3,
-  test_method = "t.test",
-  p_value_type = "raw",
-  p_label = "stars"
+  traits = c(
+    "seed_weight",
+    "protein_content",
+    "plant_height",
+    "flowering_time",
+    "flower_color"
+  )
 )
 
-hap_res$figure
-hap_res$pvalue
-hap_res$summary
+pheno_figure
 ```
 
-Use Wilcoxon or KS tests:
+`plot_pheno()` returns the figure directly. Numeric traits are shown as histograms, while categorical traits are shown as count bars. When both trait classes are requested, the result is a combined patchwork figure.
+
+`plot_hap_pheno()` and `plot_variant_pheno()` are currently intended for **numeric phenotype traits**. Categorical traits such as `flower_color` should therefore be summarized or plotted with `summary_pheno()` / `plot_pheno()` unless a categorical association method is implemented separately.
+
+### Step 3. Verify sample matching explicitly
+
+Phenotype rows do not need to follow the VCF or haplotype sample order. GeneTrackR joins genotype and phenotype records by sample ID.
+
+The demo phenotype table intentionally uses a different row order from the genotype data. Check the overlap before testing:
 
 ```{r}
-plot_hap_pheno(
+hap_sample_ids <- as.character(hap_gene$sample_haplotypes$sample_id)
+pheno_sample_ids <- as.character(pheno$sample_id)
+
+sample_match <- data.frame(
+  phenotype_samples = length(unique(pheno_sample_ids)),
+  haplotype_samples = length(unique(hap_sample_ids)),
+  matched_samples = length(intersect(pheno_sample_ids, hap_sample_ids)),
+  phenotype_only = length(setdiff(pheno_sample_ids, hap_sample_ids)),
+  haplotype_only = length(setdiff(hap_sample_ids, pheno_sample_ids))
+)
+
+sample_match
+```
+
+For the bundled demo, all 36 phenotype samples match the 36 GeneA haplotype samples even though their row orders differ.
+
+In real datasets, samples present on only one side are not available for the association test. Checking `setdiff()` before plotting is therefore recommended, especially after genotype missingness filters or phenotype QC have removed samples.
+
+### Step 4. Test the primary haplotype-phenotype association
+
+`seed_weight` is the main deterministic GeneA haplotype phenotype in the demo. Test the four GeneA haplotypes with `plot_hap_pheno()`:
+
+```{r}
+hap_seed <- plot_hap_pheno(
   hap = hap_gene,
   phenotype = pheno,
   traits = "seed_weight",
-  test_method = "wilcox.test",
-  min_hap_samples = 3
-)$figure
+  min_hap_samples = 3,
+  plot_type = "violin_boxplot",
+  test_method = "t.test",
+  p_adjust = "BH",
+  p_value_type = "adjusted",
+  p_label = "stars",
+  show_signif_only = TRUE,
+  fill_palette = "Paired"
+)
+
+hap_seed$figure
 ```
 
-Multiple traits preserve the requested order and are arranged over multiple facet columns:
+`plot_hap_pheno()` returns a `GeneTrackRPhenoPlot`, not only a ggplot. Keep the complete result because it contains the statistical output used to draw the figure:
 
 ```{r}
-plot_hap_pheno(
+hap_seed$pvalue
+hap_seed$summary
+hap_seed$bracket
+```
+
+The main components are:
+
+| Component | Content |
+| --- | --- |
+| `$figure` | phenotype distribution figure |
+| `$pvalue` | all pairwise tests, including raw and adjusted p-values |
+| `$summary` | sample number, median, mean, minimum, and maximum by trait and haplotype |
+| `$bracket` | comparisons actually prepared for display on the figure |
+| `$plot_data` | matched long-format phenotype data used for plotting |
+
+Printing the complete `GeneTrackRPhenoPlot` also prints its `$figure`, but use the named components when saving figures or exporting statistical tables.
+
+Haplotype groups are ordered by retained sample number. The x-axis label includes the group sample count, for example `Hap1 (9)`.
+
+### Step 5. Compare traits and choose the statistical settings
+
+The demo provides three useful haplotype-level behaviors in one dataset:
+
+- `seed_weight`: strong designed haplotype differences;
+- `plant_height`: moderate designed haplotype differences;
+- `flowering_time`: negative control without a designed GeneA haplotype effect.
+
+Plot them together while preserving the requested trait order:
+
+```{r}
+hap_multi <- plot_hap_pheno(
   hap = hap_gene,
   phenotype = pheno,
   traits = c(
     "seed_weight",
     "plant_height",
-    "protein_content",
     "flowering_time"
   ),
-  facet_ncol = 2,
-  min_hap_samples = 3
-)$figure
+  min_hap_samples = 3,
+  test_method = "t.test",
+  p_adjust = "BH",
+  p_value_type = "adjusted",
+  p_label = "stars",
+  facet_ncol = 3,
+  fill_palette = "Paired"
+)
+
+hap_multi$figure
+hap_multi$pvalue
 ```
 
-## Single-variant phenotype association
+Three pairwise test methods are available:
 
-`plot_variant_pheno()` is the single-variant version of `plot_hap_pheno()`. It groups samples by genotype or allele state at one variant.
+- `t.test`: compares group means and is appropriate for approximately continuous, reasonably behaved traits;
+- `wilcox.test`: rank-based alternative that is less dependent on normality assumptions;
+- `ks.test`: tests whether the overall distributions differ, not specifically their means or medians.
+
+For example:
 
 ```{r}
-variant_res <- plot_variant_pheno(
+hap_seed_wilcox <- plot_hap_pheno(
+  hap = hap_gene,
+  phenotype = pheno,
+  traits = "seed_weight",
+  min_hap_samples = 3,
+  test_method = "wilcox.test",
+  p_adjust = "BH",
+  p_value_type = "adjusted"
+)
+
+hap_seed_wilcox$pvalue
+```
+
+`$pvalue` always retains both `p_value` and `p_adj`. The argument `p_value_type` controls which of these is used to filter and label significance brackets; it does not remove the other statistic from the returned table.
+
+With four haplotypes there are six pairwise comparisons per trait, so adjusted p-values are generally preferable for the main interpretation. `p_adjust = "BH"` is the default multiple-testing adjustment used in these examples.
+
+`show_signif_only = TRUE` only controls bracket display. Non-significant comparisons remain available in `$pvalue`.
+
+### Step 6. Control phenotype-association plot appearance
+
+All GeneTrackR plotting palettes now default to `Paired`. `plot_hap_pheno()` maps fill colors according to the **median phenotype value within each trait**, so the colors are used as an ordered visual encoding rather than as permanent haplotype identities.
+
+A more detailed plot can be requested as follows:
+
+```{r}
+hap_seed_styled <- plot_hap_pheno(
+  hap = hap_gene,
+  phenotype = pheno,
+  traits = "seed_weight",
+  min_hap_samples = 3,
+  plot_type = "violin_boxplot",
+  test_method = "t.test",
+  p_adjust = "BH",
+  p_value_type = "adjusted",
+  p_label = "both",
+  show_points = TRUE,
+  show_outliers = FALSE,
+  fill_palette = "Paired",
+  fill_alpha = 0.75,
+  x_text_angle = 90,
+  text_size = 14
+)
+
+hap_seed_styled$figure
+```
+
+Use `plot_type = "violin"`, `"boxplot"`, or `"violin_boxplot"` depending on whether the distribution shape, compact summary, or both are most useful.
+
+If fixed colors for specific haplotype IDs are required, supply a named vector instead of relying on the median-based palette assignment:
+
+```{r}
+hap_seed_fixed_colors <- plot_hap_pheno(
+  hap = hap_gene,
+  phenotype = pheno,
+  traits = "seed_weight",
+  min_hap_samples = 3,
+  fill_colors = c(
+    Hap1 = "#A6CEE3",
+    Hap2 = "#1F78B4",
+    Hap3 = "#B2DF8A",
+    Hap4 = "#33A02C"
+  )
+)
+
+hap_seed_fixed_colors$figure
+```
+
+Use fixed haplotype colors only after confirming the actual `hap_id` values in `hap_gene$haplotypes`; haplotype numbering is specific to the variant set used to construct each `HapVariant`.
+
+### Step 7. Test a single variant against phenotype
+
+`plot_variant_pheno()` is the single-variant counterpart of `plot_hap_pheno()`. The demo variant `varA03` is designed so that ALT carriers have higher `protein_content` values.
+
+Select the variant by ID and use the compact binary REF/ALT representation:
+
+```{r}
+variant_protein <- plot_variant_pheno(
+  variant = vcf,
+  phenotype = pheno,
+  variant_id = "varA03",
+  traits = "protein_content",
+  genotype_mode = "code",
+  min_group_samples = 3,
+  test_method = "t.test",
+  p_adjust = "BH",
+  p_value_type = "adjusted",
+  p_label = "stars",
+  fill_palette = "Paired"
+)
+
+variant_protein$figure
+variant_protein$pvalue
+variant_protein$summary
+variant_protein$variant_data
+```
+
+For `genotype_mode = "code"`:
+
+- `0` means reference-only genotype;
+- `1` means at least one alternate allele is present.
+
+This is a binary REF/ALT-presence representation, not allele dosage. Use `genotype_mode = "string"` when allele labels are more informative:
+
+```{r}
+variant_protein_string <- plot_variant_pheno(
   variant = vcf,
   phenotype = pheno,
   variant_id = "varA03",
   traits = "protein_content",
   genotype_mode = "string",
-  min_group_samples = 3
+  min_group_samples = 3,
+  p_value_type = "adjusted"
 )
 
-variant_res$figure
-variant_res$pvalue
-variant_res$variant_data
+variant_protein_string$figure
 ```
 
-You can also select a variant by genomic position:
+A variant can also be selected by exact genomic position:
 
 ```{r}
-plot_variant_pheno(
+variant_protein_position <- plot_variant_pheno(
   variant = vcf,
   phenotype = pheno,
   chrom = "chr1",
   pos = 12342550,
   traits = "protein_content",
   genotype_mode = "code",
-  min_group_samples = 3
-)$figure
+  min_group_samples = 3,
+  p_value_type = "adjusted"
+)
+
+variant_protein_position$variant_data
 ```
+
+The selected locator must resolve to exactly one variant. If a region contains several variants, provide `variant_id` or an exact chromosome-position locator.
+
+`plot_variant_pheno()` returns the same `GeneTrackRPhenoPlot` structure as `plot_hap_pheno()`, with one additional component: `$variant_data`, containing the selected variant record.
+
+### Step 8. Pass the same objects downstream
+
+Keep the same `hap_gene` and `pheno` objects for phenotype-guided refinement and variant-effect prioritization. Rebuilding the haplotypes with a different region or missing-data rule would change the biological groups being tested.
+
+```{r}
+# Haplotype refinement (11-haplotype-refinement.qmd)
+# refined <- refine_haplotype(
+#   hap_gene,
+#   phenotype = pheno,
+#   traits = "seed_weight",
+#   min_hap_samples = 3
+# )
+
+# Variant-effect prioritization (12-variant-effect.qmd)
+# effect <- plot_variant_effect(
+#   hap_gene,
+#   phenotype = pheno,
+#   traits = "protein_content",
+#   min_group_samples = 3
+# )
+```
+
+The resulting workflow keeps one consistent chain:
+
+`VCF + annotation -> HapVariant -> phenotype association -> refinement / variant-effect analysis`.
+
+For reproducible analysis, export `$pvalue`, `$summary`, and the matched sample-level `$plot_data` together with `$figure` rather than saving only the visual result.

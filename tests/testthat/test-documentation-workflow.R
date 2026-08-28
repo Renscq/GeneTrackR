@@ -324,3 +324,82 @@ test_that("haplotype documentation workflow preserves the designed GeneA truth",
   )
   expect_true(inherits(p, "patchwork") || inherits(p, "ggplot"))
 })
+
+test_that("phenotype documentation workflow preserves sample matching and result contracts", {
+  gp <- read_genepred(
+    gtr_extdata("gtr_demo.genePredExt"),
+    format = "genePredExt",
+    verbose = FALSE,
+    progress = FALSE
+  )
+  vcf <- read_vcf(
+    gtr_extdata("gtr_demo_variants.vcf"),
+    mode = "memory",
+    keep_genotype = TRUE,
+    verbose = FALSE,
+    progress = FALSE
+  )
+  pheno <- read_pheno(
+    gtr_extdata("gtr_demo_pheno.tsv"),
+    verbose = FALSE,
+    progress = FALSE
+  )
+  hap_gene <- hap_gene_variant(
+    vcf = vcf,
+    annotation = gp,
+    gene_id = "GeneA",
+    genotype_mode = "string"
+  )
+
+  expect_equal(nrow(pheno), 36L)
+  expect_true(setequal(
+    as.character(pheno$sample_id),
+    as.character(hap_gene$sample_haplotypes$sample_id)
+  ))
+
+  pheno_summary <- summary_pheno(pheno)
+  expect_identical(
+    pheno_summary[trait == "flower_color", type],
+    "categorical"
+  )
+  expect_true(all(
+    pheno_summary[trait %in% c(
+      "seed_weight",
+      "protein_content",
+      "plant_height",
+      "flowering_time"
+    ), type] == "numeric"
+  ))
+
+  hap_seed <- plot_hap_pheno(
+    hap = hap_gene,
+    phenotype = pheno,
+    traits = "seed_weight",
+    min_hap_samples = 3,
+    p_adjust = "BH",
+    p_value_type = "adjusted"
+  )
+  expect_s3_class(hap_seed, "GeneTrackRPhenoPlot")
+  expect_true(all(c(
+    "figure", "pvalue", "summary", "bracket", "plot_data"
+  ) %in% names(hap_seed)))
+  expect_true(all(c("p_value", "p_adj") %in% names(hap_seed$pvalue)))
+  expect_equal(length(unique(as.character(hap_seed$summary$hap_id))), 4L)
+
+  variant_protein <- plot_variant_pheno(
+    variant = vcf,
+    phenotype = pheno,
+    variant_id = "varA03",
+    traits = "protein_content",
+    genotype_mode = "code",
+    min_group_samples = 3,
+    p_adjust = "BH",
+    p_value_type = "adjusted"
+  )
+  expect_s3_class(variant_protein, "GeneTrackRPhenoPlot")
+  expect_true("variant_data" %in% names(variant_protein))
+  expect_identical(
+    as.character(variant_protein$variant_data$variant_id[1L]),
+    "varA03"
+  )
+})
