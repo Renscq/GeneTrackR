@@ -4056,152 +4056,995 @@ GeneA HapVariant
 ```
 
 For the demo, `protein_content` refinement groups `Hap1/Hap2` and `Hap3/Hap4`, and `varA03` separates exactly those two refined genotype/phenotype clusters. The surrounding `p13` variants receive the same statistical effect because they carry the same genotype partition. That agreement is useful evidence for the regional signal, but it should not be mistaken for proof that every tied variant is causal.
-## Export variants and analysis results
 
-Annotation writing and cross-format conversion are covered in the **Annotation files** module for GenePred, GenePredExt, GTF, GFF3, BED6, and BED12.
+## Export tracks, figures, tables, and analysis objects
 
-### Export variants
+GeneTrackR produces several different kinds of output, and they should not all be saved in the same way. Genomic tracks should be written with the corresponding GeneTrackR writer, figures should be exported from the returned ggplot/patchwork object, result tables should be written as tabular files, and complete S3 analysis objects should be retained with `saveRDS()` when the full calculation state is needed later.
+
+A reproducible export therefore separates four output layers:
+
+1. genomic track files for use by GeneTrackR or genome browsers;
+2. PDF/PNG figures for reports and manuscripts;
+3. tabular results for inspection and downstream statistics;
+4. complete R objects for exact reloading without recalculation.
+
+This module follows eight steps:
+
+1. prepare a structured output directory and representative GeneTrackR objects;
+2. export annotation, signal, and variant tracks;
+3. save direct and class-contained figures as PDF/PNG;
+4. export haplotype, phenotype, LD, refinement, and variant-effect tables;
+5. export matrix-shaped results such as the LD matrix;
+6. optionally collect related tables into an Excel workbook;
+7. save complete GeneTrackR objects with `saveRDS()`;
+8. record a manifest and session information and verify that saved objects reload correctly.
+
+### Step 1. Prepare output directories and representative objects
+
+Create separate directories for track files, figures, tables, and serialized R objects:
 
 ```{r}
-write_vcf(
-  vcf,
-  file = file.path(tempdir(), "gtr_demo.output.vcf"),
-  overwrite = TRUE
+export_root <- file.path(tempdir(), "GeneTrackR_export")
+export_dirs <- file.path(
+  export_root,
+  c("tracks", "figures", "tables", "objects")
 )
+
+invisible(lapply(export_dirs, dir.create, recursive = TRUE, showWarnings = FALSE))
+
+track_dir <- export_dirs[1]
+figure_dir <- export_dirs[2]
+table_dir <- export_dirs[3]
+object_dir <- export_dirs[4]
 ```
 
-### Save figures and tables
+Read the demo inputs and build representative downstream objects. These are the same object classes used in the preceding workflow modules:
 
 ```{r}
-ggplot2::ggsave(
-  filename = file.path(tempdir(), "hap_pheno.pdf"),
-  plot = hap_res$figure,
-  width = 6,
-  height = 5
+gp <- read_genepred(
+  system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR"),
+  format = "genePredExt",
+  verbose = FALSE,
+  progress = FALSE
 )
 
-data.table::fwrite(
-  hap_res$pvalue,
-  file = file.path(tempdir(), "hap_pheno.pvalue.tsv"),
-  sep = "\t"
-)
-```
-
-## Recommended workflow
-
-```{r}
-library(GeneTrackR)
-
-## Input files
-gp_file <- system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR")
-vcf_file <- system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")
-pheno_file <- system.file("extdata", "gtr_demo_pheno.tsv", package = "GeneTrackR")
-rnaseq_files <- system.file(
-  "extdata",
-  c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph"),
-  package = "GeneTrackR"
-)
-riboseq_files <- system.file(
-  "extdata",
-  c("gtr_demo_riboseq_plus.bedgraph", "gtr_demo_riboseq_minus.bedgraph"),
-  package = "GeneTrackR"
+vcf <- read_vcf(
+  system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR"),
+  mode = "memory",
+  keep_genotype = TRUE,
+  verbose = FALSE,
+  progress = FALSE
 )
 
-## Read data
-gp <- read_genepred(gp_file, format = "genePredExt", verbose = FALSE)
-vcf <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
-pheno <- read_pheno(pheno_file, verbose = FALSE)
-rnaseq <- read_bwg(
-  rnaseq_files,
-  format = "bedgraph",
-  sample_names = c("RNA_seq_plus", "RNA_seq_minus"),
-  strand = c("+", "-"),
-  mode = "memory"
+pheno <- read_pheno(
+  system.file("extdata", "gtr_demo_pheno.tsv", package = "GeneTrackR"),
+  verbose = FALSE,
+  progress = FALSE
 )
-riboseq <- read_bwg(
-  riboseq_files,
-  format = "bedgraph",
-  sample_names = c("Ribo_seq_plus", "Ribo_seq_minus"),
-  strand = c("+", "-"),
-  mode = "memory"
-)
-signal_all <- merge_bwg(rnaseq, riboseq)
 
-## Browser-like view (direct figure return)
-browser_figure <- plot_tracks(
-  annotation = gp,
-  signal = signal_all,
-  variants = vcf,
-  gene_id = "GeneA",
-  signal_type = "bar"
-)
-browser_figure
-
-## Haplotype extraction
-hap <- hap_gene_variant(
+hap_gene <- hap_gene_variant(
   vcf,
   annotation = gp,
   gene_id = "GeneA",
-  genotype_mode = "string",
-  min_variant_number = 1
+  genotype_mode = "string"
 )
 
-## Haplotype-variant figure (direct figure return)
-hap_plot <- plot_hap_variant(
-  hap,
+hap_effect <- hap_gene_variant(
+  vcf,
   annotation = gp,
-  min_hap_samples = 3
+  gene_id = "GeneA",
+  genotype_mode = "code"
 )
-hap_plot
 
-## Haplotype-phenotype association
-res <- plot_hap_pheno(
-  hap,
+hap_pheno <- plot_hap_pheno(
+  hap_gene,
   phenotype = pheno,
   traits = "seed_weight",
-  min_hap_samples = 3
+  min_hap_samples = 3,
+  p_value_type = "adjusted"
 )
 
-res$figure
-res$pvalue
-
-## LD block
-ld <- compute_ld_block(
+ld_result <- compute_ld_block(
   vcf,
   chrom = "chr1",
   start = 12342620,
   end = 12355500,
   variant_type = "snp",
+  method = "r2",
   verbose = FALSE
 )
-ld <- plot_ld_block(ld, show_region = TRUE, annotation = gp, show_variant_labels = FALSE)
-ld$figure
 
-## Phenotype-guided refinement
+ld_result <- plot_ld_block(
+  ld_result,
+  annotation = gp,
+  show_region = TRUE,
+  show_variant_labels = FALSE
+)
+
 refined <- refine_haplotype(
-  hap,
+  hap_gene,
   phenotype = pheno,
   traits = "protein_content",
   min_hap_samples = 3,
   effect_threshold = 0.5
 )
-refined$refined_haplotypes
 
-## Variant effects
-effect_res <- plot_variant_effect(
-  hap,
+refined_variant_figure <- plot_refined_hap_variant(
+  refined,
+  annotation = gp,
+  min_hap_samples = 3
+)
+
+refined_pheno <- plot_refined_hap_pheno(
+  refined,
+  phenotype = pheno,
+  traits = "protein_content",
+  min_hap_samples = 3,
+  p_value_type = "adjusted"
+)
+
+effect_result <- plot_variant_effect(
+  hap_effect,
   phenotype = pheno,
   traits = "protein_content",
   min_group_samples = 3,
+  effect_type = "absolute",
   x_axis = "position"
 )
-effect_res$figure
 ```
 
-## Notes
+Keeping these objects separate is useful because their public contracts differ. `plot_hap_variant()` returns a figure directly, whereas `plot_hap_pheno()` and `plot_variant_effect()` return result objects containing `$figure`; `plot_ld_block()` returns an updated `LDTrack` with its figure stored in `$figure`.
 
-- For large indexed VCF files, use `read_vcf(file, mode = "lazy")` and query regions with `retrieve_vcf()` or directly through `hap_gene_variant()` / `hap_region_variant()`.
-- For bigWig files, region-based access avoids loading the whole signal file into memory.
-- For long signal regions, use `bin_size`, `heatmap_bin_size`, or `heatmap_max_bins` to keep plots readable.
-- `hap_variant()` remains available for compatibility, but new code should use `hap_gene_variant()` or `hap_region_variant()`.
-- `plot_hap_pheno()` and `plot_variant_pheno()` return structured lists. Use `$figure` for plotting and `$pvalue` for statistical results.
+### Step 2. Export genomic track files
+
+#### Annotation tracks
+
+Use `write_feature()` for annotation conversion. Annotation coordinate conventions and format-specific details are covered in the annotation module; the export module only centralizes representative calls:
+
+```{r}
+write_feature(
+  gp,
+  file = file.path(track_dir, "GeneA_demo.genePredExt"),
+  format = "genepredext",
+  overwrite = TRUE
+)
+
+write_feature(
+  gp,
+  file = file.path(track_dir, "GeneA_demo.bed12"),
+  format = "bed12",
+  overwrite = TRUE
+)
+```
+
+#### Signal tracks
+
+Read an in-memory signal track and export it with `write_bwg()`:
+
+```{r}
+rnaseq_plus <- read_bwg(
+  system.file(
+    "extdata",
+    "gtr_demo_rnaseq_plus.bedgraph",
+    package = "GeneTrackR"
+  ),
+  format = "bedgraph",
+  sample_names = "RNA_seq_plus",
+  strand = "+",
+  mode = "memory",
+  verbose = FALSE
+)
+
+bedgraph_files <- write_bwg(
+  rnaseq_plus,
+  outdir = track_dir,
+  format = "bedgraph",
+  overwrite = TRUE
+)
+
+bedgraph_files
+```
+
+bigWig output uses the bundled libBigWig backend and requires chromosome sizes:
+
+```{r}
+chrom_sizes_file <- system.file(
+  "extdata",
+  "gtr_demo.chrom.sizes",
+  package = "GeneTrackR"
+)
+
+bigwig_files <- write_bwg(
+  rnaseq_plus,
+  outdir = track_dir,
+  format = "bigwig",
+  chrom_sizes = chrom_sizes_file,
+  overwrite = TRUE
+)
+
+bigwig_files
+```
+
+#### Variant tracks
+
+Use `write_vcf()` when a standardized site-level VCF is required:
+
+```{r}
+write_vcf(
+  vcf,
+  file = file.path(track_dir, "gtr_demo.sites.vcf"),
+  overwrite = TRUE
+)
+```
+
+The current `write_vcf()` writes the standard site columns `CHROM`, `POS`, `ID`, `REF`, `ALT`, `QUAL`, `FILTER`, and `INFO`. It does **not** guarantee round-trip preservation of `FORMAT` and sample genotype columns. Keep the original genotype-containing VCF as the archival source whenever genotypes must be preserved exactly.
+
+### Step 3. Save figures as PDF and PNG
+
+Use the actual figure object rather than passing an entire GeneTrackR result class to `ggsave()`.
+
+Define a small local helper when both PDF and PNG are required:
+
+```{r}
+save_gtr_figure <- function(plot, stem, outdir, width = 8, height = 6, dpi = 300) {
+  ggplot2::ggsave(
+    filename = file.path(outdir, paste0(stem, ".pdf")),
+    plot = plot,
+    width = width,
+    height = height
+  )
+
+  ggplot2::ggsave(
+    filename = file.path(outdir, paste0(stem, ".png")),
+    plot = plot,
+    width = width,
+    height = height,
+    dpi = dpi
+  )
+}
+```
+
+A direct-return figure can be saved immediately:
+
+```{r}
+hap_variant_figure <- plot_hap_variant(
+  hap_gene,
+  annotation = gp,
+  min_hap_samples = 3
+)
+
+save_gtr_figure(
+  hap_variant_figure,
+  stem = "GeneA_haplotype_variant",
+  outdir = figure_dir,
+  width = 10,
+  height = 7
+)
+```
+
+For structured result classes, extract `$figure` explicitly:
+
+```{r}
+save_gtr_figure(
+  hap_pheno$figure,
+  stem = "GeneA_seed_weight_haplotype",
+  outdir = figure_dir,
+  width = 7,
+  height = 5
+)
+
+save_gtr_figure(
+  ld_result$figure,
+  stem = "GeneA_LD_gradient",
+  outdir = figure_dir,
+  width = 10,
+  height = 8
+)
+
+save_gtr_figure(
+  refined_variant_figure,
+  stem = "GeneA_refined_haplotype_variant",
+  outdir = figure_dir,
+  width = 10,
+  height = 7
+)
+
+save_gtr_figure(
+  refined_pheno$figure,
+  stem = "GeneA_refined_protein_content",
+  outdir = figure_dir,
+  width = 7,
+  height = 5
+)
+
+save_gtr_figure(
+  effect_result$figure,
+  stem = "GeneA_protein_variant_effect",
+  outdir = figure_dir,
+  width = 9,
+  height = 5
+)
+```
+
+The same rule applies to `plot_variant_pheno()` and `plot_refined_hap_pheno()`: save their `$figure` component. `plot_refined_hap_variant()` returns its figure directly.
+
+### Step 4. Export analysis tables
+
+A `HapVariant` contains several biologically different tables. Export them separately instead of flattening the complete class:
+
+```{r}
+data.table::fwrite(
+  hap_gene$variants,
+  file.path(table_dir, "GeneA.variants.tsv"),
+  sep = "\t"
+)
+
+data.table::fwrite(
+  hap_gene$haplotypes,
+  file.path(table_dir, "GeneA.haplotypes.tsv"),
+  sep = "\t"
+)
+
+data.table::fwrite(
+  hap_gene$sample_haplotypes,
+  file.path(table_dir, "GeneA.sample_haplotypes.tsv"),
+  sep = "\t"
+)
+
+data.table::fwrite(
+  hap_gene$genotype_long,
+  file.path(table_dir, "GeneA.genotype_long.tsv"),
+  sep = "\t"
+)
+```
+
+For phenotype association results, retain the statistical tables used to create the figure:
+
+```{r}
+data.table::fwrite(
+  hap_pheno$pvalue,
+  file.path(table_dir, "GeneA.seed_weight.pvalue.tsv"),
+  sep = "\t"
+)
+
+data.table::fwrite(
+  hap_pheno$summary,
+  file.path(table_dir, "GeneA.seed_weight.summary.tsv"),
+  sep = "\t"
+)
+
+data.table::fwrite(
+  hap_pheno$plot_data,
+  file.path(table_dir, "GeneA.seed_weight.plot_data.tsv"),
+  sep = "\t"
+)
+```
+
+Export pairwise LD rather than only the heatmap image:
+
+```{r}
+data.table::fwrite(
+  ld_result$data,
+  file.path(table_dir, "GeneA.LD_pairs.tsv"),
+  sep = "\t"
+)
+
+data.table::fwrite(
+  ld_result$variants,
+  file.path(table_dir, "GeneA.LD_variants.tsv"),
+  sep = "\t"
+)
+```
+
+For phenotype-guided refinement, the mapping and decision tables are essential for explaining why original haplotypes were merged:
+
+```{r}
+data.table::fwrite(
+  refined$haplotype_map,
+  file.path(table_dir, "GeneA.refined_haplotype_map.tsv"),
+  sep = "\t"
+)
+
+data.table::fwrite(
+  refined$refined_haplotypes,
+  file.path(table_dir, "GeneA.refined_haplotypes.tsv"),
+  sep = "\t"
+)
+
+data.table::fwrite(
+  refined$sample_refined_haplotypes,
+  file.path(table_dir, "GeneA.sample_refined_haplotypes.tsv"),
+  sep = "\t"
+)
+
+data.table::fwrite(
+  refined$pairwise_test,
+  file.path(table_dir, "GeneA.refinement_pairwise_test.tsv"),
+  sep = "\t"
+)
+
+data.table::fwrite(
+  refined$phenotype_summary,
+  file.path(table_dir, "GeneA.refinement_pheno_summary.tsv"),
+  sep = "\t"
+)
+
+data.table::fwrite(
+  refined_pheno$pvalue,
+  file.path(table_dir, "GeneA.refined_protein.pvalue.tsv"),
+  sep = "\t"
+)
+
+data.table::fwrite(
+  refined_pheno$summary,
+  file.path(table_dir, "GeneA.refined_protein.summary.tsv"),
+  sep = "\t"
+)
+```
+
+For regional variant-effect prioritization, retain both the summarized effects and the sample-level plotting table:
+
+```{r}
+data.table::fwrite(
+  effect_result$effect,
+  file.path(table_dir, "GeneA.protein_variant_effect.tsv"),
+  sep = "\t"
+)
+
+data.table::fwrite(
+  effect_result$plot_data,
+  file.path(table_dir, "GeneA.protein_variant_effect_plot_data.tsv"),
+  sep = "\t"
+)
+```
+
+### Step 5. Export the LD matrix cleanly
+
+A matrix should be converted to a rectangular table with an explicit row identifier before writing it:
+
+```{r}
+ld_matrix_table <- data.table::as.data.table(
+  ld_result$matrix,
+  keep.rownames = "variant_id"
+)
+
+data.table::fwrite(
+  ld_matrix_table,
+  file.path(table_dir, "GeneA.LD_matrix.tsv"),
+  sep = "\t"
+)
+```
+
+This preserves both row and column variant IDs and is easier to reopen in R, Python, spreadsheet software, or downstream matrix tools than a matrix written without row names.
+
+### Step 6. Optionally collect tables in an Excel workbook
+
+For collaborators who prefer one multi-sheet workbook, the same result tables can be collected with the optional `openxlsx` package. This is an interoperability step rather than a GeneTrackR dependency:
+
+```{r}
+if (requireNamespace("openxlsx", quietly = TRUE)) {
+  openxlsx::write.xlsx(
+    list(
+      variants = as.data.frame(hap_gene$variants),
+      haplotypes = as.data.frame(hap_gene$haplotypes),
+      sample_haps = as.data.frame(hap_gene$sample_haplotypes),
+      hap_pvalue = as.data.frame(hap_pheno$pvalue),
+      hap_summary = as.data.frame(hap_pheno$summary),
+      LD_pairs = as.data.frame(ld_result$data),
+      LD_matrix = as.data.frame(ld_matrix_table),
+      refined_map = as.data.frame(refined$haplotype_map),
+      refined_test = as.data.frame(refined$pairwise_test),
+      variant_effect = as.data.frame(effect_result$effect)
+    ),
+    file = file.path(table_dir, "GeneA.analysis.xlsx"),
+    overwrite = TRUE
+  )
+}
+```
+
+TSV remains the dependency-free default and is preferable for very large tables. Excel is most useful for compact result summaries intended for manual inspection.
+
+### Step 7. Save complete GeneTrackR objects with RDS
+
+Tabular exports are easy to inspect, but they do not preserve the complete object state. Save the corresponding S3 objects when an analysis may need to be reopened without recomputation:
+
+```{r}
+saveRDS(
+  hap_gene,
+  file.path(object_dir, "GeneA.HapVariant.rds")
+)
+
+saveRDS(
+  hap_pheno,
+  file.path(object_dir, "GeneA.seed_weight.GeneTrackRPhenoPlot.rds")
+)
+
+saveRDS(
+  ld_result,
+  file.path(object_dir, "GeneA.LDTrack.rds")
+)
+
+saveRDS(
+  refined,
+  file.path(object_dir, "GeneA.HapRefined.rds")
+)
+
+saveRDS(
+  effect_result,
+  file.path(object_dir, "GeneA.VariantEffect.rds")
+)
+```
+
+The RDS file preserves class information, metadata, parameters, intermediate tables, and stored figures. It complements rather than replaces human-readable tables and standard genomic track files.
+
+### Step 8. Record provenance and verify the export
+
+Record the package/session environment together with the result directory:
+
+```{r}
+writeLines(
+  capture.output(sessionInfo()),
+  con = file.path(export_root, "sessionInfo.txt")
+)
+
+export_manifest <- data.table::data.table(
+  file = list.files(export_root, recursive = TRUE)
+)
+
+data.table::fwrite(
+  export_manifest,
+  file.path(export_root, "manifest.tsv"),
+  sep = "\t"
+)
+
+export_manifest
+```
+
+Finally, verify that a serialized analysis object can be restored with its expected class and results:
+
+```{r}
+ld_reloaded <- readRDS(
+  file.path(object_dir, "GeneA.LDTrack.rds")
+)
+
+class(ld_reloaded)
+head(ld_reloaded$data)
+```
+
+For a complete project, keep the **original inputs**, **standard-format track exports**, **PDF/PNG figures**, **tabular results**, **RDS analysis objects**, and **session information** together. This makes the analysis both easy to inspect and reproducible at the object level.
+
+## End-to-end GeneTrackR workflow
+
+The preceding modules describe individual GeneTrackR tasks in detail. This module condenses them into one recommended end-to-end analysis for a candidate gene/locus. The goal is to keep one consistent set of input objects and pass them forward rather than repeatedly rebuilding slightly different regions or sample sets.
+
+The demo workflow uses `GeneA` and follows ten steps:
+
+1. define and read the input files;
+2. validate and summarize the core objects;
+3. inspect the locus with annotation, signal, features, and variants;
+4. retrieve the gene-body variants used for haplotype analysis;
+5. construct and visualize GeneA haplotypes;
+6. test haplotype and single-variant phenotype associations;
+7. inspect the regional LD gradient;
+8. refine genetically similar haplotypes using phenotype evidence;
+9. rank regional variant effects and integrate the evidence;
+10. export the results and adapt the workflow to large real datasets.
+
+### Step 1. Define and read the inputs
+
+Use one explicit set of source files at the start of the analysis:
+
+```{r}
+library(GeneTrackR)
+
+gp_file <- system.file(
+  "extdata",
+  "gtr_demo.genePredExt",
+  package = "GeneTrackR"
+)
+
+feature_file <- system.file(
+  "extdata",
+  "gtr_demo_features.bed",
+  package = "GeneTrackR"
+)
+
+vcf_file <- system.file(
+  "extdata",
+  "gtr_demo_variants.vcf",
+  package = "GeneTrackR"
+)
+
+pheno_file <- system.file(
+  "extdata",
+  "gtr_demo_pheno.tsv",
+  package = "GeneTrackR"
+)
+
+signal_files <- system.file(
+  "extdata",
+  c(
+    "gtr_demo_rnaseq_plus.bedgraph",
+    "gtr_demo_rnaseq_minus.bedgraph",
+    "gtr_demo_riboseq_plus.bedgraph",
+    "gtr_demo_riboseq_minus.bedgraph"
+  ),
+  package = "GeneTrackR"
+)
+```
+
+Read the objects once:
+
+```{r}
+gp <- read_genepred(
+  gp_file,
+  format = "genePredExt",
+  verbose = FALSE,
+  progress = FALSE
+)
+
+features <- read_bed(
+  feature_file,
+  verbose = FALSE,
+  progress = FALSE
+)
+
+vcf <- read_vcf(
+  vcf_file,
+  mode = "memory",
+  keep_genotype = TRUE,
+  verbose = FALSE,
+  progress = FALSE
+)
+
+pheno <- read_pheno(
+  pheno_file,
+  verbose = FALSE,
+  progress = FALSE
+)
+
+signal_all <- read_bwg(
+  signal_files,
+  format = "bedgraph",
+  sample_names = c(
+    "RNA_seq_plus",
+    "RNA_seq_minus",
+    "Ribo_seq_plus",
+    "Ribo_seq_minus"
+  ),
+  strand = c("+", "-", "+", "-"),
+  mode = "memory",
+  verbose = FALSE
+)
+```
+
+For real projects, keep these source objects unchanged and create filtered/retrieved objects for each downstream question. This makes it clear which transformations were applied at each step.
+
+### Step 2. Validate and summarize the core objects
+
+Inspect the annotation and VCF before defining haplotypes or LD regions:
+
+```{r}
+validate_feature(gp)
+validate_vcf(vcf)
+
+summary_feature(gp)
+summary_vcf(vcf)
+summary_pheno(pheno)
+summary_bwg(signal_all)
+```
+
+The most important consistency checks are:
+
+- chromosome names agree among annotation, variants, and signal tracks;
+- VCF genotype columns are retained for LD and haplotype analysis;
+- phenotype sample IDs overlap the VCF/haplotype sample IDs;
+- coordinate conventions have already been normalized by the GeneTrackR readers.
+
+The demo phenotype order is intentionally different from the VCF sample order. Downstream phenotype functions align records by `sample_id`, not by row position.
+
+### Step 3. Inspect the locus in a browser-like view
+
+Start by viewing the candidate gene in its genomic context. `plot_tracks()` can combine the gene model, RNA/Ribo signal, BED-like features, and VCF variants:
+
+```{r}
+browser_geneA <- plot_tracks(
+  annotation = gp,
+  signal = signal_all,
+  features = features,
+  variants = vcf,
+  gene_id = "GeneA",
+  samples = c("RNA_seq_plus", "Ribo_seq_plus"),
+  strand = "+",
+  signal_type = "bar",
+  feature_color_by = "auto",
+  feature_max_legend_levels = 5,
+  direction_mode = "transcript"
+)
+
+browser_geneA
+```
+
+All general plotting palettes default to `Paired`; `plot_ld_block()` is the deliberate exception and defaults to the sequential `Reds` palette. For transcript-centered Ribo-seq inspection, supply `transcript_id` to `plot_tracks()` or use `plot_signal_transcript()` so reading-frame information can be displayed explicitly.
+
+### Step 4. Retrieve the gene-body variants
+
+Inspect the exact variants that will define the GeneA haplotypes:
+
+```{r}
+geneA_variants <- retrieve_vcf(
+  vcf,
+  annotation = gp,
+  gene_id = "GeneA",
+  as = "data.table",
+  verbose = FALSE,
+  progress = FALSE
+)
+
+geneA_variants[, .(
+  variant_id,
+  chrom,
+  pos,
+  ref,
+  alt,
+  variant_type
+)]
+```
+
+The canonical GeneA gene body contains 11 demo variants. Do not silently add flanking variants to the primary haplotype definition: the upstream demo variant contains missing/heterogeneous genotypes and intentionally changes the resulting haplotype structure.
+
+### Step 5. Construct and visualize the GeneA haplotypes
+
+Use the gene body and allele-string representation for the main biological haplotype display:
+
+```{r}
+hap_gene <- hap_gene_variant(
+  vcf,
+  annotation = gp,
+  gene_id = "GeneA",
+  genotype_mode = "string"
+)
+
+hap_gene$haplotypes[, c(
+  "hap_id",
+  "sample_n",
+  "samples"
+), with = FALSE]
+```
+
+The deterministic demo contains four balanced haplotypes with nine samples each.
+
+Plot their variant patterns together with the gene structure:
+
+```{r}
+hap_gene_figure <- plot_hap_variant(
+  hap_gene,
+  annotation = gp,
+  min_hap_samples = 3,
+  variant_label = "pos",
+  show_reference_row = TRUE
+)
+
+hap_gene_figure
+```
+
+Keep the full `HapVariant` object. Its sample assignments and genotype tables are the input for phenotype association, refinement, and variant-effect analysis.
+
+### Step 6. Test phenotype associations
+
+Test the original GeneA haplotypes against a trait with a designed haplotype effect:
+
+```{r}
+hap_seed <- plot_hap_pheno(
+  hap_gene,
+  phenotype = pheno,
+  traits = "seed_weight",
+  min_hap_samples = 3,
+  test_method = "t.test",
+  p_adjust = "BH",
+  p_value_type = "adjusted"
+)
+
+hap_seed$figure
+hap_seed$pvalue
+```
+
+For a specific natural variant, use the VCF genotype directly. The demo `varA03` separates the two major GeneA genotype/phenotype clusters for `protein_content`:
+
+```{r}
+varA03_protein <- plot_variant_pheno(
+  variant = vcf,
+  phenotype = pheno,
+  variant_id = "varA03",
+  traits = "protein_content",
+  genotype_mode = "code",
+  min_group_samples = 3,
+  p_adjust = "BH",
+  p_value_type = "adjusted"
+)
+
+varA03_protein$figure
+```
+
+These functions return structured result objects. Retain `$pvalue`, `$summary`, and `$plot_data` together with `$figure` rather than saving only the visual result.
+
+### Step 7. Inspect the regional LD gradient
+
+The primary demo LD interval contains 12 SNPs. Six form a perfect high-LD core and the remaining variants progressively decorrelate, producing high, intermediate, and low `r2` values:
+
+```{r}
+ld_gradient <- compute_ld_block(
+  vcf,
+  chrom = "chr1",
+  start = 12342620,
+  end = 12355500,
+  variant_type = "snp",
+  method = "r2",
+  verbose = FALSE
+)
+
+ld_gradient <- plot_ld_block(
+  ld_gradient,
+  annotation = gp,
+  show_region = TRUE,
+  connect_region = TRUE,
+  show_variant_marker = TRUE,
+  show_variant_labels = FALSE
+)
+
+ld_gradient$figure
+```
+
+Inspect the numerical result as well as the heatmap:
+
+```{r}
+ld_gradient$data[, .(
+  variant_i,
+  variant_j,
+  distance_bp,
+  r2
+)]
+```
+
+GeneTrackR calculates pairwise LD; it does not automatically declare a biological block boundary from a hard-coded threshold. Define the downstream interval using the lead variant, LD pattern, gene context, and the biological question.
+
+### Step 8. Refine haplotypes with phenotype evidence
+
+The GeneA genotype structure contains two close haplotype pairs: `Hap1/Hap2` and `Hap3/Hap4`. Their `protein_content` values follow the same two-cluster structure, making this trait appropriate for phenotype-guided refinement:
+
+```{r}
+refined_protein <- refine_haplotype(
+  hap_gene,
+  phenotype = pheno,
+  traits = "protein_content",
+  min_hap_samples = 3,
+  test_method = "t.test",
+  p_adjust = "BH",
+  alpha = 0.05,
+  effect_threshold = 0.5
+)
+
+refined_protein$haplotype_map
+refined_protein$refined_haplotypes
+```
+
+The expected deterministic grouping is:
+
+```text
+Hap1 + Hap2 -> refined group 1
+Hap3 + Hap4 -> refined group 2
+```
+
+Inspect the decision evidence rather than reporting only the final group number:
+
+```{r}
+refined_protein$pairwise_test
+refined_protein$phenotype_summary
+```
+
+A non-significant pairwise test alone is not proof of biological equivalence. `effect_threshold` adds an explicit phenotype-distance requirement and should be chosen in the context of the trait scale and experimental precision.
+
+### Step 9. Rank variant effects and integrate the evidence
+
+For interpretable two-group effect direction, rebuild the same GeneA region in binary REF/ALT-presence mode:
+
+```{r}
+hap_effect <- hap_gene_variant(
+  vcf,
+  annotation = gp,
+  gene_id = "GeneA",
+  genotype_mode = "code"
+)
+
+effect_protein <- plot_variant_effect(
+  hap_effect,
+  phenotype = pheno,
+  traits = "protein_content",
+  min_group_samples = 3,
+  test_method = "t.test",
+  p_adjust = "BH",
+  effect_type = "absolute",
+  top_n = 10,
+  variant_label = "variant_id",
+  x_axis = "position"
+)
+
+effect_protein$figure
+```
+
+Rank the numerical results directly:
+
+```{r}
+protein_candidates <- effect_protein$effect[
+  trait == "protein_content"
+][order(-abs_effect, p_adj)]
+
+protein_candidates[, .(
+  variant_id,
+  effect,
+  abs_effect,
+  p_adj
+)]
+```
+
+Several GeneA variants share the same large effect because they encode the same `Hap1/Hap2` versus `Hap3/Hap4` genotype partition. A large phenotype effect therefore identifies an associated **variant set**, not necessarily a unique causal variant.
+
+The preferred interpretation combines all preceding evidence:
+
+```text
+variant effect
+    + pairwise LD
+    + gene/feature annotation
+    + single-variant phenotype association
+    + haplotype structure
+    + phenotype-guided refinement
+    -> candidate variants for biological validation
+```
+
+### Step 10. Export results and scale the workflow to real datasets
+
+At the end of the analysis, retain the main objects together so the result can be reopened without reconstructing the workflow:
+
+```{r}
+analysis_bundle <- list(
+  annotation = gp,
+  features = features,
+  haplotype = hap_gene,
+  haplotype_pheno = hap_seed,
+  variant_pheno = varA03_protein,
+  ld = ld_gradient,
+  refined = refined_protein,
+  variant_effect = effect_protein
+)
+
+saveRDS(
+  analysis_bundle,
+  file = file.path(tempdir(), "GeneA.GeneTrackR_workflow.rds")
+)
+```
+
+Use the export module for a complete project directory containing standard genomic tracks, PDF/PNG figures, tabular results, optional Excel workbooks, complete RDS objects, and session information.
+
+For large real-world datasets, adapt the same workflow rather than changing its logic:
+
+- read bgzip-compressed indexed VCF files with `read_vcf(mode = "lazy")` and always query a defined genomic interval before LD or haplotype analysis;
+- use lazy bigWig access when genome-wide signal should not be loaded into memory;
+- select only relevant signal samples before plotting;
+- use `bin_size`, `heatmap_bin_size`, or `heatmap_max_bins` for long/high-density signal regions;
+- prefer `hap_gene_variant()` and `hap_region_variant()` for new code; `hap_variant()` remains a compatibility wrapper;
+- remember that direct plotting functions return ggplot/patchwork figures, whereas phenotype/variant-effect results and `LDTrack` store figures inside structured result objects.
+
+The complete recommended chain is therefore:
+
+```text
+annotation + signal + VCF + phenotype
+    -> locus inspection
+    -> gene/region variant definition
+    -> haplotype construction
+    -> phenotype association
+    -> LD interpretation
+    -> phenotype-guided refinement
+    -> variant-effect prioritization
+    -> biological candidate selection
+    -> reproducible export
+```

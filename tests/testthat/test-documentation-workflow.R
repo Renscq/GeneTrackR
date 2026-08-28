@@ -609,3 +609,74 @@ test_that("variant-effect documentation workflow follows deterministic GeneA tru
   observed <- merge(varA03_effect, expected, by = "trait", all = TRUE)
   expect_equal(observed$effect, observed$expected_effect, tolerance = 1e-8)
 })
+
+test_that("export workflow preserves structured result contracts", {
+  gp <- read_genepred(
+    gtr_extdata("gtr_demo.genePredExt"),
+    format = "genePredExt",
+    verbose = FALSE,
+    progress = FALSE
+  )
+  vcf <- read_vcf(
+    gtr_extdata("gtr_demo_variants.vcf"),
+    mode = "memory",
+    keep_genotype = TRUE,
+    verbose = FALSE,
+    progress = FALSE
+  )
+  pheno <- read_pheno(
+    gtr_extdata("gtr_demo_pheno.tsv"),
+    verbose = FALSE,
+    progress = FALSE
+  )
+  hap <- hap_gene_variant(
+    vcf,
+    annotation = gp,
+    gene_id = "GeneA",
+    genotype_mode = "string"
+  )
+
+  hap_pheno <- plot_hap_pheno(
+    hap,
+    phenotype = pheno,
+    traits = "seed_weight",
+    min_hap_samples = 3
+  )
+  expect_s3_class(hap_pheno, "GeneTrackRPhenoPlot")
+  expect_true(all(c("figure", "pvalue", "summary", "plot_data") %in% names(hap_pheno)))
+
+  ld <- compute_ld_block(
+    vcf,
+    chrom = "chr1",
+    start = 12342620,
+    end = 12355500,
+    variant_type = "snp",
+    method = "r2",
+    verbose = FALSE
+  )
+  ld <- plot_ld_block(
+    ld,
+    annotation = gp,
+    show_region = TRUE,
+    show_variant_labels = FALSE
+  )
+  expect_s3_class(ld, "LDTrack")
+  expect_false(is.null(ld$figure))
+
+  refined <- refine_haplotype(
+    hap,
+    phenotype = pheno,
+    traits = "protein_content",
+    min_hap_samples = 3,
+    effect_threshold = 0.5
+  )
+  expect_s3_class(refined, "HapRefined")
+  expect_true(all(c(
+    "haplotype_map", "refined_haplotypes", "sample_refined_haplotypes",
+    "pairwise_test", "phenotype_summary", "parameters"
+  ) %in% names(refined)))
+
+  rds_file <- tempfile(fileext = ".rds")
+  saveRDS(refined, rds_file)
+  expect_s3_class(readRDS(rds_file), "HapRefined")
+})

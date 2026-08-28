@@ -35,4 +35,3 @@ format: gfm
 
 {{< include docs/14-workflow.qmd >}}
 
-{{< include docs/15-notes.qmd >}}

@@ -1,3 +1,10 @@
+# GeneTrackR 0.5.36
+
+- Rebuilt `docs/13-export.qmd` as a structured export workflow for genomic tracks, PDF/PNG figures, analysis tables, optional Excel workbooks, and complete RDS objects.
+- Rebuilt `docs/14-workflow.qmd` as the end-to-end GeneTrackR candidate-locus workflow using the current GeneA haplotype, phenotype, LD-gradient, refinement, and variant-effect examples.
+- Removed `docs/15-notes.qmd` and incorporated its large-data and object-return guidance into the end-to-end workflow.
+- Synchronized `README.qmd` and `README.md` with the revised documentation sequence.
+
 # GeneTrackR 0.5.35
 
 - Fixed `plot_variant_effect()` multi-trait reshaping so mixed integer and double phenotype columns no longer trigger `data.table::melt()` coercion warnings.
