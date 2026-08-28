@@ -252,3 +252,75 @@ test_that("browser-track documentation workflow uses current public APIs", {
   )
   expect_true(inherits(p_complete, "patchwork") || inherits(p_complete, "ggplot"))
 })
+
+test_that("haplotype documentation workflow preserves the designed GeneA truth", {
+  gp <- read_genepred(
+    gtr_extdata("gtr_demo.genePredExt"),
+    format = "genePredExt",
+    verbose = FALSE,
+    progress = FALSE
+  )
+  vcf <- read_vcf(
+    gtr_extdata("gtr_demo_variants.vcf"),
+    mode = "memory",
+    keep_genotype = TRUE,
+    verbose = FALSE,
+    progress = FALSE
+  )
+
+  hap_gene <- hap_gene_variant(
+    vcf,
+    annotation = gp,
+    gene_id = "GeneA",
+    genotype_mode = "string"
+  )
+
+  expect_s3_class(hap_gene, "HapVariant")
+  expect_equal(hap_gene$meta$variant_n, 11L)
+  expect_equal(hap_gene$meta$sample_n, 36L)
+  expect_equal(hap_gene$meta$haplotype_n, 4L)
+  expect_equal(sort(hap_gene$haplotypes$sample_n), rep(9L, 4L))
+  expect_true(all(c(
+    "region", "variants", "genotype_long", "genotype_wide",
+    "haplotypes", "sample_haplotypes", "meta"
+  ) %in% names(hap_gene)))
+
+  hap_tx <- hap_gene_variant(
+    vcf,
+    annotation = gp,
+    transcript_id = "TxA1",
+    genotype_mode = "string"
+  )
+  expect_s3_class(hap_tx, "HapVariant")
+  expect_identical(hap_tx$region$locator, "transcript")
+
+  hap_region <- hap_region_variant(
+    vcf,
+    chrom = "chr1",
+    start = 12340001,
+    end = 12352000,
+    genotype_mode = "code"
+  )
+  expect_s3_class(hap_region, "HapVariant")
+  expect_equal(hap_region$meta$variant_n, 11L)
+
+  hap_relaxed <- hap_gene_variant(
+    vcf,
+    annotation = gp,
+    gene_id = "GeneA",
+    upstream = 500,
+    genotype_mode = "string",
+    min_variant_number = 11
+  )
+  expect_true("varAup01" %in% hap_relaxed$variants$variant_id)
+  expect_equal(hap_relaxed$meta$sample_n, 36L)
+
+  p <- plot_hap_variant(
+    hap_gene,
+    annotation = gp,
+    min_hap_samples = 3,
+    variant_label = "pos",
+    gene_track_legend_position = "top"
+  )
+  expect_true(inherits(p, "patchwork") || inherits(p, "ggplot"))
+})

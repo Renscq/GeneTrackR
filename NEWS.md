@@ -1,3 +1,9 @@
+# GeneTrackR 0.5.28
+
+- Reorganized `docs/08-haplotype.qmd` into a self-contained, stepwise haplotype workflow from VCF input through downstream analysis handoff.
+- Documented the `HapVariant` object structure, genotype representations, missing-genotype filtering, flanking-region semantics, sample/variant filtering, and haplotype plotting controls.
+- Established the GeneA gene body as the primary tutorial haplotype definition (11 variants, 36 samples, four balanced haplotypes) and separated the upstream missing-genotype example from the main analysis.
+
 # GeneTrackR 0.5.27
 
 - Added `variant_palette` and `variant_colors` controls to `plot_tracks()` and forwarded them to integrated variant panels.
