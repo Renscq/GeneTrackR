@@ -1,5 +1,6 @@
 ---
 title: "Strand-specific RNA-seq and Ribo-seq signal tracks"
+description: "Read, combine, and visualize strand-specific RNA-seq and Ribo-seq signals with GeneTrackR genomic track objects."
 author: "Rensc"
 output: rmarkdown::html_vignette
 vignette: >

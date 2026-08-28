@@ -4,9 +4,165 @@ destination: pkgdown-site
 template:
   bootstrap: 5
 
+navbar:
+  structure:
+    left: [intro, reference, articles, news]
+    right: [search, github]
+  components:
+    intro:
+      text: Get Started
+      href: articles/core-workflows.html
+
 articles:
-  - title: Workflows
-    navbar: Workflows
+  - title: Getting Started
+    desc: >
+      Start with the deterministic GeneTrackR workflow and learn how package
+      objects move through annotation, variant, haplotype, phenotype, LD,
+      refinement, and variant-effect analyses.
     contents:
       - core-workflows
+
+  - title: Visualization
+    desc: >
+      Build publication-ready genomic signal and track visualizations from the
+      bundled deterministic examples.
+    navbar: Visualization
+    contents:
       - signal-tracks
+
+reference:
+  - title: Core objects
+    desc: >
+      Core GeneTrackR data structures and package-level documentation.
+    contents:
+      - GeneTrackR-package
+      - GenePred
+      - Feature
+      - FeatureTrack
+      - BwgTrack
+      - VariantTrack
+      - LDTrack
+
+  - title: Annotation I/O
+    desc: >
+      Read and write GenePred, GTF, GFF3, BED, and standardized feature tracks.
+    contents:
+      - read_genepred
+      - read_gtf
+      - read_gff
+      - read_bed
+      - write_genepred
+      - write_feature
+      - write_feature_track
+
+  - title: Annotation conversion & retrieval
+    desc: >
+      Convert, query, merge, validate, summarize, and inspect annotation objects.
+    contents:
+      - as_feature
+      - as_genepred
+      - as_granges
+      - as_gene_table
+      - as_transcript_table
+      - as_exon_table
+      - as_feature_table
+      - retrieve_feature
+      - merge_feature
+      - validate_feature
+      - summary_feature
+      - get_gene_length_distribution_table
+
+  - title: Gene model visualization
+    desc: >
+      Visualize genes, transcripts, genomic regions, interval features, and
+      annotation length distributions.
+    contents:
+      - plot_gene
+      - plot_transcript
+      - plot_region
+      - plot_feature_track
+      - plot_gene_length_distribution
+
+  - title: Signal tracks
+    desc: >
+      Read, transform, query, summarize, and visualize bedGraph, wig, and bigWig
+      genomic signals, including integrated browser-like tracks.
+    contents:
+      - read_bwg
+      - write_bwg
+      - retrieve_bwg
+      - slice_bwg
+      - merge_bwg
+      - norm_bwg
+      - bin_bwg
+      - seqinfo_bwg
+      - validate_bwg
+      - summary_bwg
+      - head.BwgTrack
+      - plot_signal_gene
+      - plot_signal_transcript
+      - plot_signal_region
+      - plot_tracks
+
+  - title: Variant tracks
+    desc: >
+      Read, query, validate, summarize, write, and visualize VCF-derived variant
+      tracks.
+    contents:
+      - read_vcf
+      - read_vcf_track
+      - write_vcf
+      - write_variant_track
+      - retrieve_vcf
+      - validate_vcf
+      - summary_vcf
+      - plot_variant
+      - plot_variant_track
+
+  - title: Haplotype analysis
+    desc: >
+      Construct haplotypes from genes, transcripts, or genomic regions and
+      visualize haplotype-defining variants.
+    contents:
+      - hap_variant
+      - hap_gene_variant
+      - hap_region_variant
+      - plot_hap_variant
+
+  - title: Phenotype association
+    desc: >
+      Read and summarize phenotype data and test phenotype differences across
+      haplotypes or individual variant genotypes.
+    contents:
+      - read_pheno
+      - summary_pheno
+      - plot_pheno
+      - plot_hap_pheno
+      - plot_variant_pheno
+      - print.GeneTrackRPhenoPlot
+
+  - title: Linkage disequilibrium
+    desc: >
+      Compute pairwise linkage disequilibrium and visualize triangular LD maps.
+    contents:
+      - compute_ld_block
+      - plot_ld_block
+
+  - title: Variant effect & refinement
+    desc: >
+      Refine haplotypes with phenotype evidence and prioritize natural variants
+      by phenotype-associated effect size.
+    contents:
+      - refine_haplotype
+      - plot_hap_refined
+      - plot_refined_hap_variant
+      - plot_refined_hap_pheno
+      - plot_variant_effect
+
+  - title: Diagnostics & advanced utilities
+    desc: >
+      Advanced parameters and diagnostics for indexed genomic track workflows.
+    contents:
+      - GeneTrackR-advanced-parameters
+      - diagnose_tabix
+      - benchmark_tabix_query

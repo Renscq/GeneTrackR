@@ -1,3 +1,11 @@
+# GeneTrackR 0.6.1
+
+- Redesigned the pkgdown information architecture around a dedicated **Get Started** entry, task-oriented **Articles**, and a functionally grouped **Reference** index.
+- Organized all current Rd topics into explicit Reference sections for core objects, annotation I/O and conversion, gene-model visualization, signal tracks, variant tracks, haplotype analysis, phenotype association, linkage disequilibrium, variant effect/refinement, and advanced diagnostics.
+- Positioned `core-workflows` as the top-level Get Started workflow and retained `signal-tracks` under the Visualization article section.
+- Added article descriptions to the existing vignettes so the pkgdown article index explains the purpose of each workflow.
+- Kept the staged `docs/*.qmd` tutorial sources unchanged; additional task-oriented articles will be migrated into the established information architecture in subsequent 0.6.x releases.
+
 # GeneTrackR 0.6.0
 
 - Initialized the GeneTrackR package website with `pkgdown`, replacing the abandoned MkDocs migration plan with an R-native documentation architecture.

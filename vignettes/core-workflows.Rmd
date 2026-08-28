@@ -1,9 +1,10 @@
 ---
-title: "GeneTrackR deterministic demo workflows"
+title: "GeneTrackR core workflow"
+description: "An end-to-end deterministic workflow connecting GeneTrackR annotation, variants, haplotypes, phenotypes, LD, refinement, and variant-effect analysis."
 author: "Rensc"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{GeneTrackR deterministic demo workflows}
+  %\VignetteIndexEntry{GeneTrackR core workflow}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
