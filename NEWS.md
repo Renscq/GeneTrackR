@@ -1,3 +1,10 @@
+# GeneTrackR 0.6.7
+
+- Added a dedicated linkage-disequilibrium article covering genotype-dosage LD calculation, `LDTrack` result inspection, `r2` and dosage-based D-prime interpretation, triangular heatmaps, regional gene/variant context, population subsets, variant filtering, and downstream regional haplotype handoff.
+- Added a dedicated phenotype-guided haplotype-refinement article covering original-versus-refined haplotype state, pairwise merge evidence, `effect_threshold`, multi-trait grouping, grouped and collapsed refined-variant plots, and refined phenotype visualization.
+- Added a dedicated variant-effect article covering binary genotype coding, absolute versus signed effects, adjusted P values, linked tied-effect interpretation, direct single-variant phenotype validation, and multi-trait prioritization.
+- Extended the pkgdown **Haplotype & association** article sequence to `Haplotype -> Phenotype -> LD -> Haplotype refinement -> Variant effect` while keeping the staged `docs/10-ld.qmd`, `docs/11-haplotype-refinement.qmd`, and `docs/12-variant-effect.qmd` sources unchanged.
+
 # GeneTrackR 0.6.6
 
 - Added a dedicated haplotype article covering gene-, transcript-, and region-defined `HapVariant` construction, genotype representations, missing-genotype filtering, sample/variant filtering, object inspection, and `plot_hap_variant()` visualization.

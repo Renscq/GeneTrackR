@@ -45,13 +45,16 @@ articles:
 
   - title: Haplotype & association
     desc: >
-      Construct haplotypes from VCF genotypes, inspect and visualize
-      haplotype-defining variants, align phenotype samples explicitly, and test
-      haplotype- or single-variant phenotype associations.
+      Construct and test haplotypes, quantify regional linkage disequilibrium,
+      refine haplotype groups with phenotype evidence, and prioritize natural
+      variants by phenotype-associated effect size.
     navbar: Haplotype & association
     contents:
       - haplotype
       - phenotype
+      - linkage-disequilibrium
+      - haplotype-refinement
+      - variant-effect
 
 reference:
   - title: Core objects
