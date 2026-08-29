@@ -1,7 +1,7 @@
 # Author: Rensc
-# Date: 2026-08-29
-# Version: dev005
-# Function: Read bedGraph, wig, and bigWig signal track files
+# Date: 2026-08-30
+# Version: dev006
+# Function: Read signal tracks through the unified native R I/O layer
 # Input: Signal track file paths
 # Output: Schema-v2 BwgTrack object
 
@@ -38,6 +38,9 @@
 #' `BwgTrack$seqinfo` follows the schema-v2 sequence metadata contract. bigWig
 #' inputs record chromosome lengths from the file header. In-memory bedGraph and
 #' wig inputs record observed chromosome names with unknown lengths (`NA`).
+#'
+#' bedGraph, WIG, and BigWig memory reads are dispatched through one internal
+#' native R I/O layer so all formats return the same canonical signal schema.
 #' @return A BwgTrack object.
 #' @examples
 #' \dontrun{
@@ -157,46 +160,21 @@ read_bwg <- function(files,
       if (verbose) {
         message(sprintf("[GeneTrackR] Loading %s/%s: %s", i, length(files), sample_names[i]))
       }
-      if (formats[i] == "bedgraph") {
-        read_bedgraph_file(files[i], sample_names[i], strand[i])
-      } else if (formats[i] == "wig") {
-        read_wig_file(files[i], sample_names[i], strand[i])
-      } else {
-        read_bigwig_whole_native(files[i], sample_names[i], strand[i])
-      }
+      read_signal_file_memory(
+        file = files[i],
+        format = formats[i],
+        sample_id = sample_names[i],
+        strand = strand[i]
+      )
     }), fill = TRUE)
   }
 
-  seqinfo_list <- lapply(seq_along(files), function(i) {
-    if (!identical(formats[i], "bigwig")) {
-      return(NULL)
-    }
-    si <- bigwig_seqinfo_native(files[i])
-    if (nrow(si) == 0L) {
-      return(NULL)
-    }
-    si[, sample_id := sample_names[i]]
-    data.table::setcolorder(si, c("sample_id", "chrom", "length"))
-    si[]
-  })
-
-  if (!is.null(data) && nrow(data) > 0L) {
-    text_sample_ids <- sample_names[formats %in% c("bedgraph", "wig")]
-    if (length(text_sample_ids) > 0L) {
-      text_seqinfo <- unique(
-        data[data[["sample_id"]] %in% text_sample_ids, .(sample_id, chrom)]
-      )
-      if (nrow(text_seqinfo) > 0L) {
-        text_seqinfo[, length := NA_integer_]
-        seqinfo_list[[length(seqinfo_list) + 1L]] <- text_seqinfo
-      }
-    }
-  }
-
-  seqinfo <- data.table::rbindlist(seqinfo_list, fill = TRUE)
-  if (is.null(seqinfo) || nrow(seqinfo) == 0L) {
-    seqinfo <- NULL
-  }
+  seqinfo <- build_signal_seqinfo(
+    files = files,
+    formats = formats,
+    sample_ids = sample_names,
+    data = data
+  )
 
   meta <- list(
     mode = mode,
@@ -264,74 +242,6 @@ infer_sample_has_strand <- function(strand, formats) {
   # formally unstranded, but paired plus/minus bedGraph files are common, so a
   # user-provided '+' or '-' is respected for bedGraph only.
   formats == "bedgraph" & strand %in% c("+", "-")
-}
-
-read_bedgraph_file <- function(file, sample_id, strand = "*") {
-  dt <- data.table::fread(file, header = FALSE, data.table = TRUE, showProgress = FALSE)
-  stop_if_not(ncol(dt) >= 4L, "A bedGraph file must contain at least four columns.")
-  out <- dt[, .(
-    sample_id = sample_id,
-    chrom = as.character(V1),
-    start = as.integer(V2) + 1L,
-    end = as.integer(V3),
-    value = as.numeric(V4),
-    strand = strand
-  )]
-  out[start <= end]
-}
-
-read_wig_file <- function(file, sample_id, strand = "*") {
-  lines <- readLines(file, warn = FALSE)
-  out <- list()
-  chrom <- NULL
-  span <- 1L
-  step <- 1L
-  current <- NA_integer_
-  mode <- NULL
-
-  for (line in lines) {
-    line <- trimws(line)
-    if (line == "" || grepl("^track|^browser", line)) next
-
-    if (grepl("^fixedStep", line)) {
-      mode <- "fixedStep"
-      chrom <- sub(".*chrom=([^ ]+).*", "\\1", line)
-      start <- as.integer(sub(".*start=([0-9]+).*", "\\1", line))
-      step <- if (grepl("step=", line)) as.integer(sub(".*step=([0-9]+).*", "\\1", line)) else 1L
-      span <- if (grepl("span=", line)) as.integer(sub(".*span=([0-9]+).*", "\\1", line)) else 1L
-      current <- start
-      next
-    }
-
-    if (grepl("^variableStep", line)) {
-      mode <- "variableStep"
-      chrom <- sub(".*chrom=([^ ]+).*", "\\1", line)
-      span <- if (grepl("span=", line)) as.integer(sub(".*span=([0-9]+).*", "\\1", line)) else 1L
-      next
-    }
-
-    if (identical(mode, "fixedStep")) {
-      value <- as.numeric(line)
-      out[[length(out) + 1L]] <- data.table::data.table(
-        sample_id = sample_id, chrom = chrom, start = current,
-        end = current + span - 1L, value = value, strand = strand
-      )
-      current <- current + step
-    } else if (identical(mode, "variableStep")) {
-      fields <- strsplit(line, "\\s+")[[1]]
-      pos <- as.integer(fields[1])
-      value <- as.numeric(fields[2])
-      out[[length(out) + 1L]] <- data.table::data.table(
-        sample_id = sample_id, chrom = chrom, start = pos,
-        end = pos + span - 1L, value = value, strand = strand
-      )
-    }
-  }
-
-  if (length(out) == 0L) {
-    return(data.table::data.table(sample_id = character(), chrom = character(), start = integer(), end = integer(), value = numeric(), strand = character()))
-  }
-  data.table::rbindlist(out)
 }
 
 #' Validate a BwgTrack object

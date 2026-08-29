@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-08-29
-# Version: dev004
+# Date: 2026-08-30
+# Version: dev005
 # Function: Query, normalize, summarize, slice, merge, and write signal tracks
 # Input: BwgTrack objects and genomic regions
 # Output: Signal tables, subset objects, and exported signal files
@@ -104,52 +104,15 @@
   }
 
   out <- lapply(seq_len(nrow(sample_tbl)), function(i) {
-    fmt <- sample_tbl$format[i]
     if (verbose) {
       message(sprintf("[GeneTrackR] Querying %s/%s: %s", i, nrow(sample_tbl), sample_tbl$sample_id[i]))
     }
-    res <- if (fmt == "bigwig") {
-      query_bigwig_native(
-        sample_tbl$file[i],
-        sample_tbl$sample_id[i],
-        chrom_value,
-        query_start,
-        query_end,
-        sample_tbl$strand[i]
-      )
-    } else if (fmt == "bedgraph" && isTRUE(sample_tbl$use_tabix[i])) {
-      query_bedgraph_tabix(
-        file = sample_tbl$file[i],
-        sample_id = sample_tbl$sample_id[i],
-        chrom = chrom_value,
-        start = query_start,
-        end = query_end,
-        strand = sample_tbl$strand[i],
-        backend = sample_tbl$tabix_backend[i],
-        empty_fallback = isTRUE(sample_tbl$tabix_empty_fallback[i])
-      )
-    } else {
-      tmp <- read_bwg(
-        sample_tbl$file[i],
-        format = fmt,
-        sample_names = sample_tbl$sample_id[i],
-        strand = sample_tbl$strand[i],
-        mode = "memory",
-        verbose = FALSE,
-        use_tabix = "no"
-      )
-      .query_bwg_internal(
-        tmp,
-        chrom_value,
-        query_start,
-        query_end,
-        samples = sample_tbl$sample_id[i],
-        strand = strand,
-        strand_policy = strand_policy,
-        verbose = FALSE,
-        progress = FALSE
-      )
-    }
+    res <- query_signal_file_region(
+      sample_row = sample_tbl[i],
+      chrom = chrom_value,
+      start = query_start,
+      end = query_end
+    )
     if (!is.null(pb)) utils::setTxtProgressBar(pb, i)
     res
   })
@@ -370,32 +333,20 @@ query_bedgraph_tabix <- function(file, sample_id, chrom, start, end, strand = "*
     if (length(lines) == 0L) {
       return(empty)
     }
-    dt <- tryCatch(
-      data.table::fread(text = paste(lines, collapse = "\n"), header = FALSE, data.table = TRUE, showProgress = FALSE),
-      error = function(e) NULL
+    out <- tryCatch(
+      attach_signal_sample(
+        parse_bedgraph_lines_native(lines),
+        sample_id = sample_id,
+        strand = strand
+      ),
+      error = function(e) empty
     )
-    if (is.null(dt) || ncol(dt) < 4L) {
-      return(empty)
-    }
-    out <- dt[, .(
-      sample_id = sample_id,
-      chrom = as.character(V1),
-      start = as.integer(V2) + 1L,
-      end = as.integer(V3),
-      value = as.numeric(V4),
-      strand = strand
-    )]
-    out <- out[out[["chrom"]] == chrom_value & out[["start"]] <= query_end & out[["end"]] >= query_start]
-    if (nrow(out) == 0L) {
-      return(empty)
-    }
-    out[, .(
-      sample_id, chrom,
-      start = pmax(start, query_start),
-      end = pmin(end, query_end),
-      value,
-      strand
-    )]
+    subset_signal_region(
+      out,
+      chrom = chrom_value,
+      start = query_start,
+      end = query_end
+    )
   }
 
   # Tabix returns no lines when a region has no coverage. This is a valid and
@@ -438,23 +389,20 @@ query_bedgraph_full_file <- function(file, sample_id, chrom, start, end, strand 
   query_end <- as.integer(end)
   empty <- empty_signal_dt()
   dt <- tryCatch(
-    read_bedgraph_file(file = file, sample_id = sample_id, strand = strand),
+    read_signal_file_memory(
+      file = file,
+      format = "bedgraph",
+      sample_id = sample_id,
+      strand = strand
+    ),
     error = function(e) empty
   )
-  if (nrow(dt) == 0L) {
-    return(empty)
-  }
-  out <- dt[dt[["chrom"]] == chrom_value & dt[["start"]] <= query_end & dt[["end"]] >= query_start]
-  if (nrow(out) == 0L) {
-    return(empty)
-  }
-  out[, .(
-    sample_id, chrom,
-    start = pmax(start, query_start),
-    end = pmin(end, query_end),
-    value,
-    strand
-  )]
+  subset_signal_region(
+    dt,
+    chrom = chrom_value,
+    start = query_start,
+    end = query_end
+  )
 }
 
 

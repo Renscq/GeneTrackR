@@ -1,7 +1,7 @@
 # Author: Rensc
 # Date: 2026-08-30
-# Version: dev007
-# Function: Write BwgTrack objects to bedGraph, wig, or bigWig files
+# Version: dev008
+# Function: Write BwgTrack objects through the unified native R I/O layer
 # Input: BwgTrack object
 # Output: Signal track files
 
@@ -12,6 +12,7 @@
 #' formats are written directly in R. bigWig output uses GeneTrackR's native R
 #' binary writer and requires chromosome sizes; no external conversion program
 #' or compiled BigWig backend is used by `write_bwg()`.
+#' All in-memory formats are dispatched through the same internal native R I/O layer.
 #'
 #' For in-memory `BwgTrack` objects, signal records are written from `object$data`.
 #' For lazy objects, direct conversion is not possible because signal records are
@@ -80,26 +81,21 @@ write_bwg <- function(object,
     x <- dt[sample_id == sid]
     if (nrow(x) == 0L) next
 
-    if (format == "bedgraph") {
-      file <- file.path(
-        outdir,
-        paste0(sid, ".bedgraph", if (compress) ".gz" else "")
-      )
-      check_output_file(file, overwrite)
-      write_bedgraph_table(x, file, compress = compress)
-    } else if (format == "wig") {
-      file <- file.path(
-        outdir,
-        paste0(sid, ".wig", if (compress) ".gz" else "")
-      )
-      check_output_file(file, overwrite)
-      write_wig_table(x, file, compress = compress)
-    } else {
-      file <- file.path(outdir, paste0(sid, ".bigwig"))
-      check_output_file(file, overwrite)
-      x <- prepare_bigwig_signal(x, chrom_sizes_table, sample_id = sid)
-      write_bigwig_native(file, x, chrom_sizes_table)
-    }
+    file <- signal_output_path(
+      outdir = outdir,
+      sample_id = sid,
+      format = format,
+      compress = compress
+    )
+    check_output_file(file, overwrite)
+    write_signal_file_memory(
+      data = x,
+      file = file,
+      format = format,
+      compress = compress,
+      chrom_sizes = if (format == "bigwig") chrom_sizes_table else NULL,
+      sample_id = sid
+    )
 
     out[[i]] <- data.table::data.table(
       sample_id = sid,
@@ -161,48 +157,6 @@ write_bwg_lazy_copy <- function(object, sample_tbl, outdir, format, overwrite) {
     )
   }
   invisible(data.table::rbindlist(out, fill = TRUE))
-}
-
-write_bedgraph_table <- function(dt, file, compress = FALSE) {
-  x <- dt[, .(
-    chrom = as.character(chrom),
-    start = as.integer(start) - 1L,
-    end = as.integer(end),
-    value = as.numeric(value)
-  )]
-  data.table::fwrite(
-    x,
-    file,
-    sep = "\t",
-    col.names = FALSE,
-    compress = if (compress) "gzip" else "auto"
-  )
-}
-
-write_wig_table <- function(dt, file, compress = FALSE) {
-  con <- if (compress) gzfile(file, open = "wt") else file(file, open = "wt")
-  on.exit(close(con), add = TRUE)
-  x <- data.table::copy(dt)
-  x[, "span" := as.integer(end) - as.integer(start) + 1L]
-  stop_if_not(
-    all(!is.na(x$span) & x$span >= 1L),
-    "WIG output requires valid intervals with end >= start."
-  )
-  data.table::setorderv(x, c("chrom", "start", "end"))
-  split_x <- split(x, x$chrom)
-  for (chr in names(split_x)) {
-    y <- split_x[[chr]]
-    block_id <- cumsum(c(TRUE, y$span[-1L] != y$span[-nrow(y)]))
-    split_y <- split(y, block_id)
-    for (block in split_y) {
-      span <- unique(block$span)
-      writeLines(paste0("variableStep chrom=", chr, " span=", span), con)
-      writeLines(
-        paste(as.integer(block$start), as.numeric(block$value), sep = "\t"),
-        con
-      )
-    }
-  }
 }
 
 prepare_chrom_sizes_table <- function(chrom_sizes) {

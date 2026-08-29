@@ -65,6 +65,9 @@ or \code{retrieve_bwg()}.
 \code{BwgTrack$seqinfo} follows the schema-v2 sequence metadata contract. bigWig
 inputs record chromosome lengths from the file header. In-memory bedGraph and
 wig inputs record observed chromosome names with unknown lengths (\code{NA}).
+
+bedGraph, WIG, and BigWig memory reads are dispatched through one internal
+native R I/O layer so all formats return the same canonical signal schema.
 }
 \examples{
 \dontrun{
