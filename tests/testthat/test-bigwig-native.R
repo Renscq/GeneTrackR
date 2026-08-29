@@ -91,28 +91,29 @@ test_that("native BigWig reader rejects invalid binary input", {
 })
 
 
-test_that("native BigWig reader matches the current compiled backend", {
+test_that("native BigWig adapters preserve the low-level reader result", {
   file <- test_path("fixtures", "native_reader_test.bigwig")
 
-  native_seqinfo <- GeneTrackR:::bigwig_seqinfo_native(file)
-  legacy_seqinfo <- GeneTrackR:::bw_seqinfo_cpp(file)
-  expect_equal(native_seqinfo, legacy_seqinfo)
-
-  native_query <- GeneTrackR:::bigwig_query_native(
+  low_level <- GeneTrackR:::bigwig_query_native(
     file,
     chrom = "chr1",
     start = 1L,
     end = 200L
   )
-  legacy_query <- GeneTrackR:::query_bigwig_cpp(
+  adapted <- GeneTrackR:::query_bigwig_native(
     file = file,
     sample_id = "sampleA",
     chrom = "chr1",
     start = 1L,
     end = 200L,
     strand = "*"
-  )[, .(chrom, start, end, value)]
+  )
 
-  expect_equal(native_query[, .(chrom, start, end)], legacy_query[, .(chrom, start, end)])
-  expect_equal(native_query$value, legacy_query$value, tolerance = 1e-6)
+  expect_equal(
+    adapted[, .(chrom, start, end, value)],
+    low_level[, .(chrom, start, end, value)],
+    tolerance = 1e-6
+  )
+  expect_true(all(adapted$sample_id == "sampleA"))
+  expect_true(all(adapted$strand == "*"))
 })

@@ -1,0 +1,19 @@
+GeneTrackR 0.7.6 removes the compiled BigWig backend.
+
+Before running devtools::document(), devtools::test(), or installing 0.7.6,
+remove these paths from the GeneTrackR package source tree:
+
+R/bw_cpp_backend.R
+src/
+
+The entire src/ directory must be removed, including any untracked .o, .dll,
+.so, or other build artifacts from earlier versions.
+
+If the package is under Git control, the tracked-source removal is equivalent to:
+
+git rm R/bw_cpp_backend.R
+git rm -r src
+
+If old untracked build artifacts remain under src/, delete the directory itself.
+Restart the R session before testing 0.7.6 if a GeneTrackR DLL from an earlier
+version was already loaded in the current session.

@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-08-30
-# Version: dev002
+# Version: dev003
 # Function: Package-level documentation for GeneTrackR
 # Input: GenePred annotations and genomic signal tracks
 # Output: Gene model plots, signal plots, and combined genome tracks
@@ -15,8 +15,6 @@
 #' @import data.table
 #' @importFrom utils head modifyList
 #' @importFrom rlang .data
-#' @importFrom Rcpp evalCpp
-#' @useDynLib GeneTrackR, .registration = TRUE
 "_PACKAGE"
 
 utils::globalVariables(c(

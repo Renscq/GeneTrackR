@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-08-30
-# Version: dev006
+# Version: dev007
 # Function: Read signal tracks through the unified native R I/O layer
 # Input: Signal track file paths
 # Output: Schema-v2 BwgTrack object
@@ -31,9 +31,8 @@
 #' `use_tabix = "auto"` uses indexed querying only when a `.tbi` index and an available backend are detected. GeneTrackR first checks the system `tabix` command and then the R package `Rsamtools`. Otherwise, lazy bedGraph queries fall back to full-file reading.
 #'
 #' BigWig metadata, full-memory loading, and lazy regional queries use the
-#' GeneTrackR native R BigWig reader. The compiled libBigWig reader is retained
-#' temporarily for regression comparison but is no longer used by `read_bwg()`
-#' or `retrieve_bwg()`.
+#' GeneTrackR native R BigWig reader. The signal subsystem does not require
+#' Rcpp, a compiled BigWig library, or an external BigWig executable.
 #'
 #' `BwgTrack$seqinfo` follows the schema-v2 sequence metadata contract. bigWig
 #' inputs record chromosome lengths from the file header. In-memory bedGraph and

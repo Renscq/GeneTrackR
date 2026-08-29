@@ -58,9 +58,8 @@ filtering is required.
 \code{use_tabix = "auto"} uses indexed querying only when a \code{.tbi} index and an available backend are detected. GeneTrackR first checks the system \code{tabix} command and then the R package \code{Rsamtools}. Otherwise, lazy bedGraph queries fall back to full-file reading.
 
 BigWig metadata, full-memory loading, and lazy regional queries use the
-GeneTrackR native R BigWig reader. The compiled libBigWig reader is retained
-temporarily for regression comparison but is no longer used by \code{read_bwg()}
-or \code{retrieve_bwg()}.
+GeneTrackR native R BigWig reader. The signal subsystem does not require
+Rcpp, a compiled BigWig library, or an external BigWig executable.
 
 \code{BwgTrack$seqinfo} follows the schema-v2 sequence metadata contract. bigWig
 inputs record chromosome lengths from the file header. In-memory bedGraph and

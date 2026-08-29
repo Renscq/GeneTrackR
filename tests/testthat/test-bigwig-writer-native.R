@@ -1,7 +1,14 @@
-test_that("write_bwg uses the native R BigWig writer", {
-  body_text <- paste(deparse(body(write_bwg)), collapse = "\n")
-  expect_false(grepl("write_bigwig_libbigwig", body_text, fixed = TRUE))
-  expect_true(grepl("write_bigwig_native", body_text, fixed = TRUE))
+test_that("write_bwg routes BigWig output through the native R dispatcher", {
+  write_body <- paste(deparse(body(write_bwg)), collapse = "\n")
+  dispatcher_body <- paste(
+    deparse(body(GeneTrackR:::write_signal_file_memory)),
+    collapse = "\n"
+  )
+
+  expect_match(write_body, "write_signal_file_memory", fixed = TRUE)
+  expect_false(grepl("write_bigwig_libbigwig", write_body, fixed = TRUE))
+  expect_match(dispatcher_body, "write_bigwig_native", fixed = TRUE)
+  expect_false(grepl("write_bigwig_libbigwig", dispatcher_body, fixed = TRUE))
 })
 
 
