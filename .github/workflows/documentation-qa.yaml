@@ -40,6 +40,7 @@ jobs:
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: |
+            roxygen2@8.1.0
             any::devtools
             any::pkgdown
             any::rcmdcheck

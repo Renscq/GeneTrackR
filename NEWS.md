@@ -1,3 +1,9 @@
+# GeneTrackR 0.6.10
+
+- Synchronized roxygen-generated package metadata, `NAMESPACE`, and package-level Rd documentation with roxygen2 8.1.0, matching the generator used by the documentation QA workflow.
+- Pinned roxygen2 8.1.0 in the documentation-QA dependency set so future CI runs do not fail solely because a newer roxygen2 release reformats generated documentation.
+- Preserved all R implementations, tests, pkgdown articles, staged Quarto sources, and package APIs unchanged; this release is limited to generated-documentation synchronization and CI reproducibility.
+
 # GeneTrackR 0.6.9
 
 - Added a dedicated GitHub Actions documentation-QA workflow that rebuilds the pkgdown site in a clean R process, verifies roxygen-generated documentation is synchronized, checks internal site links, inventories generated figure dimensions, and runs `R CMD check --as-cran`.
