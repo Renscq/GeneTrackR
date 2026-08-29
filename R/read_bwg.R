@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-08-29
-# Version: dev004
+# Version: dev005
 # Function: Read bedGraph, wig, and bigWig signal track files
 # Input: Signal track file paths
 # Output: Schema-v2 BwgTrack object
@@ -29,6 +29,11 @@
 #' filtering is required.
 #'
 #' `use_tabix = "auto"` uses indexed querying only when a `.tbi` index and an available backend are detected. GeneTrackR first checks the system `tabix` command and then the R package `Rsamtools`. Otherwise, lazy bedGraph queries fall back to full-file reading.
+#'
+#' BigWig metadata, full-memory loading, and lazy regional queries use the
+#' GeneTrackR native R BigWig reader. The compiled libBigWig reader is retained
+#' temporarily for regression comparison but is no longer used by `read_bwg()`
+#' or `retrieve_bwg()`.
 #'
 #' `BwgTrack$seqinfo` follows the schema-v2 sequence metadata contract. bigWig
 #' inputs record chromosome lengths from the file header. In-memory bedGraph and
@@ -157,7 +162,7 @@ read_bwg <- function(files,
       } else if (formats[i] == "wig") {
         read_wig_file(files[i], sample_names[i], strand[i])
       } else {
-        read_bigwig_whole_cpp(files[i], sample_names[i], strand[i])
+        read_bigwig_whole_native(files[i], sample_names[i], strand[i])
       }
     }), fill = TRUE)
   }
@@ -166,7 +171,7 @@ read_bwg <- function(files,
     if (!identical(formats[i], "bigwig")) {
       return(NULL)
     }
-    si <- bw_seqinfo_cpp(files[i])
+    si <- bigwig_seqinfo_native(files[i])
     if (nrow(si) == 0L) {
       return(NULL)
     }
@@ -197,7 +202,7 @@ read_bwg <- function(files,
     mode = mode,
     genome = genome,
     coordinate = "1-based closed",
-    backend = "libBigWig"
+    backend = "GeneTrackR-native-R"
   )
 
   if (verbose) {

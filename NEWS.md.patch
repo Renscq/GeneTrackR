@@ -1,16 +1,15 @@
 --- a/NEWS.md
 +++ b/NEWS.md
-@@ -1,3 +1,13 @@
-+# GeneTrackR 0.7.1
+@@ -1,3 +1,12 @@
++# GeneTrackR 0.7.3
 +
-+- Established the schema-v2 `BwgTrack` object foundation for the 0.7.x pure-R signal subsystem migration.
-+- Added a stable `seqinfo` slot alongside `samples`, `data`, `meta`, and `validation`; chromosome lengths can be known or `NA` when the source format does not encode sequence lengths.
-+- Standardized `BwgTrack` metadata to `coordinate = "1-based closed"` and `schema_version = "2"` while preserving the existing public constructor argument order.
-+- Added sequence metadata collection for bigWig inputs and in-memory bedGraph/WIG inputs, and preserved relevant `seqinfo` through BwgTrack retrieval, slicing, and merging.
-+- Updated `seqinfo_bwg()` to use stored schema-v2 sequence metadata first while retaining the existing libBigWig fallback for legacy objects.
-+- Added regression tests for schema construction, sequence metadata validation, text-track sequence metadata, subset propagation, and merge propagation.
-+- Kept the existing libBigWig/Rcpp backend unchanged in this release; native BigWig replacement begins in the following 0.7.x development stages.
++- Switched the public BigWig read path from the bundled libBigWig/Rcpp reader to the native R reader introduced in 0.7.2.
++- Added internal `query_bigwig_native()` and `read_bigwig_whole_native()` adapters that return the standard GeneTrackR signal schema.
++- Updated `read_bwg()` memory loading and sequence metadata collection, lazy `retrieve_bwg()` queries, and legacy `seqinfo_bwg()` fallback to use the native R backend.
++- Updated `BwgTrack$meta$backend` to `GeneTrackR-native-R` for newly read signal objects.
++- Retained the compiled reader temporarily only for regression comparison; BigWig writing remains on the compiled backend until the writer migration.
++- Added regression coverage that verifies public BigWig read functions no longer reference the compiled reader while preserving interval values, clipping, and schema behavior.
 +
- # GeneTrackR 0.6.17
+ # GeneTrackR 0.7.2
  
- - Optimized pkgdown article figure layouts by increasing the graphics canvas according to plot complexity while keeping rendered figures at full article width.
+ - Added the first native-R BigWig reader layer adapted from the stabilized bwTools 0.8.10 implementation.

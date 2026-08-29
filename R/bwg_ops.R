@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-08-29
-# Version: dev003
+# Version: dev004
 # Function: Query, normalize, summarize, slice, merge, and write signal tracks
 # Input: BwgTrack objects and genomic regions
 # Output: Signal tables, subset objects, and exported signal files
@@ -109,7 +109,7 @@
       message(sprintf("[GeneTrackR] Querying %s/%s: %s", i, nrow(sample_tbl), sample_tbl$sample_id[i]))
     }
     res <- if (fmt == "bigwig") {
-      query_bigwig_cpp(
+      query_bigwig_native(
         sample_tbl$file[i],
         sample_tbl$sample_id[i],
         chrom_value,
@@ -931,8 +931,8 @@ bin_bwg <- function(data, bin_size = 50L) {
 #' @return A data.table containing chromosome names and lengths for each sample.
 #' @details
 #' Schema-v2 objects return stored sequence metadata directly. Legacy objects
-#' without a `seqinfo` slot retain the previous behavior and query chromosome
-#' metadata from bigWig source files through the current backend.
+#' without a `seqinfo` slot query chromosome metadata from bigWig source files
+#' through the native R backend.
 #' @export
 seqinfo_bwg <- function(object, samples = NULL) {
   stop_if_not(inherits(object, "BwgTrack"), "`object` must be a BwgTrack object.")
@@ -964,7 +964,7 @@ seqinfo_bwg <- function(object, samples = NULL) {
       return(NULL)
     }
 
-    si <- bw_seqinfo_cpp(sample_tbl$file[i])
+    si <- bigwig_seqinfo_native(sample_tbl$file[i])
     if (nrow(si) == 0L) {
       return(NULL)
     }
