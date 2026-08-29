@@ -1,3 +1,10 @@
+# GeneTrackR 0.6.14
+
+* Removed the noisy GitHub Pages 404 annotation from the pkgdown workflow by probing repository Pages availability before invoking `actions/configure-pages`.
+* `actions/configure-pages` now runs only when the Pages REST endpoint is available; repositories without Pages enabled receive a clean pkgdown preview artifact and Step Summary without an Error or Warning annotation.
+* Kept pkgdown site construction as a hard CI check and retained automatic native Pages deployment once repository-level Pages is enabled.
+* No R implementation, API, vignette, test, or pkgdown content was changed.
+
 # GeneTrackR 0.6.13
 
 * Synchronized the package-level Rd file with the roxygen2 8.1.0 output generated from `DESCRIPTION` URL and BugReports metadata.
