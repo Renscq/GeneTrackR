@@ -34,12 +34,14 @@ articles:
 
   - title: Visualization
     desc: >
-      Define gene-model coordinate views and build publication-ready continuous
-      genomic signal visualizations from the bundled deterministic examples.
+      Build gene-model, continuous-signal, VCF-variant, and integrated
+      genome-browser-like views from one shared genomic coordinate framework.
     navbar: Visualization
     contents:
       - gene-model
       - signal-tracks
+      - variant-tracks
+      - browser-tracks
 
 reference:
   - title: Core objects

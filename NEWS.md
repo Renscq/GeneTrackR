@@ -1,3 +1,10 @@
+# GeneTrackR 0.6.5
+
+- Added a dedicated pkgdown variant-track article covering `VariantTrack` construction, memory versus indexed lazy VCF access, validation, summaries, genomic/gene/transcript retrieval, ID/type/pattern filtering, variant plotting, site-level VCF export, and downstream handoff.
+- Added a dedicated integrated browser-track article covering `plot_tracks()` locator semantics, gene/transcript/region views, strand-aware RNA-seq and Ribo-seq display, transcript-level Ribo-seq frame rendering, feature and variant panels, panel layout, highlighting, styling, and large-dataset usage.
+- Extended the pkgdown Visualization section from gene models and signal tracks to the complete gene-model -> signal -> variant -> integrated-browser documentation sequence.
+- Kept all staged `docs/*.qmd` sources unchanged for subsequent haplotype, phenotype, LD, refinement, variant-effect, export, and end-to-end workflow migration.
+
 # GeneTrackR 0.6.4
 
 - Added a dedicated pkgdown gene-model visualization article covering gene, transcript, and regional structural views, genomic versus spliced transcript coordinates, transcript collapse, strand-direction arrows, labels, highlights, and explicit feature colors.
