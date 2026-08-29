@@ -1,14 +1,3 @@
----
-title: "Complete candidate-locus workflow"
-description: "Run one end-to-end GeneTrackR analysis from annotation, signal, feature, VCF, and phenotype inputs through browser inspection, haplotypes, association, LD, refinement, variant prioritization, and reproducible export."
-author: "Rensc"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{Complete candidate-locus workflow}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
----
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,

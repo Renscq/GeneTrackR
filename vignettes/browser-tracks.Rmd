@@ -1,14 +1,3 @@
----
-title: "Integrated browser tracks"
-description: "Combine gene models, genomic signals, interval features, and VCF-derived variants in one shared genomic coordinate view."
-author: "Rensc"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{Integrated browser tracks}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
----
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,

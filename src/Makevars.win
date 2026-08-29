@@ -1,3 +1,0 @@
-PKG_CPPFLAGS = -DNOCURL -I.
-PKG_LIBS = -lz -lm
-CXX_STD = CXX17

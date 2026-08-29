@@ -68,9 +68,6 @@ jobs:
           )
         shell: Rscript {0}
 
-      # Avoid calling configure-pages for repositories where Pages has never
-      # been initialized. The action itself emits an Error annotation on a 404
-      # even when continue-on-error is set, so probe the REST endpoint first.
       - name: Detect GitHub Pages
         id: pages-probe
         shell: bash
@@ -78,7 +75,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-
           response_file="$(mktemp)"
           http_code="$(
             curl --silent --show-error \
@@ -89,14 +85,9 @@ jobs:
               --header "X-GitHub-Api-Version: 2022-11-28" \
               "https://api.github.com/repos/${GITHUB_REPOSITORY}/pages"
           )"
-
           case "$http_code" in
-            200)
-              echo "ready=true" >> "$GITHUB_OUTPUT"
-              ;;
-            404)
-              echo "ready=false" >> "$GITHUB_OUTPUT"
-              ;;
+            200) echo "ready=true" >> "$GITHUB_OUTPUT" ;;
+            404) echo "ready=false" >> "$GITHUB_OUTPUT" ;;
             *)
               echo "Unexpected GitHub Pages API response: HTTP ${http_code}" >&2
               cat "$response_file" >&2

@@ -1,14 +1,3 @@
----
-title: "Phenotype association workflow"
-description: "Import and QC phenotype tables, verify sample alignment, test haplotype or single-variant phenotype associations, and retain figures together with statistical results."
-author: "Rensc"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{Phenotype association workflow}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
----
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,

@@ -1,14 +1,3 @@
----
-title: "Gene model visualization"
-description: "Visualize genes, transcripts, and genomic regions with explicit coordinate, collapse, strand-direction, labeling, highlighting, and styling controls."
-author: "Rensc"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{Gene model visualization}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
----
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,

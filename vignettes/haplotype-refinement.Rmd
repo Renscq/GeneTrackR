@@ -1,14 +1,3 @@
----
-title: "Phenotype-guided haplotype refinement"
-description: "Group existing haplotypes using phenotype similarity while retaining pairwise evidence, original-to-refined mappings, grouped variant structure, and refined phenotype statistics."
-author: "Rensc"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{Phenotype-guided haplotype refinement}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
----
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,

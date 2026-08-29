@@ -1,14 +1,3 @@
----
-title: "Annotation files and feature workflows"
-description: "Read, validate, query, convert, merge, write, and visualize GenePred, GTF, GFF3, and BED annotations with GeneTrackR."
-author: "Rensc"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{Annotation files and feature workflows}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
----
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,

@@ -1,14 +1,3 @@
----
-title: "Exporting GeneTrackR results reproducibly"
-description: "Export genomic tracks, publication figures, analysis tables, Excel workbooks, complete GeneTrackR objects, and provenance without losing the structure of returned results."
-author: "Rensc"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{Exporting GeneTrackR results reproducibly}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
----
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,

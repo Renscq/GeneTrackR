@@ -1,14 +1,3 @@
----
-title: "Genomic signal tracks"
-description: "Read, query, transform, write, and visualize strand-aware RNA-seq and Ribo-seq signals with BwgTrack objects."
-author: "Rensc"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{Genomic signal tracks}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
----
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,

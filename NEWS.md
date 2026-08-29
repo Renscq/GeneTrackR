@@ -1,3 +1,69 @@
+# GeneTrackR 0.7.7
+
+- Added full signal-subsystem regression coverage for lazy-versus-memory BigWig retrieval, chromosome-edge intervals, strand semantics, normalization parity, and cross-format round trips.
+- Fixed the pure-R package boundary regression test so data.table key attributes are not mistaken for signal-value differences, while keeping compiled-helper absence as a hard requirement.
+- Improved the compiled-helper failure diagnostic to identify stale namespace bindings and remind developers to remove `R/bw_cpp_backend.R` and restart R before testing.
+- Prevented `summary_bwg()` and `bin_bwg()` from mutating caller-owned data.tables through data.table reference semantics.
+- Fixed `merge_bwg(sample_conflict = "keep_first")` so duplicate sample IDs retain records and sequence metadata only from the first source, including lazy objects without in-memory signal data.
+- Retained the pure-R bedGraph, WIG, and BigWig I/O architecture, schema-v2 `BwgTrack` contract, and public signal APIs unchanged.
+
+# GeneTrackR 0.7.6
+
+- Removed the compiled libBigWig/Rcpp compatibility backend after native-R BigWig reading, querying, and writing had been migrated and unified in 0.7.2-0.7.5.
+- Removed `R/bw_cpp_backend.R` and the complete `src/` tree, including libBigWig C sources, the Rcpp bridge, platform Makevars files, and compiled build artifacts.
+- Removed `Rcpp` from `Imports` and `LinkingTo`, removed the generated Rcpp import and GeneTrackR `useDynLib()` registration, and changed package metadata to `NeedsCompilation: no`.
+- Replaced the obsolete compiled-reader parity test with native low-level-versus-adapter parity and added package-level regression checks that compiled BigWig helpers are absent from the namespace.
+- Updated the BigWig writer architecture test to follow the 0.7.5 dispatcher design (`write_bwg()` -> `write_signal_file_memory()` -> `write_bigwig_native()`) instead of requiring a direct writer call from `write_bwg()`.
+- Retained the existing public signal APIs, schema-v2 `BwgTrack` contract, 1-based closed coordinates, tabix bedGraph behavior, and native-R BigWig round-trip behavior.
+
+# GeneTrackR 0.7.5
+
+- Added a unified native-R signal I/O layer for bedGraph, WIG, and BigWig formats while preserving the existing public `read_bwg()`, `retrieve_bwg()`, and `write_bwg()` APIs.
+- Centralized in-memory format dispatch through `read_signal_file_memory()` and `write_signal_file_memory()`, and centralized lazy per-sample retrieval through `query_signal_file_region()`.
+- Replaced duplicate bedGraph parsing in full-file and tabix query paths with one canonical 0-based half-open to 1-based closed parser.
+- Reworked WIG text reading around the stabilized bwTools parser pattern, including fixedStep, variableStep, bedGraph-style records, comments, and gzip/bgzip text connections.
+- Centralized signal-region clipping and sequence-metadata construction so all supported formats follow the same canonical six-column signal schema and schema-v2 `seqinfo` contract.
+- Retained compatibility wrappers for existing internal text I/O helper names while removing their duplicate implementations from `read_bwg.R` and `write_bwg.R`.
+- Added regression coverage for unified dispatch, compressed text inputs, interval clipping, and bedGraph/WIG round trips without coordinate drift.
+- Kept Rcpp and `src/` temporarily for compiled-backend parity code only; their final removal remains isolated to the next migration stage.
+
+# GeneTrackR 0.7.4
+
+- Fixed schema-v2 `seqinfo` chromosome subsetting in `retrieve_bwg(..., as = "BwgTrack")` and `slice_bwg(..., as = "BwgTrack")`; the previous helper allowed the `data.table` `chrom` column to mask the function argument and therefore retained unrelated chromosomes.
+- Added the native-R BigWig writer adapted from the stabilized bwTools 0.8.10 implementation, including binary packing, chromosome B+ tree construction, R-tree indexing, compressed data blocks, total summaries, and zoom-level generation.
+- Switched `write_bwg(..., format = "bigwig")` from the bundled libBigWig/Rcpp writer to the native R writer without changing the public `write_bwg()` argument contract.
+- Kept `chrom_sizes` mandatory for GeneTrackR BigWig export in this release to avoid mixing backend migration with API changes.
+- Added native writer regression coverage for round-trip signal values, multiple samples, overlap and chromosome-boundary validation, and multi-level chromosome indexes.
+- Retained the compiled backend only for temporary parity tests and later cleanup; public BigWig reading and writing now both use native R implementations.
+
+# GeneTrackR 0.7.3
+
+- Switched the public BigWig read path from the bundled libBigWig/Rcpp reader to the native R reader introduced in 0.7.2.
+- Added internal `query_bigwig_native()` and `read_bigwig_whole_native()` adapters that return the standard GeneTrackR signal schema.
+- Updated `read_bwg()` memory loading and sequence metadata collection, lazy `retrieve_bwg()` queries, and legacy `seqinfo_bwg()` fallback to use the native R backend.
+- Updated `BwgTrack$meta$backend` to `GeneTrackR-native-R` for newly read signal objects.
+- Retained the compiled reader temporarily only for regression comparison; BigWig writing remains on the compiled backend until the writer migration.
+- Added regression coverage that verifies public BigWig read functions no longer reference the compiled reader while preserving interval values, clipping, and schema behavior.
+
+# GeneTrackR 0.7.2
+
+- Added the first native-R BigWig reader layer adapted from the stabilized bwTools 0.8.10 implementation.
+- Added internal binary decoding for BigWig headers, chromosome B+ trees, R-tree indexes, compressed data blocks, and 32-bit floating-point signal values.
+- Added internal `bigwig_metadata_native()`, `bigwig_seqinfo_native()`, and `bigwig_query_native()` functions using 1-based closed coordinates without Rcpp or `.Call()`.
+- Added metadata caching keyed by normalized path, file size, and modification time while keeping the native reader local-file only.
+- Added a deterministic BigWig fixture and regression tests for chromosome metadata, interval decoding, clipping, empty ranges, invalid files, and parity with the existing compiled backend.
+- Kept `read_bwg()` and `retrieve_bwg()` on the existing libBigWig/Rcpp backend in this release so the new reader can be verified before the public backend switch in 0.7.3.
+
+# GeneTrackR 0.7.1
+
+- Established the schema-v2 `BwgTrack` object foundation for the 0.7.x pure-R signal subsystem migration.
+- Added a stable `seqinfo` slot alongside `samples`, `data`, `meta`, and `validation`; chromosome lengths can be known or `NA` when the source format does not encode sequence lengths.
+- Standardized `BwgTrack` metadata to `coordinate = "1-based closed"` and `schema_version = "2"` while preserving the existing public constructor argument order.
+- Added sequence metadata collection for bigWig inputs and in-memory bedGraph/WIG inputs, and preserved relevant `seqinfo` through BwgTrack retrieval, slicing, and merging.
+- Updated `seqinfo_bwg()` to use stored schema-v2 sequence metadata first while retaining the existing libBigWig fallback for legacy objects.
+- Added regression tests for schema construction, sequence metadata validation, text-track sequence metadata, subset propagation, and merge propagation.
+- Kept the existing libBigWig/Rcpp backend unchanged in this release; native BigWig replacement begins in the following 0.7.x development stages.
+
 # GeneTrackR 0.6.17
 
 - Optimized pkgdown article figure layouts by increasing the graphics canvas according to plot complexity while keeping rendered figures at full article width.

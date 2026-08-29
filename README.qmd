@@ -1,37 +1,32 @@
----
-title: "GeneTrackR"
-format: gfm
----
-
 <!-- README.md is assembled from README.qmd and docs/*.qmd with tools/render_readme.R. Edit the QMD sources, not README.md. -->
 
-{{< include docs/00-overview.qmd >}}
 
-{{< include docs/01-installation.qmd >}}
 
-{{< include docs/02-example-data.qmd >}}
 
-{{< include docs/03-annotation.qmd >}}
 
-{{< include docs/04-gene-model.qmd >}}
 
-{{< include docs/05-signal.qmd >}}
 
-{{< include docs/06-variant.qmd >}}
 
-{{< include docs/07-browser-tracks.qmd >}}
 
-{{< include docs/08-haplotype.qmd >}}
 
-{{< include docs/09-phenotype.qmd >}}
 
-{{< include docs/10-ld.qmd >}}
 
-{{< include docs/11-haplotype-refinement.qmd >}}
 
-{{< include docs/12-variant-effect.qmd >}}
 
-{{< include docs/13-export.qmd >}}
 
-{{< include docs/14-workflow.qmd >}}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

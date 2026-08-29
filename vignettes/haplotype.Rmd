@@ -1,14 +1,3 @@
----
-title: "Haplotype construction and visualization"
-description: "Construct HapVariant objects from gene, transcript, or genomic-region VCF genotypes, control genotype and missing-data representations, and visualize haplotype-defining variants."
-author: "Rensc"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{Haplotype construction and visualization}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
----
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,

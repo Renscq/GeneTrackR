@@ -27,15 +27,7 @@ test_that("compiled BigWig compatibility helpers are absent from the namespace",
     envir = ns,
     inherits = FALSE
   )]
-  expect_length(
-    present,
-    0L,
-    info = paste0(
-      "Compiled compatibility helpers remain loaded: ",
-      paste(present, collapse = ", "),
-      ". Remove R/bw_cpp_backend.R from the package source and restart R before testing."
-    )
-  )
+  expect_identical(present, character())
 })
 
 

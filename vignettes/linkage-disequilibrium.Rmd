@@ -1,14 +1,3 @@
----
-title: "Linkage disequilibrium analysis and visualization"
-description: "Compute pairwise LD from genotype-rich VCF data, inspect LDTrack numerical results, draw triangular LD maps with genomic context, and hand selected intervals to regional haplotype analysis."
-author: "Rensc"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{Linkage disequilibrium analysis and visualization}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
----
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,

@@ -1,14 +1,3 @@
----
-title: "Variant tracks"
-description: "Read, validate, query, filter, write, and visualize VCF-derived variants with VariantTrack objects."
-author: "Rensc"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{Variant tracks}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
----
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,

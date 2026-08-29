@@ -1,14 +1,3 @@
----
-title: "GeneTrackR deterministic example data"
-description: "Understand the bundled annotation, signal, variant, haplotype, LD, and phenotype data used throughout GeneTrackR documentation and tests."
-author: "Rensc"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{GeneTrackR deterministic example data}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
----
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,

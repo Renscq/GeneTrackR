@@ -1,14 +1,3 @@
----
-title: "GeneTrackR core workflow"
-description: "A compact deterministic workflow connecting GeneTrackR annotation, variants, haplotypes, phenotypes, LD, refinement, and variant-effect analysis."
-author: "Rensc"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{GeneTrackR core workflow}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
----
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
