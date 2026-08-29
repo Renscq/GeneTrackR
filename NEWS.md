@@ -1,3 +1,10 @@
+# GeneTrackR 0.6.9
+
+- Added a dedicated GitHub Actions documentation-QA workflow that rebuilds the pkgdown site in a clean R process, verifies roxygen-generated documentation is synchronized, checks internal site links, inventories generated figure dimensions, and runs `R CMD check --as-cran`.
+- Added a Bioconductor release preflight for main-branch and manually triggered runs using the official `bioconductor/bioconductor_docker:RELEASE_3_23` image and `BiocCheck`; package-specific documentation/coding errors fail CI, while submission-only `biocViews` checks are deferred until the formal Bioconductor submission phase.
+- Modernized pkgdown deployment to the native GitHub Pages artifact workflow while retaining `pkgdown-site/` as the generated-site directory.
+- Kept the 0.6.8 article, Reference, API, and analysis implementations unchanged; this release is limited to documentation QA and CI integration.
+
 # GeneTrackR 0.6.8
 
 - Added a dedicated export and reproducibility article covering standard genomic track writers, PDF/PNG figure export, tabular result preservation, LD matrix export, optional `openxlsx` workbooks, complete RDS objects, manifests, and `sessionInfo()` provenance.

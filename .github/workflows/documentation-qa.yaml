@@ -1,0 +1,425 @@
+# Validate GeneTrackR documentation, package checks, and Bioconductor readiness.
+
+name: Documentation QA
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: documentation-qa-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  documentation-qa:
+    name: pkgdown and R CMD check
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: yes
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Pandoc
+        uses: r-lib/actions/setup-pandoc@v2
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - name: Install QA dependencies
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: |
+            any::devtools
+            any::pkgdown
+            any::rcmdcheck
+            any::urlchecker
+            any::openxlsx
+            local::.
+          needs: website
+
+      - name: Verify generated R documentation is synchronized
+        run: |
+          devtools::document()
+        shell: Rscript {0}
+
+      - name: Check roxygen drift
+        run: |
+          git diff --exit-code -- DESCRIPTION NAMESPACE man
+
+      - name: Check pkgdown configuration
+        run: |
+          pkgdown::check_pkgdown()
+          pkgdown::pkgdown_sitrep()
+        shell: Rscript {0}
+
+      - name: Build pkgdown site in a clean process
+        run: |
+          set -o pipefail
+          Rscript -e 'pkgdown::build_site(new_process = TRUE, install = TRUE, preview = FALSE, quiet = FALSE)' \
+            2>&1 | tee "${RUNNER_TEMP}/pkgdown-build.log"
+
+      - name: Check internal website links and assets
+        run: |
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          from urllib.parse import unquote, urlsplit
+          import os
+          import re
+
+          site = Path("pkgdown-site").resolve()
+          if not site.exists():
+              raise SystemExit("pkgdown-site was not created")
+
+          site_prefix = "/GeneTrackR/"
+          broken = []
+          id_cache = {}
+
+          class LinkParser(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.refs = []
+
+              def handle_starttag(self, tag, attrs):
+                  attrs = dict(attrs)
+                  for attr in ("href", "src"):
+                      value = attrs.get(attr)
+                      if value:
+                          self.refs.append((attr, value))
+
+          def resolve_target(page, raw_path):
+              path = unquote(raw_path)
+              if not path:
+                  return page
+              if path.startswith(site_prefix):
+                  return site / path[len(site_prefix):]
+              if path.startswith("/"):
+                  return None
+              return page.parent / path
+
+          def normalize_target(target):
+              target = target.resolve()
+              try:
+                  target.relative_to(site)
+              except ValueError:
+                  return None
+              if target.is_dir():
+                  return target / "index.html"
+              if target.exists():
+                  return target
+              if target.suffix == "":
+                  html = target.with_suffix(".html")
+                  if html.exists():
+                      return html
+                  index = target / "index.html"
+                  if index.exists():
+                      return index
+              return target
+
+          def page_ids(path):
+              if path not in id_cache:
+                  text = path.read_text(encoding="utf-8", errors="ignore")
+                  id_cache[path] = set(
+                      re.findall(r'\b(?:id|name)=["\']([^"\']+)["\']', text)
+                  )
+              return id_cache[path]
+
+          for page in site.rglob("*.html"):
+              parser = LinkParser()
+              parser.feed(page.read_text(encoding="utf-8", errors="ignore"))
+
+              for attr, ref in parser.refs:
+                  if ref.startswith((
+                      "http://", "https://", "mailto:", "tel:", "javascript:",
+                      "data:", "blob:"
+                  )):
+                      continue
+
+                  parts = urlsplit(ref)
+                  target = resolve_target(page, parts.path)
+                  if target is None:
+                      continue
+                  target = normalize_target(target)
+
+                  if target is None or not target.exists():
+                      broken.append((page.relative_to(site), attr, ref, "missing target"))
+                      continue
+
+                  if (
+                      attr == "href"
+                      and parts.fragment
+                      and target.suffix.lower() == ".html"
+                  ):
+                      fragment = unquote(parts.fragment)
+                      if fragment not in page_ids(target):
+                          broken.append((
+                              page.relative_to(site), attr, ref, "missing fragment"
+                          ))
+
+          report = Path(os.environ["RUNNER_TEMP"]) / "internal-link-check.txt"
+          with report.open("w", encoding="utf-8") as handle:
+              if broken:
+                  for page, attr, ref, reason in broken:
+                      handle.write("{}\t{}\t{}\t{}\n".format(page, attr, ref, reason))
+              else:
+                  handle.write("No broken internal links or local assets detected.\n")
+
+          if broken:
+              print(report.read_text(encoding="utf-8"))
+              raise SystemExit("Detected {} broken internal links/assets".format(len(broken)))
+
+          print("Internal link and local asset check: PASS")
+          PY
+
+      - name: Inventory generated figure dimensions
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          import re
+          import struct
+          import xml.etree.ElementTree as ET
+
+          site = Path("pkgdown-site")
+          report = Path(os.environ["RUNNER_TEMP"]) / "figure-inventory.tsv"
+
+          def png_size(path):
+              with path.open("rb") as handle:
+                  header = handle.read(24)
+              if header[:8] != b"\x89PNG\r\n\x1a\n":
+                  return None, None
+              return struct.unpack(">II", header[16:24])
+
+          def jpeg_size(path):
+              with path.open("rb") as handle:
+                  if handle.read(2) != b"\xff\xd8":
+                      return None, None
+                  while True:
+                      marker_start = handle.read(1)
+                      if not marker_start:
+                          return None, None
+                      if marker_start != b"\xff":
+                          continue
+                      marker = handle.read(1)
+                      while marker == b"\xff":
+                          marker = handle.read(1)
+                      if marker in (b"\xd8", b"\xd9"):
+                          continue
+                      length_raw = handle.read(2)
+                      if len(length_raw) != 2:
+                          return None, None
+                      length = struct.unpack(">H", length_raw)[0]
+                      if marker[0] in {
+                          0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7,
+                          0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF
+                      }:
+                          data = handle.read(5)
+                          height, width = struct.unpack(">HH", data[1:5])
+                          return width, height
+                      handle.seek(length - 2, 1)
+
+          def svg_size(path):
+              root = ET.parse(path).getroot()
+              width = root.attrib.get("width")
+              height = root.attrib.get("height")
+              viewbox = root.attrib.get("viewBox")
+              if viewbox:
+                  parts = re.split(r"[ ,]+", viewbox.strip())
+                  if len(parts) == 4:
+                      return parts[2], parts[3]
+              return width, height
+
+          images = sorted(
+              path for path in site.rglob("*")
+              if path.suffix.lower() in {".png", ".jpg", ".jpeg", ".svg"}
+          )
+
+          with report.open("w", encoding="utf-8") as handle:
+              handle.write("path\ttype\twidth\theight\tbytes\n")
+              for path in images:
+                  suffix = path.suffix.lower()
+                  width = height = None
+                  try:
+                      if suffix == ".png":
+                          width, height = png_size(path)
+                      elif suffix in {".jpg", ".jpeg"}:
+                          width, height = jpeg_size(path)
+                      elif suffix == ".svg":
+                          width, height = svg_size(path)
+                  except Exception:
+                      pass
+                  handle.write(
+                      "{}\t{}\t{}\t{}\t{}\n".format(
+                          path.relative_to(site), suffix.lstrip("."),
+                          width if width is not None else "NA",
+                          height if height is not None else "NA",
+                          path.stat().st_size,
+                      )
+                  )
+
+          print("Generated figure files: {}".format(len(images)))
+          print("Figure inventory: {}".format(report))
+          PY
+
+      - name: Check package URLs
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          Rscript -e 'urlchecker::url_check()' \
+            2>&1 | tee "${RUNNER_TEMP}/url-check.log"
+
+      - name: Run R CMD check
+        uses: r-lib/actions/check-r-package@v2
+        with:
+          args: 'c("--no-manual", "--as-cran")'
+          build_args: 'c("--no-manual", "--compact-vignettes=gs+qpdf")'
+          error-on: '"warning"'
+          upload-results: always
+          artifact-name: GeneTrackR-R-CMD-check
+
+      - name: Write QA summary
+        if: always()
+        run: |
+          {
+            echo "## GeneTrackR documentation QA"
+            echo
+            echo "- R: $(R --version | head -n 1)"
+            echo "- Package version: $(awk '/^Version:/ {print $2}' DESCRIPTION)"
+            echo "- pkgdown destination: pkgdown-site/"
+            echo "- Internal links: see internal-link-check.txt"
+            echo "- Figure dimensions: see figure-inventory.tsv"
+            echo "- External URL checks are advisory because remote endpoints can be transient."
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload documentation QA artifacts
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: GeneTrackR-documentation-QA
+          if-no-files-found: ignore
+          path: |
+            pkgdown-site/
+            ${{ runner.temp }}/pkgdown-build.log
+            ${{ runner.temp }}/internal-link-check.txt
+            ${{ runner.temp }}/figure-inventory.tsv
+            ${{ runner.temp }}/url-check.log
+
+  bioccheck:
+    name: Bioconductor 3.23 preflight
+    if: >-
+      ${{ github.event_name == 'workflow_dispatch' ||
+          (github.event_name == 'push' &&
+           (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')) }}
+    needs: documentation-qa
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Run checks in official Bioconductor release container
+        run: |
+          set -euo pipefail
+
+          docker pull bioconductor/bioconductor_docker:RELEASE_3_23
+
+          docker run --rm \
+            --user root \
+            -e CI=true \
+            -v "${GITHUB_WORKSPACE}:/workspace" \
+            -v "${RUNNER_TEMP}:/qa" \
+            -w /workspace \
+            bioconductor/bioconductor_docker:RELEASE_3_23 \
+            bash -s <<'BASH'
+          set -euo pipefail
+
+          trap 'for d in *.Rcheck; do if [ -d "$d" ]; then cp -a "$d" /qa/; fi; done' EXIT
+
+          Rscript - <<'RSCRIPT'
+          bioc_version <- as.character(BiocManager::version())
+          r_version <- paste(R.version$major, R.version$minor, sep = ".")
+          cat("R version:", r_version, "\n")
+          cat("Bioconductor version:", bioc_version, "\n")
+          if (bioc_version != "3.23") {
+              stop("Expected Bioconductor 3.23, found ", bioc_version)
+          }
+
+          options(repos = BiocManager::repositories())
+          install.packages("remotes")
+          BiocManager::install(
+              c("BiocCheck", "BiocStyle"),
+              ask = FALSE,
+              update = FALSE
+          )
+          remotes::install_deps(
+              ".",
+              dependencies = c("Depends", "Imports", "LinkingTo", "Suggests"),
+              upgrade = "never"
+          )
+          RSCRIPT
+
+          R CMD build . 2>&1 | tee /qa/R-CMD-build-bioc.log
+
+          package_tarball="$(ls -1t GeneTrackR_*.tar.gz | head -n 1)"
+          echo "Package tarball: ${package_tarball}"
+
+          R CMD check --no-manual --as-cran "${package_tarball}" \
+            2>&1 | tee /qa/R-CMD-check-bioc.log
+
+          Rscript - "${package_tarball}" 2>&1 <<'RSCRIPT' | tee /qa/BiocCheck.log
+          args <- commandArgs(trailingOnly = TRUE)
+          result <- BiocCheck::BiocCheck(
+              args[[1]],
+              `build-output-file` = "/qa/R-CMD-build-bioc.log",
+              `no-check-bioc-views` = TRUE,
+              `quit-with-status` = FALSE
+          )
+
+          error_n <- as.integer(result$error)
+          warning_n <- as.integer(result$warning)
+          note_n <- as.integer(result$note)
+
+          cat("BiocCheck ERROR count:", error_n, "\n")
+          cat("BiocCheck WARNING count:", warning_n, "\n")
+          cat("BiocCheck NOTE count:", note_n, "\n")
+
+          if (error_n > 0L) {
+              quit(status = 1L)
+          }
+          RSCRIPT
+          BASH
+
+      - name: Write Bioconductor QA summary
+        if: always()
+        run: |
+          {
+            echo "## Bioconductor 3.23 preflight"
+            echo
+            echo "- Container: bioconductor/bioconductor_docker:RELEASE_3_23"
+            echo "- R CMD check: --no-manual --as-cran"
+            echo "- BiocCheck: ERROR counts are CI-failing; WARNING/NOTE counts remain visible for submission hardening"
+            echo "- Detailed logs are attached as workflow artifacts."
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload Bioconductor QA artifacts
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: GeneTrackR-Bioconductor-QA
+          if-no-files-found: ignore
+          path: |
+            ${{ runner.temp }}/R-CMD-build-bioc.log
+            ${{ runner.temp }}/R-CMD-check-bioc.log
+            ${{ runner.temp }}/BiocCheck.log
+            ${{ runner.temp }}/*.Rcheck/
