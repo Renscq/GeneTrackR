@@ -34,9 +34,10 @@ a data.frame/data.table with two columns: chromosome and size.}
 Invisibly returns a data.table containing sample IDs and output files.
 }
 \description{
-Writes a \code{BwgTrack} object to bedGraph, wig, or bigWig files. bedGraph and
-wig output are implemented directly in R. bigWig output is written directly
-with the bundled third-party libBigWig library and requires chromosome sizes.
+Writes a \code{BwgTrack} object to bedGraph, wig, or bigWig files. All three
+formats are written directly in R. bigWig output uses GeneTrackR's native R
+binary writer and requires chromosome sizes; no external conversion program
+or compiled BigWig backend is used by \code{write_bwg()}.
 
 For in-memory \code{BwgTrack} objects, signal records are written from \code{object$data}.
 For lazy objects, direct conversion is not possible because signal records are

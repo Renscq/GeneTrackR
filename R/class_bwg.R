@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-08-29
-# Version: dev002
+# Date: 2026-08-30
+# Version: dev003
 # Function: BwgTrack S3 class constructors, schema normalization, and print methods
 # Input: Signal sample metadata, optional in-memory signal table, and sequence metadata
 # Output: Schema-v2 BwgTrack object
@@ -126,8 +126,8 @@ subset_bwg_seqinfo <- function(object, sample_ids = NULL, chrom = NULL) {
     x <- x[x[["sample_id"]] %in% sample_ids]
   }
   if (!is.null(chrom)) {
-    chrom <- as.character(chrom)
-    x <- x[x[["chrom"]] %in% chrom]
+    chrom_value <- as.character(chrom)
+    x <- x[x[["chrom"]] %in% chrom_value]
   }
   x[]
 }

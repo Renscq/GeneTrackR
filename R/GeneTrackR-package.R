@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-05-27
-# Version: dev001
+# Date: 2026-08-30
+# Version: dev002
 # Function: Package-level documentation for GeneTrackR
 # Input: GenePred annotations and genomic signal tracks
 # Output: Gene model plots, signal plots, and combined genome tracks
@@ -37,5 +37,6 @@ utils::globalVariables(c(
   "center_y", "region_x", "genotype_raw", "dosage", "xmin", "xmax", "level", "parent_id",
   "source", "gene_biotype", "transcript_biotype", "transcript_type", "rank_pos",
   "exon_row_key", "strand_key", "phase_int", "tabix_empty_fallback", "tabix_backend",
-  "use_tabix", "has_tabix"
+  "use_tabix", "has_tabix", "tid", "start0", "valid_count", "min_value", "max_value",
+  "sum_data", "sum_squared", "size", "chrom_order__", "chrom_size__", "previous_end__"
 ))
