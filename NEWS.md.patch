@@ -1,15 +1,15 @@
 --- a/NEWS.md
 +++ b/NEWS.md
 @@ -1,3 +1,12 @@
-+# GeneTrackR 0.7.6
++# GeneTrackR 0.7.7
 +
-+- Removed the compiled libBigWig/Rcpp compatibility backend after native-R BigWig reading, querying, and writing had been migrated and unified in 0.7.2-0.7.5.
-+- Removed `R/bw_cpp_backend.R` and the complete `src/` tree, including libBigWig C sources, the Rcpp bridge, platform Makevars files, and compiled build artifacts.
-+- Removed `Rcpp` from `Imports` and `LinkingTo`, removed the generated Rcpp import and GeneTrackR `useDynLib()` registration, and changed package metadata to `NeedsCompilation: no`.
-+- Replaced the obsolete compiled-reader parity test with native low-level-versus-adapter parity and added package-level regression checks that compiled BigWig helpers are absent from the namespace.
-+- Updated the BigWig writer architecture test to follow the 0.7.5 dispatcher design (`write_bwg()` -> `write_signal_file_memory()` -> `write_bigwig_native()`) instead of requiring a direct writer call from `write_bwg()`.
-+- Retained the existing public signal APIs, schema-v2 `BwgTrack` contract, 1-based closed coordinates, tabix bedGraph behavior, and native-R BigWig round-trip behavior.
++- Added full signal-subsystem regression coverage for lazy-versus-memory BigWig retrieval, chromosome-edge intervals, strand semantics, normalization parity, and cross-format round trips.
++- Fixed the pure-R package boundary regression test so data.table key attributes are not mistaken for signal-value differences, while keeping compiled-helper absence as a hard requirement.
++- Improved the compiled-helper failure diagnostic to identify stale namespace bindings and remind developers to remove `R/bw_cpp_backend.R` and restart R before testing.
++- Prevented `summary_bwg()` and `bin_bwg()` from mutating caller-owned data.tables through data.table reference semantics.
++- Fixed `merge_bwg(sample_conflict = "keep_first")` so duplicate sample IDs retain records and sequence metadata only from the first source, including lazy objects without in-memory signal data.
++- Retained the pure-R bedGraph, WIG, and BigWig I/O architecture, schema-v2 `BwgTrack` contract, and public signal APIs unchanged.
 +
- # GeneTrackR 0.7.5
+ # GeneTrackR 0.7.6
  
- - Added a unified native-R signal I/O layer for bedGraph, WIG, and BigWig formats while preserving the existing public `read_bwg()`, `retrieve_bwg()`, and `write_bwg()` APIs.
+ - Removed the compiled libBigWig/Rcpp compatibility backend after native-R BigWig reading, querying, and writing had been migrated and unified in 0.7.2-0.7.5.

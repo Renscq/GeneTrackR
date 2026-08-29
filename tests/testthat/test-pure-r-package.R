@@ -20,13 +20,22 @@ test_that("compiled BigWig compatibility helpers are absent from the namespace",
     "write_bigwig_libbigwig"
   )
 
-  expect_false(any(vapply(
+  present <- compiled_helpers[vapply(
     compiled_helpers,
     exists,
     logical(1L),
     envir = ns,
     inherits = FALSE
-  )))
+  )]
+  expect_length(
+    present,
+    0L,
+    info = paste0(
+      "Compiled compatibility helpers remain loaded: ",
+      paste(present, collapse = ", "),
+      ". Remove R/bw_cpp_backend.R from the package source and restart R before testing."
+    )
+  )
 })
 
 
@@ -73,8 +82,8 @@ test_that("pure R BigWig read and write remain functional without compiled helpe
   )
 
   expect_equal(
-    observed[, .(sample_id, chrom, start, end)],
-    signal[, .(sample_id, chrom, start, end)]
+    as.data.frame(observed[, .(sample_id, chrom, start, end)]),
+    as.data.frame(signal[, .(sample_id, chrom, start, end)])
   )
   expect_equal(observed$value, signal$value, tolerance = 1e-4)
 })

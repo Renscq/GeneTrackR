@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-08-30
-# Version: dev005
+# Version: dev006
 # Function: Query, normalize, summarize, slice, merge, and write signal tracks
 # Input: BwgTrack objects and genomic regions
 # Output: Signal tables, subset objects, and exported signal files
@@ -598,7 +598,7 @@ summary_bwg <- function(object, chrom = NULL, start = NULL, end = NULL, samples 
     if (is.null(object$data)) {
       return(data.table::copy(object$samples))
     }
-    dt <- object$data
+    dt <- data.table::copy(object$data)
   } else {
     dt <- .query_bwg_internal(object, chrom, start, end, samples = samples)
   }
@@ -760,6 +760,21 @@ merge_bwg <- function(..., sample_conflict = c("error", "rename", "sum", "mean",
     seqinfo <- NULL
   }
 
+  if (length(dup) > 0L && sample_conflict == "keep_first") {
+    keep_sources <- samples[, .(source_index = source_index[1L]), by = sample_id]
+    keep_key <- paste(keep_sources$sample_id, keep_sources$source_index, sep = "\r")
+    sample_key <- paste(samples$sample_id, samples$source_index, sep = "\r")
+    samples <- samples[sample_key %in% keep_key]
+    if (!is.null(data)) {
+      data_key <- paste(data$sample_id, data$source_index, sep = "\r")
+      data <- data[data_key %in% keep_key]
+    }
+    if (!is.null(seqinfo)) {
+      seqinfo_key <- paste(seqinfo$sample_id, seqinfo$source_index, sep = "\r")
+      seqinfo <- seqinfo[seqinfo_key %in% keep_key]
+    }
+  }
+
   if (!is.null(data) && length(dup) > 0L) {
     if (sample_conflict == "rename") {
       map <- samples[, .(source_index, old_sample_id = sub("^set[0-9]+_", "", sample_id), sample_id)]
@@ -771,10 +786,6 @@ merge_bwg <- function(..., sample_conflict = c("error", "rename", "sum", "mean",
       fun <- if (sample_conflict == "sum") sum else mean
       data <- data[, .(value = fun(value, na.rm = TRUE)), by = .(sample_id, chrom, start, end, strand)]
       samples <- samples[, .SD[1L], by = sample_id]
-    }
-    if (sample_conflict == "keep_first") {
-      samples <- samples[, .SD[1L], by = sample_id]
-      data <- data[sample_id %in% samples$sample_id]
     }
   }
 
@@ -846,7 +857,7 @@ merge_bwg <- function(..., sample_conflict = c("error", "rename", "sum", "mean",
 #' }
 #' @export
 bin_bwg <- function(data, bin_size = 50L) {
-  dt <- data.table::as.data.table(data)
+  dt <- data.table::copy(data.table::as.data.table(data))
   stop_if_not(all(c("sample_id", "chrom", "start", "end", "value") %in% names(dt)), "Input must be a signal table.")
   if (nrow(dt) == 0L) {
     out <- data.table::data.table(
