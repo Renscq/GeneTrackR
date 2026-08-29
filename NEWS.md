@@ -1,3 +1,9 @@
+# GeneTrackR 0.6.13
+
+* Synchronized the package-level Rd file with the roxygen2 8.1.0 output generated from `DESCRIPTION` URL and BugReports metadata.
+* Added the automatically generated Useful links `\seealso{}` section so the documentation QA roxygen drift check remains clean.
+* No R implementation, API, vignette, test, pkgdown workflow, or analysis behavior was changed.
+
 # GeneTrackR 0.6.12
 
 * Made the pkgdown GitHub Pages deployment tolerant of repositories where Pages has not yet been enabled: pkgdown site construction remains a hard check, while Pages configuration/deployment is skipped with a clear warning instead of failing the entire workflow.
