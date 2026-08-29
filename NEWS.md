@@ -1,3 +1,8 @@
+# GeneTrackR 0.6.11
+
+* Re-synchronized roxygen2 8.1.0 generated metadata, `NAMESPACE`, and package-level Rd documentation after the 0.6.10 GitHub commit omitted part of the generated-file update.
+* Retained the documentation QA roxygen drift guard and the explicit `roxygen2@8.1.0` CI pin.
+
 # GeneTrackR 0.6.10
 
 - Synchronized roxygen-generated package metadata, `NAMESPACE`, and package-level Rd documentation with roxygen2 8.1.0, matching the generator used by the documentation QA workflow.
