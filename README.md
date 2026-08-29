@@ -1,4 +1,5 @@
-<!-- README.md is generated from README.qmd and docs/*.qmd. Edit the QMD sources, not README.md. -->
+
+<!-- README.md is assembled from README.qmd and docs/*.qmd with tools/render_readme.R. Edit the QMD sources, not README.md. -->
 
 **GeneTrackR** is a lightweight R package for reading, querying, writing, and visualizing gene annotations, genomic signal tracks, variant tracks, haplotypes, and phenotype associations. It is designed for programmable IGV-like visualization in R while keeping direct access to the underlying annotation, coverage, variant, haplotype, and phenotype tables.
 
@@ -20,7 +21,7 @@
 
 GeneTrackR depends on CRAN and Bioconductor packages. Install the dependencies first, then install GeneTrackR from GitHub.
 
-```{r}
+```r
 ## CRAN dependencies
 install.packages(c(
   "devtools",
@@ -53,7 +54,7 @@ devtools::install_github(
 
 Load the package:
 
-```{r}
+```r
 library(GeneTrackR)
 ```
 
@@ -64,7 +65,7 @@ git clone https://github.com/Renscq/GeneTrackR.git
 cd GeneTrackR
 ```
 
-```{r}
+```r
 devtools::document()
 devtools::install()
 ```
@@ -73,7 +74,7 @@ devtools::install()
 
 GeneTrackR ships with one deterministic demo genome in `inst/extdata`. The dataset is compact but intentionally designed to exercise the major modules without external files.
 
-```{r}
+```r
 gp_file <- system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR")
 gtf_file <- system.file("extdata", "gtr_demo.gtf", package = "GeneTrackR")
 gff_file <- system.file("extdata", "gtr_demo.gff3", package = "GeneTrackR")
@@ -121,7 +122,7 @@ Coordinate conventions are handled at the file boundary:
 
 The built-in annotation files describe the same demo genome:
 
-```{r}
+```r
 gp_file <- system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR")
 gtf_file <- system.file("extdata", "gtr_demo.gtf", package = "GeneTrackR")
 gff_file <- system.file("extdata", "gtr_demo.gff3", package = "GeneTrackR")
@@ -136,7 +137,7 @@ GenePred stores one transcript per row with transcript/CDS boundaries and exon b
 
 The built-in file is GenePredExt:
 
-```{r}
+```r
 gp <- read_genepred(
   gp_file,
   format = "genePredExt",
@@ -152,7 +153,7 @@ head(gp$exons)
 
 Standard GenePred uses the same reader. Here a standard GenePred file is created from the demo object and read back:
 
-```{r}
+```r
 gp_standard_file <- file.path(tempdir(), "gtr_demo.genePred")
 
 write_feature(
@@ -174,7 +175,7 @@ gp_standard <- read_genepred(
 
 GenePred-compatible objects can be subset by gene, transcript, or genomic region:
 
-```{r}
+```r
 gp_gene_a <- retrieve_feature(
   gp,
   gene_id = "GeneA"
@@ -196,7 +197,7 @@ gp_region <- retrieve_feature(
 
 For a plain table instead of a sub-object:
 
-```{r}
+```r
 gp_gene_table <- retrieve_feature(
   gp,
   chrom = "chr1",
@@ -211,7 +212,7 @@ gp_gene_table <- retrieve_feature(
 
 Subsets from the same or different GenePred objects can be recombined with `merge_feature()`:
 
-```{r}
+```r
 gp_gene_b <- retrieve_feature(gp, gene_id = "GeneB")
 
 gp_merged <- merge_feature(
@@ -226,7 +227,7 @@ gp_merged <- merge_feature(
 
 A GenePred-compatible object can be written as either GenePred or GenePredExt:
 
-```{r}
+```r
 write_feature(
   gp_gene_a,
   file.path(tempdir(), "GeneA.genePred"),
@@ -250,7 +251,7 @@ GTF stores gene-model records in a 9-column table and uses the final attribute c
 
 #### Read
 
-```{r}
+```r
 gtf <- read_gtf(
   gtf_file,
   verbose = FALSE,
@@ -264,7 +265,7 @@ head(gtf$transcripts)
 
 Selected feature types can be loaded when the full annotation is not required:
 
-```{r}
+```r
 gtf_core <- read_gtf(
   gtf_file,
   feature_types = c("gene", "transcript", "exon", "CDS"),
@@ -275,7 +276,7 @@ gtf_core <- read_gtf(
 
 #### Subset
 
-```{r}
+```r
 gtf_gene_a <- retrieve_feature(gtf, gene_id = "GeneA")
 
 gtf_gene_a_exons <- retrieve_feature(
@@ -296,7 +297,7 @@ gtf_region <- retrieve_feature(
 
 #### Merge
 
-```{r}
+```r
 gtf_gene_b <- retrieve_feature(gtf, gene_id = "GeneB")
 
 gtf_merged <- merge_feature(
@@ -308,7 +309,7 @@ gtf_merged <- merge_feature(
 
 #### Write
 
-```{r}
+```r
 write_feature(
   gtf_gene_a,
   file.path(tempdir(), "GeneA.gtf"),
@@ -325,7 +326,7 @@ GFF3 also uses 9 columns, but hierarchy is represented primarily through `ID` an
 
 #### Read
 
-```{r}
+```r
 gff <- read_gff(
   gff_file,
   verbose = FALSE,
@@ -339,7 +340,7 @@ head(gff$transcripts)
 
 Feature-type filtering is also supported:
 
-```{r}
+```r
 gff_core <- read_gff(
   gff_file,
   feature_types = c("gene", "mRNA", "exon", "CDS"),
@@ -350,7 +351,7 @@ gff_core <- read_gff(
 
 #### Subset
 
-```{r}
+```r
 gff_gene_a <- retrieve_feature(gff, gene_id = "GeneA")
 
 gff_region <- retrieve_feature(
@@ -364,7 +365,7 @@ gff_region <- retrieve_feature(
 
 #### Merge
 
-```{r}
+```r
 gff_gene_b <- retrieve_feature(gff, gene_id = "GeneB")
 
 gff_merged <- merge_feature(
@@ -376,7 +377,7 @@ gff_merged <- merge_feature(
 
 #### Write
 
-```{r}
+```r
 write_feature(
   gff_gene_a,
   file.path(tempdir(), "GeneA.gff3"),
@@ -391,7 +392,7 @@ BED is treated differently from GenePred/GTF/GFF3. `read_bed()` reads BED3-BED12
 
 #### Read
 
-```{r}
+```r
 features <- read_bed(
   bed_file,
   verbose = FALSE,
@@ -408,7 +409,7 @@ The demo BED contains promoters, enhancers, candidate regions, repeats, conserve
 
 BED intervals can be selected by region or text pattern:
 
-```{r}
+```r
 bed_gene_a <- retrieve_feature(
   features,
   chrom = "chr1",
@@ -425,7 +426,7 @@ bed_promoters <- retrieve_feature(
 
 #### Merge
 
-```{r}
+```r
 bed_gene_b <- retrieve_feature(
   features,
   chrom = "chr1",
@@ -446,7 +447,7 @@ bed_merged <- merge_feature(
 
 Generic BED-derived intervals should normally be written as BED6:
 
-```{r}
+```r
 write_feature(
   bed_merged,
   file.path(tempdir(), "merged_features.bed6"),
@@ -457,7 +458,7 @@ write_feature(
 
 BED12 output requires transcript/exon gene-model information. It is therefore appropriate for `GenePred` or gene-model GTF/GFF3 objects rather than a generic BED interval track:
 
-```{r}
+```r
 write_feature(
   gp_gene_a,
   file.path(tempdir(), "GeneA.bed12"),
@@ -492,7 +493,7 @@ For generic BED-style interval tracks, `"trim"` behaves as overlap selection bec
 
 When the same locus is loaded from different annotation formats, `rename` is useful if both representations should be retained:
 
-```{r}
+```r
 cross_format <- merge_feature(
   list(gp_gene_a, gtf_gene_a),
   source_names = c("GenePred", "GTF"),
@@ -506,7 +507,7 @@ If the two inputs represent the same annotation and only one copy is needed, use
 
 The readers share a common internal representation, so annotation formats can be converted without reparsing text manually:
 
-```{r}
+```r
 # GTF/GFF3 gene models -> GenePred-compatible object
 gtf_as_gp <- as_genepred(gtf)
 gff_as_gp <- as_genepred(gff)
@@ -525,7 +526,7 @@ gene_gr <- as_granges(gp, level = "gene")
 
 `write_feature()` is also the main cross-format writer. For example, a GTF-derived gene model can be exported as GenePredExt or BED12:
 
-```{r}
+```r
 write_feature(
   gtf_gene_a,
   file.path(tempdir(), "GeneA.from_gtf.genePredExt"),
@@ -580,7 +581,7 @@ Plotting functions such as `plot_gene()`, `plot_signal_gene()`, `plot_variant()`
 
 ### Plot a gene
 
-```{r}
+```r
 plot_gene(
   gp,
   gene_id = "GeneA",
@@ -591,7 +592,7 @@ plot_gene(
 
 ### Plot a transcript
 
-```{r}
+```r
 plot_transcript(
   gp,
   transcript_id = "TxA1",
@@ -601,7 +602,7 @@ plot_transcript(
 
 Spliced transcript coordinate mode removes introns:
 
-```{r}
+```r
 plot_transcript(
   gp,
   transcript_id = "TxA1",
@@ -611,7 +612,7 @@ plot_transcript(
 
 ### Plot a genomic region
 
-```{r}
+```r
 plot_region(
   gp,
   chrom = "chr1",
@@ -624,7 +625,7 @@ plot_region(
 
 ### Customize gene model colors
 
-```{r}
+```r
 plot_gene(
   gp,
   gene_id = "GeneA",
@@ -660,7 +661,7 @@ The examples use the same `GeneA`/`TxA1` positive-strand locus whenever possible
 
 Load the annotation and locate the four strand-specific signal files:
 
-```{r}
+```r
 gp_file <- system.file(
   "extdata",
   "gtr_demo.genePredExt",
@@ -695,7 +696,7 @@ gp <- read_genepred(
 
 Read the RNA-seq plus/minus bedGraph files into one `BwgTrack` object:
 
-```{r}
+```r
 rnaseq <- read_bwg(
   rnaseq_files,
   format = "bedgraph",
@@ -710,7 +711,7 @@ summary_bwg(rnaseq)
 
 Read the Ribo-seq plus/minus bedGraph files in the same way:
 
-```{r}
+```r
 riboseq <- read_bwg(
   riboseq_files,
   format = "bedgraph",
@@ -734,7 +735,7 @@ Because bedGraph does not store strand metadata, `strand = c("+", "-")` explicit
 
 `write_bwg()` can convert an in-memory `BwgTrack` to bigWig directly with the bundled third-party libBigWig library in `src/`. No external conversion program is required; only chromosome sizes are needed for the bigWig header.
 
-```{r}
+```r
 chrom_sizes_file <- system.file(
   "extdata",
   "gtr_demo.chrom.sizes",
@@ -747,7 +748,7 @@ dir.create(bigwig_dir, recursive = TRUE, showWarnings = FALSE)
 
 Write the RNA-seq tracks:
 
-```{r}
+```r
 rnaseq_bigwig <- write_bwg(
   rnaseq,
   outdir = bigwig_dir,
@@ -761,7 +762,7 @@ rnaseq_bigwig
 
 Write the Ribo-seq tracks:
 
-```{r}
+```r
 riboseq_bigwig <- write_bwg(
   riboseq,
   outdir = bigwig_dir,
@@ -790,7 +791,7 @@ BigWig export has a single backend in GeneTrackR: the bundled libBigWig implemen
 
 RNA-seq gene track:
 
-```{r}
+```r
 p_rnaseq_gene <- plot_signal_gene(
   signal = rnaseq,
   annotation = gp,
@@ -810,7 +811,7 @@ p_rnaseq_gene
 
 Ribo-seq gene track:
 
-```{r}
+```r
 p_riboseq_gene <- plot_signal_gene(
   signal = riboseq,
   annotation = gp,
@@ -836,7 +837,7 @@ The relative vertical space occupied by the signal and gene-model panels is cont
 
 `plot_signal_transcript()` focuses on a single transcript. The RNA-seq example uses the standard bar representation in transcript coordinates:
 
-```{r}
+```r
 p_rnaseq_transcript <- plot_signal_transcript(
   signal = rnaseq,
   annotation = gp,
@@ -856,7 +857,7 @@ p_rnaseq_transcript
 
 For Ribo-seq, `plot_type = "frame"` maps P-site counts back onto the transcript reading frame. The demo is designed so that frame 0 contributes about 80% of total RPF counts, while frame 1 and frame 2 each contribute about 10%. Counts within each frame are deliberately heterogeneous rather than repeated at nearly identical heights. Discrete palettes such as `Set1` are assigned strictly in palette order: `frame0`, `frame1`, and `frame2` receive the first, second, and third palette colors, respectively:
 
-```{r}
+```r
 p_riboseq_transcript <- plot_signal_transcript(
   signal = riboseq,
   annotation = gp,
@@ -874,7 +875,7 @@ p_riboseq_transcript
 
 Use `plot_type = "bar"` instead when the goal is to compare the genomic distribution of Ribo-seq P-site counts with the RNA-seq coverage representation:
 
-```{r}
+```r
 plot_signal_transcript(
   signal = riboseq,
   annotation = gp,
@@ -891,7 +892,7 @@ plot_signal_transcript(
 
 Merge the two `BwgTrack` objects so RNA-seq and Ribo-seq can be displayed in one integrated track figure:
 
-```{r}
+```r
 signal_all <- merge_bwg(rnaseq, riboseq)
 
 signal_all
@@ -900,7 +901,7 @@ summary_bwg(signal_all)
 
 For the positive-strand `GeneA` locus, explicitly select the two plus-strand samples:
 
-```{r}
+```r
 p_signal_tracks <- plot_tracks(
   annotation = gp,
   signal = signal_all,
@@ -933,7 +934,7 @@ For `bar` and `line` region plots, sample/group colors follow the sample/group l
 
 The following region contains the positive-strand `GeneA`, negative-strand `GeneB`, and positive-strand `GeneC`, making it useful for displaying both strand-specific RNA-seq tracks:
 
-```{r}
+```r
 p_rnaseq_region <- plot_signal_region(
   signal = rnaseq,
   annotation = gp,
@@ -955,7 +956,7 @@ p_rnaseq_region
 
 Plot the Ribo-seq tracks over the same interval:
 
-```{r}
+```r
 p_riboseq_region <- plot_signal_region(
   signal = riboseq,
   annotation = gp,
@@ -994,7 +995,7 @@ The examples use the same `GeneA` / `TxA1` locus used elsewhere in the documenta
 
 Locate the demo VCF and annotation files:
 
-```{r}
+```r
 vcf_file <- system.file(
   "extdata",
   "gtr_demo_variants.vcf",
@@ -1017,7 +1018,7 @@ gp <- read_genepred(
 
 Read the complete demo VCF into memory:
 
-```{r}
+```r
 vcf <- read_vcf(
   vcf_file,
   mode = "memory",
@@ -1031,7 +1032,7 @@ vcf
 
 `read_vcf()` returns a `VariantTrack`. Standard VCF fields are normalized internally to columns such as `chrom`, `pos`, `variant_id`, `ref`, `alt`, `qual`, `filter`, `info`, and `variant_type`. Genotype columns are retained when `keep_genotype = TRUE`.
 
-```{r}
+```r
 head(vcf$data[, c(
   "chrom",
   "pos",
@@ -1050,7 +1051,7 @@ Coordinates inside `VariantTrack` use **1-based genomic positions**, consistent 
 
 For a bgzip-compressed VCF with a `.tbi` or `.csi` index, `mode = "auto"` or `mode = "lazy"` avoids loading all records into memory. A lazy `VariantTrack` stores the source file and sample metadata first; variants are loaded only when a genomic region is requested.
 
-```{r}
+```r
 # large_vcf <- "/path/to/large.vcf.gz"
 #
 # vcf_lazy <- read_vcf(
@@ -1075,7 +1076,7 @@ Lazy regional queries require an indexed VCF and `Rsamtools`. For small files su
 
 Use `validate_vcf()` to check required fields, coordinates, allele fields, duplicated variant IDs, and consistency between `pos`, `start`, and `end`:
 
-```{r}
+```r
 vcf_validation <- validate_vcf(vcf)
 
 vcf_validation$invalid_summary
@@ -1090,14 +1091,14 @@ The validation result contains:
 
 Use `summary_vcf()` to summarize the current variant collection. A genomic region is **not required** for an in-memory `VariantTrack`; with no range supplied, the complete object is summarized. By default, variants are counted by chromosome and inferred variant type:
 
-```{r}
+```r
 vcf_summary <- summary_vcf(vcf)
 vcf_summary
 ```
 
 A chromosome or complete genomic range can still be supplied when only a subset should be summarized:
 
-```{r}
+```r
 chr1_summary <- summary_vcf(vcf, chrom = "chr1")
 chr1_summary
 ```
@@ -1110,7 +1111,7 @@ The demo VCF intentionally contains SNPs and indels so the same file can be reus
 
 Retrieve the broader `GeneA` / `GeneB` / `GeneC` demonstration region as a table:
 
-```{r}
+```r
 region_table <- retrieve_vcf(
   vcf,
   chrom = "chr1",
@@ -1132,7 +1133,7 @@ region_table[, .(
 
 Use `as = "VariantTrack"` when the subset will be passed to another GeneTrackR function:
 
-```{r}
+```r
 region_variants <- retrieve_vcf(
   vcf,
   chrom = "chr1",
@@ -1156,7 +1157,7 @@ When annotation is available, `retrieve_vcf()` can resolve genomic coordinates d
 
 Retrieve variants inside the `GeneA` gene body:
 
-```{r}
+```r
 genea_variants <- retrieve_vcf(
   vcf,
   annotation = gp,
@@ -1172,7 +1173,7 @@ The canonical demo design contains **11 variants within the GeneA gene body**.
 
 Upstream and downstream flanking regions can be added explicitly:
 
-```{r}
+```r
 genea_extended <- retrieve_vcf(
   vcf,
   annotation = gp,
@@ -1191,7 +1192,7 @@ For `GeneA`, the upstream extension additionally includes `varAup01`, which is i
 
 Transcript-aware retrieval uses the same interface:
 
-```{r}
+```r
 txa1_variants <- retrieve_vcf(
   vcf,
   annotation = gp,
@@ -1211,7 +1212,7 @@ These filters do not require a genomic region for an in-memory `VariantTrack`; t
 
 Retrieve one or more known variant IDs:
 
-```{r}
+```r
 selected_variants <- retrieve_vcf(
   vcf,
   variant_id = c("varA03", "varA04", "varA05"),
@@ -1231,7 +1232,7 @@ selected_variants[, .(
 
 Filter by inferred variant type:
 
-```{r}
+```r
 genea_indels <- retrieve_vcf(
   genea_variants,
   variant_type = c("INS", "DEL"),
@@ -1250,7 +1251,7 @@ genea_indels[, .(
 
 `pattern` searches `variant_id`, `REF`, `ALT`, `INFO`, and `variant_type`. Fixed-string matching supports `ignore_case = TRUE` without regular-expression interpretation. For example, the demo high-LD variants contain `high_ld` in the INFO role field:
 
-```{r}
+```r
 high_ld_variants <- retrieve_vcf(
   vcf,
   pattern = "high_ld",
@@ -1268,7 +1269,7 @@ These filters can be combined with genomic, gene, or transcript queries when a m
 
 `plot_variant()` returns a ggplot object directly. The GeneA region contains SNP, insertion, and deletion examples, so it is useful for demonstrating variant-type colors.
 
-```{r}
+```r
 p_genea_variants <- plot_variant(
   genea_variants,
   color_by = "variant_type",
@@ -1284,7 +1285,7 @@ p_genea_variants
 
 For a broader genomic region, use the previously retrieved `VariantTrack`:
 
-```{r}
+```r
 p_region_variants <- plot_variant(
   region_variants,
   chrom = "chr1",
@@ -1331,7 +1332,7 @@ The examples use the same `GeneA` / `TxA1` region used throughout the other Gene
 
 Locate the bundled demo files:
 
-```{r}
+```r
 gp_file <- system.file(
   "extdata",
   "gtr_demo.genePredExt",
@@ -1364,7 +1365,7 @@ vcf_file <- system.file(
 
 Read the annotation, four strand-specific signal tracks, BED features, and VCF variants:
 
-```{r}
+```r
 gp <- read_genepred(
   gp_file,
   format = "genePredExt",
@@ -1422,7 +1423,7 @@ Do not supply more than one locator type in the same call.
 
 Start with the annotation alone. When `gene_id` is supplied, GeneTrackR derives the chromosome and plotting interval from the complete gene locus:
 
-```{r}
+```r
 p_browser_gene_model <- plot_tracks(
   annotation = gp,
   gene_id = "GeneA",
@@ -1435,7 +1436,7 @@ p_browser_gene_model
 
 Add RNA-seq and Ribo-seq signal over the same locus. `GeneA` is on the positive strand, so select the two positive-strand samples explicitly:
 
-```{r}
+```r
 p_browser_gene <- plot_tracks(
   annotation = gp,
   signal = signal_all,
@@ -1464,7 +1465,7 @@ For discrete signal tracks, colors follow the selected sample/group order and th
 
 Use `transcript_id` when the plotting interval should correspond to one transcript rather than the complete gene locus:
 
-```{r}
+```r
 p_browser_transcript <- plot_tracks(
   annotation = gp,
   signal = signal_all,
@@ -1496,7 +1497,7 @@ The signal panel remains in **genomic coordinates** so that it stays aligned wit
 
 For a multi-gene interval or a locus not defined by one annotation ID, provide explicit genomic coordinates. The demo interval below contains `GeneA`, `GeneB`, and `GeneC` and therefore includes both positive- and negative-strand signal:
 
-```{r}
+```r
 browser_chrom <- "chr1"
 browser_start <- 12339001
 browser_end <- 12374500
@@ -1537,7 +1538,7 @@ Use `signal_y_scale = "free"` when assays have substantially different count ran
 
 Pass `FeatureTrack` and `VariantTrack` objects directly to `features` and `variants`. `plot_tracks()` retrieves only records overlapping the selected browser interval:
 
-```{r}
+```r
 p_browser_complete <- plot_tracks(
   annotation = gp,
   signal = signal_all,
@@ -1588,7 +1589,7 @@ With `layout = "gene_top"`, the gene model is moved to the top, followed by sign
 
 `features` and `variants` can also be named lists when several independent interval or variant collections should be drawn as separate panels:
 
-```{r}
+```r
 # feature_tracks <- list(
 #   Regulatory = regulatory_features,
 #   QTL = qtl_features
@@ -1617,7 +1618,7 @@ Panel proportions are controlled through the named `heights` vector. Increase `s
 
 The following example moves the gene model to the top and highlights the small LD demonstration interval shared with the LD workflow:
 
-```{r}
+```r
 ld_highlight <- data.frame(
   start = 12342620,
   end = 12343180
@@ -1699,7 +1700,7 @@ The main example uses the designed `GeneA` locus. Its gene body contains 11 vari
 
 Locate and read the bundled demo files:
 
-```{r}
+```r
 vcf_file <- system.file(
   "extdata",
   "gtr_demo_variants.vcf",
@@ -1736,7 +1737,7 @@ For indexed large VCF files, the input can also be a lazy `VariantTrack` or a VC
 
 For gene- or transcript-defined analysis, use `hap_gene_variant()`. The primary GeneA workflow intentionally uses the **gene body only** so that the haplotype definition is based on variants inside the annotated locus:
 
-```{r}
+```r
 hap_gene <- hap_gene_variant(
   vcf = vcf,
   annotation = gp,
@@ -1758,7 +1759,7 @@ The four genotype patterns are intentionally hierarchical: `Hap1/Hap2` are the c
 
 Check these values directly from the returned object rather than assuming a fixed number for real datasets:
 
-```{r}
+```r
 hap_gene$meta
 hap_gene$haplotypes[, c("hap_id", "sample_n", "samples"), with = FALSE]
 ```
@@ -1769,7 +1770,7 @@ hap_gene$haplotypes[, c("hap_id", "sample_n", "samples"), with = FALSE]
 
 A `HapVariant` keeps the complete state needed by downstream GeneTrackR functions:
 
-```{r}
+```r
 hap_gene$region
 hap_gene$variants
 hap_gene$genotype_long
@@ -1791,7 +1792,7 @@ The components have distinct purposes:
 
 The `meta` list records the genotype representation, missing-value policy, retained sample number, variant number, and haplotype number:
 
-```{r}
+```r
 hap_gene$meta
 ```
 
@@ -1805,7 +1806,7 @@ GeneTrackR provides two genotype representations through `genotype_mode`.
 
 `genotype_mode = "string"` is recommended when the haplotype table itself is important for interpretation:
 
-```{r}
+```r
 hap_gene_string <- hap_gene_variant(
   vcf = vcf,
   annotation = gp,
@@ -1824,7 +1825,7 @@ String mode is also a compact display representation rather than a phased dosage
 
 `genotype_mode = "code"` collapses each genotype to reference versus alternate presence:
 
-```{r}
+```r
 hap_gene_code <- hap_gene_variant(
   vcf = vcf,
   annotation = gp,
@@ -1848,14 +1849,14 @@ By default, `min_variant_number = NULL` requires a sample to have non-missing ge
 
 The GeneA gene body has complete demo genotypes, so all 36 samples are retained:
 
-```{r}
+```r
 hap_gene$meta$sample_n
 hap_gene$meta$min_variant_number
 ```
 
 Flanking regions can introduce additional variants with missing data. The demo upstream variant `varAup01` is intentionally designed with missing/heterozygous genotypes. Adding it changes the haplotype definition:
 
-```{r}
+```r
 hap_gene_upstream <- hap_gene_variant(
   vcf = vcf,
   annotation = gp,
@@ -1872,7 +1873,7 @@ hap_gene_upstream$meta
 
 To retain samples that are missing a limited number of variants, set an explicit threshold. The extended demo region contains 12 variants, so `min_variant_number = 11` allows one missing genotype:
 
-```{r}
+```r
 hap_gene_upstream_relaxed <- hap_gene_variant(
   vcf = vcf,
   annotation = gp,
@@ -1889,7 +1890,7 @@ Use relaxed thresholds deliberately. Missing values become part of the observed 
 
 A custom missing label can be supplied for display:
 
-```{r}
+```r
 hap_missing_label <- hap_gene_variant(
   vcf = vcf,
   annotation = gp,
@@ -1909,7 +1910,7 @@ Internally, GeneTrackR still tracks which genotypes are biologically missing, so
 
 Use `transcript_id` instead of `gene_id` when variants should be restricted to one transcript locus:
 
-```{r}
+```r
 hap_tx <- hap_gene_variant(
   vcf = vcf,
   annotation = gp,
@@ -1926,7 +1927,7 @@ Supply exactly one of `gene_id` or `transcript_id`.
 
 `upstream` and `downstream` are interpreted relative to transcription direction when `strand_aware = TRUE`:
 
-```{r}
+```r
 hap_gene_flank <- hap_gene_variant(
   vcf = vcf,
   annotation = gp,
@@ -1947,7 +1948,7 @@ For a negative-strand gene, biological upstream is toward increasing genomic coo
 
 Use `hap_region_variant()` when the interval is defined directly rather than by annotation:
 
-```{r}
+```r
 hap_region <- hap_region_variant(
   vcf = vcf,
   chrom = "chr1",
@@ -1965,7 +1966,7 @@ This is useful for GWAS/LD intervals, promoter windows, QTL regions, or any cust
 
 The haplotype can be restricted before grouping. For example, analyze a subset of samples:
 
-```{r}
+```r
 hap_sample_subset <- hap_gene_variant(
   vcf = vcf,
   annotation = gp,
@@ -1979,7 +1980,7 @@ hap_sample_subset$meta
 
 Or construct haplotypes using only SNPs:
 
-```{r}
+```r
 hap_snp <- hap_gene_variant(
   vcf = vcf,
   annotation = gp,
@@ -1999,7 +2000,7 @@ Filtering variants changes the haplotype definition and may merge previously dis
 
 `plot_hap_variant()` combines the gene model, natural-variant markers, connector lines, REF/ALT reference rows, and haplotype genotype table:
 
-```{r}
+```r
 hap_variant_figure <- plot_hap_variant(
   hap_gene,
   annotation = gp,
@@ -2017,7 +2018,7 @@ hap_variant_figure
 
 General plotting palettes default to `Paired`; `plot_ld_block()` is the deliberate package-level exception and defaults to `Reds`. The main haplotype visual controls can still be changed independently:
 
-```{r}
+```r
 hap_variant_custom <- plot_hap_variant(
   hap_gene,
   annotation = gp,
@@ -2039,7 +2040,7 @@ hap_variant_custom
 
 For allele-string haplotypes, table colors always follow the stable biological class order `A`, `T`, `C`, `G`, and `indel`. Custom colors can be supplied explicitly with those names:
 
-```{r}
+```r
 plot_hap_variant(
   hap_gene,
   annotation = gp,
@@ -2060,7 +2061,7 @@ Use `show_variant_marker = FALSE` to hide natural-variant triangles, or adjust `
 
 Do not reconstruct haplotypes separately for each downstream analysis. The `hap_gene` object created in Step 2 is the input for the following modules:
 
-```{r}
+```r
 # Haplotype-phenotype association (09-phenotype.qmd)
 # hap_res <- plot_hap_pheno(
 #   hap_gene,
@@ -2117,7 +2118,7 @@ The bundled phenotype data contain four numeric traits and one categorical trait
 
 Locate the bundled phenotype, VCF, and annotation files:
 
-```{r}
+```r
 pheno_file <- system.file(
   "extdata",
   "gtr_demo_pheno.tsv",
@@ -2139,7 +2140,7 @@ gp_file <- system.file(
 
 Read the three inputs and reconstruct the same GeneA gene-body haplotypes used in the haplotype workflow:
 
-```{r}
+```r
 pheno <- read_pheno(
   pheno_file,
   verbose = FALSE,
@@ -2171,7 +2172,7 @@ hap_gene <- hap_gene_variant(
 
 `read_pheno()` returns a `data.table`. By default, the first column is treated as the sample column and renamed to `sample_id`. If another column stores sample IDs, specify it explicitly:
 
-```{r}
+```r
 # pheno <- read_pheno(
 #   "phenotype.tsv",
 #   sample_col = "Taxa"
@@ -2184,7 +2185,7 @@ Sample IDs must be unique. Duplicate IDs are rejected because they would make ge
 
 Start with `summary_pheno()` before any association test:
 
-```{r}
+```r
 pheno_summary <- summary_pheno(pheno)
 pheno_summary
 ```
@@ -2199,7 +2200,7 @@ The summary reports:
 
 Plot numeric and categorical phenotype distributions directly from the phenotype table:
 
-```{r}
+```r
 pheno_figure <- plot_pheno(
   pheno,
   traits = c(
@@ -2224,7 +2225,7 @@ Phenotype rows do not need to follow the VCF or haplotype sample order. GeneTrac
 
 The demo phenotype table intentionally uses a different row order from the genotype data. Check the overlap before testing:
 
-```{r}
+```r
 hap_sample_ids <- as.character(hap_gene$sample_haplotypes$sample_id)
 pheno_sample_ids <- as.character(pheno$sample_id)
 
@@ -2247,7 +2248,7 @@ In real datasets, samples present on only one side are not available for the ass
 
 `seed_weight` is the main deterministic GeneA haplotype phenotype in the demo. Test the four GeneA haplotypes with `plot_hap_pheno()`:
 
-```{r}
+```r
 hap_seed <- plot_hap_pheno(
   hap = hap_gene,
   phenotype = pheno,
@@ -2267,7 +2268,7 @@ hap_seed$figure
 
 `plot_hap_pheno()` returns a `GeneTrackRPhenoPlot`, not only a ggplot. Keep the complete result because it contains the statistical output used to draw the figure:
 
-```{r}
+```r
 hap_seed$pvalue
 hap_seed$summary
 hap_seed$bracket
@@ -2297,7 +2298,7 @@ The demo provides three useful haplotype-level behaviors in one dataset:
 
 Plot them together while preserving the requested trait order:
 
-```{r}
+```r
 hap_multi <- plot_hap_pheno(
   hap = hap_gene,
   phenotype = pheno,
@@ -2327,7 +2328,7 @@ Three pairwise test methods are available:
 
 For example:
 
-```{r}
+```r
 hap_seed_wilcox <- plot_hap_pheno(
   hap = hap_gene,
   phenotype = pheno,
@@ -2353,7 +2354,7 @@ General GeneTrackR plotting palettes default to `Paired`; `plot_ld_block()` is t
 
 A more detailed plot can be requested as follows:
 
-```{r}
+```r
 hap_seed_styled <- plot_hap_pheno(
   hap = hap_gene,
   phenotype = pheno,
@@ -2379,7 +2380,7 @@ Use `plot_type = "violin"`, `"boxplot"`, or `"violin_boxplot"` depending on whet
 
 If fixed colors for specific haplotype IDs are required, supply a named vector instead of relying on the median-based palette assignment:
 
-```{r}
+```r
 hap_seed_fixed_colors <- plot_hap_pheno(
   hap = hap_gene,
   phenotype = pheno,
@@ -2404,7 +2405,7 @@ Use fixed haplotype colors only after confirming the actual `hap_id` values in `
 
 Select the variant by ID and use the compact binary REF/ALT representation:
 
-```{r}
+```r
 variant_protein <- plot_variant_pheno(
   variant = vcf,
   phenotype = pheno,
@@ -2432,7 +2433,7 @@ For `genotype_mode = "code"`:
 
 This is a binary REF/ALT-presence representation, not allele dosage. Use `genotype_mode = "string"` when allele labels are more informative:
 
-```{r}
+```r
 variant_protein_string <- plot_variant_pheno(
   variant = vcf,
   phenotype = pheno,
@@ -2448,7 +2449,7 @@ variant_protein_string$figure
 
 A variant can also be selected by exact genomic position:
 
-```{r}
+```r
 variant_protein_position <- plot_variant_pheno(
   variant = vcf,
   phenotype = pheno,
@@ -2471,7 +2472,7 @@ The selected locator must resolve to exactly one variant. If a region contains s
 
 Keep the same `hap_gene` and `pheno` objects for phenotype-guided refinement and variant-effect prioritization. Rebuilding the haplotypes with a different region or missing-data rule would change the biological groups being tested.
 
-```{r}
+```r
 # Haplotype refinement (11-haplotype-refinement.qmd)
 # refined <- refine_haplotype(
 #   hap_gene,
@@ -2534,7 +2535,7 @@ This module follows nine steps:
 
 Locate and read the same demo VCF and GenePred annotation used in the variant and haplotype workflows:
 
-```{r}
+```r
 
 vcf_file <- system.file(
 
@@ -2592,7 +2593,7 @@ For large bgzip-compressed and indexed VCF files, a lazy `VariantTrack` can be u
 
 The main demo interval starts inside `GeneA` and extends into the short downstream interval before `GeneB`. It contains 12 designed LD SNPs plus two GeneA indels. Use `variant_type = "snp"` so the LD example contains exactly `varLD01`-`varLD12`:
 
-```{r}
+```r
 
 ld_gradient <- compute_ld_block(
 
@@ -2632,7 +2633,7 @@ The expected result is:
 
 Check the retained variants before interpreting the heatmap:
 
-```{r}
+```r
 
 ld_gradient$variants
 
@@ -2644,7 +2645,7 @@ The first six variants remain inside GeneA and use the same genotype pattern req
 
 `LDTrack` keeps the complete state of an LD calculation:
 
-```{r}
+```r
 
 names(ld_gradient)
 
@@ -2672,7 +2673,7 @@ The main components are:
 
 Inspect the pairwise table directly:
 
-```{r}
+```r
 
 ld_gradient$data[, .(
 
@@ -2712,7 +2713,7 @@ Important columns are:
 
 The region and settings used for calculation are preserved in the object:
 
-```{r}
+```r
 
 ld_gradient$region
 
@@ -2724,7 +2725,7 @@ ld_gradient$meta
 
 The symmetric LD matrix uses variant IDs as row and column names and contains 1 on the diagonal:
 
-```{r}
+```r
 
 round(ld_gradient$matrix, 3)
 
@@ -2734,7 +2735,7 @@ Unlike the previous all-identical six-variant example, the new matrix is intenti
 
 Summarize the distribution directly:
 
-```{r}
+```r
 
 range(ld_gradient$data$r2, na.rm = TRUE)
 
@@ -2744,7 +2745,7 @@ summary(ld_gradient$data$r2)
 
 Define descriptive groups explicitly when useful:
 
-```{r}
+```r
 
 ld_pair_summary <- ld_gradient$data[, .(
 
@@ -2768,7 +2769,7 @@ GeneTrackR calculates pairwise LD but does **not** automatically call biological
 
 `plot_ld_block()` now defaults to the sequential `Reds` palette, which is well suited to an `r2` scale from 0 to 1:
 
-```{r}
+```r
 
 ld_gradient <- plot_ld_block(
 
@@ -2792,7 +2793,7 @@ The default color interpretation is straightforward: pale cells indicate low LD 
 
 The palette can still be changed explicitly when needed:
 
-```{r}
+```r
 
 ld_gradient_paired <- plot_ld_block(
 
@@ -2816,7 +2817,7 @@ ld_gradient_paired$figure
 
 For locus interpretation, add the compact genomic region track above the triangular heatmap:
 
-```{r}
+```r
 
 ld_gradient_region <- plot_ld_block(
 
@@ -2862,7 +2863,7 @@ With 12 variants, the region panel is now dense enough to show the relationship 
 
 The dedicated low-LD interval remains useful as an extreme comparison:
 
-```{r}
+```r
 
 ld_low <- compute_ld_block(
 
@@ -2896,7 +2897,7 @@ ld_low$data[, .(
 
 The six pairwise values are designed so that most are zero and the maximum is approximately `1 / 9`:
 
-```{r}
+```r
 
 range(ld_low$data$r2, na.rm = TRUE)
 
@@ -2906,7 +2907,7 @@ max(ld_low$data$r2, na.rm = TRUE)
 
 Plot it using the same default `Reds` scale:
 
-```{r}
+```r
 
 ld_low <- plot_ld_block(
 
@@ -2924,7 +2925,7 @@ ld_low$figure
 
 The two-variant demo region contains exactly one pairwise comparison:
 
-```{r}
+```r
 
 ld_pair <- compute_ld_block(
 
@@ -2948,7 +2949,7 @@ ld_pair$data
 
 `plot_ld_block()` draws this case as one centered diamond:
 
-```{r}
+```r
 
 ld_pair <- plot_ld_block(
 
@@ -2966,7 +2967,7 @@ ld_pair$figure
 
 When only the figure is needed for a temporary plotting call, compatibility mode can return it directly:
 
-```{r}
+```r
 
 pair_figure <- plot_ld_block(
 
@@ -2986,7 +2987,7 @@ pair_figure
 
 LD is population dependent. Use `samples` when LD should be estimated in a defined population subset:
 
-```{r}
+```r
 
 subset_samples <- sprintf("S%02d", 1:24)
 
@@ -3020,7 +3021,7 @@ ld_subset$meta$sample_n
 
 `variant_type` controls the records retained before pairwise calculation. It is important in the primary demo because the genomic interval also contains GeneA indels that are not part of the 12-SNP LD truth set:
 
-```{r}
+```r
 
 ld_snp <- compute_ld_block(
 
@@ -3048,7 +3049,7 @@ Available choices are `both`, `snp`, and `ind`. At least two retained variants a
 
 The genotype dosage matrix is omitted by default to reduce object size. Retain it only when detailed genotype QC or downstream matrix analysis is needed:
 
-```{r}
+```r
 
 ld_with_gt <- compute_ld_block(
 
@@ -3082,7 +3083,7 @@ For the demo, the retained genotype matrix is `12 x 36`.
 
 `method = "Dprime"` is also available:
 
-```{r}
+```r
 
 ld_dprime <- compute_ld_block(
 
@@ -3124,7 +3125,7 @@ LD measures statistical association between variants; it does not by itself iden
 
 Once an interval has been selected biologically, the same region can be passed to the haplotype workflow. To reproduce the 12-SNP LD definition, retain SNPs only:
 
-```{r}
+```r
 
 hap_ld_region <- hap_region_variant(
 
@@ -3192,7 +3193,7 @@ The workflow follows nine steps:
 
 Locate and read the same demo files used in the previous workflows:
 
-```{r}
+```r
 gp_file <- system.file(
   "extdata",
   "gtr_demo.genePredExt",
@@ -3235,7 +3236,7 @@ pheno <- read_pheno(
 
 Rebuild the standard GeneA gene-body haplotypes exactly as in `08-haplotype.qmd`:
 
-```{r}
+```r
 hap_gene <- hap_gene_variant(
   vcf,
   annotation = gp,
@@ -3260,7 +3261,7 @@ Refinement is therefore performed on a fixed biological definition of the origin
 
 Refinement is easiest to interpret when the phenotype grouping is compatible with the underlying genotype geometry. First calculate the number of allele-state differences between the four original GeneA haplotypes:
 
-```{r}
+```r
 hap_variant_ids <- as.character(hap_gene$variants$variant_id)
 
 hap_alleles <- as.matrix(
@@ -3299,7 +3300,7 @@ Therefore:
 
 The phenotype design follows the same structure. Inspect `protein_content` before refinement:
 
-```{r}
+```r
 protein_before <- plot_hap_pheno(
   hap_gene,
   phenotype = pheno,
@@ -3340,7 +3341,7 @@ Hap3 + Hap4                  high protein_content
 
 Run phenotype-guided refinement:
 
-```{r}
+```r
 refined_protein <- refine_haplotype(
   hap_gene,
   phenotype = pheno,
@@ -3376,7 +3377,7 @@ Using an effect threshold is recommended when the biological interpretation depe
 
 `refine_haplotype()` returns a `HapRefined` object rather than only a plotting result:
 
-```{r}
+```r
 names(refined_protein)
 ```
 
@@ -3395,14 +3396,14 @@ The main components are:
 
 Inspect the original-to-refined mapping directly:
 
-```{r}
+```r
 refined_protein$haplotype_map
 refined_protein$sample_refined_haplotypes
 ```
 
 `refined_protein$refined_hap` is intentionally a normal `HapVariant`-compatible object:
 
-```{r}
+```r
 refined_protein$refined_hap
 refined_protein$refined_hap$haplotypes
 ```
@@ -3413,7 +3414,7 @@ This makes it possible to reuse the standard haplotype plotting and phenotype-an
 
 Do not treat refinement as a black box. Inspect the pairwise evidence used to generate the refined groups:
 
-```{r}
+```r
 refined_protein$pairwise_test[, c(
   "trait",
   "group1",
@@ -3438,13 +3439,13 @@ All comparisons between the `Hap1/Hap2` and `Hap3/Hap4` genotype clusters have a
 
 The trait-specific grouping can be inspected separately:
 
-```{r}
+```r
 refined_protein$trait_group_map
 ```
 
 The final original-to-refined relationship is stored in:
 
-```{r}
+```r
 refined_protein$haplotype_map
 ```
 
@@ -3458,7 +3459,7 @@ This separation is useful when multiple traits are used, because each trait is g
 
 The default `collapse_refined = FALSE` keeps the original haplotype rows and arranges them into refined groups:
 
-```{r}
+```r
 refined_variant_grouped <- plot_refined_hap_variant(
   refined_protein,
   annotation = gp,
@@ -3482,7 +3483,7 @@ This is usually the most informative refinement plot because it shows **which or
 
 Set `collapse_refined = TRUE` when a compact summary is required:
 
-```{r}
+```r
 refined_variant_collapsed <- plot_refined_hap_variant(
   refined_protein,
   annotation = gp,
@@ -3506,7 +3507,7 @@ For mechanistic interpretation, keep the grouped view available even when the co
 
 Use `plot_refined_hap_pheno()` to visualize the phenotype distributions of the refined groups:
 
-```{r}
+```r
 refined_protein_pheno <- plot_refined_hap_pheno(
   refined_protein,
   phenotype = pheno,
@@ -3542,7 +3543,7 @@ Refinement is **trait dependent**. The same original haplotypes can produce very
 
 `seed_weight` was designed with four distinct means while preserving the same genotype hierarchy: `Hap1/Hap2` remain closer to one another than to `Hap3/Hap4`, and the same is true within the second pair. The within-pair mean differences are nevertheless larger than `effect_threshold = 0.5`, so refinement should retain all four groups:
 
-```{r}
+```r
 refined_seed_weight <- refine_haplotype(
   hap_gene,
   phenotype = pheno,
@@ -3563,7 +3564,7 @@ The expected result is four refined groups, showing that refinement does not aut
 
 The demo `flowering_time` trait contains no designed GeneA haplotype effect:
 
-```{r}
+```r
 refined_flowering <- refine_haplotype(
   hap_gene,
   phenotype = pheno,
@@ -3586,7 +3587,7 @@ This example is also a reminder that **a refined group is conditional on the sel
 
 Several numeric traits can be supplied together:
 
-```{r}
+```r
 refined_multi_trait <- refine_haplotype(
   hap_gene,
   phenotype = pheno,
@@ -3618,7 +3619,7 @@ Do not choose these parameters only to obtain a desired number of refined groups
 
 Phenotype-guided refinement changes the **group label**, not the underlying VCF or the original haplotype definition. Keep both levels of information:
 
-```{r}
+```r
 refined_protein$original_hap$haplotypes
 refined_protein$haplotype_map
 refined_protein$refined_haplotypes
@@ -3628,7 +3629,7 @@ For the `protein_content` demo, the final grouping is expected to be `Hap1/Hap2`
 
 The refined object can be passed directly to the refined plotting wrappers, while the **original** `hap_gene` remains the preferred input for variant-level effect prioritization:
 
-```{r}
+```r
 # Refined-group visualization
 # plot_refined_hap_variant(refined_protein, annotation = gp)
 # plot_refined_hap_pheno(refined_protein, phenotype = pheno, traits = "protein_content")
@@ -3676,7 +3677,7 @@ This module follows nine steps:
 
 Locate and read the same demo VCF, annotation, and phenotype files used in the haplotype and refinement workflows:
 
-```{r}
+```r
 vcf_file <- system.file(
   "extdata",
   "gtr_demo_variants.vcf",
@@ -3719,7 +3720,7 @@ pheno <- read_pheno(
 
 For effect screening, construct a second GeneA `HapVariant` with `genotype_mode = "code"`:
 
-```{r}
+```r
 hap_effect <- hap_gene_variant(
   vcf,
   annotation = gp,
@@ -3753,7 +3754,7 @@ The original string-coded `hap_gene` from the haplotype workflow remains prefera
 
 The main demo trait is `protein_content`. Run one effect calculation for every GeneA variant:
 
-```{r}
+```r
 effect_protein <- plot_variant_effect(
   hap_effect,
   phenotype = pheno,
@@ -3778,7 +3779,7 @@ Using `x_axis = "position"` places variants at their genomic coordinates. Use `x
 
 `plot_variant_effect()` returns a `GeneTrackRVariantEffectPlot` object rather than a bare ggplot:
 
-```{r}
+```r
 class(effect_protein)
 names(effect_protein)
 ```
@@ -3793,7 +3794,7 @@ The three main components are:
 
 Inspect the effect table directly:
 
-```{r}
+```r
 effect_protein$effect[, .(
   variant_id,
   chrom,
@@ -3817,7 +3818,7 @@ For a binary `code`-mode variant, `effect` is the mean difference between genoty
 
 Sort variants by absolute phenotype effect:
 
-```{r}
+```r
 protein_rank <- effect_protein$effect[
   order(-abs_effect, p_adj),
   .(
@@ -3843,7 +3844,7 @@ varA02                                       : absolute effect ~= 0
 
 Retrieve the strongest class explicitly:
 
-```{r}
+```r
 protein_top <- effect_protein$effect[
   abs_effect >= 5.9,
   .(variant_id, pos, effect, abs_effect, p_adj)
@@ -3860,7 +3861,7 @@ The variants with an effect of approximately `+6` share the same `p13` genotype 
 
 Inspect their variant metadata:
 
-```{r}
+```r
 retrieve_vcf(
   vcf,
   variant_id = protein_top$variant_id,
@@ -3898,7 +3899,7 @@ In the demo, `varA03` is marked as the designed `protein_effect` variant, while 
 
 A signed-effect plot can be generated directly:
 
-```{r}
+```r
 effect_protein_signed <- plot_variant_effect(
   hap_effect,
   phenotype = pheno,
@@ -3919,7 +3920,7 @@ For the present binary `code`-mode workflow, positive values mean that genotype 
 
 Check the designed site directly:
 
-```{r}
+```r
 effect_protein_signed$effect[
   variant_id == "varA03",
   .(
@@ -3943,7 +3944,7 @@ Do not generalize this interpretation blindly to every possible `HapVariant`. Wi
 
 The regional effect scan tells us that `varA03` belongs to the high-effect set. Confirm the genotype/phenotype relationship directly with `plot_variant_pheno()`:
 
-```{r}
+```r
 varA03_pheno <- plot_variant_pheno(
   variant = vcf,
   phenotype = pheno,
@@ -3962,7 +3963,7 @@ varA03_pheno$pvalue
 
 Retrieve the variant itself to connect the binary genotype classes to its alleles:
 
-```{r}
+```r
 retrieve_vcf(
   vcf,
   variant_id = "varA03",
@@ -3993,7 +3994,7 @@ This direct check is preferable to inferring allele direction from the regional 
 
 `plot_variant_effect()` can evaluate several numeric traits in one call:
 
-```{r}
+```r
 effect_multi <- plot_variant_effect(
   hap_effect,
   phenotype = pheno,
@@ -4019,7 +4020,7 @@ Numeric traits may be stored as either integer or double columns. `plot_variant_
 
 Inspect the same variant across traits:
 
-```{r}
+```r
 effect_multi$effect[
   variant_id == "varA03",
   .(
@@ -4083,14 +4084,19 @@ This module follows eight steps:
 
 Create separate directories for track files, figures, tables, and serialized R objects:
 
-```{r}
+```r
 export_root <- file.path(tempdir(), "GeneTrackR_export")
 export_dirs <- file.path(
   export_root,
   c("tracks", "figures", "tables", "objects")
 )
 
-invisible(lapply(export_dirs, dir.create, recursive = TRUE, showWarnings = FALSE))
+invisible(lapply(
+  export_dirs,
+  dir.create,
+  recursive = TRUE,
+  showWarnings = FALSE
+))
 
 track_dir <- export_dirs[1]
 figure_dir <- export_dirs[2]
@@ -4100,7 +4106,7 @@ object_dir <- export_dirs[4]
 
 Read the demo inputs and build representative downstream objects. These are the same object classes used in the preceding workflow modules:
 
-```{r}
+```r
 gp <- read_genepred(
   system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR"),
   format = "genePredExt",
@@ -4201,7 +4207,7 @@ Keeping these objects separate is useful because their public contracts differ. 
 
 Use `write_feature()` for annotation conversion. Annotation coordinate conventions and format-specific details are covered in the annotation module; the export module only centralizes representative calls:
 
-```{r}
+```r
 write_feature(
   gp,
   file = file.path(track_dir, "GeneA_demo.genePredExt"),
@@ -4221,7 +4227,7 @@ write_feature(
 
 Read an in-memory signal track and export it with `write_bwg()`:
 
-```{r}
+```r
 rnaseq_plus <- read_bwg(
   system.file(
     "extdata",
@@ -4247,7 +4253,7 @@ bedgraph_files
 
 bigWig output uses the bundled libBigWig backend and requires chromosome sizes:
 
-```{r}
+```r
 chrom_sizes_file <- system.file(
   "extdata",
   "gtr_demo.chrom.sizes",
@@ -4269,7 +4275,7 @@ bigwig_files
 
 Use `write_vcf()` when a standardized site-level VCF is required:
 
-```{r}
+```r
 write_vcf(
   vcf,
   file = file.path(track_dir, "gtr_demo.sites.vcf"),
@@ -4285,8 +4291,15 @@ Use the actual figure object rather than passing an entire GeneTrackR result cla
 
 Define a small local helper when both PDF and PNG are required:
 
-```{r}
-save_gtr_figure <- function(plot, stem, outdir, width = 8, height = 6, dpi = 300) {
+```r
+save_gtr_figure <- function(
+  plot,
+  stem,
+  outdir,
+  width = 8,
+  height = 6,
+  dpi = 300
+) {
   ggplot2::ggsave(
     filename = file.path(outdir, paste0(stem, ".pdf")),
     plot = plot,
@@ -4306,7 +4319,7 @@ save_gtr_figure <- function(plot, stem, outdir, width = 8, height = 6, dpi = 300
 
 A direct-return figure can be saved immediately:
 
-```{r}
+```r
 hap_variant_figure <- plot_hap_variant(
   hap_gene,
   annotation = gp,
@@ -4324,7 +4337,7 @@ save_gtr_figure(
 
 For structured result classes, extract `$figure` explicitly:
 
-```{r}
+```r
 save_gtr_figure(
   hap_pheno$figure,
   stem = "GeneA_seed_weight_haplotype",
@@ -4372,7 +4385,7 @@ The same rule applies to `plot_variant_pheno()` and `plot_refined_hap_pheno()`: 
 
 A `HapVariant` contains several biologically different tables. Export them separately instead of flattening the complete class:
 
-```{r}
+```r
 data.table::fwrite(
   hap_gene$variants,
   file.path(table_dir, "GeneA.variants.tsv"),
@@ -4400,7 +4413,7 @@ data.table::fwrite(
 
 For phenotype association results, retain the statistical tables used to create the figure:
 
-```{r}
+```r
 data.table::fwrite(
   hap_pheno$pvalue,
   file.path(table_dir, "GeneA.seed_weight.pvalue.tsv"),
@@ -4422,7 +4435,7 @@ data.table::fwrite(
 
 Export pairwise LD rather than only the heatmap image:
 
-```{r}
+```r
 data.table::fwrite(
   ld_result$data,
   file.path(table_dir, "GeneA.LD_pairs.tsv"),
@@ -4438,7 +4451,7 @@ data.table::fwrite(
 
 For phenotype-guided refinement, the mapping and decision tables are essential for explaining why original haplotypes were merged:
 
-```{r}
+```r
 data.table::fwrite(
   refined$haplotype_map,
   file.path(table_dir, "GeneA.refined_haplotype_map.tsv"),
@@ -4484,7 +4497,7 @@ data.table::fwrite(
 
 For regional variant-effect prioritization, retain both the summarized effects and the sample-level plotting table:
 
-```{r}
+```r
 data.table::fwrite(
   effect_result$effect,
   file.path(table_dir, "GeneA.protein_variant_effect.tsv"),
@@ -4502,7 +4515,7 @@ data.table::fwrite(
 
 A matrix should be converted to a rectangular table with an explicit row identifier before writing it:
 
-```{r}
+```r
 ld_matrix_table <- data.table::as.data.table(
   ld_result$matrix,
   keep.rownames = "variant_id"
@@ -4521,7 +4534,7 @@ This preserves both row and column variant IDs and is easier to reopen in R, Pyt
 
 For collaborators who prefer one multi-sheet workbook, the same result tables can be collected with the optional `openxlsx` package. This is an interoperability step rather than a GeneTrackR dependency:
 
-```{r}
+```r
 if (requireNamespace("openxlsx", quietly = TRUE)) {
   openxlsx::write.xlsx(
     list(
@@ -4548,7 +4561,7 @@ TSV remains the dependency-free default and is preferable for very large tables.
 
 Tabular exports are easy to inspect, but they do not preserve the complete object state. Save the corresponding S3 objects when an analysis may need to be reopened without recomputation:
 
-```{r}
+```r
 saveRDS(
   hap_gene,
   file.path(object_dir, "GeneA.HapVariant.rds")
@@ -4581,7 +4594,7 @@ The RDS file preserves class information, metadata, parameters, intermediate tab
 
 Record the package/session environment together with the result directory:
 
-```{r}
+```r
 writeLines(
   capture.output(sessionInfo()),
   con = file.path(export_root, "sessionInfo.txt")
@@ -4602,7 +4615,7 @@ export_manifest
 
 Finally, verify that a serialized analysis object can be restored with its expected class and results:
 
-```{r}
+```r
 ld_reloaded <- readRDS(
   file.path(object_dir, "GeneA.LDTrack.rds")
 )
@@ -4634,7 +4647,7 @@ The demo workflow uses `GeneA` and follows ten steps:
 
 Use one explicit set of source files at the start of the analysis:
 
-```{r}
+```r
 library(GeneTrackR)
 
 gp_file <- system.file(
@@ -4675,7 +4688,7 @@ signal_files <- system.file(
 
 Read the objects once:
 
-```{r}
+```r
 gp <- read_genepred(
   gp_file,
   format = "genePredExt",
@@ -4724,7 +4737,7 @@ For real projects, keep these source objects unchanged and create filtered/retri
 
 Inspect the annotation and VCF before defining haplotypes or LD regions:
 
-```{r}
+```r
 validate_feature(gp)
 validate_vcf(vcf)
 
@@ -4747,7 +4760,7 @@ The demo phenotype order is intentionally different from the VCF sample order. D
 
 Start by viewing the candidate gene in its genomic context. `plot_tracks()` can combine the gene model, RNA/Ribo signal, BED-like features, and VCF variants:
 
-```{r}
+```r
 browser_geneA <- plot_tracks(
   annotation = gp,
   signal = signal_all,
@@ -4771,7 +4784,7 @@ All general plotting palettes default to `Paired`; `plot_ld_block()` is the deli
 
 Inspect the exact variants that will define the GeneA haplotypes:
 
-```{r}
+```r
 geneA_variants <- retrieve_vcf(
   vcf,
   annotation = gp,
@@ -4797,7 +4810,7 @@ The canonical GeneA gene body contains 11 demo variants. Do not silently add fla
 
 Use the gene body and allele-string representation for the main biological haplotype display:
 
-```{r}
+```r
 hap_gene <- hap_gene_variant(
   vcf,
   annotation = gp,
@@ -4816,7 +4829,7 @@ The deterministic demo contains four balanced haplotypes with nine samples each.
 
 Plot their variant patterns together with the gene structure:
 
-```{r}
+```r
 hap_gene_figure <- plot_hap_variant(
   hap_gene,
   annotation = gp,
@@ -4834,7 +4847,7 @@ Keep the full `HapVariant` object. Its sample assignments and genotype tables ar
 
 Test the original GeneA haplotypes against a trait with a designed haplotype effect:
 
-```{r}
+```r
 hap_seed <- plot_hap_pheno(
   hap_gene,
   phenotype = pheno,
@@ -4851,7 +4864,7 @@ hap_seed$pvalue
 
 For a specific natural variant, use the VCF genotype directly. The demo `varA03` separates the two major GeneA genotype/phenotype clusters for `protein_content`:
 
-```{r}
+```r
 varA03_protein <- plot_variant_pheno(
   variant = vcf,
   phenotype = pheno,
@@ -4872,7 +4885,7 @@ These functions return structured result objects. Retain `$pvalue`, `$summary`, 
 
 The primary demo LD interval contains 12 SNPs. Six form a perfect high-LD core and the remaining variants progressively decorrelate, producing high, intermediate, and low `r2` values:
 
-```{r}
+```r
 ld_gradient <- compute_ld_block(
   vcf,
   chrom = "chr1",
@@ -4897,7 +4910,7 @@ ld_gradient$figure
 
 Inspect the numerical result as well as the heatmap:
 
-```{r}
+```r
 ld_gradient$data[, .(
   variant_i,
   variant_j,
@@ -4912,7 +4925,7 @@ GeneTrackR calculates pairwise LD; it does not automatically declare a biologica
 
 The GeneA genotype structure contains two close haplotype pairs: `Hap1/Hap2` and `Hap3/Hap4`. Their `protein_content` values follow the same two-cluster structure, making this trait appropriate for phenotype-guided refinement:
 
-```{r}
+```r
 refined_protein <- refine_haplotype(
   hap_gene,
   phenotype = pheno,
@@ -4937,7 +4950,7 @@ Hap3 + Hap4 -> refined group 2
 
 Inspect the decision evidence rather than reporting only the final group number:
 
-```{r}
+```r
 refined_protein$pairwise_test
 refined_protein$phenotype_summary
 ```
@@ -4948,7 +4961,7 @@ A non-significant pairwise test alone is not proof of biological equivalence. `e
 
 For interpretable two-group effect direction, rebuild the same GeneA region in binary REF/ALT-presence mode:
 
-```{r}
+```r
 hap_effect <- hap_gene_variant(
   vcf,
   annotation = gp,
@@ -4974,7 +4987,7 @@ effect_protein$figure
 
 Rank the numerical results directly:
 
-```{r}
+```r
 protein_candidates <- effect_protein$effect[
   trait == "protein_content"
 ][order(-abs_effect, p_adj)]
@@ -5005,7 +5018,7 @@ variant effect
 
 At the end of the analysis, retain the main objects together so the result can be reopened without reconstructing the workflow:
 
-```{r}
+```r
 analysis_bundle <- list(
   annotation = gp,
   features = features,
@@ -5048,3 +5061,4 @@ annotation + signal + VCF + phenotype
     -> biological candidate selection
     -> reproducible export
 ```
+

@@ -1,3 +1,16 @@
+# GeneTrackR 0.6.16
+
+- Removed the `Documentation QA` GitHub Actions workflow.
+- Retained the pkgdown workflow as the single documentation build and deployment workflow.
+- Kept README rendering, pkgdown articles, package code, tests, and generated documentation unchanged.
+
+# GeneTrackR 0.6.15
+
+* Fixed pkgdown homepage code rendering by generating `README.md` from `README.qmd` and staged `docs/*.qmd` sources as display-only GitHub-Flavored Markdown; Quarto/knitr `\`\`\`{r}` fences are converted to standard `\`\`\`r` fences instead of being exposed as plain text.
+* Added `tools/render_readme.R` as the single deterministic README assembly entry point. The script expands Quarto include directives without executing the 202 documentation code chunks and supports `--check` for CI synchronization checks.
+* Added README synchronization to Documentation QA and made the pkgdown workflow regenerate `README.md` before site construction, preventing stale homepage content.
+* No R implementation, API, vignette, statistical method, or plotting behavior was changed.
+
 # GeneTrackR 0.6.14
 
 * Removed the noisy GitHub Pages 404 annotation from the pkgdown workflow by probing repository Pages availability before invoking `actions/configure-pages`.

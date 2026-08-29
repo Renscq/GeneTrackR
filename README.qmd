@@ -3,7 +3,7 @@ title: "GeneTrackR"
 format: gfm
 ---
 
-<!-- README.md is generated from README.qmd and docs/*.qmd. Edit the QMD sources, not README.md. -->
+<!-- README.md is assembled from README.qmd and docs/*.qmd with tools/render_readme.R. Edit the QMD sources, not README.md. -->
 
 {{< include docs/00-overview.qmd >}}
 
