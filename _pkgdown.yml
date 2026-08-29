@@ -121,8 +121,8 @@ reference:
 
   - title: Signal tracks
     desc: >
-      Read, transform, query, summarize, and visualize bedGraph, wig, and bigWig
-      genomic signals, including integrated browser-like tracks.
+      Read, transform, query, write, summarize, and visualize bedGraph, wig,
+      and bigWig genomic signals through the built-in pure-R I/O layer.
     contents:
       - read_bwg
       - write_bwg

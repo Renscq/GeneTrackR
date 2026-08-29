@@ -6,7 +6,7 @@
 ## Main features
 
 - Read and standardize annotations from **GenePred**, **GenePredExt**, **GTF**, **GFF3**, and **BED**.
-- Read and query **bedGraph**, **wig**, and **bigWig** signal tracks.
+- Read, query, and write **bedGraph**, **wig**, and **bigWig** signal tracks through a built-in pure-R I/O layer.
 - Read, lazily query, retrieve, merge, plot, and write **VCF** variant tracks.
 - Draw gene models by gene, transcript, or genomic region.
 - Draw signal tracks as bar, line, area, or heatmap tracks.
@@ -19,7 +19,7 @@
 
 ## Installation
 
-GeneTrackR depends on CRAN and Bioconductor packages. Install the dependencies first, then install GeneTrackR from GitHub.
+GeneTrackR depends on CRAN and Bioconductor packages. Install the dependencies first, then install GeneTrackR from GitHub. GeneTrackR is a pure-R package and does not require a C/C++ compilation toolchain.
 
 ```r
 ## CRAN dependencies
@@ -29,7 +29,6 @@ install.packages(c(
   "ggplot2",
   "patchwork",
   "rlang",
-  "Rcpp",
   "RColorBrewer"
 ))
 
@@ -733,7 +732,7 @@ Because bedGraph does not store strand metadata, `strand = c("+", "-")` explicit
 
 ### Step 2. Write RNA-seq and Ribo-seq bigWig files
 
-`write_bwg()` can convert an in-memory `BwgTrack` to bigWig directly with the bundled third-party libBigWig library in `src/`. No external conversion program is required; only chromosome sizes are needed for the bigWig header.
+`write_bwg()` converts an in-memory `BwgTrack` to bigWig with GeneTrackR's built-in pure-R binary writer. No compiled library or external `bedGraphToBigWig` executable is required; chromosome sizes are still required to construct a valid bigWig header and chromosome index.
 
 ```r
 chrom_sizes_file <- system.file(
@@ -783,7 +782,7 @@ Ribo_seq_plus.bigwig
 Ribo_seq_minus.bigwig
 ```
 
-BigWig export has a single backend in GeneTrackR: the bundled libBigWig implementation. This keeps the write path deterministic across platforms and avoids an external executable dependency.
+BigWig export has a single pure-R backend in GeneTrackR. Reading, regional querying, and writing therefore use the same package-native coordinate contract without a compiled-code dependency or external converter.
 
 ### Step 3. Plot RNA-seq and Ribo-seq tracks for a gene
 
@@ -4251,7 +4250,7 @@ bedgraph_files <- write_bwg(
 bedgraph_files
 ```
 
-bigWig output uses the bundled libBigWig backend and requires chromosome sizes:
+bigWig output uses GeneTrackR's built-in pure-R writer and requires chromosome sizes:
 
 ```r
 chrom_sizes_file <- system.file(
@@ -5061,4 +5060,3 @@ annotation + signal + VCF + phenotype
     -> biological candidate selection
     -> reproducible export
 ```
-

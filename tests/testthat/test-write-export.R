@@ -71,7 +71,7 @@ test_that("lazy signal copies preserve compression suffixes and validate source 
 })
 
 
-test_that("bundled libBigWig backend writes and rereads bigWig", {
+test_that("pure R BigWig writer writes and rereads bigWig", {
   signal <- data.table::data.table(
     sample_id = "sampleA",
     chrom = c("chr1", "chr1", "chr2"),
@@ -124,7 +124,7 @@ test_that("bundled libBigWig backend writes and rereads bigWig", {
 })
 
 
-test_that("bigWig export rejects overlaps before calling libBigWig", {
+test_that("bigWig export rejects overlaps before pure R writing", {
   signal <- data.table::data.table(
     sample_id = "sampleA",
     chrom = "chr1",
@@ -152,7 +152,7 @@ test_that("bigWig export rejects overlaps before calling libBigWig", {
 })
 
 
-test_that("bundled libBigWig backend writes multiple strand-specific samples", {
+test_that("pure R BigWig writer handles multiple strand-specific samples", {
   signal <- data.table::data.table(
     sample_id = c("RNA_seq_plus", "RNA_seq_plus", "RNA_seq_minus", "RNA_seq_minus"),
     chrom = c("chr1", "chr1", "chr1", "chr1"),
@@ -220,7 +220,7 @@ test_that("bundled libBigWig backend writes multiple strand-specific samples", {
 })
 
 
-test_that("demo strand-specific RNA-seq tracks round-trip through bundled libBigWig", {
+test_that("demo strand-specific RNA-seq tracks round-trip through pure R BigWig", {
   rnaseq <- read_bwg(
     gtr_extdata(c(
       "gtr_demo_rnaseq_plus.bedgraph",
@@ -273,7 +273,7 @@ test_that("demo strand-specific RNA-seq tracks round-trip through bundled libBig
 })
 
 
-test_that("write_bwg exposes a single bundled bigWig backend", {
+test_that("write_bwg keeps a single pure R bigWig backend", {
   args <- names(formals(write_bwg))
   expect_false("bigwig_backend" %in% args)
   expect_false("bedGraphToBigWig" %in% args)

@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-08-30
-# Version: dev006
+# Version: dev007
 # Function: Query, normalize, summarize, slice, merge, and write signal tracks
 # Input: BwgTrack objects and genomic regions
 # Output: Signal tables, subset objects, and exported signal files
@@ -891,7 +891,7 @@ bin_bwg <- function(data, bin_size = 50L) {
 #' @details
 #' Schema-v2 objects return stored sequence metadata directly. Legacy objects
 #' without a `seqinfo` slot query chromosome metadata from bigWig source files
-#' through the native R backend.
+#' through the built-in pure-R backend.
 #' @export
 seqinfo_bwg <- function(object, samples = NULL) {
   stop_if_not(inherits(object, "BwgTrack"), "`object` must be a BwgTrack object.")

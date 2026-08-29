@@ -1,3 +1,12 @@
+# GeneTrackR 0.7.8
+
+- Finalized the 0.7.x pure-R signal migration documentation without changing public APIs or signal calculations.
+- Removed obsolete Rcpp, bundled libBigWig, `src/`, and compiled-backend wording from installation guides, signal/export tutorials, pkgdown vignettes, generated README content, and public signal help pages.
+- Restored `README.qmd` as the canonical include-based source used by `tools/render_readme.R`; the clean 0.7.7 deployment artifact had retained the rendered README but stripped its include directives.
+- Updated package-level documentation to state that bedGraph, WIG, and BigWig reading, regional querying, and writing use the built-in pure-R signal I/O architecture.
+- Synchronized the public signal Rd pages with their roxygen sources and renamed legacy writer-test labels to match the pure-R implementation.
+- Retained schema-v2 `BwgTrack`, 1-based closed internal coordinates, lazy/memory semantics, tabix bedGraph behavior, BigWig chromosome-size requirements, and all 0.7.7 signal behavior unchanged.
+
 # GeneTrackR 0.7.7
 
 - Added full signal-subsystem regression coverage for lazy-versus-memory BigWig retrieval, chromosome-edge intervals, strand semantics, normalization parity, and cross-format round trips.

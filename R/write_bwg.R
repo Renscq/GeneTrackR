@@ -1,7 +1,7 @@
 # Author: Rensc
 # Date: 2026-08-30
-# Version: dev008
-# Function: Write BwgTrack objects through the unified native R I/O layer
+# Version: dev009
+# Function: Write BwgTrack objects through the unified pure R I/O layer
 # Input: BwgTrack object
 # Output: Signal track files
 
@@ -9,10 +9,10 @@
 #'
 #' @description
 #' Writes a `BwgTrack` object to bedGraph, wig, or bigWig files. All three
-#' formats are written directly in R. bigWig output uses GeneTrackR's native R
-#' binary writer and requires chromosome sizes; no external conversion program
-#' or compiled BigWig backend is used by `write_bwg()`.
-#' All in-memory formats are dispatched through the same internal native R I/O layer.
+#' formats are written directly in pure R. bigWig output uses GeneTrackR's
+#' built-in binary writer and requires chromosome sizes; no external conversion
+#' program or compiled library is required. All in-memory formats are dispatched
+#' through the same internal pure-R I/O layer.
 #'
 #' For in-memory `BwgTrack` objects, signal records are written from `object$data`.
 #' For lazy objects, direct conversion is not possible because signal records are

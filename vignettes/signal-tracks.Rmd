@@ -11,7 +11,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-GeneTrackR uses `BwgTrack` as the common object for continuous genomic signals from **bedGraph**, **wig**, and **bigWig** files. The normal signal workflow is:
+GeneTrackR uses `BwgTrack` as the common object for continuous genomic signals from **bedGraph**, **wig**, and **bigWig** files. Signal reading, regional querying, and writing are implemented in pure R. The normal signal workflow is:
 
 1. read signal metadata or records into a `BwgTrack`;
 2. validate and inspect sample metadata;
@@ -184,7 +184,7 @@ Binning changes the resolution of the signal representation. It should therefore
 
 ## Write bigWig output
 
-`write_bwg()` writes bedGraph, wig, or bigWig from an in-memory `BwgTrack`. BigWig output requires chromosome sizes. GeneTrackR uses its bundled libBigWig backend, so an external `bedGraphToBigWig` executable is not required.
+`write_bwg()` writes bedGraph, wig, or bigWig from an in-memory `BwgTrack`. All three formats are written in pure R. BigWig output requires chromosome sizes, but it does not require a compiled library or an external `bedGraphToBigWig` executable.
 
 ```{r write-bigwig}
 chrom_sizes_file <- system.file(

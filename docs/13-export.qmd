@@ -191,7 +191,7 @@ bedgraph_files <- write_bwg(
 bedgraph_files
 ```
 
-bigWig output uses the bundled libBigWig backend and requires chromosome sizes:
+bigWig output uses GeneTrackR's built-in pure-R writer and requires chromosome sizes:
 
 ```{r}
 chrom_sizes_file <- system.file(

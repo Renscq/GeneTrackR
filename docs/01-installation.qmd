@@ -1,6 +1,6 @@
 ## Installation
 
-GeneTrackR depends on CRAN and Bioconductor packages. Install the dependencies first, then install GeneTrackR from GitHub.
+GeneTrackR depends on CRAN and Bioconductor packages. Install the dependencies first, then install GeneTrackR from GitHub. GeneTrackR is a pure-R package and does not require a C/C++ compilation toolchain.
 
 ```{r}
 ## CRAN dependencies
@@ -10,7 +10,6 @@ install.packages(c(
   "ggplot2",
   "patchwork",
   "rlang",
-  "Rcpp",
   "RColorBrewer"
 ))
 

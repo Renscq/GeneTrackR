@@ -3,7 +3,7 @@
 ## Main features
 
 - Read and standardize annotations from **GenePred**, **GenePredExt**, **GTF**, **GFF3**, and **BED**.
-- Read and query **bedGraph**, **wig**, and **bigWig** signal tracks.
+- Read, query, and write **bedGraph**, **wig**, and **bigWig** signal tracks through a built-in pure-R I/O layer.
 - Read, lazily query, retrieve, merge, plot, and write **VCF** variant tracks.
 - Draw gene models by gene, transcript, or genomic region.
 - Draw signal tracks as bar, line, area, or heatmap tracks.

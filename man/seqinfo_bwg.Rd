@@ -20,5 +20,5 @@ Get chromosome information from BwgTrack objects
 \details{
 Schema-v2 objects return stored sequence metadata directly. Legacy objects
 without a \code{seqinfo} slot query chromosome metadata from bigWig source files
-through the native R backend.
+through the built-in pure-R backend.
 }

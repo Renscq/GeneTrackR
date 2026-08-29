@@ -8,7 +8,8 @@
 \description{
 GeneTrackR provides utilities for reading, validating, slicing, merging,
 writing, and plotting GenePred annotations and bedGraph, wig, or bigWig
-genomic signal tracks.
+genomic signal tracks. Signal-track reading, regional querying, and writing are
+implemented in pure R.
 }
 \seealso{
 Useful links:
@@ -21,6 +22,11 @@ Useful links:
 }
 \author{
 \strong{Maintainer}: Rensc \email{rensc0718@163.com}
+
+Authors:
+\itemize{
+  \item Rensc \email{rensc0718@163.com}
+}
 
 }
 \keyword{internal}
