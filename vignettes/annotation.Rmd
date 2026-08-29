@@ -1,0 +1,490 @@
+---
+title: "Annotation files and feature workflows"
+description: "Read, validate, query, convert, merge, write, and visualize GenePred, GTF, GFF3, and BED annotations with GeneTrackR."
+author: "Rensc"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Annotation files and feature workflows}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 8,
+  fig.height = 4.8
+)
+```
+
+GeneTrackR provides one annotation workflow for **GenePred**, **GenePredExt**, **GTF**, **GFF3**, and **BED** files. The readers normalize file-level coordinate conventions into a common internal representation, and the downstream API works on compatible `GenePred` / `FeatureTrack` objects instead of requiring format-specific code at every step.
+
+This article follows the normal analysis order:
+
+1. read annotation files;
+2. inspect and validate the returned objects;
+3. retrieve genes, transcripts, exons, or genomic intervals;
+4. convert between standardized representations;
+5. merge compatible annotation subsets;
+6. write native or cross-format outputs;
+7. visualize annotation structure before downstream signal, variant, haplotype, or LD analysis.
+
+```{r load-package}
+library(GeneTrackR)
+```
+
+## Supported formats and coordinate conventions
+
+| Format | Typical content | Reader | Main return | Input coordinate convention |
+|---|---|---|---|---|
+| GenePred | 10-column transcript model | `read_genepred(..., format = "genePred")` | `GenePred` | 0-based half-open by default |
+| GenePredExt | 15-column transcript model with gene/status/frame fields | `read_genepred(..., format = "genePredExt")` | `GenePred` | 0-based half-open by default |
+| GTF | 9-column hierarchical annotation | `read_gtf()` | `FeatureTrack` | 1-based closed |
+| GFF3 | 9-column hierarchy using `ID` / `Parent` | `read_gff()` | `FeatureTrack` | 1-based closed |
+| BED | BED3-BED12 interval annotation | `read_bed()` | `FeatureTrack` | 0-based half-open by default |
+
+GeneTrackR stores imported annotation intervals internally as **1-based closed** coordinates. Coordinate conversion therefore belongs at the file boundary: do not manually add or subtract one after reading an annotation unless an external downstream format explicitly requires a different convention.
+
+`write_feature()` converts GenePred- and BED-like outputs back to UCSC-style coordinates by default with `coordinate = "ucsc"`.
+
+## Load the deterministic annotation files
+
+The bundled demo files represent the same small reference genome in multiple annotation formats.
+
+```{r annotation-paths}
+gp_file <- system.file(
+  "extdata",
+  "gtr_demo.genePredExt",
+  package = "GeneTrackR"
+)
+gtf_file <- system.file(
+  "extdata",
+  "gtr_demo.gtf",
+  package = "GeneTrackR"
+)
+gff_file <- system.file(
+  "extdata",
+  "gtr_demo.gff3",
+  package = "GeneTrackR"
+)
+bed_file <- system.file(
+  "extdata",
+  "gtr_demo_features.bed",
+  package = "GeneTrackR"
+)
+```
+
+Read all four representations through their native readers:
+
+```{r read-annotation}
+gp <- read_genepred(
+  gp_file,
+  format = "genePredExt",
+  verbose = FALSE,
+  progress = FALSE
+)
+
+gtf <- read_gtf(
+  gtf_file,
+  verbose = FALSE,
+  progress = FALSE
+)
+
+gff <- read_gff(
+  gff_file,
+  verbose = FALSE,
+  progress = FALSE
+)
+
+features <- read_bed(
+  bed_file,
+  verbose = FALSE,
+  progress = FALSE
+)
+```
+
+GenePred/GenePredExt and hierarchical GTF/GFF3 inputs provide gene-model information. BED is primarily treated as an interval feature track and should not be assumed to reconstruct transcript/exon blocks from generic BED input.
+
+## Annotation object contract
+
+GeneTrackR intentionally exposes a small common object model:
+
+| Input | Main object | Important contents |
+|---|---|---|
+| GenePred / GenePredExt | `GenePred` | `$genes`, `$transcripts`, `$exons`, `$data` |
+| Gene-model GTF / GFF3 | `FeatureTrack` | `$data` plus derived `$genes`, `$transcripts`, `$exons` when available |
+| BED | `FeatureTrack` | primarily the standardized interval `$data` table |
+
+The objects can be inspected directly without immediately flattening them:
+
+```{r inspect-objects}
+gp
+head(gp$genes)
+head(gp$transcripts)
+head(gp$exons)
+
+head(gtf$data)
+head(features$data)
+```
+
+This object contract is important downstream. Gene-model objects can be passed directly to gene-model, signal, variant, haplotype, and LD visualization functions, while interval-style `FeatureTrack` objects can be overlaid as annotation tracks.
+
+## Validate and summarize annotations
+
+Use `validate_feature()` after importing external annotation data, especially before cross-format conversion or merging.
+
+```{r validate-annotation}
+gp_validation <- validate_feature(gp)
+gtf_validation <- validate_feature(gtf)
+gff_validation <- validate_feature(gff)
+bed_validation <- validate_feature(features)
+
+gp_validation$invalid_summary
+bed_validation$invalid_summary
+```
+
+For gene-model objects, validation checks both the standardized feature table and transcript/exon consistency. For interval-style BED tracks, validation focuses on the standardized feature records.
+
+`summary_feature()` provides a compact QC view at different hierarchy levels:
+
+```{r summarize-annotation}
+summary_feature(gp, level = "gene")
+summary_feature(gp, level = "transcript")
+summary_feature(gp, level = "exon")
+summary_feature(features, level = "feature")
+```
+
+A region can be summarized without first constructing a separate subset:
+
+```{r summarize-region}
+summary_feature(
+  gp,
+  chrom = "chr1",
+  start = 12339001,
+  end = 12374500,
+  level = "gene"
+)
+```
+
+## Retrieve genes, transcripts, and regions
+
+`retrieve_feature()` is the common annotation query interface. By default it preserves a compatible annotation object; request `as = "data.table"` only when a flat table is required.
+
+### Exact gene or transcript retrieval
+
+```{r retrieve-identifiers}
+gp_gene_a <- retrieve_feature(
+  gp,
+  gene_id = "GeneA"
+)
+
+gp_tx_a1 <- retrieve_feature(
+  gp,
+  transcript_id = "TxA1"
+)
+
+gp_gene_a$genes
+gp_tx_a1$transcripts
+```
+
+### Genomic-region retrieval
+
+```{r retrieve-region}
+gp_region <- retrieve_feature(
+  gp,
+  chrom = "chr1",
+  start = 12339001,
+  end = 12374500,
+  mode = "overlap"
+)
+```
+
+The region-selection modes have distinct semantics:
+
+| `mode` | Meaning |
+|---|---|
+| `"overlap"` | Keep records overlapping the requested interval. |
+| `"within"` | Keep records fully contained in the requested interval. |
+| `"trim"` | Keep overlapping hierarchical gene-model records and clip model boundaries to the requested interval. |
+
+For generic interval-style BED tracks, `trim` behaves as overlap selection because there is no transcript/exon hierarchy to rebuild.
+
+### Retrieve a flat table
+
+```{r retrieve-table}
+gp_gene_table <- retrieve_feature(
+  gp,
+  chrom = "chr1",
+  start = 12339001,
+  end = 12374500,
+  level = "gene",
+  as = "data.table"
+)
+
+gp_gene_table
+```
+
+BED-derived features can be retrieved with the same regional interface or by text pattern:
+
+```{r retrieve-bed}
+bed_gene_a <- retrieve_feature(
+  features,
+  chrom = "chr1",
+  start = 12338201,
+  end = 12352000,
+  mode = "overlap"
+)
+
+bed_promoters <- retrieve_feature(
+  features,
+  pattern = "promoter"
+)
+
+head(bed_promoters$data)
+```
+
+## Convert annotations and expose standardized tables
+
+The unified object model allows annotation formats to be converted without reparsing their original text representation.
+
+```{r convert-annotation}
+# Hierarchical GTF/GFF3 -> GenePred-compatible model
+gtf_as_gp <- as_genepred(gtf)
+gff_as_gp <- as_genepred(gff)
+
+# Standardized hierarchy tables
+gene_dt <- as_gene_table(gp)
+tx_dt <- as_transcript_table(gp)
+exon_dt <- as_exon_table(gp)
+feature_dt <- as_feature_table(gp)
+
+head(gene_dt)
+head(tx_dt)
+```
+
+`as_feature()` returns the common feature-compatible object representation, while `as_granges()` provides Bioconductor interoperability:
+
+```{r bioconductor-conversion}
+gp_feature <- as_feature(gp)
+gene_gr <- as_granges(gp, level = "gene")
+
+gp_feature
+gene_gr
+```
+
+Use the hierarchy-specific table helpers when downstream code explicitly requires tabular data. Preserve the full object for GeneTrackR workflows so gene/transcript/exon relationships are not silently discarded.
+
+## Merge compatible annotations
+
+`merge_feature()` accepts `Feature`, `FeatureTrack`, and `GenePred` objects, including lists of objects.
+
+```{r merge-subsets}
+gp_gene_b <- retrieve_feature(
+  gp,
+  gene_id = "GeneB"
+)
+
+gp_merged <- merge_feature(
+  gp_gene_a,
+  gp_gene_b,
+  source_names = c("GeneA", "GeneB"),
+  conflict = "deduplicate"
+)
+
+gp_merged$genes
+```
+
+Duplicate identifiers are handled explicitly:
+
+| `conflict` | Behavior |
+|---|---|
+| `"deduplicate"` | Keep the first compatible copy according to input order. Default. |
+| `"rename"` | Rename conflicting IDs in later inputs and update hierarchy references. |
+| `"keep_all"` | Retain conflicting records unchanged. |
+| `"error"` | Stop if duplicate identifiers are detected. |
+| `"keep_first"` | Backward-compatible alias of `"deduplicate"`. |
+
+When two formats describe the same locus but both representations must be retained, `rename` prevents identifier collisions:
+
+```{r merge-cross-format}
+gtf_gene_a <- retrieve_feature(
+  gtf,
+  gene_id = "GeneA"
+)
+
+cross_format <- merge_feature(
+  list(gp_gene_a, gtf_gene_a),
+  source_names = c("GenePred", "GTF"),
+  conflict = "rename"
+)
+
+cross_format$genes
+```
+
+If the inputs are alternative encodings of the same annotation and only one copy is required, use `conflict = "deduplicate"` instead.
+
+## Write annotations and perform round-trip checks
+
+`write_feature()` is the main annotation writer. It supports `genepred`, `genepredext`, `gff`, `gtf`, `bed6`, and `bed12` outputs.
+
+### GenePred / GenePredExt
+
+```{r write-genepred}
+gp_out <- file.path(tempdir(), "GeneA.genePredExt")
+
+write_feature(
+  gp_gene_a,
+  gp_out,
+  format = "genepredext",
+  overwrite = TRUE
+)
+```
+
+`write_genepred()` remains available as a compatibility wrapper, but new workflows should generally use `write_feature()` because it provides the unified cross-format interface.
+
+### GTF / GFF3
+
+```{r write-hierarchical}
+gtf_out <- file.path(tempdir(), "GeneA.gtf")
+gff_out <- file.path(tempdir(), "GeneA.gff3")
+
+write_feature(
+  gtf_gene_a,
+  gtf_out,
+  format = "gtf",
+  overwrite = TRUE
+)
+
+write_feature(
+  gtf_gene_a,
+  gff_out,
+  format = "gff",
+  overwrite = TRUE
+)
+```
+
+### BED6 / BED12
+
+Generic BED-derived intervals should normally be written as BED6:
+
+```{r write-bed6}
+bed_out <- file.path(tempdir(), "GeneA_features.bed6")
+
+write_feature(
+  bed_gene_a,
+  bed_out,
+  format = "bed6",
+  overwrite = TRUE
+)
+```
+
+BED12 requires transcript/exon model information and is therefore appropriate for `GenePred` or hierarchical GTF/GFF3 models:
+
+```{r write-bed12}
+bed12_out <- file.path(tempdir(), "GeneA.bed12")
+
+write_feature(
+  gp_gene_a,
+  bed12_out,
+  format = "bed12",
+  overwrite = TRUE
+)
+```
+
+For reproducible conversion workflows, read the written file back and compare the biological records rather than comparing raw coordinates across formats that use different native conventions:
+
+```{r round-trip}
+gp_roundtrip <- read_genepred(
+  gp_out,
+  format = "genePredExt",
+  verbose = FALSE,
+  progress = FALSE
+)
+
+as_gene_table(gp_gene_a)[, .(gene_id, chrom, gene_start, gene_end, strand)]
+as_gene_table(gp_roundtrip)[, .(gene_id, chrom, gene_start, gene_end, strand)]
+```
+
+## Visualize annotation structure
+
+Annotation QC is easier when the tables and genomic structure are inspected together. GeneTrackR provides complementary views for gene models and interval feature tracks.
+
+### Gene model
+
+```{r plot-gene, fig.height=3.8}
+plot_gene(
+  gp,
+  gene_id = "GeneA",
+  label_position = "axis",
+  direction_mode = "end",
+  plot_theme = "classic"
+)
+```
+
+### Transcript structure
+
+```{r plot-transcript, fig.height=3.8}
+plot_transcript(
+  gp,
+  transcript_id = "TxA1",
+  coordinate = "genomic",
+  plot_theme = "classic"
+)
+```
+
+Spliced transcript coordinates can be requested with `coordinate = "transcript"` when introns should be removed from the x-axis representation.
+
+### Genomic region
+
+```{r plot-region, fig.height=4.2}
+plot_region(
+  gp,
+  chrom = "chr1",
+  start = 12339001,
+  end = 12374500,
+  mode = "overlap",
+  label_by = "gene",
+  plot_theme = "classic"
+)
+```
+
+### Interval feature track
+
+```{r plot-feature-track, fig.height=3.8}
+plot_feature_track(
+  features,
+  chrom = "chr1",
+  start = 12338201,
+  end = 12374500,
+  plot_theme = "classic"
+)
+```
+
+### Gene-length distribution
+
+The distribution helper separates calculation from plotting so the derived table can be inspected or exported independently.
+
+```{r gene-length-table}
+gene_length_dt <- get_gene_length_distribution_table(gp)
+head(gene_length_dt)
+```
+
+```{r plot-gene-length, fig.height=4.2}
+plot_gene_length_distribution(gp)
+```
+
+## Recommended annotation workflow
+
+For external annotation projects, a robust sequence is:
+
+1. **Read with the native parser** and let GeneTrackR handle source-format coordinates.
+2. **Validate immediately** with `validate_feature()` before downstream filtering or conversion.
+3. **Inspect hierarchy and summary tables** to confirm gene/transcript/exon counts and chromosome/strand coverage.
+4. **Retrieve sub-objects**, not only plain tables, when the result will continue through GeneTrackR.
+5. **Convert only at explicit interfaces** using `as_*()` or `write_feature()` rather than manually reconstructing columns.
+6. **Resolve merge conflicts explicitly** instead of silently dropping duplicate identifiers.
+7. **Round-trip important exports** and compare standardized biological coordinates/IDs.
+8. **Visualize representative loci** before integrating signal, variants, haplotypes, or LD.
+
+The annotation object produced here is the common structural input for the remaining GeneTrackR workflows. The dedicated visualization, signal, variant, haplotype, and association articles build on the same object contract rather than introducing a second annotation representation.

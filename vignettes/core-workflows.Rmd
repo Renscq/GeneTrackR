@@ -18,6 +18,8 @@ knitr::opts_chunk$set(
 )
 ```
 
+If you are new to the package, read **Getting started with GeneTrackR** first, then **GeneTrackR deterministic example data** for the shared file inventory, coordinate conventions, and designed truth. This article assumes that installation and the demo data model are already familiar.
+
 This vignette uses the single deterministic `gtr_demo_*` dataset shipped with GeneTrackR. The same annotation, VCF, phenotype table, and designed truth are shared across annotation, variant, haplotype, LD, refinement, and variant-effect workflows.
 
 ## Load the canonical demo inputs

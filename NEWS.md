@@ -1,3 +1,26 @@
+# GeneTrackR 0.6.4
+
+- Added a dedicated pkgdown gene-model visualization article covering gene, transcript, and regional structural views, genomic versus spliced transcript coordinates, transcript collapse, strand-direction arrows, labels, highlights, and explicit feature colors.
+- Rebuilt the signal-track article around the complete `BwgTrack` workflow: reading, lazy versus in-memory access, strand semantics, regional retrieval, normalization, merging, binning, writing, gene/transcript/region visualization, Ribo-seq frame views, and integrated `plot_tracks()` figures.
+- Separated gene-model structure from continuous-signal documentation so later variant/browser-track articles can build on a stable visualization foundation without duplicating annotation or signal basics.
+- Added the gene-model article to the pkgdown Visualization section while retaining all staged `docs/*.qmd` sources unchanged for subsequent migration steps.
+
+# GeneTrackR 0.6.3
+
+- Added a dedicated pkgdown annotation article covering GenePred/GenePredExt, GTF, GFF3, and BED inputs through one unified GeneTrackR workflow.
+- Reorganized annotation documentation around native coordinate handling, object contracts, validation and summaries, feature retrieval, cross-format conversion, merging, writing, and round-trip checks.
+- Added annotation-focused visualization examples for genes, transcripts, genomic regions, interval feature tracks, and gene-length distributions.
+- Added a Data & annotation section to the pkgdown Articles index while retaining the existing Getting Started and Visualization navigation.
+- Kept all staged `docs/*.qmd` sources unchanged for later module-specific migration.
+
+# GeneTrackR 0.6.2
+
+- Rebuilt the pkgdown Get Started path around a dedicated first-run article that covers installation, package loading, bundled demo inputs, and a minimal annotation-to-haplotype/phenotype workflow.
+- Added a deterministic example-data article documenting the shared file inventory, coordinate conventions, core dimensions, sample alignment rule, GeneA haplotype/phenotype truth, LD gradient, and strand-specific RNA-seq/Ribo-seq design.
+- Updated the pkgdown article order to `Getting started -> Example data -> Core workflow`, while retaining signal-track documentation under Visualization.
+- Added prerequisite navigation to the existing core workflow without changing its executable analysis workflow.
+- Kept all staged `docs/*.qmd` sources unchanged for later module-by-module migration.
+
 # GeneTrackR 0.6.1
 
 - Redesigned the pkgdown information architecture around a dedicated **Get Started** entry, task-oriented **Articles**, and a functionally grouped **Reference** index.

@@ -1,0 +1,217 @@
+---
+title: "Getting started with GeneTrackR"
+description: "Install GeneTrackR, load the deterministic demo data, and run a minimal annotation-to-haplotype workflow."
+author: "Rensc"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with GeneTrackR}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 8,
+  fig.height = 4.8
+)
+```
+
+GeneTrackR is an R package for annotation, genomic signal, variant, haplotype, phenotype, linkage-disequilibrium, and variant-effect workflows. This page is the shortest path from installation to a first reproducible analysis. The examples use the deterministic `gtr_demo_*` files shipped with the package, so no external data download is required.
+
+## Installation
+
+GeneTrackR depends on CRAN and Bioconductor packages. Install the Bioconductor dependencies first, then install GeneTrackR from GitHub.
+
+```{r install, eval=FALSE}
+if (!requireNamespace("BiocManager", quietly = TRUE)) {
+  install.packages("BiocManager")
+}
+
+BiocManager::install(
+  c("GenomicRanges", "IRanges", "Rsamtools"),
+  ask = FALSE,
+  update = FALSE
+)
+
+if (!requireNamespace("remotes", quietly = TRUE)) {
+  install.packages("remotes")
+}
+
+remotes::install_github(
+  "Renscq/GeneTrackR",
+  dependencies = TRUE,
+  build_vignettes = FALSE
+)
+```
+
+`Rsamtools` is optional for basic in-memory analyses but is recommended for indexed VCF and tabix-backed genomic queries.
+
+For local package development:
+
+```bash
+# Clone the source repository.
+git clone https://github.com/Renscq/GeneTrackR.git
+cd GeneTrackR
+```
+
+```{r local-development, eval=FALSE}
+devtools::document()
+devtools::install(build_vignettes = FALSE)
+```
+
+## Load GeneTrackR
+
+```{r load-package}
+library(GeneTrackR)
+```
+
+## Locate the bundled example data
+
+The core demo files are installed under `extdata`:
+
+```{r demo-paths}
+gp_file <- system.file(
+  "extdata",
+  "gtr_demo.genePredExt",
+  package = "GeneTrackR"
+)
+
+vcf_file <- system.file(
+  "extdata",
+  "gtr_demo_variants.vcf",
+  package = "GeneTrackR"
+)
+
+pheno_file <- system.file(
+  "extdata",
+  "gtr_demo_pheno.tsv",
+  package = "GeneTrackR"
+)
+
+c(
+  annotation = gp_file,
+  variants = vcf_file,
+  phenotype = pheno_file
+)
+```
+
+The complete demo also includes GTF/GFF3/BED annotation files and strand-specific RNA-seq/Ribo-seq bedGraph tracks. See the **GeneTrackR deterministic example data** article for the complete data model and designed truth.
+
+## Read the three core inputs
+
+```{r read-core-inputs}
+gp <- read_genepred(
+  gp_file,
+  format = "genePredExt",
+  verbose = FALSE,
+  progress = FALSE
+)
+
+vcf <- read_vcf(
+  vcf_file,
+  mode = "memory",
+  keep_genotype = TRUE,
+  verbose = FALSE,
+  progress = FALSE
+)
+
+pheno <- read_pheno(
+  pheno_file,
+  verbose = FALSE,
+  progress = FALSE
+)
+```
+
+These objects preserve the data needed by downstream modules. In particular, keep VCF genotype columns when the analysis will include haplotypes or LD.
+
+## Inspect a candidate gene
+
+`GeneA` is the primary positive-strand demo locus.
+
+```{r inspect-gene}
+genea <- retrieve_feature(
+  gp,
+  gene_id = "GeneA"
+)
+
+genea$genes
+```
+
+A gene model can be drawn directly from the same annotation object:
+
+```{r plot-gene}
+plot_gene(
+  gp,
+  gene_id = "GeneA"
+)
+```
+
+## Retrieve variants for the same locus
+
+```{r retrieve-variants}
+genea_variants <- retrieve_vcf(
+  vcf,
+  annotation = gp,
+  gene_id = "GeneA",
+  as = "data.table",
+  verbose = FALSE,
+  progress = FALSE
+)
+
+genea_variants[, .(
+  variant_id,
+  chrom,
+  pos,
+  ref,
+  alt,
+  variant_type
+)]
+```
+
+The annotation object defines the interval; no manual coordinate copy is needed.
+
+## Build gene haplotypes
+
+```{r build-haplotypes}
+hap <- hap_gene_variant(
+  vcf,
+  annotation = gp,
+  gene_id = "GeneA",
+  genotype_mode = "string"
+)
+
+hap$haplotypes[, c(
+  "hap_id",
+  "sample_n",
+  "samples"
+), with = FALSE]
+```
+
+The deterministic GeneA example contains four balanced haplotype groups. Keep the returned `HapVariant` object: it carries sample assignments and genotype tables into phenotype, refinement, and variant-effect analyses.
+
+## Test a phenotype association
+
+```{r haplotype-phenotype}
+hap_pheno <- plot_hap_pheno(
+  hap,
+  phenotype = pheno,
+  traits = "protein_content",
+  min_hap_samples = 3
+)
+
+hap_pheno$pvalue
+```
+
+GeneTrackR aligns phenotype and genotype records by `sample_id`. Row order should never be used as the sample-matching rule.
+
+## Where to go next
+
+Use the Getting Started articles in this order:
+
+1. **Getting started with GeneTrackR** — installation and the minimal analysis above.
+2. **GeneTrackR deterministic example data** — file inventory, coordinate conventions, sample design, and known positive/negative controls.
+3. **GeneTrackR core workflow** — the full candidate-locus workflow from input validation and browser-like inspection through haplotypes, phenotype association, LD, refinement, variant effects, and export.
+
+For signal-specific analyses, continue with **Strand-specific RNA-seq and Ribo-seq signal tracks**.

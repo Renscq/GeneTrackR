@@ -1,10 +1,10 @@
 ---
-title: "Strand-specific RNA-seq and Ribo-seq signal tracks"
-description: "Read, combine, and visualize strand-specific RNA-seq and Ribo-seq signals with GeneTrackR genomic track objects."
+title: "Genomic signal tracks"
+description: "Read, query, transform, write, and visualize strand-aware RNA-seq and Ribo-seq signals with BwgTrack objects."
 author: "Rensc"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Strand-specific RNA-seq and Ribo-seq signal tracks}
+  %\VignetteIndexEntry{Genomic signal tracks}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -14,39 +14,59 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.width = 8,
-  fig.height = 4.5
+  fig.height = 4.8,
+  dpi = 500
 )
 ```
 
-This vignette uses the deterministic GeneTrackR demo genome. RNA-seq and Ribo-seq signals are each represented by separate plus- and minus-strand bedGraph files.
+GeneTrackR uses `BwgTrack` as the common object for continuous genomic signals from **bedGraph**, **wig**, and **bigWig** files. The normal signal workflow is:
 
-## Load annotation and signal files
+1. read signal metadata or records into a `BwgTrack`;
+2. validate and inspect sample metadata;
+3. retrieve only the genomic interval needed for analysis;
+4. optionally normalize, merge, or bin tracks;
+5. write standardized signal files when required;
+6. visualize signal at gene, transcript, or regional scale;
+7. combine signal with the gene model and other genomic tracks.
 
-```{r load-data}
+The deterministic demo provides separate plus- and minus-strand RNA-seq and Ribo-seq bedGraph files.
+
+```{r load-package}
 library(GeneTrackR)
 
 gp <- read_genepred(
-  system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR"),
+  system.file(
+    "extdata",
+    "gtr_demo.genePredExt",
+    package = "GeneTrackR"
+  ),
   format = "genePredExt",
-  verbose = FALSE
+  verbose = FALSE,
+  progress = FALSE
 )
 
 rnaseq_files <- system.file(
   "extdata",
-  c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph"),
+  c(
+    "gtr_demo_rnaseq_plus.bedgraph",
+    "gtr_demo_rnaseq_minus.bedgraph"
+  ),
   package = "GeneTrackR"
 )
 
 riboseq_files <- system.file(
   "extdata",
-  c("gtr_demo_riboseq_plus.bedgraph", "gtr_demo_riboseq_minus.bedgraph"),
+  c(
+    "gtr_demo_riboseq_plus.bedgraph",
+    "gtr_demo_riboseq_minus.bedgraph"
+  ),
   package = "GeneTrackR"
 )
 ```
 
-bedGraph does not store strand metadata. The strand is therefore supplied explicitly when constructing the `BwgTrack` objects.
+## Read signal tracks
 
-`read_bwg()` returns a `BwgTrack`. The signal plotting functions used below return ggplot/patchwork figures directly; they do not return a list with a `$figure` field. `merge_bwg()` returns another `BwgTrack`, so the merged object can be passed directly into any signal plotting function.
+For small inputs or repeated local analysis, `mode = "memory"` loads all signal records immediately.
 
 ```{r read-signal}
 rnaseq <- read_bwg(
@@ -67,120 +87,272 @@ riboseq <- read_bwg(
   verbose = FALSE
 )
 
-rnaseq$samples[, c("sample_id", "strand"), with = FALSE]
-riboseq$samples[, c("sample_id", "strand"), with = FALSE]
+summary_bwg(rnaseq)
+summary_bwg(riboseq)
 ```
 
-## RNA-seq: exon-enriched coverage
+A `BwgTrack` keeps sample-level metadata separately from signal records. Inspect `$samples` when strand, format, normalization, or backing-file information matters.
 
-The RNA-seq demo tracks contain signal over exons, including UTRs. Designed intronic and intergenic regions have no bedGraph records. `GeneA` is on the plus strand and `GeneB` is on the minus strand.
+```{r inspect-samples}
+rnaseq$samples[, c("sample_id", "format", "strand"), with = FALSE]
+```
 
-```{r rnaseq-genea}
-rnaseq_genea_figure <- plot_signal_gene(
-  signal = rnaseq,
+## Lazy versus memory mode
+
+For large real-world bigWig or indexed bedGraph files, prefer `mode = "lazy"`. Lazy mode keeps file metadata and retrieves only the requested interval instead of loading the whole signal track.
+
+```{r lazy-signal, eval=FALSE}
+signal_lazy <- read_bwg(
+  files = c("sample1.bigwig", "sample2.bigwig"),
+  format = "bigwig",
+  sample_names = c("sample1", "sample2"),
+  mode = "lazy"
+)
+```
+
+Use memory mode when the track is small enough to fit comfortably in memory and will be queried repeatedly over many loci. Full-memory bigWig loading can be expensive; GeneTrackR therefore warns when a bigWig is loaded in memory mode.
+
+## Strand semantics
+
+Standard bigWig and wig files do not encode strand at the record level. GeneTrackR therefore treats them as unstranded signals. For paired plus/minus **bedGraph** files, an explicit `strand = c("+", "-")` records the source-file strand in the `BwgTrack` sample table and enables strand-aware filtering.
+
+With gene- or transcript-based retrieval, `strand = "auto"` can use the strand of the annotation target.
+
+## Retrieve a genomic interval
+
+`retrieve_bwg()` supports direct genomic coordinates and annotation-aware gene/transcript retrieval. This is the preferred interface for lazy signal objects.
+
+```{r retrieve-gene}
+rnaseq_genea <- retrieve_bwg(
+  rnaseq,
   annotation = gp,
   gene_id = "GeneA",
-  plot_type = "bar",
-  signal_y_scale = "fixed"
+  strand = "auto",
+  as = "data.table"
 )
-rnaseq_genea_figure
+
+head(rnaseq_genea)
 ```
 
-```{r rnaseq-geneb}
-rnaseq_geneb_figure <- plot_signal_gene(
-  signal = rnaseq,
-  annotation = gp,
-  gene_id = "GeneB",
-  plot_type = "bar",
-  signal_y_scale = "fixed"
+The same operation can return a new in-memory `BwgTrack` when a reusable regional object is more convenient:
+
+```{r retrieve-object}
+rnaseq_region <- retrieve_bwg(
+  rnaseq,
+  chrom = "chr1",
+  start = 12339001,
+  end = 12352000,
+  strand = "+",
+  as = "BwgTrack"
 )
-rnaseq_geneb_figure
+
+rnaseq_region
 ```
 
+`slice_bwg()` provides a compact coordinate-only interface when annotation-aware resolution is not required.
 
-## Palette direction and panel proportions
+## Normalize and merge signals
 
-`signal_palette_direction` reverses the standard palette order before discrete colors are assigned. The effect is visible even when strand-aware retrieval leaves a single signal sample. Explicit `signal_colors` remain unchanged because they are treated as exact user mappings.
+`norm_bwg()` records and applies supported sample-level normalization strategies. For RPM/CPM normalization, supply appropriate library sizes; for externally defined scaling, use named scale factors.
 
-```{r rnaseq-palette-layout}
-rnaseq_palette_figure <- plot_signal_gene(
-  signal = rnaseq,
-  annotation = gp,
-  gene_id = "GeneA",
-  plot_type = "bar",
-  signal_palette = "Blues",
-  signal_palette_direction = -1,
-  signal_y_scale = "fixed",
-  signal_track_height = 4,
-  gene_track_height = 1
+```{r normalize-signal}
+rnaseq_scaled <- norm_bwg(
+  rnaseq,
+  method = "scale",
+  scale_factor = c(
+    RNA_seq_plus = 1,
+    RNA_seq_minus = 1
+  )
 )
-rnaseq_palette_figure
 ```
 
-The same height arguments are available in `plot_signal_transcript()` and `plot_signal_region()`. The integrated `plot_tracks()` function already exposes a named `heights` vector.
+RNA-seq and Ribo-seq tracks have distinct sample IDs in the demo and can be merged directly:
 
-## Ribo-seq: sparse base-resolution P-site counts
-
-The Ribo-seq tracks contain moderately dense one-base integer P-site-like counts only in CDS regions. Frame 0 is broadly occupied with variable heights, while frame 1 and frame 2 use different codon subsets with lower irregular counts. Zero-count bases are omitted. Counts follow transcript orientation, are distributed at approximately 80%/10%/10% across frame 0/frame 1/frame 2, and initiation/termination frame-0 counts are approximately two times the internal frame-0 mean.
-
-For the positive-strand `TxA1` transcript:
-
-```{r riboseq-plus}
-riboseq_plus_figure <- plot_signal_transcript(
-  signal = riboseq,
-  annotation = gp,
-  transcript_id = "TxA1",
-  coordinate = "transcript",
-  plot_type = "frame"
-)
-riboseq_plus_figure
-```
-
-For the negative-strand `TxB1` transcript:
-
-```{r riboseq-minus}
-riboseq_minus_figure <- plot_signal_transcript(
-  signal = riboseq,
-  annotation = gp,
-  transcript_id = "TxB1",
-  coordinate = "transcript",
-  plot_type = "frame"
-)
-riboseq_minus_figure
-```
-
-## Combine all four signal tracks
-
-RNA-seq and Ribo-seq objects have distinct sample IDs and can therefore be merged directly.
-
-```{r merge-tracks}
+```{r merge-signal}
 signal_all <- merge_bwg(rnaseq, riboseq)
 summary_bwg(signal_all)
 ```
 
-A regional plot can display both assays and both strands over the GeneA-GeneB-GeneC locus.
+When duplicated sample IDs exist, resolve them deliberately through `sample_conflict`; do not silently merge biologically distinct samples.
 
-```{r regional-plot}
-regional_signal_figure <- plot_signal_region(
-  signal = signal_all,
+## Bin retrieved signal
+
+For broad regions, fixed-width binning can reduce plotting density or produce a compact summary table.
+
+```{r bin-signal}
+genea_binned <- bin_bwg(
+  rnaseq_genea,
+  bin_size = 50
+)
+
+head(genea_binned)
+```
+
+Binning changes the resolution of the signal representation. It should therefore be chosen according to the biological scale of the analysis rather than only for visual convenience.
+
+## Write bigWig output
+
+`write_bwg()` writes bedGraph, wig, or bigWig from an in-memory `BwgTrack`. BigWig output requires chromosome sizes. GeneTrackR uses its bundled libBigWig backend, so an external `bedGraphToBigWig` executable is not required.
+
+```{r write-bigwig}
+chrom_sizes_file <- system.file(
+  "extdata",
+  "gtr_demo.chrom.sizes",
+  package = "GeneTrackR"
+)
+
+bigwig_dir <- file.path(tempdir(), "GeneTrackR_demo_bigwig")
+dir.create(bigwig_dir, recursive = TRUE, showWarnings = FALSE)
+
+rnaseq_bigwig <- write_bwg(
+  rnaseq,
+  outdir = bigwig_dir,
+  format = "bigwig",
+  chrom_sizes = chrom_sizes_file,
+  overwrite = TRUE
+)
+
+rnaseq_bigwig
+```
+
+GeneTrackR stores in-memory intervals as 1-based closed coordinates and handles the file-format conversion during writing. Do not manually shift coordinates before `write_bwg()`.
+
+## Plot signal over a gene
+
+`plot_signal_gene()` resolves the genomic span from the annotation. For strand-specific bedGraph inputs, `strand = "auto"` selects the track matching the target gene strand.
+
+```{r plot-rnaseq-gene}
+rnaseq_gene_figure <- plot_signal_gene(
+  signal = rnaseq,
+  annotation = gp,
+  gene_id = "GeneA",
+  plot_type = "bar",
+  strand = "auto",
+  signal_palette = "Blues",
+  signal_palette_direction = -1,
+  signal_y_scale = "fixed",
+  signal_track_height = 4,
+  gene_track_height = 1,
+  direction_mode = "end",
+  plot_theme = "classic"
+)
+
+rnaseq_gene_figure
+```
+
+`signal_track_height` and `gene_track_height` control only panel proportions; they do not rescale the biological signal.
+
+## Plot signal over a transcript
+
+`plot_signal_transcript()` can use genomic coordinates or spliced transcript coordinates. For RNA-seq coverage, a bar plot in transcript coordinates removes intronic distance:
+
+```{r plot-rnaseq-transcript}
+plot_signal_transcript(
+  signal = rnaseq,
+  annotation = gp,
+  transcript_id = "TxA1",
+  coordinate = "transcript",
+  plot_type = "bar",
+  strand = "auto",
+  signal_palette = "Blues",
+  signal_palette_direction = -1,
+  signal_y_scale = "fixed",
+  direction_mode = "end",
+  plot_theme = "classic"
+)
+```
+
+## Ribo-seq reading-frame view
+
+For Ribo-seq P-site-like signals, `plot_type = "frame"` maps counts to transcript reading frame. This view is only available for transcript-level plotting because the frame is defined relative to a transcript CDS.
+
+```{r plot-riboseq-frame}
+plot_signal_transcript(
+  signal = riboseq,
+  annotation = gp,
+  transcript_id = "TxA1",
+  coordinate = "transcript",
+  plot_type = "frame",
+  strand = "auto",
+  frame_palette = "Set1",
+  signal_track_height = 4,
+  gene_track_height = 1,
+  direction_mode = "end",
+  plot_theme = "classic"
+)
+```
+
+The bundled Ribo-seq demo intentionally contains a dominant frame-0 signal with lower irregular frame-1/frame-2 counts. It is designed to exercise frame-aware plotting rather than to represent a statistical periodicity test.
+
+## Plot a genomic region
+
+`plot_signal_region()` is appropriate for intervals containing several genes or for regions not naturally defined by a single gene/transcript.
+
+```{r plot-rnaseq-region}
+plot_signal_region(
+  signal = rnaseq,
   annotation = gp,
   chrom = "chr1",
   start = 12339001,
   end = 12374500,
   strand = "both",
-  plot_type = "bar"
+  plot_type = "bar",
+  signal_palette = "Blues",
+  signal_palette_direction = -1,
+  signal_y_scale = "free",
+  signal_y_ticks = "pretty",
+  signal_track_height = 4,
+  gene_track_height = 1,
+  direction_mode = "end",
+  plot_theme = "classic"
 )
-regional_signal_figure
 ```
 
-The same `BwgTrack` can be passed directly to `plot_tracks()`. Here it is combined with the GeneA annotation track:
+For comparisons between samples, choose `signal_y_scale` deliberately. `"fixed"` preserves a common y scale; `"free"` emphasizes within-track shape but should not be used to visually compare absolute signal magnitude between panels.
+
+## Signal summaries and visual transformations
+
+The plotting functions support `signal_summary` for grouped summaries and `signal_transform` for visual transformation (`none`, `log2`, `log10`, or `sqrt`). These controls affect the displayed representation and should not be confused with biological normalization performed by `norm_bwg()`.
+
+Similarly, `bin_size` and heatmap binning parameters alter plotting resolution. Preserve unmodified signal objects when the downstream analysis requires original base-resolution values.
+
+## Integrated track figure
+
+`plot_tracks()` combines the gene model with signal and, in later workflows, feature or variant tracks. For a positive-strand GeneA view, select the plus-strand RNA-seq and Ribo-seq samples explicitly:
 
 ```{r integrated-tracks}
-integrated_signal_figure <- plot_tracks(
+plot_tracks(
   annotation = gp,
   signal = signal_all,
   gene_id = "GeneA",
-  signal_type = "bar"
+  samples = c("RNA_seq_plus", "Ribo_seq_plus"),
+  strand = "+",
+  signal_type = "bar",
+  signal_palette = "Dark2",
+  signal_y_scale = "free",
+  signal_y_ticks = "pretty",
+  heights = c(
+    signal = 4,
+    gene = 1,
+    feature = 0.8,
+    variant = 0.7
+  ),
+  direction_mode = "end",
+  plot_theme = "classic"
 )
-integrated_signal_figure
 ```
+
+The named `heights` vector controls the relative vertical allocation of each panel. Missing feature or variant inputs do not need separate placeholder tracks.
+
+## Practical guidance for large signal data
+
+For large sequencing datasets:
+
+- prefer `mode = "lazy"` for bigWig and indexed bedGraph;
+- retrieve only the required locus before materializing signal records;
+- retain explicit sample IDs and strand metadata;
+- normalize with documented library sizes or scale factors rather than modifying values ad hoc;
+- use binning for visualization only when base-resolution detail is unnecessary;
+- keep the original `BwgTrack` unchanged when exploring alternative transformations or plotting settings.
+
+This keeps the annotation coordinate frame, signal values, and downstream variant/haplotype analysis separable and reproducible.

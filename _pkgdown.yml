@@ -11,23 +11,34 @@ navbar:
   components:
     intro:
       text: Get Started
-      href: articles/core-workflows.html
+      href: articles/getting-started.html
 
 articles:
   - title: Getting Started
     desc: >
-      Start with the deterministic GeneTrackR workflow and learn how package
-      objects move through annotation, variant, haplotype, phenotype, LD,
-      refinement, and variant-effect analyses.
+      Install GeneTrackR, learn the deterministic example data, and move from a
+      minimal first analysis to the complete candidate-locus workflow.
     contents:
+      - getting-started
+      - example-data
       - core-workflows
+
+  - title: Data & annotation
+    desc: >
+      Read GenePred/GenePredExt, GTF, GFF3, and BED annotations into unified
+      GeneTrackR objects, then validate, retrieve, convert, merge, write, and
+      visualize them.
+    navbar: Data & annotation
+    contents:
+      - annotation
 
   - title: Visualization
     desc: >
-      Build publication-ready genomic signal and track visualizations from the
-      bundled deterministic examples.
+      Define gene-model coordinate views and build publication-ready continuous
+      genomic signal visualizations from the bundled deterministic examples.
     navbar: Visualization
     contents:
+      - gene-model
       - signal-tracks
 
 reference:

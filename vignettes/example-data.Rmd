@@ -1,0 +1,178 @@
+---
+title: "GeneTrackR deterministic example data"
+description: "Understand the bundled annotation, signal, variant, haplotype, LD, and phenotype data used throughout GeneTrackR documentation and tests."
+author: "Rensc"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{GeneTrackR deterministic example data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 8,
+  fig.height = 4.8
+)
+```
+
+GeneTrackR ships one deterministic demo genome under `inst/extdata`. The files are small enough for package examples but deliberately share the same chromosomes, genes, variants, samples, and phenotype truth so that different modules can be demonstrated without silently changing the biological context.
+
+```{r load-package}
+library(GeneTrackR)
+```
+
+## File inventory
+
+```{r file-inventory}
+extdata_dir <- system.file("extdata", package = "GeneTrackR")
+
+sort(list.files(
+  extdata_dir,
+  pattern = "^gtr_demo",
+  full.names = FALSE
+))
+```
+
+The main files are:
+
+| File | Role |
+|---|---|
+| `gtr_demo.genePredExt` | Canonical gene/transcript annotation used by most examples |
+| `gtr_demo.gtf` | The same annotation represented as GTF |
+| `gtr_demo.gff3` | The same annotation represented as GFF3 |
+| `gtr_demo_features.bed` | Promoter, enhancer, candidate-region, QTL, repeat, and conserved features |
+| `gtr_demo_variants.vcf` | Shared variant/genotype input for variant, haplotype, LD, refinement, and variant-effect workflows |
+| `gtr_demo_pheno.tsv` | Numeric and categorical phenotypes for all VCF samples |
+| `gtr_demo_rnaseq_plus.bedgraph` | Plus-strand synthetic RNA-seq coverage |
+| `gtr_demo_rnaseq_minus.bedgraph` | Minus-strand synthetic RNA-seq coverage |
+| `gtr_demo_riboseq_plus.bedgraph` | Plus-strand synthetic Ribo-seq P-site-like counts |
+| `gtr_demo_riboseq_minus.bedgraph` | Minus-strand synthetic Ribo-seq P-site-like counts |
+| `gtr_demo.chrom.sizes` | Chromosome lengths for the demo genome |
+
+## Core dimensions
+
+The deterministic model contains:
+
+- 2 chromosomes (`chr1`, `chr2`);
+- 20 genes and 24 transcripts;
+- 36 samples (`S01`-`S36`);
+- 56 designed variants;
+- one primary positive-strand locus, `GeneA`;
+- one primary negative-strand locus, `GeneB`.
+
+The same annotation is represented in GenePredExt, GTF, and GFF3 so reader and conversion workflows can be compared against one biological model.
+
+## Coordinate conventions
+
+The canonical model tables are 1-based closed. Output files follow their native format conventions:
+
+- GTF, GFF3, and VCF use 1-based coordinates;
+- GenePredExt, BED, and bedGraph are written using their standard 0-based conventions;
+- GeneTrackR readers standardize imported genomic intervals for package-level analysis.
+
+Do not manually shift coordinates after reading files through GeneTrackR unless a downstream external format explicitly requires it.
+
+## Load representative objects
+
+```{r representative-objects}
+gp_file <- system.file(
+  "extdata",
+  "gtr_demo.genePredExt",
+  package = "GeneTrackR"
+)
+
+vcf_file <- system.file(
+  "extdata",
+  "gtr_demo_variants.vcf",
+  package = "GeneTrackR"
+)
+
+pheno_file <- system.file(
+  "extdata",
+  "gtr_demo_pheno.tsv",
+  package = "GeneTrackR"
+)
+
+gp <- read_genepred(
+  gp_file,
+  format = "genePredExt",
+  verbose = FALSE,
+  progress = FALSE
+)
+
+vcf <- read_vcf(
+  vcf_file,
+  mode = "memory",
+  keep_genotype = TRUE,
+  verbose = FALSE,
+  progress = FALSE
+)
+
+pheno <- read_pheno(
+  pheno_file,
+  verbose = FALSE,
+  progress = FALSE
+)
+
+summary_feature(gp)
+summary_vcf(vcf)
+summary_pheno(pheno)
+```
+
+## GeneA haplotype truth
+
+The GeneA gene body contains 11 variants used by the canonical haplotype example. They define four balanced genotype groups with nine samples per group.
+
+The genotype geometry is hierarchical:
+
+- Hap1 and Hap2 are the nearest pair;
+- Hap3 and Hap4 are the second nearest pair;
+- cross-cluster haplotypes differ at more loci.
+
+This structure is reused in phenotype-guided refinement and variant-effect examples rather than creating an unrelated dataset for each function.
+
+## Phenotype truth and controls
+
+The phenotype rows are deliberately stored in a different order from VCF sample columns. Analyses must align samples by `sample_id`, never by row position.
+
+The designed traits have different roles:
+
+- `protein_content` follows the major GeneA two-cluster structure and is used for refinement and variant-effect examples;
+- `seed_weight` and `plant_height` retain four ordered haplotype means;
+- `flowering_time` is a negative-control trait with the same within-group value pattern across the four GeneA haplotypes;
+- the phenotype table also contains a categorical trait for phenotype-type handling examples.
+
+These known positive and negative controls make documentation examples testable: a workflow is expected to recover the designed structure rather than merely produce a plot.
+
+## LD truth
+
+The primary LD region contains 12 SNPs (`varLD01`-`varLD12`).
+
+- `varLD01`-`varLD06` form a perfect high-LD core;
+- `varLD07`-`varLD12` progressively decorrelate downstream, creating strong, intermediate, and weak pairwise `r2` values;
+- the added LD variants lie outside the GeneA body, so they do not change the 11-variant GeneA haplotype definition.
+
+A second region around `GeneT` on chromosome 2 contains exactly two variants (`varPair01`, `varPair02`) and is retained as a deterministic two-variant LD plotting case.
+
+## RNA-seq and Ribo-seq signal truth
+
+The four signal files preserve assay type and strand separately.
+
+RNA-seq tracks contain exon-enriched coverage, including UTRs, while intronic and intergenic regions have no records. Ribo-seq tracks contain sparse 1-bp positive integer P-site-like counts restricted to CDS positions.
+
+The Ribo-seq design has approximately 80%/10%/10% of total counts in frame 0/frame 1/frame 2. Initiation and termination frame-0 counts are approximately twice the internal frame-0 mean. Frame assignment follows transcript orientation for both positive- and negative-strand genes.
+
+## Recommended use in examples and tests
+
+Use the bundled files as one connected model:
+
+1. read annotation, signal, variants, and phenotype once;
+2. retrieve smaller locus-specific objects for downstream questions;
+3. keep the original source objects unchanged;
+4. align genotype and phenotype samples explicitly by ID;
+5. compare results against the designed positive and negative controls when validating workflows.
+
+The **GeneTrackR core workflow** article applies this model end to end for a candidate locus.

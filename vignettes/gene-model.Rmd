@@ -1,0 +1,274 @@
+---
+title: "Gene model visualization"
+description: "Visualize genes, transcripts, and genomic regions with explicit coordinate, collapse, strand-direction, labeling, highlighting, and styling controls."
+author: "Rensc"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Gene model visualization}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 8,
+  fig.height = 4.8,
+  dpi = 500
+)
+```
+
+GeneTrackR treats the gene model as the structural coordinate frame for downstream signal, variant, haplotype, and LD visualization. The three primary plotting functions differ only in how the target interval is selected:
+
+| Task | Function | Typical locator |
+|---|---|---|
+| Plot all transcripts of one gene | `plot_gene()` | `gene_id` |
+| Plot one transcript | `plot_transcript()` | `transcript_id` |
+| Plot all models in a genomic interval | `plot_region()` | `chrom`, `start`, `end` |
+
+All three functions return a ggplot object and accept the same core controls for CDS/UTR geometry, direction arrows, feature labels, colors, highlighting, text size, and plot theme.
+
+```{r load-package}
+library(GeneTrackR)
+
+gp <- read_genepred(
+  system.file(
+    "extdata",
+    "gtr_demo.genePredExt",
+    package = "GeneTrackR"
+  ),
+  format = "genePredExt",
+  verbose = FALSE,
+  progress = FALSE
+)
+```
+
+## Plot a gene
+
+`plot_gene()` displays all transcripts assigned to a gene by default. Genomic coordinates preserve introns and therefore provide the most direct view of exon spacing and transcript structure.
+
+```{r plot-gene}
+gene_figure <- plot_gene(
+  gp,
+  gene_id = "GeneA",
+  coordinate = "genomic",
+  collapse = "none",
+  direction_mode = "end",
+  label_position = "axis",
+  label_by = "transcript",
+  plot_theme = "classic"
+)
+
+gene_figure
+```
+
+The returned figure can be saved with the standard ggplot2 workflow:
+
+```{r save-gene-figure, eval=FALSE}
+ggplot2::ggsave(
+  "GeneA.gene_model.pdf",
+  plot = gene_figure,
+  width = 8,
+  height = 4.8
+)
+```
+
+## Transcript collapse modes
+
+Genes with many transcript isoforms can become visually dense. `collapse` controls whether the original isoforms are retained or summarized before plotting.
+
+| `collapse` | Interpretation |
+|---|---|
+| `"none"` | Keep every transcript independently. |
+| `"union_exon"` | Build one gene-level collapsed model by combining exon boundaries with the same exon number across transcripts. |
+| `"longest"` | Retain the transcript with the longest genomic transcript span for each gene. |
+
+Use `"none"` when isoform differences are biologically important. Use a collapsed model only when the intended figure represents a gene-level structure rather than transcript-specific architecture.
+
+```{r collapse-gene}
+plot_gene(
+  gp,
+  gene_id = "GeneA",
+  collapse = "longest",
+  coordinate = "genomic",
+  direction_mode = "end",
+  plot_theme = "classic"
+)
+```
+
+## Plot a transcript
+
+`plot_transcript()` isolates a single transcript and supports two coordinate systems.
+
+### Genomic coordinates
+
+`coordinate = "genomic"` preserves the genomic span and introns.
+
+```{r transcript-genomic}
+plot_transcript(
+  gp,
+  transcript_id = "TxA1",
+  coordinate = "genomic",
+  direction_mode = "end",
+  plot_theme = "classic"
+)
+```
+
+### Spliced transcript coordinates
+
+`coordinate = "transcript"` removes intronic distance and places exons consecutively in the transcript coordinate system. This representation is useful when the downstream question concerns mature RNA or translation rather than genomic distance.
+
+```{r transcript-spliced}
+plot_transcript(
+  gp,
+  transcript_id = "TxA1",
+  coordinate = "transcript",
+  direction_mode = "end",
+  plot_theme = "classic"
+)
+```
+
+Coordinate choice also changes the meaning of `highlight`: highlight intervals are genomic positions in genomic-coordinate plots and spliced transcript positions in transcript-coordinate plots.
+
+## Plot a genomic region
+
+`plot_region()` is the structural view to use when a locus contains multiple genes or when the interval is defined independently of a gene identifier.
+
+```{r plot-region}
+plot_region(
+  gp,
+  chrom = "chr1",
+  start = 12339001,
+  end = 12374500,
+  mode = "overlap",
+  direction_mode = "end",
+  label_by = "gene",
+  plot_theme = "classic"
+)
+```
+
+The region-selection mode should be chosen explicitly when an interval cuts through gene models:
+
+| `mode` | Selection behavior |
+|---|---|
+| `"overlap"` | Include models overlapping the requested interval. |
+| `"within"` | Include models completely contained inside the interval. |
+| `"trim"` | Include overlapping models and clip their displayed structure to the requested interval. |
+
+## Strand direction
+
+GeneTrackR can draw direction information at different structural levels with `direction_mode`:
+
+| `direction_mode` | Meaning |
+|---|---|
+| `"transcript"` | One direction arrow for each transcript. |
+| `"gene"` | One direction arrow for each gene. |
+| `"end"` | A compact arrow at the directional end of each gene. |
+| `"none"` | Hide direction arrows. |
+
+For regional or browser-style figures, `"end"` is usually the most compact representation while still preserving strand orientation.
+
+```{r direction-mode}
+plot_region(
+  gp,
+  chrom = "chr1",
+  start = 12339001,
+  end = 12374500,
+  direction_mode = "end",
+  label_by = "gene",
+  plot_theme = "classic"
+)
+```
+
+## CDS, UTR, and exon geometry
+
+By default, coding and non-coding exon segments are drawn with different vertical thicknesses. These can be adjusted without changing genomic coordinates:
+
+```{r feature-geometry}
+plot_gene(
+  gp,
+  gene_id = "GeneA",
+  cds_height = 0.55,
+  utr_height = 0.25,
+  direction_mode = "end",
+  plot_theme = "classic"
+)
+```
+
+Set `show_cds = FALSE` when the distinction between CDS and UTR is not required.
+
+## Labels
+
+`label_position` and `label_by` are independent controls:
+
+- `label_position = "axis"` places identifiers on the y axis;
+- `label_position = "feature"` places identifiers directly on the model;
+- `label_by = "gene"` uses gene IDs;
+- `label_by = "transcript"` uses transcript IDs.
+
+```{r feature-labels}
+plot_gene(
+  gp,
+  gene_id = "GeneA",
+  label_position = "feature",
+  label_by = "transcript",
+  direction_mode = "end",
+  plot_theme = "classic"
+)
+```
+
+## Highlight an interval
+
+`highlight` accepts a data frame with `start` and `end` columns. Optional grouping or label columns can be retained for more complex overlays.
+
+```{r highlight-region}
+highlight_interval <- data.frame(
+  start = 12343000,
+  end = 12345500
+)
+
+plot_gene(
+  gp,
+  gene_id = "GeneA",
+  coordinate = "genomic",
+  highlight = highlight_interval,
+  direction_mode = "end",
+  plot_theme = "classic"
+)
+```
+
+Do not reuse genomic highlight coordinates in a transcript-coordinate plot without converting them to the spliced transcript coordinate system first.
+
+## Colors and borders
+
+Use `gene_palette` for automatic discrete colors or `gene_colors` for an exact feature mapping. Explicit mappings are preferable when figures must remain comparable across analyses.
+
+```{r gene-colors}
+plot_gene(
+  gp,
+  gene_id = "GeneA",
+  gene_colors = c(
+    UTR = "#66C2A5",
+    CDS = "#FC8D62",
+    exon = "#8DA0CB"
+  ),
+  gene_border_color = "black",
+  direction_mode = "end",
+  plot_theme = "classic"
+)
+```
+
+`gene_border_color = NA` removes feature borders.
+
+## Choosing the structural view
+
+A useful rule is to select the coordinate system before adjusting appearance:
+
+1. use `plot_region()` for a locus containing several genes;
+2. use `plot_gene()` when transcript architecture within one gene matters;
+3. use `plot_transcript(..., coordinate = "genomic")` when one isoform must remain on the genome;
+4. use `plot_transcript(..., coordinate = "transcript")` for mature-transcript or translation-oriented interpretation;
+5. only then adjust collapse, labels, direction arrows, highlights, and colors.
+
+The same annotation object can be passed directly to `plot_signal_gene()`, `plot_signal_transcript()`, `plot_signal_region()`, and `plot_tracks()`, so the structural coordinate definition remains consistent when signal or variant layers are added.
