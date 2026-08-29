@@ -1,3 +1,9 @@
+# GeneTrackR 0.6.12
+
+* Made the pkgdown GitHub Pages deployment tolerant of repositories where Pages has not yet been enabled: pkgdown site construction remains a hard check, while Pages configuration/deployment is skipped with a clear warning instead of failing the entire workflow.
+* Added a fallback `pkgdown-site-preview` workflow artifact when GitHub Pages is unavailable, so the generated site can still be inspected from the Actions run.
+* Retained the native GitHub Pages artifact/deploy path automatically when `actions/configure-pages` succeeds; no R implementation, API, vignette, or pkgdown content was changed.
+
 # GeneTrackR 0.6.11
 
 * Re-synchronized roxygen2 8.1.0 generated metadata, `NAMESPACE`, and package-level Rd documentation after the 0.6.10 GitHub commit omitted part of the generated-file update.

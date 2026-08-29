@@ -1,7 +1,7 @@
 Package: GeneTrackR
 Type: Package
 Title: GenePred Gene Model and Genomic Signal Track Visualization
-Version: 0.6.11
+Version: 0.6.12
 Authors@R: person("Rensc", role = c("aut", "cre"), email = "rensc0718@163.com")
 Description: Provides lightweight tools to read, validate, summarize, slice, merge,
     write, and visualize GenePred annotations and genomic signal tracks from
@@ -26,4 +26,3 @@ NeedsCompilation: yes
 Packaged: 2026-07-01 07:52:38 UTC; rensc
 Author: Rensc [aut, cre]
 Maintainer: Rensc <rensc0718@163.com>
-RoxygenNote: 7.3.3

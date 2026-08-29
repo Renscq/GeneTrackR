@@ -10,17 +10,13 @@ GeneTrackR provides utilities for reading, validating, slicing, merging,
 writing, and plotting GenePred annotations and bedGraph, wig, or bigWig
 genomic signal tracks.
 }
-\seealso{
-Useful links:
-\itemize{
-  \item \url{https://renscq.github.io/GeneTrackR/}
-  \item \url{https://github.com/Renscq/GeneTrackR}
-  \item Report bugs at \url{https://github.com/Renscq/GeneTrackR/issues}
-}
-
-}
 \author{
 \strong{Maintainer}: Rensc \email{rensc0718@163.com}
+
+Authors:
+\itemize{
+  \item Rensc \email{rensc0718@163.com}
+}
 
 }
 \keyword{internal}
