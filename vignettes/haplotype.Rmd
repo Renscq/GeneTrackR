@@ -13,9 +13,12 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  fig.width = 9,
-  fig.height = 6.5,
-  dpi = 500
+  fig.width = 12.5,
+  fig.height = 8,
+  dpi = 300,
+  fig.retina = 1,
+  out.width = "100%",
+  fig.align = "center"
 )
 ```
 
@@ -354,7 +357,8 @@ hap_variant_figure <- plot_hap_variant(
   gene_pos_x_angle = 90,
   gene_track_legend_position = "top",
   direction_mode = "gene",
-  table_x_angle = 90
+  table_x_angle = 90,
+  text_size = 9
 )
 
 hap_variant_figure
@@ -376,7 +380,8 @@ hap_variant_custom <- plot_hap_variant(
   genotype_text_size = 3,
   variant_marker_size = 3,
   gene_track_height = 1.4,
-  connector_height = 0.4
+  connector_height = 0.4,
+  text_size = 9
 )
 
 hap_variant_custom
@@ -395,7 +400,8 @@ plot_hap_variant(
     C = "#7570B3",
     G = "#E7298A",
     indel = "#66A61E"
-  )
+  ),
+  text_size = 9
 )
 ```
 

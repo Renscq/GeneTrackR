@@ -13,9 +13,12 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  fig.width = 8,
-  fig.height = 4.8,
-  dpi = 500
+  fig.width = 10.5,
+  fig.height = 6,
+  dpi = 300,
+  fig.retina = 1,
+  out.width = "100%",
+  fig.align = "center"
 )
 ```
 
@@ -57,7 +60,8 @@ gene_figure <- plot_gene(
   direction_mode = "end",
   label_position = "axis",
   label_by = "transcript",
-  plot_theme = "classic"
+  plot_theme = "classic",
+  text_size = 10
 )
 
 gene_figure
@@ -93,7 +97,8 @@ plot_gene(
   collapse = "longest",
   coordinate = "genomic",
   direction_mode = "end",
-  plot_theme = "classic"
+  plot_theme = "classic",
+  text_size = 10
 )
 ```
 
@@ -111,7 +116,8 @@ plot_transcript(
   transcript_id = "TxA1",
   coordinate = "genomic",
   direction_mode = "end",
-  plot_theme = "classic"
+  plot_theme = "classic",
+  text_size = 10
 )
 ```
 
@@ -125,7 +131,8 @@ plot_transcript(
   transcript_id = "TxA1",
   coordinate = "transcript",
   direction_mode = "end",
-  plot_theme = "classic"
+  plot_theme = "classic",
+  text_size = 10
 )
 ```
 
@@ -144,7 +151,8 @@ plot_region(
   mode = "overlap",
   direction_mode = "end",
   label_by = "gene",
-  plot_theme = "classic"
+  plot_theme = "classic",
+  text_size = 10
 )
 ```
 
@@ -177,7 +185,8 @@ plot_region(
   end = 12374500,
   direction_mode = "end",
   label_by = "gene",
-  plot_theme = "classic"
+  plot_theme = "classic",
+  text_size = 10
 )
 ```
 
@@ -192,7 +201,8 @@ plot_gene(
   cds_height = 0.55,
   utr_height = 0.25,
   direction_mode = "end",
-  plot_theme = "classic"
+  plot_theme = "classic",
+  text_size = 10
 )
 ```
 
@@ -214,7 +224,8 @@ plot_gene(
   label_position = "feature",
   label_by = "transcript",
   direction_mode = "end",
-  plot_theme = "classic"
+  plot_theme = "classic",
+  text_size = 10
 )
 ```
 
@@ -234,7 +245,8 @@ plot_gene(
   coordinate = "genomic",
   highlight = highlight_interval,
   direction_mode = "end",
-  plot_theme = "classic"
+  plot_theme = "classic",
+  text_size = 10
 )
 ```
 
@@ -255,7 +267,8 @@ plot_gene(
   ),
   gene_border_color = "black",
   direction_mode = "end",
-  plot_theme = "classic"
+  plot_theme = "classic",
+  text_size = 10
 )
 ```
 

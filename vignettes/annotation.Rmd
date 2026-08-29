@@ -13,8 +13,12 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  fig.width = 8,
-  fig.height = 4.8
+  fig.width = 10.5,
+  fig.height = 6,
+  dpi = 300,
+  fig.retina = 1,
+  out.width = "100%",
+  fig.align = "center"
 )
 ```
 
@@ -412,24 +416,26 @@ Annotation QC is easier when the tables and genomic structure are inspected toge
 
 ### Gene model
 
-```{r plot-gene, fig.height=3.8}
+```{r plot-gene, fig.height=5.0}
 plot_gene(
   gp,
   gene_id = "GeneA",
   label_position = "axis",
   direction_mode = "end",
-  plot_theme = "classic"
+  plot_theme = "classic",
+  text_size = 10
 )
 ```
 
 ### Transcript structure
 
-```{r plot-transcript, fig.height=3.8}
+```{r plot-transcript, fig.height=5.0}
 plot_transcript(
   gp,
   transcript_id = "TxA1",
   coordinate = "genomic",
-  plot_theme = "classic"
+  plot_theme = "classic",
+  text_size = 10
 )
 ```
 
@@ -437,7 +443,7 @@ Spliced transcript coordinates can be requested with `coordinate = "transcript"`
 
 ### Genomic region
 
-```{r plot-region, fig.height=4.2}
+```{r plot-region, fig.height=5.5}
 plot_region(
   gp,
   chrom = "chr1",
@@ -445,19 +451,21 @@ plot_region(
   end = 12374500,
   mode = "overlap",
   label_by = "gene",
-  plot_theme = "classic"
+  plot_theme = "classic",
+  text_size = 10
 )
 ```
 
 ### Interval feature track
 
-```{r plot-feature-track, fig.height=3.8}
+```{r plot-feature-track, fig.height=5.0}
 plot_feature_track(
   features,
   chrom = "chr1",
   start = 12338201,
   end = 12374500,
-  plot_theme = "classic"
+  plot_theme = "classic",
+  text_size = 10
 )
 ```
 
@@ -470,7 +478,7 @@ gene_length_dt <- get_gene_length_distribution_table(gp)
 head(gene_length_dt)
 ```
 
-```{r plot-gene-length, fig.height=4.2}
+```{r plot-gene-length, fig.height=5.5}
 plot_gene_length_distribution(gp)
 ```
 

@@ -13,9 +13,12 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  fig.width = 9,
-  fig.height = 6.5,
-  dpi = 500
+  fig.width = 12.5,
+  fig.height = 8,
+  dpi = 300,
+  fig.retina = 1,
+  out.width = "100%",
+  fig.align = "center"
 )
 ```
 
@@ -165,7 +168,8 @@ browser_geneA <- plot_tracks(
   signal_type = "bar",
   feature_color_by = "auto",
   feature_max_legend_levels = 5,
-  direction_mode = "transcript"
+  direction_mode = "transcript",
+  text_size = 9
 )
 
 browser_geneA
@@ -228,7 +232,8 @@ hap_gene_figure <- plot_hap_variant(
   annotation = gp,
   min_hap_samples = 3,
   variant_label = "pos",
-  show_reference_row = TRUE
+  show_reference_row = TRUE,
+  text_size = 9
 )
 
 hap_gene_figure
@@ -248,7 +253,8 @@ hap_seed <- plot_hap_pheno(
   min_hap_samples = 3,
   test_method = "t.test",
   p_adjust = "BH",
-  p_value_type = "adjusted"
+  p_value_type = "adjusted",
+  text_size = 9
 )
 
 hap_seed$figure
@@ -266,7 +272,8 @@ varA03_protein <- plot_variant_pheno(
   genotype_mode = "code",
   min_group_samples = 3,
   p_adjust = "BH",
-  p_value_type = "adjusted"
+  p_value_type = "adjusted",
+  text_size = 9
 )
 
 varA03_protein$figure
@@ -295,7 +302,8 @@ ld_gradient <- plot_ld_block(
   show_region = TRUE,
   connect_region = TRUE,
   show_variant_marker = TRUE,
-  show_variant_labels = FALSE
+  show_variant_labels = FALSE,
+  font = 9
 )
 
 ld_gradient$figure
@@ -372,7 +380,8 @@ effect_protein <- plot_variant_effect(
   effect_type = "absolute",
   top_n = 10,
   variant_label = "variant_id",
-  x_axis = "position"
+  x_axis = "position",
+  text_size = 9
 )
 
 effect_protein$figure

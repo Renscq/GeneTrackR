@@ -13,8 +13,12 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  fig.width = 8,
-  fig.height = 4.8
+  fig.width = 12,
+  fig.height = 7.5,
+  dpi = 300,
+  fig.retina = 1,
+  out.width = "100%",
+  fig.align = "center"
 )
 ```
 
@@ -114,7 +118,8 @@ hap_figure <- plot_hap_variant(
   annotation = gp,
   min_hap_samples = 3,
   show_reference_row = TRUE,
-  gene_pos_x_angle = 90
+  gene_pos_x_angle = 90,
+  text_size = 9
 )
 hap_figure
 ```
@@ -129,7 +134,8 @@ hap_pheno <- plot_hap_pheno(
   phenotype = pheno,
   traits = c("seed_weight", "flowering_time"),
   min_hap_samples = 3,
-  facet_ncol = 2
+  facet_ncol = 2,
+  text_size = 9
 )
 
 hap_pheno$figure
@@ -147,7 +153,8 @@ variant_pheno <- plot_variant_pheno(
   variant_id = "varA03",
   traits = "protein_content",
   genotype_mode = "code",
-  min_group_samples = 3
+  min_group_samples = 3,
+  text_size = 9
 )
 
 variant_pheno$figure
@@ -177,7 +184,8 @@ ld <- plot_ld_block(
   ld,
   annotation = gp,
   show_region = TRUE,
-  show_variant_labels = FALSE
+  show_variant_labels = FALSE,
+  font = 9
 )
 ld$figure
 ```
@@ -193,7 +201,7 @@ ld_pair <- compute_ld_block(
   method = "r2",
   verbose = FALSE
 )
-ld_pair_figure <- plot_ld_block(ld_pair, return_object = FALSE)
+ld_pair_figure <- plot_ld_block(ld_pair, return_object = FALSE, font = 9)
 ld_pair_figure
 ```
 
@@ -216,7 +224,8 @@ refined_pheno <- plot_refined_hap_pheno(
   refined,
   phenotype = pheno,
   traits = "protein_content",
-  min_hap_samples = 3
+  min_hap_samples = 3,
+  text_size = 9
 )
 refined_pheno$figure
 refined_pheno$pvalue
@@ -228,7 +237,8 @@ The refined haplotype-variant plot returns a figure directly:
 refined_variant_figure <- plot_refined_hap_variant(
   refined,
   annotation = gp,
-  min_hap_samples = 3
+  min_hap_samples = 3,
+  text_size = 9
 )
 refined_variant_figure
 ```
@@ -241,7 +251,8 @@ effect_res <- plot_variant_effect(
   phenotype = pheno,
   traits = "protein_content",
   min_group_samples = 3,
-  x_axis = "position"
+  x_axis = "position",
+  text_size = 9
 )
 
 effect_res$figure

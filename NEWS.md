@@ -1,3 +1,10 @@
+# GeneTrackR 0.6.17
+
+- Optimized pkgdown article figure layouts by increasing the graphics canvas according to plot complexity while keeping rendered figures at full article width.
+- Standardized vignette web graphics to 150 dpi with `fig.retina = 1`; publication-oriented export examples continue to use 500 dpi.
+- Reduced documentation-only plotting text sizes to 9-10 pt for functions that expose `text_size` or `font`, without changing GeneTrackR plotting defaults or package APIs.
+- Enlarged annotation-specific figure heights and retained all R implementations, staged `docs/*.qmd` sources, tests, and statistical behavior unchanged.
+
 # GeneTrackR 0.6.16
 
 - Removed the `Documentation QA` GitHub Actions workflow.

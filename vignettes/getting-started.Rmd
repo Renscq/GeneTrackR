@@ -13,8 +13,12 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  fig.width = 8,
-  fig.height = 4.8
+  fig.width = 10.5,
+  fig.height = 6,
+  dpi = 300,
+  fig.retina = 1,
+  out.width = "100%",
+  fig.align = "center"
 )
 ```
 
@@ -144,7 +148,8 @@ A gene model can be drawn directly from the same annotation object:
 ```{r plot-gene}
 plot_gene(
   gp,
-  gene_id = "GeneA"
+  gene_id = "GeneA",
+  text_size = 10
 )
 ```
 
@@ -198,7 +203,8 @@ hap_pheno <- plot_hap_pheno(
   hap,
   phenotype = pheno,
   traits = "protein_content",
-  min_hap_samples = 3
+  min_hap_samples = 3,
+  text_size = 10
 )
 
 hap_pheno$pvalue

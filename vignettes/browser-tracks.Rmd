@@ -13,9 +13,12 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  fig.width = 9,
-  fig.height = 6.5,
-  dpi = 500
+  fig.width = 12.5,
+  fig.height = 8,
+  dpi = 300,
+  fig.retina = 1,
+  out.width = "100%",
+  fig.align = "center"
 )
 ```
 
@@ -123,7 +126,8 @@ plot_tracks(
   annotation = gp,
   gene_id = "GeneA",
   direction_mode = "transcript",
-  plot_theme = "classic"
+  plot_theme = "classic",
+  text_size = 9
 )
 ```
 
@@ -146,7 +150,8 @@ plot_tracks(
     feature = 0.8,
     variant = 0.7
   ),
-  plot_theme = "classic"
+  plot_theme = "classic",
+  text_size = 9
 )
 ```
 
@@ -175,7 +180,8 @@ plot_tracks(
     feature = 0.8,
     variant = 0.7
   ),
-  plot_theme = "classic"
+  plot_theme = "classic",
+  text_size = 9
 )
 ```
 
@@ -215,7 +221,8 @@ plot_tracks(
     feature = 0.8,
     variant = 0.7
   ),
-  plot_theme = "classic"
+  plot_theme = "classic",
+  text_size = 9
 )
 ```
 
@@ -255,7 +262,8 @@ plot_tracks(
     feature = 0.9,
     variant = 0.8
   ),
-  plot_theme = "classic"
+  plot_theme = "classic",
+  text_size = 9
 )
 ```
 
@@ -286,7 +294,8 @@ plot_tracks(
   variants = variant_tracks,
   chrom = browser_chrom,
   start = browser_start,
-  end = browser_end
+  end = browser_end,
+  text_size = 9
 )
 ```
 
@@ -338,7 +347,7 @@ browser_figure <- plot_tracks(
   direction_mode = "gene",
   plot_theme = "classic",
   show_panel_border = FALSE,
-  text_size = 14
+  text_size = 9
 )
 
 browser_figure

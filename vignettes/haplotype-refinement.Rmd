@@ -13,9 +13,12 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  fig.width = 9,
-  fig.height = 6.5,
-  dpi = 500
+  fig.width = 12.5,
+  fig.height = 8,
+  dpi = 300,
+  fig.retina = 1,
+  out.width = "100%",
+  fig.align = "center"
 )
 ```
 
@@ -154,7 +157,8 @@ protein_before <- plot_hap_pheno(
   p_adjust = "BH",
   p_value_type = "adjusted",
   show_points = TRUE,
-  fill_palette = "Paired"
+  fill_palette = "Paired",
+  text_size = 9
 )
 protein_before$figure
 protein_before$summary
@@ -313,7 +317,8 @@ refined_variant_grouped <- plot_refined_hap_variant(
   gene_track_legend_position = "top",
   gene_palette = "Paired",
   table_palette = "Paired",
-  variant_palette = "Paired"
+  variant_palette = "Paired",
+  text_size = 9
 )
 refined_variant_grouped
 ```
@@ -334,7 +339,8 @@ refined_variant_collapsed <- plot_refined_hap_variant(
   variant_label = "pos",
   gene_palette = "Paired",
   table_palette = "Paired",
-  variant_palette = "Paired"
+  variant_palette = "Paired",
+  text_size = 9
 )
 refined_variant_collapsed
 ```
@@ -357,7 +363,8 @@ refined_protein_pheno <- plot_refined_hap_pheno(
   p_adjust = "BH",
   p_value_type = "adjusted",
   show_points = TRUE,
-  fill_palette = "Paired"
+  fill_palette = "Paired",
+  text_size = 9
 )
 refined_protein_pheno$figure
 refined_protein_pheno$summary
@@ -467,8 +474,8 @@ The refined object can be passed directly to the refined plotting wrappers, whil
 
 ```{r}
 # Refined-group visualization
-# plot_refined_hap_variant(refined_protein, annotation = gp)
-# plot_refined_hap_pheno(refined_protein, phenotype = pheno, traits = "protein_content")
+# plot_refined_hap_variant(refined_protein, annotation = gp, text_size = 9)
+# plot_refined_hap_pheno(refined_protein, phenotype = pheno, traits = "protein_content", text_size = 9)
 # Variant-level prioritization keeps the original sample genotypes
 # effect <- plot_variant_effect(
 #   hap_gene,

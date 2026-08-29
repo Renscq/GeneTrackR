@@ -13,9 +13,12 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  fig.width = 9,
+  fig.width = 10.5,
   fig.height = 6.5,
-  dpi = 500
+  dpi = 300,
+  fig.retina = 1,
+  out.width = "100%",
+  fig.align = "center"
 )
 ```
 
@@ -125,7 +128,8 @@ effect_protein <- plot_variant_effect(
   effect_type = "absolute",
   top_n = 10,
   variant_label = "variant_id",
-  x_axis = "position"
+  x_axis = "position",
+  text_size = 10
 )
 effect_protein$figure
 ```
@@ -267,7 +271,8 @@ effect_protein_signed <- plot_variant_effect(
   effect_type = "signed",
   top_n = 10,
   variant_label = "variant_id",
-  x_axis = "position"
+  x_axis = "position",
+  text_size = 10
 )
 effect_protein_signed$figure
 ```
@@ -309,7 +314,8 @@ varA03_pheno <- plot_variant_pheno(
   genotype_mode = "code",
   min_group_samples = 3,
   p_adjust = "BH",
-  p_value_type = "adjusted"
+  p_value_type = "adjusted",
+  text_size = 10
 )
 varA03_pheno$figure
 varA03_pheno$summary
@@ -365,7 +371,8 @@ effect_multi <- plot_variant_effect(
   effect_type = "absolute",
   top_n = 5,
   variant_label = "variant_id",
-  x_axis = "position"
+  x_axis = "position",
+  text_size = 10
 )
 effect_multi$figure
 ```

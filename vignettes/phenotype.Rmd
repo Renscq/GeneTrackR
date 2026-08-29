@@ -13,9 +13,12 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  fig.width = 9,
+  fig.width = 10.5,
   fig.height = 6.5,
-  dpi = 500
+  dpi = 300,
+  fig.retina = 1,
+  out.width = "100%",
+  fig.align = "center"
 )
 ```
 
@@ -141,7 +144,8 @@ pheno_figure <- plot_pheno(
     "plant_height",
     "flowering_time",
     "flower_color"
-  )
+  ),
+  text_size = 10
 )
 
 pheno_figure
@@ -192,7 +196,8 @@ hap_seed <- plot_hap_pheno(
   p_value_type = "adjusted",
   p_label = "stars",
   show_signif_only = TRUE,
-  fill_palette = "Paired"
+  fill_palette = "Paired",
+  text_size = 10
 )
 
 hap_seed$figure
@@ -245,7 +250,8 @@ hap_multi <- plot_hap_pheno(
   p_value_type = "adjusted",
   p_label = "stars",
   facet_ncol = 3,
-  fill_palette = "Paired"
+  fill_palette = "Paired",
+  text_size = 10
 )
 
 hap_multi$figure
@@ -268,7 +274,8 @@ hap_seed_wilcox <- plot_hap_pheno(
   min_hap_samples = 3,
   test_method = "wilcox.test",
   p_adjust = "BH",
-  p_value_type = "adjusted"
+  p_value_type = "adjusted",
+  text_size = 10
 )
 
 hap_seed_wilcox$pvalue
@@ -302,7 +309,7 @@ hap_seed_styled <- plot_hap_pheno(
   fill_palette = "Paired",
   fill_alpha = 0.75,
   x_text_angle = 90,
-  text_size = 14
+  text_size = 10
 )
 
 hap_seed_styled$figure
@@ -323,7 +330,8 @@ hap_seed_fixed_colors <- plot_hap_pheno(
     Hap2 = "#1F78B4",
     Hap3 = "#B2DF8A",
     Hap4 = "#33A02C"
-  )
+  ),
+  text_size = 10
 )
 
 hap_seed_fixed_colors$figure
@@ -349,7 +357,8 @@ variant_protein <- plot_variant_pheno(
   p_adjust = "BH",
   p_value_type = "adjusted",
   p_label = "stars",
-  fill_palette = "Paired"
+  fill_palette = "Paired",
+  text_size = 10
 )
 
 variant_protein$figure
@@ -373,7 +382,8 @@ variant_protein_string <- plot_variant_pheno(
   traits = "protein_content",
   genotype_mode = "string",
   min_group_samples = 3,
-  p_value_type = "adjusted"
+  p_value_type = "adjusted",
+  text_size = 10
 )
 
 variant_protein_string$figure
@@ -390,7 +400,8 @@ variant_protein_position <- plot_variant_pheno(
   traits = "protein_content",
   genotype_mode = "code",
   min_group_samples = 3,
-  p_value_type = "adjusted"
+  p_value_type = "adjusted",
+  text_size = 10
 )
 
 variant_protein_position$variant_data

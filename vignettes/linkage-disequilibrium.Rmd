@@ -13,9 +13,12 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  fig.width = 9,
-  fig.height = 6.5,
-  dpi = 500
+  fig.width = 11.5,
+  fig.height = 7,
+  dpi = 300,
+  fig.retina = 1,
+  out.width = "100%",
+  fig.align = "center"
 )
 ```
 
@@ -233,7 +236,8 @@ ld_gradient <- plot_ld_block(
   label_by = "variant_id",
   show_variant_labels = TRUE,
   show_region = FALSE,
-  return_object = TRUE
+  return_object = TRUE,
+  font = 10
 )
 ld_gradient$figure
 ```
@@ -247,7 +251,8 @@ ld_gradient_blue <- plot_ld_block(
   ld_gradient,
   color_palette = "Blues",
   show_variant_labels = FALSE,
-  return_object = TRUE
+  return_object = TRUE,
+  font = 10
 )
 ld_gradient_blue$figure
 ```
@@ -270,7 +275,8 @@ ld_gradient_region <- plot_ld_block(
   show_variant_labels = TRUE,
   region_height = 1.25,
   connector_height = 0.35,
-  return_object = TRUE
+  return_object = TRUE,
+  font = 10
 )
 ld_gradient_region$figure
 ```
@@ -319,7 +325,8 @@ Plot it using the same default `Reds` scale:
 ld_low <- plot_ld_block(
   ld_low,
   label_by = "variant_id",
-  return_object = TRUE
+  return_object = TRUE,
+  font = 10
 )
 ld_low$figure
 ```
@@ -344,7 +351,8 @@ ld_pair$data
 ld_pair <- plot_ld_block(
   ld_pair,
   label_by = "variant_id",
-  return_object = TRUE
+  return_object = TRUE,
+  font = 10
 )
 ld_pair$figure
 ```
@@ -354,7 +362,8 @@ When only the figure is needed for a temporary plotting call, compatibility mode
 ```{r}
 pair_figure <- plot_ld_block(
   ld_pair,
-  return_object = FALSE
+  return_object = FALSE,
+  font = 10
 )
 pair_figure
 ```
