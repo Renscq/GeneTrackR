@@ -43,6 +43,16 @@ articles:
       - variant-tracks
       - browser-tracks
 
+  - title: Haplotype & association
+    desc: >
+      Construct haplotypes from VCF genotypes, inspect and visualize
+      haplotype-defining variants, align phenotype samples explicitly, and test
+      haplotype- or single-variant phenotype associations.
+    navbar: Haplotype & association
+    contents:
+      - haplotype
+      - phenotype
+
 reference:
   - title: Core objects
     desc: >

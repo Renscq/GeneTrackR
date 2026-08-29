@@ -1,3 +1,10 @@
+# GeneTrackR 0.6.6
+
+- Added a dedicated haplotype article covering gene-, transcript-, and region-defined `HapVariant` construction, genotype representations, missing-genotype filtering, sample/variant filtering, object inspection, and `plot_hap_variant()` visualization.
+- Added a dedicated phenotype-association article covering phenotype import and QC, explicit sample-ID alignment checks, haplotype-phenotype testing, multi-trait inference, single-variant phenotype testing, and preservation of returned statistical tables.
+- Added a task-oriented **Haplotype & association** section to the pkgdown Articles index, positioned after variant/browser visualization and before the later LD/refinement/variant-effect modules.
+- Kept the staged `docs/08-haplotype.qmd` and `docs/09-phenotype.qmd` sources unchanged while migrating their current workflows into pkgdown vignettes.
+
 # GeneTrackR 0.6.5
 
 - Added a dedicated pkgdown variant-track article covering `VariantTrack` construction, memory versus indexed lazy VCF access, validation, summaries, genomic/gene/transcript retrieval, ID/type/pattern filtering, variant plotting, site-level VCF export, and downstream handoff.
