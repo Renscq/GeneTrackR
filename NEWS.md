@@ -1,3 +1,10 @@
+# GeneTrackR 0.6.8
+
+- Added a dedicated export and reproducibility article covering standard genomic track writers, PDF/PNG figure export, tabular result preservation, LD matrix export, optional `openxlsx` workbooks, complete RDS objects, manifests, and `sessionInfo()` provenance.
+- Added a production-oriented complete workflow article connecting annotation, interval features, RNA-seq/Ribo-seq signals, variants, haplotypes, phenotype association, LD, phenotype-guided refinement, variant-effect prioritization, and reproducible export through one consistent candidate-locus analysis.
+- Added a **Workflow & reproducibility** section to the pkgdown Articles index while retaining `core-workflows` as the shorter Getting Started workflow.
+- Kept the staged `docs/13-export.qmd` and `docs/14-workflow.qmd` sources unchanged while migrating their current workflows into formal pkgdown vignettes.
+
 # GeneTrackR 0.6.7
 
 - Added a dedicated linkage-disequilibrium article covering genotype-dosage LD calculation, `LDTrack` result inspection, `r2` and dosage-based D-prime interpretation, triangular heatmaps, regional gene/variant context, population subsets, variant filtering, and downstream regional haplotype handoff.

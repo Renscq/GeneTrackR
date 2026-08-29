@@ -56,6 +56,16 @@ articles:
       - haplotype-refinement
       - variant-effect
 
+  - title: Workflow & reproducibility
+    desc: >
+      Run the complete candidate-locus workflow and preserve genomic tracks,
+      figures, statistical tables, analysis objects, and provenance for
+      reproducible downstream use.
+    navbar: Workflow & reproducibility
+    contents:
+      - complete-workflow
+      - export-results
+
 reference:
   - title: Core objects
     desc: >

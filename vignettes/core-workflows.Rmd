@@ -1,6 +1,6 @@
 ---
 title: "GeneTrackR core workflow"
-description: "An end-to-end deterministic workflow connecting GeneTrackR annotation, variants, haplotypes, phenotypes, LD, refinement, and variant-effect analysis."
+description: "A compact deterministic workflow connecting GeneTrackR annotation, variants, haplotypes, phenotypes, LD, refinement, and variant-effect analysis."
 author: "Rensc"
 output: rmarkdown::html_vignette
 vignette: >
@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-If you are new to the package, read **Getting started with GeneTrackR** first, then **GeneTrackR deterministic example data** for the shared file inventory, coordinate conventions, and designed truth. This article assumes that installation and the demo data model are already familiar.
+If you are new to the package, read **Getting started with GeneTrackR** first, then **GeneTrackR deterministic example data** for the shared file inventory, coordinate conventions, and designed truth. This article assumes that installation and the demo data model are already familiar. It is intentionally compact; use **Complete candidate-locus workflow** for the production-oriented path that also integrates signal tracks, interval features, browser inspection, reproducible export, and large-data guidance.
 
 This vignette uses the single deterministic `gtr_demo_*` dataset shipped with GeneTrackR. The same annotation, VCF, phenotype table, and designed truth are shared across annotation, variant, haplotype, LD, refinement, and variant-effect workflows.
 
