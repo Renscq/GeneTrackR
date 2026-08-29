@@ -1,0 +1,16 @@
+--- a/NEWS.md
++++ b/NEWS.md
+@@ -1,3 +1,13 @@
++# GeneTrackR 0.7.1
++
++- Established the schema-v2 `BwgTrack` object foundation for the 0.7.x pure-R signal subsystem migration.
++- Added a stable `seqinfo` slot alongside `samples`, `data`, `meta`, and `validation`; chromosome lengths can be known or `NA` when the source format does not encode sequence lengths.
++- Standardized `BwgTrack` metadata to `coordinate = "1-based closed"` and `schema_version = "2"` while preserving the existing public constructor argument order.
++- Added sequence metadata collection for bigWig inputs and in-memory bedGraph/WIG inputs, and preserved relevant `seqinfo` through BwgTrack retrieval, slicing, and merging.
++- Updated `seqinfo_bwg()` to use stored schema-v2 sequence metadata first while retaining the existing libBigWig fallback for legacy objects.
++- Added regression tests for schema construction, sequence metadata validation, text-track sequence metadata, subset propagation, and merge propagation.
++- Kept the existing libBigWig/Rcpp backend unchanged in this release; native BigWig replacement begins in the following 0.7.x development stages.
++
+ # GeneTrackR 0.6.17
+ 
+ - Optimized pkgdown article figure layouts by increasing the graphics canvas according to plot complexity while keeping rendered figures at full article width.

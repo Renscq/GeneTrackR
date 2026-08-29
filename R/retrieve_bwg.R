@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-05-28
-# Version: dev002
+# Date: 2026-08-29
+# Version: dev003
 # Function: Retrieve signal records from BwgTrack objects
 # Input: BwgTrack object and genomic region
 # Output: data.table, BwgTrack, or GRanges
@@ -43,7 +43,9 @@
 #' verified by full-file fread. Keep FALSE for speed unless debugging tabix
 #' coordinate/index issues.
 #'
-#' @return A data.table, BwgTrack object, or GRanges object.
+#' @return A data.table, BwgTrack object, or GRanges object. BwgTrack subsets
+#' retain sequence metadata for the selected samples and chromosome when
+#' available.
 #'
 #' @examples
 #' \dontrun{
@@ -152,7 +154,18 @@ retrieve_bwg <- function(object,
   if (!is.null(samples)) {
     sample_tbl <- sample_tbl[sample_tbl[["sample_id"]] %in% as.character(samples)]
   }
-  BwgTrack(samples = sample_tbl, data = dt, meta = modifyList(object$meta, list(mode = "memory")), validation = make_empty_validation())
+  seqinfo <- subset_bwg_seqinfo(
+    object,
+    sample_ids = sample_tbl[["sample_id"]],
+    chrom = chrom
+  )
+  BwgTrack(
+    samples = sample_tbl,
+    data = dt,
+    meta = modifyList(object$meta, list(mode = "memory")),
+    validation = make_empty_validation(),
+    seqinfo = seqinfo
+  )
 }
 
 

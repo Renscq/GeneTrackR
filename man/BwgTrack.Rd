@@ -8,21 +8,31 @@ BwgTrack(
   samples,
   data = NULL,
   meta = list(),
-  validation = make_empty_validation()
+  validation = make_empty_validation(),
+  seqinfo = NULL
 )
 }
 \arguments{
-\item{samples}{Sample metadata table.}
+\item{samples}{Sample metadata table containing \code{sample_id}.}
 
 \item{data}{Optional in-memory signal table.}
 
-\item{meta}{Metadata list.}
+\item{meta}{Metadata list. \code{coordinate}, \code{schema_version}, \code{backend}, and
+\code{mode} are normalized by the constructor.}
 
 \item{validation}{Validation result list.}
+
+\item{seqinfo}{Optional chromosome metadata containing \code{chrom} and \code{length}.
+If \code{sample_id} is absent, the chromosome metadata are shared across all
+samples. Unknown chromosome lengths can be represented by \code{NA}.}
 }
 \value{
-A BwgTrack object.
+A BwgTrack object with \code{samples}, \code{data}, \code{seqinfo}, \code{meta}, and
+\code{validation} slots.
 }
 \description{
-Create a BwgTrack object
+Creates a standardized \code{BwgTrack} object. GeneTrackR schema version 2 keeps
+sample metadata, optional in-memory signal records, optional chromosome
+metadata, object metadata, and validation results in stable named slots.
+Public signal coordinates use 1-based closed intervals.
 }

@@ -75,7 +75,9 @@ verified by full-file fread. Keep FALSE for speed unless debugging tabix
 coordinate/index issues.}
 }
 \value{
-A data.table, BwgTrack object, or GRanges object.
+A data.table, BwgTrack object, or GRanges object. BwgTrack subsets
+retain sequence metadata for the selected samples and chromosome when
+available.
 }
 \description{
 \code{retrieve_bwg()} is the unified signal retrieval API in GeneTrackR. It

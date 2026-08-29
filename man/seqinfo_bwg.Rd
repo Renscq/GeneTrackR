@@ -2,7 +2,7 @@
 % Please edit documentation in R/bwg_ops.R
 \name{seqinfo_bwg}
 \alias{seqinfo_bwg}
-\title{Get chromosome information from BwgTrack bigWig files}
+\title{Get chromosome information from BwgTrack objects}
 \usage{
 seqinfo_bwg(object, samples = NULL)
 }
@@ -15,5 +15,10 @@ seqinfo_bwg(object, samples = NULL)
 A data.table containing chromosome names and lengths for each sample.
 }
 \description{
-Get chromosome information from BwgTrack bigWig files
+Get chromosome information from BwgTrack objects
+}
+\details{
+Schema-v2 objects return stored sequence metadata directly. Legacy objects
+without a \code{seqinfo} slot retain the previous behavior and query chromosome
+metadata from bigWig source files through the current backend.
 }

@@ -1,9 +1,9 @@
 # Author: Rensc
-# Date: 2026-05-26
-# Version: dev003
+# Date: 2026-08-29
+# Version: dev004
 # Function: Read bedGraph, wig, and bigWig signal track files
 # Input: Signal track file paths
-# Output: BwgTrack object
+# Output: Schema-v2 BwgTrack object
 
 #' Read bedGraph, wig, or bigWig signal tracks
 #'
@@ -29,6 +29,10 @@
 #' filtering is required.
 #'
 #' `use_tabix = "auto"` uses indexed querying only when a `.tbi` index and an available backend are detected. GeneTrackR first checks the system `tabix` command and then the R package `Rsamtools`. Otherwise, lazy bedGraph queries fall back to full-file reading.
+#'
+#' `BwgTrack$seqinfo` follows the schema-v2 sequence metadata contract. bigWig
+#' inputs record chromosome lengths from the file header. In-memory bedGraph and
+#' wig inputs record observed chromosome names with unknown lengths (`NA`).
 #' @return A BwgTrack object.
 #' @examples
 #' \dontrun{
@@ -158,6 +162,37 @@ read_bwg <- function(files,
     }), fill = TRUE)
   }
 
+  seqinfo_list <- lapply(seq_along(files), function(i) {
+    if (!identical(formats[i], "bigwig")) {
+      return(NULL)
+    }
+    si <- bw_seqinfo_cpp(files[i])
+    if (nrow(si) == 0L) {
+      return(NULL)
+    }
+    si[, sample_id := sample_names[i]]
+    data.table::setcolorder(si, c("sample_id", "chrom", "length"))
+    si[]
+  })
+
+  if (!is.null(data) && nrow(data) > 0L) {
+    text_sample_ids <- sample_names[formats %in% c("bedgraph", "wig")]
+    if (length(text_sample_ids) > 0L) {
+      text_seqinfo <- unique(
+        data[data[["sample_id"]] %in% text_sample_ids, .(sample_id, chrom)]
+      )
+      if (nrow(text_seqinfo) > 0L) {
+        text_seqinfo[, length := NA_integer_]
+        seqinfo_list[[length(seqinfo_list) + 1L]] <- text_seqinfo
+      }
+    }
+  }
+
+  seqinfo <- data.table::rbindlist(seqinfo_list, fill = TRUE)
+  if (is.null(seqinfo) || nrow(seqinfo) == 0L) {
+    seqinfo <- NULL
+  }
+
   meta <- list(
     mode = mode,
     genome = genome,
@@ -168,7 +203,13 @@ read_bwg <- function(files,
   if (verbose) {
     message(sprintf("[GeneTrackR] Finished reading signal metadata. samples: %s; mode: %s.", nrow(samples), mode))
   }
-  obj <- BwgTrack(samples = samples, data = data, meta = meta, validation = make_empty_validation())
+  obj <- BwgTrack(
+    samples = samples,
+    data = data,
+    meta = meta,
+    validation = make_empty_validation(),
+    seqinfo = seqinfo
+  )
   if (check_chrom) {
     obj$validation <- validate_bwg(obj)
   }

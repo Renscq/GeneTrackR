@@ -56,6 +56,10 @@ provide \code{strand = c("+", "-")} and matching \code{sample_names} if strand-s
 filtering is required.
 
 \code{use_tabix = "auto"} uses indexed querying only when a \code{.tbi} index and an available backend are detected. GeneTrackR first checks the system \code{tabix} command and then the R package \code{Rsamtools}. Otherwise, lazy bedGraph queries fall back to full-file reading.
+
+\code{BwgTrack$seqinfo} follows the schema-v2 sequence metadata contract. bigWig
+inputs record chromosome lengths from the file header. In-memory bedGraph and
+wig inputs record observed chromosome names with unknown lengths (\code{NA}).
 }
 \examples{
 \dontrun{

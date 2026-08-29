@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-05-26
-# Version: dev002
+# Date: 2026-08-29
+# Version: dev003
 # Function: Query, normalize, summarize, slice, merge, and write signal tracks
 # Input: BwgTrack objects and genomic regions
 # Output: Signal tables, subset objects, and exported signal files
@@ -723,7 +723,18 @@ slice_bwg <- function(object, chrom, start, end, samples = NULL, strand = "ignor
   if (!is.null(samples)) {
     samples_tbl <- samples_tbl[sample_id %in% samples]
   }
-  BwgTrack(samples = samples_tbl, data = dt, meta = modifyList(object$meta, list(mode = "memory")), validation = make_empty_validation())
+  seqinfo <- subset_bwg_seqinfo(
+    object,
+    sample_ids = samples_tbl[["sample_id"]],
+    chrom = chrom
+  )
+  BwgTrack(
+    samples = samples_tbl,
+    data = dt,
+    meta = modifyList(object$meta, list(mode = "memory")),
+    validation = make_empty_validation(),
+    seqinfo = seqinfo
+  )
 }
 
 #' Merge signal track objects
@@ -789,6 +800,18 @@ merge_bwg <- function(..., sample_conflict = c("error", "rename", "sum", "mean",
   })
   data <- data.table::rbindlist(data_list, fill = TRUE)
 
+  seqinfo_list <- lapply(seq_along(objs), function(i) {
+    si <- objs[[i]]$seqinfo
+    if (is.null(si)) return(NULL)
+    si <- data.table::copy(data.table::as.data.table(si))
+    si[, source_index := i]
+    si
+  })
+  seqinfo <- data.table::rbindlist(seqinfo_list, fill = TRUE)
+  if (is.null(seqinfo) || nrow(seqinfo) == 0L) {
+    seqinfo <- NULL
+  }
+
   if (!is.null(data) && length(dup) > 0L) {
     if (sample_conflict == "rename") {
       map <- samples[, .(source_index, old_sample_id = sub("^set[0-9]+_", "", sample_id), sample_id)]
@@ -807,14 +830,44 @@ merge_bwg <- function(..., sample_conflict = c("error", "rename", "sum", "mean",
     }
   }
 
+  if (!is.null(seqinfo) && length(dup) > 0L) {
+    if (sample_conflict == "rename") {
+      map <- samples[, .(source_index, old_sample_id = sub("^set[0-9]+_", "", sample_id), sample_id)]
+      seqinfo <- merge(
+        seqinfo,
+        map,
+        by.x = c("source_index", "sample_id"),
+        by.y = c("source_index", "old_sample_id"),
+        all.x = TRUE
+      )
+      seqinfo[!is.na(i.sample_id), sample_id := i.sample_id]
+      seqinfo[, i.sample_id := NULL]
+    }
+    if (sample_conflict %in% c("sum", "mean", "keep_first")) {
+      seqinfo <- unique(seqinfo[, .(sample_id, chrom, length)])
+    }
+  }
+
   if (!is.null(data) && "source_index" %in% names(data)) {
     data[, source_index := NULL]
+  }
+  if (!is.null(seqinfo) && "source_index" %in% names(seqinfo)) {
+    seqinfo[, source_index := NULL]
   }
   if ("source_index" %in% names(samples)) {
     samples[, source_index := NULL]
   }
 
-  BwgTrack(samples = samples, data = data, meta = list(mode = if (is.null(data)) "lazy" else "memory", coordinate = "1-based closed"), validation = make_empty_validation())
+  BwgTrack(
+    samples = samples,
+    data = data,
+    meta = list(
+      mode = if (is.null(data)) "lazy" else "memory",
+      coordinate = "1-based closed"
+    ),
+    validation = make_empty_validation(),
+    seqinfo = seqinfo
+  )
 }
 
 #' Bin signal tracks into fixed-width windows
@@ -871,14 +924,22 @@ bin_bwg <- function(data, bin_size = 50L) {
 }
 
 
-#' Get chromosome information from BwgTrack bigWig files
+#' Get chromosome information from BwgTrack objects
 #'
 #' @param object A BwgTrack object.
 #' @param samples Optional sample IDs.
 #' @return A data.table containing chromosome names and lengths for each sample.
+#' @details
+#' Schema-v2 objects return stored sequence metadata directly. Legacy objects
+#' without a `seqinfo` slot retain the previous behavior and query chromosome
+#' metadata from bigWig source files through the current backend.
 #' @export
 seqinfo_bwg <- function(object, samples = NULL) {
   stop_if_not(inherits(object, "BwgTrack"), "`object` must be a BwgTrack object.")
+
+  if (!is.null(object$seqinfo)) {
+    return(subset_bwg_seqinfo(object, sample_ids = samples))
+  }
 
   sample_tbl <- data.table::copy(object$samples)
   if (!"use_tabix" %in% names(sample_tbl)) {
