@@ -1,3 +1,12 @@
+---
+title: "Annotation I/O and conversion"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Annotation I/O and conversion}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,

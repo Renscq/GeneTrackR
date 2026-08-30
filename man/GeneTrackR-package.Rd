@@ -4,12 +4,13 @@
 \name{GeneTrackR-package}
 \alias{GeneTrackR}
 \alias{GeneTrackR-package}
-\title{GeneTrackR: GenePred and Genomic Signal Track Visualization}
+\title{GeneTrackR: Genomic Track Visualization and Haplotype Analysis}
 \description{
-GeneTrackR provides utilities for reading, validating, slicing, merging,
-writing, and plotting GenePred annotations and bedGraph, wig, or bigWig
-genomic signal tracks. Signal-track reading, regional querying, and writing are
-implemented in pure R.
+GeneTrackR provides a shared genomic-coordinate framework for annotation, signal,
+variant, haplotype, phenotype, linkage-disequilibrium, and variant-effect
+workflows. Annotation objects interoperate with \code{GenomicRanges::GRanges}, and
+bedGraph, wig, and bigWig signal reading, querying, and writing use the built-in
+pure-R signal I/O layer.
 }
 \seealso{
 Useful links:
@@ -22,11 +23,6 @@ Useful links:
 }
 \author{
 \strong{Maintainer}: Rensc \email{rensc0718@163.com}
-
-Authors:
-\itemize{
-  \item Rensc \email{rensc0718@163.com}
-}
 
 }
 \keyword{internal}

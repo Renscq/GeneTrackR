@@ -1,16 +1,17 @@
 # Author: Rensc
 # Date: 2026-08-30
-# Version: dev004
+# Version: dev005
 # Function: Package-level documentation for GeneTrackR
-# Input: GenePred annotations and genomic signal tracks
-# Output: Gene model plots, signal plots, and combined genome tracks
+# Input: Genomic annotations, signal tracks, variants, and phenotype data
+# Output: Integrated genomic tracks, haplotype analyses, and variant prioritization
 
-#' GeneTrackR: GenePred and Genomic Signal Track Visualization
+#' GeneTrackR: Genomic Track Visualization and Haplotype Analysis
 #'
-#' GeneTrackR provides utilities for reading, validating, slicing, merging,
-#' writing, and plotting GenePred annotations and bedGraph, wig, or bigWig
-#' genomic signal tracks. Signal-track reading, regional querying, and writing are
-#' implemented in pure R.
+#' GeneTrackR provides a shared genomic-coordinate framework for annotation, signal,
+#' variant, haplotype, phenotype, linkage-disequilibrium, and variant-effect
+#' workflows. Annotation objects interoperate with `GenomicRanges::GRanges`, and
+#' bedGraph, wig, and bigWig signal reading, querying, and writing use the built-in
+#' pure-R signal I/O layer.
 #'
 #' @keywords internal
 #' @import data.table

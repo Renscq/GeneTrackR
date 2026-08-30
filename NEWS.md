@@ -1,3 +1,13 @@
+# GeneTrackR 0.8.0
+
+- Started the Bioconductor-readiness phase while keeping the 0.7.8 pure-R signal implementation and public analysis APIs unchanged.
+- Added Bioconductor-oriented DESCRIPTION metadata, including software `biocViews`, a broader package title, and a three-sentence functional description that reflects annotation, signal, variant, haplotype, phenotype, LD, and variant-effect workflows.
+- Kept `NeedsCompilation: no`, removed stale generated DESCRIPTION fields and the obsolete roxygen configuration pin, and added `openxlsx` to Suggests for the optional workbook workflow used in an executable vignette.
+- Added RiboParser-style README navigation links for pkgdown documentation, issues, citation, and license, and added explicit Citation and License sections.
+- Converted all pkgdown article Rmd files into formal R package vignettes with `VignetteIndexEntry`, `VignetteEngine`, and UTF-8 metadata so they can participate in `R CMD build` and `R CMD check`.
+- Added a Bioconductor-readiness regression test for metadata and GRanges interoperability and a versioned developer preflight script for repository, vignette, compiled-code, and submission-boundary checks.
+- Kept the package at version 0.8.0 during preflight development; the formal Bioconductor submission candidate will use the required 0.99.0 version series.
+
 # GeneTrackR 0.7.8
 
 - Finalized the 0.7.x pure-R signal migration documentation without changing public APIs or signal calculations.

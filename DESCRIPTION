@@ -1,29 +1,29 @@
 Package: GeneTrackR
 Type: Package
-Title: GenePred Gene Model and Genomic Signal Track Visualization
-Version: 0.7.8
+Title: Genomic Track Visualization and Haplotype Analysis
+Version: 0.8.0
 Authors@R: person("Rensc", role = c("aut", "cre"), email = "rensc0718@163.com")
-Description: Provides lightweight tools to read, validate, summarize, slice, merge,
-    write, and visualize GenePred annotations and genomic signal tracks from
-    bedGraph, wig, and bigWig files through a pure-R signal I/O layer. The
-    package supports gene model plots,
-    transcript plots, regional plots, signal coverage plots, and combined
-    genome-browser-like track visualization.
+Description: Provides tools to read, validate, query, transform, write,
+    and visualize gene annotations, genomic signal tracks, and variant
+    tracks using a shared genomic coordinate framework. Supports GenePred,
+    GTF, GFF3, and BED annotations; bedGraph, wig, and bigWig signals; VCF
+    variants; integrated locus visualization; haplotype construction;
+    phenotype association; linkage disequilibrium; haplotype refinement;
+    and variant-effect analysis. The package interoperates with
+    GenomicRanges objects and uses a pure-R signal I/O layer so core
+    workflows do not require a compiled extension.
 License: GPL + file LICENSE
 URL: https://renscq.github.io/GeneTrackR/, https://github.com/Renscq/GeneTrackR
 BugReports: https://github.com/Renscq/GeneTrackR/issues
+biocViews: Software, GenomeAnnotation, Coverage, Sequencing, Visualization
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 Depends: R (>= 4.2.0)
 Imports: data.table, ggplot2, patchwork, rlang, utils, stats, grid,
         GenomicRanges, IRanges, RColorBrewer
-Suggests: testthat (>= 3.0.0), roxygen2, knitr, rmarkdown, Rsamtools
+Suggests: testthat (>= 3.0.0), roxygen2, knitr, rmarkdown, Rsamtools, openxlsx
 VignetteBuilder: knitr
 Config/testthat/edition: 3
-Config/roxygen2/version: 8.1.0
 Config/Needs/website: pkgdown
 NeedsCompilation: no
-Packaged: 2026-07-01 07:52:38 UTC; rensc
-Author: Rensc [aut, cre]
-Maintainer: Rensc <rensc0718@163.com>

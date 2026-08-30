@@ -1,6 +1,21 @@
 
 <!-- README.md is assembled from README.qmd and docs/*.qmd with tools/render_readme.R. Edit the QMD sources, not README.md. -->
 
+# GeneTrackR
+
+<p align="center">
+  <strong>GeneTrackR</strong> is an R toolkit for integrated genomic annotation, signal, variant, haplotype, and phenotype analysis.
+</p>
+
+<p align="center">
+  📖 <a href="https://renscq.github.io/GeneTrackR/">Documentation</a> |
+  🐞 <a href="https://github.com/Renscq/GeneTrackR/issues">Issues</a> |
+  📚 <a href="#citation">Citation</a> |
+  📝 <a href="#license">License</a>
+</p>
+
+---
+
 **GeneTrackR** is a lightweight R package for reading, querying, writing, and visualizing gene annotations, genomic signal tracks, variant tracks, haplotypes, and phenotype associations. It is designed for programmable IGV-like visualization in R while keeping direct access to the underlying annotation, coverage, variant, haplotype, and phenotype tables.
 
 ## Main features
@@ -5060,3 +5075,15 @@ annotation + signal + VCF + phenotype
     -> biological candidate selection
     -> reproducible export
 ```
+
+## Citation
+
+If you use GeneTrackR in a publication, please cite the package version used in the analysis. The installed package citation can be inspected with:
+
+```r
+citation("GeneTrackR")
+```
+
+## License
+
+GeneTrackR is distributed under the GPL license declared in `DESCRIPTION`; see the top-level `LICENSE` file for the package copyright holder and year.

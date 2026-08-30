@@ -1,3 +1,12 @@
+---
+title: "Phenotype-guided haplotype refinement"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Phenotype-guided haplotype refinement}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,

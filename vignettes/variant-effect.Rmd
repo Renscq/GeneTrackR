@@ -1,3 +1,12 @@
+---
+title: "Variant effect analysis"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Variant effect analysis}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
