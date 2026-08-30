@@ -424,6 +424,8 @@ exon_dt <- as_exon_table(gp)
 gene_gr <- as_granges(gp, level = "gene")
 ```
 
+`as_granges()` is the common Bioconductor exchange boundary for GeneTrackR genomic track objects. Annotation objects use `level` to choose gene, transcript, exon, or feature records; in-memory `BwgTrack` and `VariantTrack` objects can also be converted directly in downstream workflows.
+
 `write_feature()` is also the main cross-format writer. For example, a GTF-derived gene model can be exported as GenePredExt or BED12:
 
 ```{r}

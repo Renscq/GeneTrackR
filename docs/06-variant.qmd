@@ -127,7 +127,7 @@ The demo VCF intentionally contains SNPs and indels so the same file can be reus
 
 ### Step 3. Retrieve variants from a genomic region
 
-`retrieve_vcf()` can return either a plain `data.table` or a new `VariantTrack`.
+`retrieve_vcf()` can return a plain `data.table`, a new `VariantTrack`, or a `GenomicRanges::GRanges` object.
 
 Retrieve the broader `GeneA` / `GeneB` / `GeneC` demonstration region as a table:
 
@@ -169,7 +169,23 @@ region_variants
 The distinction is important:
 
 - `as = "data.table"` is convenient for inspection, filtering, and tabular analysis;
-- `as = "VariantTrack"` preserves the GeneTrackR object interface for downstream plotting and analysis.
+- `as = "VariantTrack"` preserves the GeneTrackR object interface for downstream plotting and analysis;
+- `as = "GRanges"` exposes the same genomic subset to standard Bioconductor interval operations.
+
+```{r}
+region_gr <- retrieve_vcf(
+  vcf,
+  chrom = "chr1",
+  start = 12339001,
+  end = 12374500,
+  as = "GRanges",
+  verbose = FALSE
+)
+
+region_gr
+```
+
+An in-memory `VariantTrack` can also be converted directly with `as_granges(vcf)`. VCF-derived columns such as `variant_id`, `ref`, `alt`, `variant_type`, and retained genotype columns remain metadata columns on the returned `GRanges`. Lazy `VariantTrack` objects should first be retrieved by genomic region.
 
 ### Step 4. Retrieve variants by gene or transcript
 

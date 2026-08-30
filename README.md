@@ -55,8 +55,11 @@ if (!requireNamespace("BiocManager", quietly = TRUE)) {
 BiocManager::install(c(
   "GenomicRanges",
   "IRanges",
-  "Rsamtools"
+  "S4Vectors"
 ), ask = FALSE, update = FALSE)
+
+## Optional indexed-query acceleration
+BiocManager::install("Rsamtools", ask = FALSE, update = FALSE)
 
 ## Install GeneTrackR from GitHub
 devtools::install_github(
@@ -65,6 +68,8 @@ devtools::install_github(
   build_vignettes = FALSE
 )
 ```
+
+`Rsamtools` is optional and is only required when GeneTrackR uses the Bioconductor tabix backend for indexed VCF or bedGraph regional queries.
 
 Load the package:
 
@@ -538,6 +543,8 @@ exon_dt <- as_exon_table(gp)
 gene_gr <- as_granges(gp, level = "gene")
 ```
 
+`as_granges()` is the common Bioconductor exchange boundary for GeneTrackR genomic track objects. Annotation objects use `level` to choose gene, transcript, exon, or feature records; in-memory `BwgTrack` and `VariantTrack` objects can also be converted directly in downstream workflows.
+
 `write_feature()` is also the main cross-format writer. For example, a GTF-derived gene model can be exported as GenePredExt or BED12:
 
 ```r
@@ -798,6 +805,31 @@ Ribo_seq_minus.bigwig
 ```
 
 BigWig export has a single pure-R backend in GeneTrackR. Reading, regional querying, and writing therefore use the same package-native coordinate contract without a compiled-code dependency or external converter.
+
+### Bioconductor interoperability
+
+GeneTrackR genomic tracks are not intended to isolate signal analysis from the Bioconductor ecosystem. An in-memory `BwgTrack` can be converted directly to `GenomicRanges::GRanges`; genomic coordinates and strand are retained, while `sample_id` and signal values are exposed as metadata (`score`).
+
+```r
+rnaseq_gr <- as_granges(rnaseq)
+head(rnaseq_gr)
+```
+
+For large lazy tracks, retrieve only the required interval directly as `GRanges`:
+
+```r
+rnaseq_gene_gr <- retrieve_bwg(
+  rnaseq,
+  annotation = gp,
+  gene_id = "GeneA",
+  strand = "auto",
+  as = "GRanges"
+)
+
+head(rnaseq_gene_gr)
+```
+
+Bioconductor already provides broad genomic-file import/export infrastructure through `rtracklayer`. GeneTrackR retains its native pure-R bedGraph/WIG/BigWig layer to preserve one multi-sample `BwgTrack` API, lazy/memory semantics, strand policy, and installation without a GeneTrackR-compiled signal backend. The native layer is an implementation choice for GeneTrackR's track workflow rather than a replacement for `rtracklayer`; `GRanges` is the exchange boundary for downstream Bioconductor operations.
 
 ### Step 3. Plot RNA-seq and Ribo-seq tracks for a gene
 
@@ -1121,7 +1153,7 @@ The demo VCF intentionally contains SNPs and indels so the same file can be reus
 
 ### Step 3. Retrieve variants from a genomic region
 
-`retrieve_vcf()` can return either a plain `data.table` or a new `VariantTrack`.
+`retrieve_vcf()` can return a plain `data.table`, a new `VariantTrack`, or a `GenomicRanges::GRanges` object.
 
 Retrieve the broader `GeneA` / `GeneB` / `GeneC` demonstration region as a table:
 
@@ -1163,7 +1195,23 @@ region_variants
 The distinction is important:
 
 - `as = "data.table"` is convenient for inspection, filtering, and tabular analysis;
-- `as = "VariantTrack"` preserves the GeneTrackR object interface for downstream plotting and analysis.
+- `as = "VariantTrack"` preserves the GeneTrackR object interface for downstream plotting and analysis;
+- `as = "GRanges"` exposes the same genomic subset to standard Bioconductor interval operations.
+
+```r
+region_gr <- retrieve_vcf(
+  vcf,
+  chrom = "chr1",
+  start = 12339001,
+  end = 12374500,
+  as = "GRanges",
+  verbose = FALSE
+)
+
+region_gr
+```
+
+An in-memory `VariantTrack` can also be converted directly with `as_granges(vcf)`. VCF-derived columns such as `variant_id`, `ref`, `alt`, `variant_type`, and retained genotype columns remain metadata columns on the returned `GRanges`. Lazy `VariantTrack` objects should first be retrieved by genomic region.
 
 ### Step 4. Retrieve variants by gene or transcript
 

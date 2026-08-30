@@ -152,6 +152,31 @@ rnaseq_region
 
 `slice_bwg()` provides a compact coordinate-only interface when annotation-aware resolution is not required.
 
+## Bioconductor interoperability
+
+In-memory `BwgTrack` objects can be converted directly to `GenomicRanges::GRanges`. Genomic coordinates and strand are retained, while `sample_id` and the signal value are represented as metadata (`score`):
+
+```{r signal-granges}
+rnaseq_gr <- as_granges(rnaseq_region)
+rnaseq_gr
+```
+
+Lazy tracks should remain lazy until a bounded interval is needed. `retrieve_bwg(..., as = "GRanges")` provides that interval directly in a standard Bioconductor container.
+
+```{r retrieve-granges}
+rnaseq_gene_gr <- retrieve_bwg(
+  rnaseq,
+  annotation = gp,
+  gene_id = "GeneA",
+  strand = "auto",
+  as = "GRanges"
+)
+
+rnaseq_gene_gr
+```
+
+Bioconductor's `rtracklayer` package provides broad standard genomic-file import/export infrastructure. GeneTrackR retains its native pure-R bedGraph/WIG/BigWig layer because the `BwgTrack` workflow combines multi-sample metadata, lazy/memory access, strand policy, normalization state, and a single API across the three signal formats. The native backend is not intended to replace `rtracklayer`; `GRanges` is the exchange boundary when GeneTrackR results need to participate in the wider Bioconductor ecosystem.
+
 ## Normalize and merge signals
 
 `norm_bwg()` records and applies supported sample-level normalization strategies. For RPM/CPM normalization, supply appropriate library sizes; for externally defined scaling, use named scale factors.

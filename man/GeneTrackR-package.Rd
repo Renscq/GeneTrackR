@@ -8,9 +8,9 @@
 \description{
 GeneTrackR provides a shared genomic-coordinate framework for annotation, signal,
 variant, haplotype, phenotype, linkage-disequilibrium, and variant-effect
-workflows. Annotation objects interoperate with \code{GenomicRanges::GRanges}, and
-bedGraph, wig, and bigWig signal reading, querying, and writing use the built-in
-pure-R signal I/O layer.
+workflows. Annotation, signal, and variant track objects interoperate with
+\code{GenomicRanges::GRanges}, and bedGraph, wig, and bigWig signal reading,
+querying, and writing use the built-in pure-R signal I/O layer.
 }
 \seealso{
 Useful links:
@@ -23,6 +23,11 @@ Useful links:
 }
 \author{
 \strong{Maintainer}: Rensc \email{rensc0718@163.com}
+
+Authors:
+\itemize{
+  \item Rensc \email{rensc0718@163.com}
+}
 
 }
 \keyword{internal}

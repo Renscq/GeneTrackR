@@ -139,7 +139,7 @@ summary_vcf(
 
 ## Retrieve by genomic region
 
-`retrieve_vcf()` returns either a plain `data.table` for direct inspection or another `VariantTrack` for downstream GeneTrackR operations.
+`retrieve_vcf()` returns a plain `data.table`, another `VariantTrack`, or a `GenomicRanges::GRanges` object for downstream Bioconductor operations.
 
 ```{r retrieve-region-table}
 region_table <- retrieve_vcf(
@@ -175,6 +175,23 @@ region_variants <- retrieve_vcf(
 
 region_variants
 ```
+
+Use `as = "GRanges"` when the genomic subset should move directly into Bioconductor interval operations.
+
+```{r retrieve-region-granges}
+region_gr <- retrieve_vcf(
+  variants,
+  chrom = "chr1",
+  start = 12339001,
+  end = 12374500,
+  as = "GRanges",
+  verbose = FALSE
+)
+
+region_gr
+```
+
+For an in-memory object, `as_granges(variants)` converts the full `VariantTrack` and preserves VCF-derived fields as `GRanges` metadata columns. A lazy `VariantTrack` should be retrieved by genomic region before conversion.
 
 A direct region query must use one chromosome with both `start` and `end`. A chromosome-only query is also valid when coordinates are not required.
 

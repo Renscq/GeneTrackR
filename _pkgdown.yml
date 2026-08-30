@@ -79,6 +79,13 @@ reference:
       - VariantTrack
       - LDTrack
 
+  - title: Bioconductor interoperability
+    desc: >
+      Convert GeneTrackR annotation, signal, and variant tracks to standard
+      GenomicRanges objects for downstream Bioconductor interval workflows.
+    contents:
+      - as_granges
+
   - title: Annotation I/O
     desc: >
       Read and write GenePred, GTF, GFF3, BED, and standardized feature tracks.
@@ -97,7 +104,6 @@ reference:
     contents:
       - as_feature
       - as_genepred
-      - as_granges
       - as_gene_table
       - as_transcript_table
       - as_exon_table

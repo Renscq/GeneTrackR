@@ -265,7 +265,7 @@ head(gene_dt)
 head(tx_dt)
 ```
 
-`as_feature()` returns the common feature-compatible object representation, while `as_granges()` provides Bioconductor interoperability:
+`as_feature()` returns the common feature-compatible object representation, while `as_granges()` provides the shared Bioconductor exchange boundary used by annotation, signal, and variant tracks:
 
 ```{r bioconductor-conversion}
 gp_feature <- as_feature(gp)
@@ -274,6 +274,8 @@ gene_gr <- as_granges(gp, level = "gene")
 gp_feature
 gene_gr
 ```
+
+For annotation objects, `level` selects gene, transcript, exon, or feature intervals. In-memory `BwgTrack` and `VariantTrack` objects can be converted with the same `as_granges()` function when downstream analysis is performed with standard Bioconductor interval infrastructure.
 
 Use the hierarchy-specific table helpers when downstream code explicitly requires tabular data. Preserve the full object for GeneTrackR workflows so gene/transcript/exon relationships are not silently discarded.
 

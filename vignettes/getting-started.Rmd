@@ -32,10 +32,13 @@ if (!requireNamespace("BiocManager", quietly = TRUE)) {
 }
 
 BiocManager::install(
-  c("GenomicRanges", "IRanges", "Rsamtools"),
+  c("GenomicRanges", "IRanges", "S4Vectors"),
   ask = FALSE,
   update = FALSE
 )
+
+# Optional indexed-query acceleration
+BiocManager::install("Rsamtools", ask = FALSE, update = FALSE)
 
 if (!requireNamespace("remotes", quietly = TRUE)) {
   install.packages("remotes")

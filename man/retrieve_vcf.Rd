@@ -21,7 +21,7 @@ retrieve_vcf(
   keep_genotype = TRUE,
   ignore_case = TRUE,
   fixed = FALSE,
-  as = c("data.table", "VariantTrack"),
+  as = c("data.table", "VariantTrack", "GRanges"),
   verbose = TRUE,
   progress = interactive() && isTRUE(verbose)
 )
@@ -59,14 +59,14 @@ retrieve_vcf(
 
 \item{fixed}{Logical. Whether pattern is matched as a fixed string.}
 
-\item{as}{Output type: \code{data.table} or \code{VariantTrack}.}
+\item{as}{Output type: \code{data.table}, \code{VariantTrack}, or \code{GRanges}.}
 
 \item{verbose}{Logical. Whether to print progress messages.}
 
 \item{progress}{Logical. Whether to print a compact stage-level progress indicator.}
 }
 \value{
-A data.table or VariantTrack object.
+A data.table, VariantTrack, or \code{GenomicRanges::GRanges} object.
 }
 \description{
 Retrieves VCF records by optional genomic region, gene/transcript locator,
@@ -84,4 +84,5 @@ retrieve_vcf(vcf, variant_type = "SNP")
 retrieve_vcf(vcf, pattern = "varA", fixed = TRUE)
 vt <- retrieve_vcf(vcf, chrom = "chr1", start = 12339700, end = 12343200, as = "VariantTrack")
 vt
+retrieve_vcf(vcf, chrom = "chr1", start = 12339700, end = 12343200, as = "GRanges")
 }

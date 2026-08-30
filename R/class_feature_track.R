@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-05-28
-# Version: dev001
+# Date: 2026-08-31
+# Version: dev002
 # Function: Define unified Feature annotation class and GenePred-compatible constructor
 # Input: Standardized annotation or variant tables
 # Output: Unified S3 track objects
@@ -430,71 +430,6 @@ as_gene_table <- function(object) {
   stop_if_not(inherits(object, "GenePred"), "`object` must be a GenePred object.")
   data.table::copy(object$genes)
 }
-
-#' Convert a GenePred object to GRanges
-#'
-#' @param object A GenePred object.
-#' @param level Feature level. One of gene, transcript, or exon.
-#' @return A GRanges object.
-#' @export
-as_granges <- function(object, level = c("gene", "transcript", "exon", "feature")) {
-  stop_if_not(inherits(object, "GenePred") || inherits(object, "Feature") || inherits(object, "FeatureTrack"), "`object` must be a GenePred or Feature object.")
-  level <- match.arg(level)
-
-  if (!inherits(object, "GenePred") && level != "feature") {
-    object <- as_genepred(object)
-  }
-
-  if (level == "feature") {
-    dt <- as_feature_table(object)
-    return(GenomicRanges::GRanges(
-      seqnames = dt$chrom,
-      ranges = IRanges::IRanges(start = dt$start, end = dt$end),
-      strand = dt$strand,
-      feature_id = dt$feature_id,
-      name = dt$name,
-      type = dt$type,
-      gene_id = dt$gene_id,
-      transcript_id = dt$transcript_id
-    ))
-  }
-
-  if (level == "gene") {
-    dt <- as_gene_table(object)
-    gr <- GenomicRanges::GRanges(
-      seqnames = dt$chrom,
-      ranges = IRanges::IRanges(start = dt$gene_start, end = dt$gene_end),
-      strand = dt$strand,
-      gene_id = dt$gene_id,
-      gene_type = dt$gene_type
-    )
-    return(gr)
-  }
-
-  if (level == "transcript") {
-    dt <- as_transcript_table(object)
-    gr <- GenomicRanges::GRanges(
-      seqnames = dt$chrom,
-      ranges = IRanges::IRanges(start = dt$tx_start, end = dt$tx_end),
-      strand = dt$strand,
-      transcript_id = dt$transcript_id,
-      gene_id = dt$gene_id,
-      gene_type = dt$gene_type
-    )
-    return(gr)
-  }
-
-  dt <- as_exon_table(object)
-  GenomicRanges::GRanges(
-    seqnames = dt$chrom,
-    ranges = IRanges::IRanges(start = dt$exon_start, end = dt$exon_end),
-    strand = dt$strand,
-    transcript_id = dt$transcript_id,
-    gene_id = dt$gene_id,
-    exon_number = dt$exon_number
-  )
-}
-
 
 genepred_to_feature_table <- function(transcripts, exons, genes = NULL) {
   tx <- data.table::copy(data.table::as.data.table(transcripts))

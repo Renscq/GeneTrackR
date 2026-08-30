@@ -1,9 +1,9 @@
 # Author: Rensc
-# Date: 2026-05-31
-# Version: dev003
+# Date: 2026-08-31
+# Version: dev004
 # Function: Retrieve variants from VariantTrack objects or indexed VCF files
 # Input: VariantTrack object or VCF path and filters
-# Output: data.table or VariantTrack object
+# Output: data.table, VariantTrack, or GRanges object
 
 #' Retrieve variants from a VariantTrack or an indexed VCF file
 #'
@@ -31,10 +31,10 @@
 #' @param keep_genotype Logical. Whether to keep FORMAT and sample genotype columns when `object` is a VCF file path.
 #' @param ignore_case Logical. Whether pattern matching ignores case.
 #' @param fixed Logical. Whether pattern is matched as a fixed string.
-#' @param as Output type: `data.table` or `VariantTrack`.
+#' @param as Output type: `data.table`, `VariantTrack`, or `GRanges`.
 #' @param verbose Logical. Whether to print progress messages.
 #' @param progress Logical. Whether to print a compact stage-level progress indicator.
-#' @return A data.table or VariantTrack object.
+#' @return A data.table, VariantTrack, or `GenomicRanges::GRanges` object.
 #' @examples
 #' vcf_file <- system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")
 #' vcf <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
@@ -43,6 +43,7 @@
 #' retrieve_vcf(vcf, pattern = "varA", fixed = TRUE)
 #' vt <- retrieve_vcf(vcf, chrom = "chr1", start = 12339700, end = 12343200, as = "VariantTrack")
 #' vt
+#' retrieve_vcf(vcf, chrom = "chr1", start = 12339700, end = 12343200, as = "GRanges")
 #' @export
 retrieve_vcf <- function(object,
                          pattern = NULL,
@@ -60,7 +61,7 @@ retrieve_vcf <- function(object,
                          keep_genotype = TRUE,
                          ignore_case = TRUE,
                          fixed = FALSE,
-                         as = c("data.table", "VariantTrack"),
+                         as = c("data.table", "VariantTrack", "GRanges"),
                          verbose = TRUE,
                          progress = interactive() && isTRUE(verbose)) {
   as <- match.arg(as)
@@ -150,7 +151,9 @@ retrieve_vcf <- function(object,
   }
 
   if (as == "data.table") return(dt[])
-  VariantTrack(dt, meta = vt$meta)
+  result <- VariantTrack(dt, meta = vt$meta)
+  if (as == "GRanges") return(as_granges(result))
+  result
 }
 
 
@@ -254,9 +257,6 @@ retrieve_vcf_file <- function(file,
     col_names <- parse_vcf_header_names(header)
 
     progress_msg(2L, 4L, "Scanning tabix index.")
-    stop_if_not(requireNamespace("GenomicRanges", quietly = TRUE), "Package `GenomicRanges` is required for indexed VCF queries.")
-    stop_if_not(requireNamespace("IRanges", quietly = TRUE), "Package `IRanges` is required for indexed VCF queries.")
-
     query_gr <- GenomicRanges::GRanges(
       seqnames = as.character(chrom)[1L],
       ranges = IRanges::IRanges(

@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-08-30
-# Version: dev005
+# Date: 2026-08-31
+# Version: dev006
 # Function: Package-level documentation for GeneTrackR
 # Input: Genomic annotations, signal tracks, variants, and phenotype data
 # Output: Integrated genomic tracks, haplotype analyses, and variant prioritization
@@ -9,9 +9,9 @@
 #'
 #' GeneTrackR provides a shared genomic-coordinate framework for annotation, signal,
 #' variant, haplotype, phenotype, linkage-disequilibrium, and variant-effect
-#' workflows. Annotation objects interoperate with `GenomicRanges::GRanges`, and
-#' bedGraph, wig, and bigWig signal reading, querying, and writing use the built-in
-#' pure-R signal I/O layer.
+#' workflows. Annotation, signal, and variant track objects interoperate with
+#' `GenomicRanges::GRanges`, and bedGraph, wig, and bigWig signal reading, querying,
+#' and writing use the built-in pure-R signal I/O layer.
 #'
 #' @keywords internal
 #' @import data.table

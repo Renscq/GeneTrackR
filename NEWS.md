@@ -1,3 +1,12 @@
+# GeneTrackR 0.8.1
+
+- Expanded Bioconductor interoperability so `as_granges()` now accepts annotation, in-memory signal (`BwgTrack`), and in-memory variant (`VariantTrack`) objects while preserving the existing annotation-level interface.
+- Added `retrieve_vcf(..., as = "GRanges")` so indexed or in-memory variant retrieval can feed directly into standard Bioconductor genomic interval workflows.
+- Added `S4Vectors`, `grDevices`, and `tools` to explicit runtime imports where GeneTrackR calls their namespaces directly; retained `Rsamtools` in Suggests because tabix-backed querying remains an optional acceleration path.
+- Added dependency-placement and cross-track `GRanges` regression coverage, including lazy-track conversion diagnostics.
+- Documented the boundary between GeneTrackR's native pure-R bedGraph/WIG/BigWig I/O and Bioconductor's `rtracklayer` infrastructure while keeping the native backend and public signal APIs unchanged.
+- Added `tools/bioc_preflight.002.R` with dependency duplication, namespace-declaration, and interoperability checks while retaining the 0.8.0 preflight script for development history.
+
 # GeneTrackR 0.8.0
 
 - Started the Bioconductor-readiness phase while keeping the 0.7.8 pure-R signal implementation and public analysis APIs unchanged.

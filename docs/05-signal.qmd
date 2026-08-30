@@ -139,6 +139,31 @@ Ribo_seq_minus.bigwig
 
 BigWig export has a single pure-R backend in GeneTrackR. Reading, regional querying, and writing therefore use the same package-native coordinate contract without a compiled-code dependency or external converter.
 
+### Bioconductor interoperability
+
+GeneTrackR genomic tracks are not intended to isolate signal analysis from the Bioconductor ecosystem. An in-memory `BwgTrack` can be converted directly to `GenomicRanges::GRanges`; genomic coordinates and strand are retained, while `sample_id` and signal values are exposed as metadata (`score`).
+
+```{r}
+rnaseq_gr <- as_granges(rnaseq)
+head(rnaseq_gr)
+```
+
+For large lazy tracks, retrieve only the required interval directly as `GRanges`:
+
+```{r}
+rnaseq_gene_gr <- retrieve_bwg(
+  rnaseq,
+  annotation = gp,
+  gene_id = "GeneA",
+  strand = "auto",
+  as = "GRanges"
+)
+
+head(rnaseq_gene_gr)
+```
+
+Bioconductor already provides broad genomic-file import/export infrastructure through `rtracklayer`. GeneTrackR retains its native pure-R bedGraph/WIG/BigWig layer to preserve one multi-sample `BwgTrack` API, lazy/memory semantics, strand policy, and installation without a GeneTrackR-compiled signal backend. The native layer is an implementation choice for GeneTrackR's track workflow rather than a replacement for `rtracklayer`; `GRanges` is the exchange boundary for downstream Bioconductor operations.
+
 ### Step 3. Plot RNA-seq and Ribo-seq tracks for a gene
 
 `plot_signal_gene()` retrieves the genomic span of a gene and optionally adds the gene model below the signal panel. With `strand = "auto"`, the gene strand is used to select the matching signal track. `GeneA` is on the positive strand, so the following examples use the plus RNA-seq and Ribo-seq samples automatically.

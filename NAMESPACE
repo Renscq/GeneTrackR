@@ -94,5 +94,7 @@ export(write_variant_track)
 export(write_vcf)
 import(data.table)
 importFrom(rlang,.data)
-importFrom(utils,head)
-importFrom(utils,modifyList)
+importFrom(utils,
+  head,
+  modifyList
+)
