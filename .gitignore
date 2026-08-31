@@ -1,2 +1,6 @@
 .Rproj.user
 /pkgdown-site/
+*.Rproj
+.Rhistory
+.RData
+.Ruserdata

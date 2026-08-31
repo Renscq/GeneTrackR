@@ -72,7 +72,7 @@ The development version remains available from the GeneTrackR GitHub repository.
 
 Locate and read the same demo files used in the previous workflows:
 
-```{r}
+```{r haplotype-refinement-01}
 gp_file <- system.file(
   "extdata",
   "gtr_demo.genePredExt",
@@ -110,7 +110,7 @@ pheno <- read_pheno(
 
 Rebuild the standard GeneA gene-body haplotypes using the same definition as in the haplotype article:
 
-```{r}
+```{r haplotype-refinement-02}
 hap_gene <- hap_gene_variant(
   vcf,
   annotation = gp,
@@ -134,7 +134,7 @@ Refinement is therefore performed on a fixed biological definition of the origin
 
 Refinement is easiest to interpret when the phenotype grouping is compatible with the underlying genotype geometry. First calculate the number of allele-state differences between the four original GeneA haplotypes:
 
-```{r}
+```{r haplotype-refinement-03}
 hap_variant_ids <- as.character(hap_gene$variants$variant_id)
 hap_alleles <- as.matrix(
   hap_gene$haplotypes[, ..hap_variant_ids]
@@ -169,7 +169,7 @@ Therefore:
 
 The phenotype design follows the same structure. Inspect `protein_content` before refinement:
 
-```{r}
+```{r haplotype-refinement-04}
 protein_before <- plot_hap_pheno(
   hap_gene,
   phenotype = pheno,
@@ -210,7 +210,7 @@ Hap3 + Hap4                  high protein_content
 
 Run phenotype-guided refinement:
 
-```{r}
+```{r haplotype-refinement-05}
 refined_protein <- refine_haplotype(
   hap_gene,
   phenotype = pheno,
@@ -245,7 +245,7 @@ Using an effect threshold is recommended when the biological interpretation depe
 
 `refine_haplotype()` returns a `HapRefined` object rather than only a plotting result:
 
-```{r}
+```{r haplotype-refinement-06}
 names(refined_protein)
 ```
 
@@ -264,14 +264,14 @@ The main components are:
 
 Inspect the original-to-refined mapping directly:
 
-```{r}
+```{r haplotype-refinement-07}
 refined_protein$haplotype_map
 refined_protein$sample_refined_haplotypes
 ```
 
 `refined_protein$refined_hap` is intentionally a normal `HapVariant`-compatible object:
 
-```{r}
+```{r haplotype-refinement-08}
 refined_protein$refined_hap
 refined_protein$refined_hap$haplotypes
 ```
@@ -282,7 +282,7 @@ This makes it possible to reuse the standard haplotype plotting and phenotype-an
 
 Do not treat refinement as a black box. Inspect the pairwise evidence used to generate the refined groups:
 
-```{r}
+```{r haplotype-refinement-09}
 refined_protein$pairwise_test[, c(
   "trait",
   "group1",
@@ -307,13 +307,13 @@ All comparisons between the `Hap1/Hap2` and `Hap3/Hap4` genotype clusters have a
 
 The trait-specific grouping can be inspected separately:
 
-```{r}
+```{r haplotype-refinement-10}
 refined_protein$trait_group_map
 ```
 
 The final original-to-refined relationship is stored in:
 
-```{r}
+```{r haplotype-refinement-11}
 refined_protein$haplotype_map
 ```
 
@@ -327,7 +327,7 @@ This separation is useful when multiple traits are used, because each trait is g
 
 The default `collapse_refined = FALSE` keeps the original haplotype rows and arranges them into refined groups:
 
-```{r}
+```{r haplotype-refinement-12}
 refined_variant_grouped <- plot_refined_hap_variant(
   refined_protein,
   annotation = gp,
@@ -351,7 +351,7 @@ This is usually the most informative refinement plot because it shows **which or
 
 Set `collapse_refined = TRUE` when a compact summary is required:
 
-```{r}
+```{r haplotype-refinement-13}
 refined_variant_collapsed <- plot_refined_hap_variant(
   refined_protein,
   annotation = gp,
@@ -375,7 +375,7 @@ For mechanistic interpretation, keep the grouped view available even when the co
 
 Use `plot_refined_hap_pheno()` to visualize the phenotype distributions of the refined groups:
 
-```{r}
+```{r haplotype-refinement-14}
 refined_protein_pheno <- plot_refined_hap_pheno(
   refined_protein,
   phenotype = pheno,
@@ -411,7 +411,7 @@ Refinement is **trait dependent**. The same original haplotypes can produce very
 
 `seed_weight` was designed with four distinct means while preserving the same genotype hierarchy: `Hap1/Hap2` remain closer to one another than to `Hap3/Hap4`, and the same is true within the second pair. The within-pair mean differences are nevertheless larger than `effect_threshold = 0.5`, so refinement should retain all four groups:
 
-```{r}
+```{r haplotype-refinement-15}
 refined_seed_weight <- refine_haplotype(
   hap_gene,
   phenotype = pheno,
@@ -431,7 +431,7 @@ The expected result is four refined groups, showing that refinement does not aut
 
 The demo `flowering_time` trait contains no designed GeneA haplotype effect:
 
-```{r}
+```{r haplotype-refinement-16}
 refined_flowering <- refine_haplotype(
   hap_gene,
   phenotype = pheno,
@@ -453,7 +453,7 @@ This example is also a reminder that **a refined group is conditional on the sel
 
 Several numeric traits can be supplied together:
 
-```{r}
+```{r haplotype-refinement-17}
 refined_multi_trait <- refine_haplotype(
   hap_gene,
   phenotype = pheno,
@@ -484,7 +484,7 @@ Do not choose these parameters only to obtain a desired number of refined groups
 
 Phenotype-guided refinement changes the **group label**, not the underlying VCF or the original haplotype definition. Keep both levels of information:
 
-```{r}
+```{r haplotype-refinement-18}
 refined_protein$original_hap$haplotypes
 refined_protein$haplotype_map
 refined_protein$refined_haplotypes
@@ -494,7 +494,7 @@ For the `protein_content` demo, the final grouping is expected to be `Hap1/Hap2`
 
 The refined object can be passed directly to the refined plotting wrappers, while the **original** `hap_gene` remains the preferred input for variant-level effect prioritization:
 
-```{r}
+```{r haplotype-refinement-19}
 # Refined-group visualization
 # plot_refined_hap_variant(refined_protein, annotation = gp, text_size = 9)
 # plot_refined_hap_pheno(refined_protein, phenotype = pheno, traits = "protein_content", text_size = 9)

@@ -69,7 +69,7 @@ The development version remains available from the GeneTrackR GitHub repository.
 
 Locate and read the bundled demo files:
 
-```{r}
+```{r haplotype-01}
 vcf_file <- system.file(
   "extdata",
   "gtr_demo_variants.vcf",
@@ -106,7 +106,7 @@ For indexed large VCF files, the input can also be a lazy `VariantTrack` or a VC
 
 For gene- or transcript-defined analysis, use `hap_gene_variant()`. The primary GeneA workflow intentionally uses the **gene body only** so that the haplotype definition is based on variants inside the annotated locus:
 
-```{r}
+```{r haplotype-02}
 hap_gene <- hap_gene_variant(
   vcf = vcf,
   annotation = gp,
@@ -128,7 +128,7 @@ The four genotype patterns are intentionally hierarchical: `Hap1/Hap2` are the c
 
 Check these values directly from the returned object rather than assuming a fixed number for real datasets:
 
-```{r}
+```{r haplotype-03}
 hap_gene$meta
 hap_gene$haplotypes[, c("hap_id", "sample_n", "samples"), with = FALSE]
 ```
@@ -139,7 +139,7 @@ hap_gene$haplotypes[, c("hap_id", "sample_n", "samples"), with = FALSE]
 
 A `HapVariant` keeps the complete state needed by downstream GeneTrackR functions:
 
-```{r}
+```{r haplotype-04}
 hap_gene$region
 hap_gene$variants
 hap_gene$genotype_long
@@ -161,7 +161,7 @@ The components have distinct purposes:
 
 The `meta` list records the genotype representation, missing-value policy, retained sample number, variant number, and haplotype number:
 
-```{r}
+```{r haplotype-05}
 hap_gene$meta
 ```
 
@@ -175,7 +175,7 @@ GeneTrackR provides two genotype representations through `genotype_mode`.
 
 `genotype_mode = "string"` is recommended when the haplotype table itself is important for interpretation:
 
-```{r}
+```{r haplotype-06}
 hap_gene_string <- hap_gene_variant(
   vcf = vcf,
   annotation = gp,
@@ -194,7 +194,7 @@ String mode is also a compact display representation rather than a phased dosage
 
 `genotype_mode = "code"` collapses each genotype to reference versus alternate presence:
 
-```{r}
+```{r haplotype-07}
 hap_gene_code <- hap_gene_variant(
   vcf = vcf,
   annotation = gp,
@@ -218,14 +218,14 @@ By default, `min_variant_number = NULL` requires a sample to have non-missing ge
 
 The GeneA gene body has complete demo genotypes, so all 36 samples are retained:
 
-```{r}
+```{r haplotype-08}
 hap_gene$meta$sample_n
 hap_gene$meta$min_variant_number
 ```
 
 Flanking regions can introduce additional variants with missing data. The demo upstream variant `varAup01` is intentionally designed with missing/heterozygous genotypes. Adding it changes the haplotype definition:
 
-```{r}
+```{r haplotype-09}
 hap_gene_upstream <- hap_gene_variant(
   vcf = vcf,
   annotation = gp,
@@ -242,7 +242,7 @@ hap_gene_upstream$meta
 
 To retain samples that are missing a limited number of variants, set an explicit threshold. The extended demo region contains 12 variants, so `min_variant_number = 11` allows one missing genotype:
 
-```{r}
+```{r haplotype-10}
 hap_gene_upstream_relaxed <- hap_gene_variant(
   vcf = vcf,
   annotation = gp,
@@ -259,7 +259,7 @@ Use relaxed thresholds deliberately. Missing values become part of the observed 
 
 A custom missing label can be supplied for display:
 
-```{r}
+```{r haplotype-11}
 hap_missing_label <- hap_gene_variant(
   vcf = vcf,
   annotation = gp,
@@ -279,7 +279,7 @@ Internally, GeneTrackR still tracks which genotypes are biologically missing, so
 
 Use `transcript_id` instead of `gene_id` when variants should be restricted to one transcript locus:
 
-```{r}
+```{r haplotype-12}
 hap_tx <- hap_gene_variant(
   vcf = vcf,
   annotation = gp,
@@ -296,7 +296,7 @@ Supply exactly one of `gene_id` or `transcript_id`.
 
 `upstream` and `downstream` are interpreted relative to transcription direction when `strand_aware = TRUE`:
 
-```{r}
+```{r haplotype-13}
 hap_gene_flank <- hap_gene_variant(
   vcf = vcf,
   annotation = gp,
@@ -317,7 +317,7 @@ For a negative-strand gene, biological upstream is toward increasing genomic coo
 
 Use `hap_region_variant()` when the interval is defined directly rather than by annotation:
 
-```{r}
+```{r haplotype-14}
 hap_region <- hap_region_variant(
   vcf = vcf,
   chrom = "chr1",
@@ -335,7 +335,7 @@ This is useful for GWAS/LD intervals, promoter windows, QTL regions, or any cust
 
 The haplotype can be restricted before grouping. For example, analyze a subset of samples:
 
-```{r}
+```{r haplotype-15}
 hap_sample_subset <- hap_gene_variant(
   vcf = vcf,
   annotation = gp,
@@ -349,7 +349,7 @@ hap_sample_subset$meta
 
 Or construct haplotypes using only SNPs:
 
-```{r}
+```{r haplotype-16}
 hap_snp <- hap_gene_variant(
   vcf = vcf,
   annotation = gp,
@@ -369,7 +369,7 @@ Filtering variants changes the haplotype definition and may merge previously dis
 
 `plot_hap_variant()` combines the gene model, natural-variant markers, connector lines, REF/ALT reference rows, and haplotype genotype table:
 
-```{r}
+```{r haplotype-17}
 hap_variant_figure <- plot_hap_variant(
   hap_gene,
   annotation = gp,
@@ -388,7 +388,7 @@ hap_variant_figure
 
 General plotting palettes default to `Paired`; `plot_ld_block()` is the deliberate package-level exception and defaults to `Reds`. The main haplotype visual controls can still be changed independently:
 
-```{r}
+```{r haplotype-18}
 hap_variant_custom <- plot_hap_variant(
   hap_gene,
   annotation = gp,
@@ -411,7 +411,7 @@ hap_variant_custom
 
 For allele-string haplotypes, table colors always follow the stable biological class order `A`, `T`, `C`, `G`, and `indel`. Custom colors can be supplied explicitly with those names:
 
-```{r}
+```{r haplotype-19}
 plot_hap_variant(
   hap_gene,
   annotation = gp,
@@ -433,7 +433,7 @@ Use `show_variant_marker = FALSE` to hide natural-variant triangles, or adjust `
 
 Do not reconstruct haplotypes separately for each downstream analysis. The `hap_gene` object created in Step 2 is the input for the following modules:
 
-```{r}
+```{r haplotype-20}
 # Haplotype-phenotype association
 # hap_res <- plot_hap_pheno(
 #   hap_gene,

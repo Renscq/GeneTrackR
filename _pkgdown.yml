@@ -205,6 +205,7 @@ reference:
     desc: >
       Advanced parameters and diagnostics for indexed genomic track workflows.
     contents:
+      - GeneTrackR-demo-data
       - GeneTrackR-advanced-parameters
       - diagnose_tabix
       - benchmark_tabix_query

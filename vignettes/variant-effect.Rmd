@@ -68,7 +68,7 @@ The development version remains available from the GeneTrackR GitHub repository.
 
 Locate and read the same demo VCF, annotation, and phenotype files used in the haplotype and refinement workflows:
 
-```{r}
+```{r variant-effect-01}
 vcf_file <- system.file(
   "extdata",
   "gtr_demo_variants.vcf",
@@ -106,7 +106,7 @@ pheno <- read_pheno(
 
 For effect screening, construct a second GeneA `HapVariant` with `genotype_mode = "code"`:
 
-```{r}
+```{r variant-effect-02}
 hap_effect <- hap_gene_variant(
   vcf,
   annotation = gp,
@@ -139,7 +139,7 @@ The original string-coded `hap_gene` from the haplotype workflow remains prefera
 
 The main demo trait is `protein_content`. Run one effect calculation for every GeneA variant:
 
-```{r}
+```{r variant-effect-03}
 effect_protein <- plot_variant_effect(
   hap_effect,
   phenotype = pheno,
@@ -164,7 +164,7 @@ Using `x_axis = "position"` places variants at their genomic coordinates. Use `x
 
 `plot_variant_effect()` returns a `GeneTrackRVariantEffectPlot` object rather than a bare ggplot:
 
-```{r}
+```{r variant-effect-04}
 class(effect_protein)
 names(effect_protein)
 ```
@@ -179,7 +179,7 @@ The three main components are:
 
 Inspect the effect table directly:
 
-```{r}
+```{r variant-effect-05}
 effect_protein$effect[, .(
   variant_id,
   chrom,
@@ -203,7 +203,7 @@ For a binary `code`-mode variant, `effect` is the mean difference between genoty
 
 Sort variants by absolute phenotype effect:
 
-```{r}
+```{r variant-effect-06}
 protein_rank <- effect_protein$effect[
   order(-abs_effect, p_adj),
   .(
@@ -228,7 +228,7 @@ varA02                                       : absolute effect ~= 0
 
 Retrieve the strongest class explicitly:
 
-```{r}
+```{r variant-effect-07}
 protein_top <- effect_protein$effect[
   abs_effect >= 5.9,
   .(variant_id, pos, effect, abs_effect, p_adj)
@@ -244,7 +244,7 @@ The variants with an effect of approximately `+6` share the same `p13` genotype 
 
 Inspect their variant metadata:
 
-```{r}
+```{r variant-effect-08}
 retrieve_vcf(
   vcf,
   variant_id = protein_top$variant_id,
@@ -282,7 +282,7 @@ In the demo, `varA03` is marked as the designed `protein_effect` variant, while 
 
 A signed-effect plot can be generated directly:
 
-```{r}
+```{r variant-effect-09}
 effect_protein_signed <- plot_variant_effect(
   hap_effect,
   phenotype = pheno,
@@ -303,7 +303,7 @@ For the present binary `code`-mode workflow, positive values mean that genotype 
 
 Check the designed site directly:
 
-```{r}
+```{r variant-effect-10}
 effect_protein_signed$effect[
   variant_id == "varA03",
   .(
@@ -327,7 +327,7 @@ Do not generalize this interpretation blindly to every possible `HapVariant`. Wi
 
 The regional effect scan tells us that `varA03` belongs to the high-effect set. Confirm the genotype/phenotype relationship directly with `plot_variant_pheno()`:
 
-```{r}
+```{r variant-effect-11}
 varA03_pheno <- plot_variant_pheno(
   variant = vcf,
   phenotype = pheno,
@@ -346,7 +346,7 @@ varA03_pheno$pvalue
 
 Retrieve the variant itself to connect the binary genotype classes to its alleles:
 
-```{r}
+```{r variant-effect-12}
 retrieve_vcf(
   vcf,
   variant_id = "varA03",
@@ -377,7 +377,7 @@ This direct check is preferable to inferring allele direction from the regional 
 
 `plot_variant_effect()` can evaluate several numeric traits in one call:
 
-```{r}
+```{r variant-effect-13}
 effect_multi <- plot_variant_effect(
   hap_effect,
   phenotype = pheno,
@@ -403,7 +403,7 @@ Numeric traits may be stored as either integer or double columns. `plot_variant_
 
 Inspect the same variant across traits:
 
-```{r}
+```{r variant-effect-14}
 effect_multi$effect[
   variant_id == "varA03",
   .(

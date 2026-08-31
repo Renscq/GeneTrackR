@@ -34,22 +34,25 @@
 
 ## Installation
 
-GeneTrackR depends on CRAN and Bioconductor packages. Install the dependencies first, then install GeneTrackR from GitHub. GeneTrackR is a pure-R package and does not require a C/C++ compilation toolchain.
+GeneTrackR is being prepared for Bioconductor submission. After acceptance, the recommended installation path is `BiocManager::install("GeneTrackR")`. GeneTrackR is a pure-R package and does not require a GeneTrackR-specific C/C++ compilation toolchain.
 
 ```r
-## CRAN dependencies
-install.packages(c(
-  "devtools",
-  "data.table",
-  "ggplot2",
-  "patchwork",
-  "rlang",
-  "RColorBrewer"
-))
-
-## Bioconductor dependencies
 if (!requireNamespace("BiocManager", quietly = TRUE)) {
   install.packages("BiocManager")
+}
+
+## Available after Bioconductor acceptance
+BiocManager::install("GeneTrackR")
+```
+
+Until the package is accepted by Bioconductor, install the development source from GitHub. `BiocManager` resolves the Bioconductor dependencies while `remotes` installs the source repository.
+
+```r
+if (!requireNamespace("BiocManager", quietly = TRUE)) {
+  install.packages("BiocManager")
+}
+if (!requireNamespace("remotes", quietly = TRUE)) {
+  install.packages("remotes")
 }
 
 BiocManager::install(c(
@@ -58,18 +61,18 @@ BiocManager::install(c(
   "S4Vectors"
 ), ask = FALSE, update = FALSE)
 
-## Optional indexed-query acceleration
-BiocManager::install("Rsamtools", ask = FALSE, update = FALSE)
-
-## Install GeneTrackR from GitHub
-devtools::install_github(
+remotes::install_github(
   "Renscq/GeneTrackR",
   dependencies = TRUE,
   build_vignettes = FALSE
 )
 ```
 
-`Rsamtools` is optional and is only required when GeneTrackR uses the Bioconductor tabix backend for indexed VCF or bedGraph regional queries.
+`Rsamtools` is an optional dependency used only for indexed VCF or bedGraph regional queries. Install it when tabix acceleration is required:
+
+```r
+BiocManager::install("Rsamtools", ask = FALSE, update = FALSE)
+```
 
 Load the package:
 

@@ -1,4 +1,4 @@
-# GeneTrackR demo data model (v0.5.33)
+# GeneTrackR deterministic demo data model
 
 This directory contains one deterministic demo genome shared across GeneTrackR examples.
 All `gtr_demo_*` files are generated from the canonical model tables in `inst/scripts/demo_model/`.

@@ -84,7 +84,7 @@ The development version remains available from the GeneTrackR GitHub repository.
 
 Locate and read the same demo VCF and GenePred annotation used in the variant and haplotype workflows:
 
-```{r}
+```{r linkage-disequilibrium-01}
 vcf_file <- system.file(
   "extdata",
   "gtr_demo_variants.vcf",
@@ -118,7 +118,7 @@ For large bgzip-compressed and indexed VCF files, a lazy `VariantTrack` can be u
 
 The main demo interval starts inside `GeneA` and extends into the short downstream interval before `GeneB`. It contains 12 designed LD SNPs plus two GeneA indels. Use `variant_type = "snp"` so the LD example contains exactly `varLD01`-`varLD12`:
 
-```{r}
+```{r linkage-disequilibrium-02}
 ld_gradient <- compute_ld_block(
   vcf,
   chrom = "chr1",
@@ -146,7 +146,7 @@ The expected result is:
 
 Check the retained variants before interpreting the heatmap:
 
-```{r}
+```{r linkage-disequilibrium-03}
 ld_gradient$variants
 ```
 
@@ -156,7 +156,7 @@ The first six variants remain inside GeneA and use the same genotype pattern req
 
 `LDTrack` keeps the complete state of an LD calculation:
 
-```{r}
+```{r linkage-disequilibrium-04}
 names(ld_gradient)
 ```
 
@@ -182,7 +182,7 @@ The main components are:
 
 Inspect the pairwise table directly:
 
-```{r}
+```{r linkage-disequilibrium-05}
 ld_gradient$data[, .(
   variant_i,
   variant_j,
@@ -211,7 +211,7 @@ Important columns are:
 
 The region and settings used for calculation are preserved in the object:
 
-```{r}
+```{r linkage-disequilibrium-06}
 ld_gradient$region
 ld_gradient$meta
 ```
@@ -220,7 +220,7 @@ ld_gradient$meta
 
 The symmetric LD matrix uses variant IDs as row and column names and contains 1 on the diagonal:
 
-```{r}
+```{r linkage-disequilibrium-07}
 round(ld_gradient$matrix, 3)
 ```
 
@@ -228,14 +228,14 @@ Unlike the previous all-identical six-variant example, the new matrix is intenti
 
 Summarize the distribution directly:
 
-```{r}
+```{r linkage-disequilibrium-08}
 range(ld_gradient$data$r2, na.rm = TRUE)
 summary(ld_gradient$data$r2)
 ```
 
 Define descriptive groups explicitly when useful:
 
-```{r}
+```{r linkage-disequilibrium-09}
 ld_pair_summary <- ld_gradient$data[, .(
   high_ld = sum(r2 >= 0.8, na.rm = TRUE),
   intermediate_ld = sum(r2 >= 0.2 & r2 < 0.8, na.rm = TRUE),
@@ -252,7 +252,7 @@ GeneTrackR calculates pairwise LD but does **not** automatically call biological
 
 `plot_ld_block()` now defaults to the sequential `Reds` palette, which is well suited to an `r2` scale from 0 to 1:
 
-```{r}
+```{r linkage-disequilibrium-10}
 ld_gradient <- plot_ld_block(
   ld_gradient,
   label_by = "variant_id",
@@ -268,7 +268,7 @@ The default color interpretation is straightforward: pale cells indicate low LD 
 
 The palette can still be changed explicitly when needed. Any sequential or diverging RColorBrewer palette accepted by GeneTrackR can be supplied; for example:
 
-```{r}
+```{r linkage-disequilibrium-11}
 ld_gradient_blue <- plot_ld_block(
   ld_gradient,
   color_palette = "Blues",
@@ -285,7 +285,7 @@ ld_gradient_blue$figure
 
 For locus interpretation, add the compact genomic region track above the triangular heatmap:
 
-```{r}
+```{r linkage-disequilibrium-12}
 ld_gradient_region <- plot_ld_block(
   ld_gradient,
   show_region = TRUE,
@@ -317,7 +317,7 @@ With 12 variants, the region panel is now dense enough to show the relationship 
 
 The dedicated low-LD interval remains useful as an extreme comparison:
 
-```{r}
+```{r linkage-disequilibrium-13}
 ld_low <- compute_ld_block(
   vcf,
   chrom = "chr2",
@@ -336,14 +336,14 @@ ld_low$data[, .(
 
 The six pairwise values are designed so that most are zero and the maximum is approximately `1 / 9`:
 
-```{r}
+```{r linkage-disequilibrium-14}
 range(ld_low$data$r2, na.rm = TRUE)
 max(ld_low$data$r2, na.rm = TRUE)
 ```
 
 Plot it using the same default `Reds` scale:
 
-```{r}
+```{r linkage-disequilibrium-15}
 ld_low <- plot_ld_block(
   ld_low,
   label_by = "variant_id",
@@ -355,7 +355,7 @@ ld_low$figure
 
 The two-variant demo region contains exactly one pairwise comparison:
 
-```{r}
+```{r linkage-disequilibrium-16}
 ld_pair <- compute_ld_block(
   vcf,
   chrom = "chr2",
@@ -369,7 +369,7 @@ ld_pair$data
 
 `plot_ld_block()` draws this case as one centered diamond:
 
-```{r}
+```{r linkage-disequilibrium-17}
 ld_pair <- plot_ld_block(
   ld_pair,
   label_by = "variant_id",
@@ -381,7 +381,7 @@ ld_pair$figure
 
 When only the figure is needed for a temporary plotting call, compatibility mode can return it directly:
 
-```{r}
+```{r linkage-disequilibrium-18}
 pair_figure <- plot_ld_block(
   ld_pair,
   return_object = FALSE,
@@ -396,7 +396,7 @@ pair_figure
 
 LD is population dependent. Use `samples` when LD should be estimated in a defined population subset:
 
-```{r}
+```{r linkage-disequilibrium-19}
 subset_samples <- sprintf("S%02d", 1:24)
 ld_subset <- compute_ld_block(
   vcf,
@@ -416,7 +416,7 @@ ld_subset$meta$sample_n
 
 `variant_type` controls the records retained before pairwise calculation. It is important in the primary demo because the genomic interval also contains GeneA indels that are not part of the 12-SNP LD truth set:
 
-```{r}
+```{r linkage-disequilibrium-20}
 ld_snp <- compute_ld_block(
   vcf,
   chrom = "chr1",
@@ -434,7 +434,7 @@ Available choices are `both`, `snp`, and `ind`. At least two retained variants a
 
 The genotype dosage matrix is omitted by default to reduce object size. Retain it only when detailed genotype QC or downstream matrix analysis is needed:
 
-```{r}
+```{r linkage-disequilibrium-21}
 ld_with_gt <- compute_ld_block(
   vcf,
   chrom = "chr1",
@@ -455,7 +455,7 @@ For the demo, the retained genotype matrix is `12 x 36`.
 
 `method = "Dprime"` is also available:
 
-```{r}
+```{r linkage-disequilibrium-22}
 ld_dprime <- compute_ld_block(
   vcf,
   chrom = "chr2",
@@ -481,7 +481,7 @@ LD measures statistical association between variants; it does not by itself iden
 
 Once an interval has been selected biologically, the same region can be passed to the haplotype workflow. To reproduce the 12-SNP LD definition, retain SNPs only:
 
-```{r}
+```{r linkage-disequilibrium-23}
 hap_ld_region <- hap_region_variant(
   vcf,
   chrom = "chr1",

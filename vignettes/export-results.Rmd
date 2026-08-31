@@ -56,7 +56,7 @@ This module follows eight steps:
 
 Create separate directories for track files, figures, tables, and serialized R objects:
 
-```{r}
+```{r export-results-01}
 export_root <- file.path(tempdir(), "GeneTrackR_export")
 export_dirs <- file.path(
   export_root,
@@ -78,7 +78,7 @@ object_dir <- export_dirs[4]
 
 Read the demo inputs and build representative downstream objects. These are the same object classes used in the preceding workflow modules:
 
-```{r}
+```{r export-results-02}
 gp <- read_genepred(
   system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR"),
   format = "genePredExt",
@@ -184,7 +184,7 @@ Keeping these objects separate is useful because their public contracts differ. 
 
 Use `write_feature()` for annotation conversion. Annotation coordinate conventions and format-specific details are covered in the annotation module; the export module only centralizes representative calls:
 
-```{r}
+```{r export-results-03}
 write_feature(
   gp,
   file = file.path(track_dir, "GeneA_demo.genePredExt"),
@@ -204,7 +204,7 @@ write_feature(
 
 Read an in-memory signal track and export it with `write_bwg()`:
 
-```{r}
+```{r export-results-04}
 rnaseq_plus <- read_bwg(
   system.file(
     "extdata",
@@ -230,7 +230,7 @@ bedgraph_files
 
 bigWig output uses GeneTrackR's built-in pure-R writer and requires chromosome sizes:
 
-```{r}
+```{r export-results-05}
 chrom_sizes_file <- system.file(
   "extdata",
   "gtr_demo.chrom.sizes",
@@ -252,7 +252,7 @@ bigwig_files
 
 Use `write_vcf()` when a standardized site-level VCF is required:
 
-```{r}
+```{r export-results-06}
 write_vcf(
   vcf,
   file = file.path(track_dir, "gtr_demo.sites.vcf"),
@@ -268,7 +268,7 @@ Use the actual figure object rather than passing an entire GeneTrackR result cla
 
 Define a small local helper when both PDF and PNG are required. The helper keeps a publication-oriented default of 500 dpi, while the executable vignette calls below pass the build-aware `gtr_vignette_dpi` value so package checks do not spend time rendering manuscript-scale raster files. Set `dpi = 300` to `500` explicitly for final publication export.
 
-```{r}
+```{r export-results-07}
 save_gtr_figure <- function(
   plot,
   stem,
@@ -296,7 +296,7 @@ save_gtr_figure <- function(
 
 A direct-return figure can be saved immediately:
 
-```{r}
+```{r export-results-08}
 hap_variant_figure <- plot_hap_variant(
   hap_gene,
   annotation = gp,
@@ -316,7 +316,7 @@ save_gtr_figure(
 
 For structured result classes, extract `$figure` explicitly:
 
-```{r}
+```{r export-results-09}
 save_gtr_figure(
   hap_pheno$figure,
   stem = "GeneA_seed_weight_haplotype",
@@ -369,7 +369,7 @@ The same rule applies to `plot_variant_pheno()` and `plot_refined_hap_pheno()`: 
 
 A `HapVariant` contains several biologically different tables. Export them separately instead of flattening the complete class:
 
-```{r}
+```{r export-results-10}
 data.table::fwrite(
   hap_gene$variants,
   file.path(table_dir, "GeneA.variants.tsv"),
@@ -397,7 +397,7 @@ data.table::fwrite(
 
 For phenotype association results, retain the statistical tables used to create the figure:
 
-```{r}
+```{r export-results-11}
 data.table::fwrite(
   hap_pheno$pvalue,
   file.path(table_dir, "GeneA.seed_weight.pvalue.tsv"),
@@ -419,7 +419,7 @@ data.table::fwrite(
 
 Export pairwise LD rather than only the heatmap image:
 
-```{r}
+```{r export-results-12}
 data.table::fwrite(
   ld_result$data,
   file.path(table_dir, "GeneA.LD_pairs.tsv"),
@@ -435,7 +435,7 @@ data.table::fwrite(
 
 For phenotype-guided refinement, the mapping and decision tables are essential for explaining why original haplotypes were merged:
 
-```{r}
+```{r export-results-13}
 data.table::fwrite(
   refined$haplotype_map,
   file.path(table_dir, "GeneA.refined_haplotype_map.tsv"),
@@ -481,7 +481,7 @@ data.table::fwrite(
 
 For regional variant-effect prioritization, retain both the summarized effects and the sample-level plotting table:
 
-```{r}
+```{r export-results-14}
 data.table::fwrite(
   effect_result$effect,
   file.path(table_dir, "GeneA.protein_variant_effect.tsv"),
@@ -499,7 +499,7 @@ data.table::fwrite(
 
 A matrix should be converted to a rectangular table with an explicit row identifier before writing it:
 
-```{r}
+```{r export-results-15}
 ld_matrix_table <- data.table::as.data.table(
   ld_result$matrix,
   keep.rownames = "variant_id"
@@ -518,7 +518,7 @@ This preserves both row and column variant IDs and is easier to reopen in R, Pyt
 
 For collaborators who prefer one multi-sheet workbook, the same result tables can be collected with the optional `openxlsx` package. This is an interoperability step rather than a GeneTrackR dependency:
 
-```{r}
+```{r export-results-16}
 if (requireNamespace("openxlsx", quietly = TRUE)) {
   openxlsx::write.xlsx(
     list(
@@ -545,7 +545,7 @@ TSV remains the dependency-free default and is preferable for very large tables.
 
 Tabular exports are easy to inspect, but they do not preserve the complete object state. Save the corresponding S3 objects when an analysis may need to be reopened without recomputation:
 
-```{r}
+```{r export-results-17}
 saveRDS(
   hap_gene,
   file.path(object_dir, "GeneA.HapVariant.rds")
@@ -578,7 +578,7 @@ The RDS file preserves class information, metadata, parameters, intermediate tab
 
 Record the package/session environment together with the result directory:
 
-```{r}
+```{r export-results-18}
 writeLines(
   capture.output(sessionInfo()),
   con = file.path(export_root, "sessionInfo.txt")
@@ -599,7 +599,7 @@ export_manifest
 
 Finally, verify that a serialized analysis object can be restored with its expected class and results:
 
-```{r}
+```{r export-results-19}
 ld_reloaded <- readRDS(
   file.path(object_dir, "GeneA.LDTrack.rds")
 )

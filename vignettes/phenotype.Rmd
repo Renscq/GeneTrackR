@@ -75,7 +75,7 @@ The development version remains available from the GeneTrackR GitHub repository.
 
 Locate the bundled phenotype, VCF, and annotation files:
 
-```{r}
+```{r phenotype-01}
 pheno_file <- system.file(
   "extdata",
   "gtr_demo_pheno.tsv",
@@ -97,7 +97,7 @@ gp_file <- system.file(
 
 Read the three inputs and reconstruct the same GeneA gene-body haplotypes used in the haplotype workflow:
 
-```{r}
+```{r phenotype-02}
 pheno <- read_pheno(
   pheno_file,
   verbose = FALSE,
@@ -129,7 +129,7 @@ hap_gene <- hap_gene_variant(
 
 `read_pheno()` returns a `data.table`. By default, the first column is treated as the sample column and renamed to `sample_id`. If another column stores sample IDs, specify it explicitly:
 
-```{r}
+```{r phenotype-03}
 # pheno <- read_pheno(
 #   "phenotype.tsv",
 #   sample_col = "Taxa"
@@ -142,7 +142,7 @@ Sample IDs must be unique. Duplicate IDs are rejected because they would make ge
 
 Start with `summary_pheno()` before any association test:
 
-```{r}
+```{r phenotype-04}
 pheno_summary <- summary_pheno(pheno)
 pheno_summary
 ```
@@ -157,7 +157,7 @@ The summary reports:
 
 Plot numeric and categorical phenotype distributions directly from the phenotype table:
 
-```{r}
+```{r phenotype-05}
 pheno_figure <- plot_pheno(
   pheno,
   traits = c(
@@ -183,7 +183,7 @@ Phenotype rows do not need to follow the VCF or haplotype sample order. GeneTrac
 
 The demo phenotype table intentionally uses a different row order from the genotype data. Check the overlap before testing:
 
-```{r}
+```{r phenotype-06}
 hap_sample_ids <- as.character(hap_gene$sample_haplotypes$sample_id)
 pheno_sample_ids <- as.character(pheno$sample_id)
 
@@ -206,7 +206,7 @@ In real datasets, samples present on only one side are not available for the ass
 
 `seed_weight` is the main deterministic GeneA haplotype phenotype in the demo. Test the four GeneA haplotypes with `plot_hap_pheno()`:
 
-```{r}
+```{r phenotype-07}
 hap_seed <- plot_hap_pheno(
   hap = hap_gene,
   phenotype = pheno,
@@ -227,7 +227,7 @@ hap_seed$figure
 
 `plot_hap_pheno()` returns a `GeneTrackRPhenoPlot`, not only a ggplot. Keep the complete result because it contains the statistical output used to draw the figure:
 
-```{r}
+```{r phenotype-08}
 hap_seed$pvalue
 hap_seed$summary
 hap_seed$bracket
@@ -257,7 +257,7 @@ The demo provides three useful haplotype-level behaviors in one dataset:
 
 Plot them together while preserving the requested trait order:
 
-```{r}
+```{r phenotype-09}
 hap_multi <- plot_hap_pheno(
   hap = hap_gene,
   phenotype = pheno,
@@ -288,7 +288,7 @@ Three pairwise test methods are available:
 
 For example:
 
-```{r}
+```{r phenotype-10}
 hap_seed_wilcox <- plot_hap_pheno(
   hap = hap_gene,
   phenotype = pheno,
@@ -315,7 +315,7 @@ General GeneTrackR plotting palettes default to `Paired`; `plot_ld_block()` is t
 
 A more detailed plot can be requested as follows:
 
-```{r}
+```{r phenotype-11}
 hap_seed_styled <- plot_hap_pheno(
   hap = hap_gene,
   phenotype = pheno,
@@ -341,7 +341,7 @@ Use `plot_type = "violin"`, `"boxplot"`, or `"violin_boxplot"` depending on whet
 
 If fixed colors for specific haplotype IDs are required, supply a named vector instead of relying on the median-based palette assignment:
 
-```{r}
+```{r phenotype-12}
 hap_seed_fixed_colors <- plot_hap_pheno(
   hap = hap_gene,
   phenotype = pheno,
@@ -367,7 +367,7 @@ Use fixed haplotype colors only after confirming the actual `hap_id` values in `
 
 Select the variant by ID and use the compact binary REF/ALT representation:
 
-```{r}
+```{r phenotype-13}
 variant_protein <- plot_variant_pheno(
   variant = vcf,
   phenotype = pheno,
@@ -396,7 +396,7 @@ For `genotype_mode = "code"`:
 
 This is a binary REF/ALT-presence representation, not allele dosage. Use `genotype_mode = "string"` when allele labels are more informative:
 
-```{r}
+```{r phenotype-14}
 variant_protein_string <- plot_variant_pheno(
   variant = vcf,
   phenotype = pheno,
@@ -413,7 +413,7 @@ variant_protein_string$figure
 
 A variant can also be selected by exact genomic position:
 
-```{r}
+```{r phenotype-15}
 variant_protein_position <- plot_variant_pheno(
   variant = vcf,
   phenotype = pheno,
@@ -437,7 +437,7 @@ The selected locator must resolve to exactly one variant. If a region contains s
 
 Keep the same `hap_gene` and `pheno` objects for phenotype-guided refinement and variant-effect prioritization. Rebuilding the haplotypes with a different region or missing-data rule would change the biological groups being tested.
 
-```{r}
+```{r phenotype-16}
 # Haplotype refinement
 # refined <- refine_haplotype(
 #   hap_gene,

@@ -49,7 +49,7 @@ The demo workflow uses `GeneA` and follows ten steps:
 
 Use one explicit set of source files at the start of the analysis:
 
-```{r}
+```{r complete-workflow-01}
 library(GeneTrackR)
 
 gp_file <- system.file(
@@ -90,7 +90,7 @@ signal_files <- system.file(
 
 Read the objects once:
 
-```{r}
+```{r complete-workflow-02}
 gp <- read_genepred(
   gp_file,
   format = "genePredExt",
@@ -139,7 +139,7 @@ For real projects, keep these source objects unchanged and create filtered/retri
 
 Inspect the annotation and VCF before defining haplotypes or LD regions:
 
-```{r}
+```{r complete-workflow-03}
 validate_feature(gp)
 validate_vcf(vcf)
 
@@ -162,7 +162,7 @@ The demo phenotype order is intentionally different from the VCF sample order. D
 
 Start by viewing the candidate gene in its genomic context. `plot_tracks()` can combine the gene model, RNA/Ribo signal, BED-like features, and VCF variants:
 
-```{r}
+```{r complete-workflow-04}
 browser_geneA <- plot_tracks(
   annotation = gp,
   signal = signal_all,
@@ -187,7 +187,7 @@ All general plotting palettes default to `Paired`; `plot_ld_block()` is the deli
 
 Inspect the exact variants that will define the GeneA haplotypes:
 
-```{r}
+```{r complete-workflow-05}
 geneA_variants <- retrieve_vcf(
   vcf,
   annotation = gp,
@@ -213,7 +213,7 @@ The canonical GeneA gene body contains 11 demo variants. Do not silently add fla
 
 Use the gene body and allele-string representation for the main biological haplotype display:
 
-```{r}
+```{r complete-workflow-06}
 hap_gene <- hap_gene_variant(
   vcf,
   annotation = gp,
@@ -232,7 +232,7 @@ The deterministic demo contains four balanced haplotypes with nine samples each.
 
 Plot their variant patterns together with the gene structure:
 
-```{r}
+```{r complete-workflow-07}
 hap_gene_figure <- plot_hap_variant(
   hap_gene,
   annotation = gp,
@@ -251,7 +251,7 @@ Keep the full `HapVariant` object. Its sample assignments and genotype tables ar
 
 Test the original GeneA haplotypes against a trait with a designed haplotype effect:
 
-```{r}
+```{r complete-workflow-08}
 hap_seed <- plot_hap_pheno(
   hap_gene,
   phenotype = pheno,
@@ -269,7 +269,7 @@ hap_seed$pvalue
 
 For a specific natural variant, use the VCF genotype directly. The demo `varA03` separates the two major GeneA genotype/phenotype clusters for `protein_content`:
 
-```{r}
+```{r complete-workflow-09}
 varA03_protein <- plot_variant_pheno(
   variant = vcf,
   phenotype = pheno,
@@ -291,7 +291,7 @@ These functions return structured result objects. Retain `$pvalue`, `$summary`, 
 
 The primary demo LD interval contains 12 SNPs. Six form a perfect high-LD core and the remaining variants progressively decorrelate, producing high, intermediate, and low `r2` values:
 
-```{r}
+```{r complete-workflow-10}
 ld_gradient <- compute_ld_block(
   vcf,
   chrom = "chr1",
@@ -317,7 +317,7 @@ ld_gradient$figure
 
 Inspect the numerical result as well as the heatmap:
 
-```{r}
+```{r complete-workflow-11}
 ld_gradient$data[, .(
   variant_i,
   variant_j,
@@ -332,7 +332,7 @@ GeneTrackR calculates pairwise LD; it does not automatically declare a biologica
 
 The GeneA genotype structure contains two close haplotype pairs: `Hap1/Hap2` and `Hap3/Hap4`. Their `protein_content` values follow the same two-cluster structure, making this trait appropriate for phenotype-guided refinement:
 
-```{r}
+```{r complete-workflow-12}
 refined_protein <- refine_haplotype(
   hap_gene,
   phenotype = pheno,
@@ -357,7 +357,7 @@ Hap3 + Hap4 -> refined group 2
 
 Inspect the decision evidence rather than reporting only the final group number:
 
-```{r}
+```{r complete-workflow-13}
 refined_protein$pairwise_test
 refined_protein$phenotype_summary
 ```
@@ -368,7 +368,7 @@ A non-significant pairwise test alone is not proof of biological equivalence. `e
 
 For interpretable two-group effect direction, rebuild the same GeneA region in binary REF/ALT-presence mode:
 
-```{r}
+```{r complete-workflow-14}
 hap_effect <- hap_gene_variant(
   vcf,
   annotation = gp,
@@ -395,7 +395,7 @@ effect_protein$figure
 
 Rank the numerical results directly:
 
-```{r}
+```{r complete-workflow-15}
 protein_candidates <- effect_protein$effect[
   trait == "protein_content"
 ][order(-abs_effect, p_adj)]
@@ -426,7 +426,7 @@ variant effect
 
 At the end of the analysis, retain the main objects together so the result can be reopened without reconstructing the workflow:
 
-```{r}
+```{r complete-workflow-16}
 analysis_bundle <- list(
   annotation = gp,
   features = features,
