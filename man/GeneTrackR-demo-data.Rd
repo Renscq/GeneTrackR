@@ -12,7 +12,8 @@ vignettes without downloading external data.
 
 The installed \code{extdata} directory contains:
 \itemize{
-\item \code{gtr_demo.genePredExt}, \code{gtr_demo.gtf}, and \code{gtr_demo.gff3} for the same deterministic gene annotation;
+\item \code{gtr_demo.genePredExt}, \code{gtr_demo.gtf}, and \code{gtr_demo.gff3} for the same
+deterministic gene annotation;
 \item \code{gtr_demo_features.bed} for genomic interval features;
 \item \code{gtr_demo_variants.vcf} for designed variant and genotype patterns;
 \item \code{gtr_demo_pheno.tsv} for deterministic phenotypes;
@@ -20,14 +21,16 @@ The installed \code{extdata} directory contains:
 \item plus/minus RNA-seq and Ribo-seq \code{gtr_demo_*bedgraph} signal tracks.
 }
 }
+
 \section{Provenance}{
 
 The dataset is synthetic and deterministic. Canonical source tables are
 stored under \code{inst/scripts/demo_model} in the source package.
-\code{inst/scripts/generate_demo_data.R} generates the installed \code{gtr_demo_*}
+\code{inst/scripts/generate_demo_data.R} generates the installed \verb{gtr_demo_*}
 files and \code{inst/scripts/validate_demo_data.R} validates their designed
 dimensions and relationships. No external biological dataset is bundled.
 }
+
 \section{Coordinate conventions}{
 
 Canonical source tables use 1-based closed coordinates. Format-specific
@@ -35,8 +38,10 @@ output follows the conventions of GenePredExt, BED, bedGraph, GTF, GFF3,
 and VCF, and GeneTrackR readers convert those inputs to their documented
 internal coordinate representation.
 }
+
 \examples{
 system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR")
 system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")
 system.file("extdata", "gtr_demo_pheno.tsv", package = "GeneTrackR")
+
 }
