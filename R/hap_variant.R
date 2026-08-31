@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-08-19
-# Version: dev002
+# Version: dev003
 # Function: Build haplotype tables from VCF variants
 # Input: VariantTrack objects, VCF files, and genomic locators
 # Output: HapVariant objects
@@ -30,10 +30,16 @@
 #' anno_file <- system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR")
 #' vcf <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
 #' anno <- read_genepred(anno_file, format = "genePredExt", verbose = FALSE)
-#' hap <- hap_gene_variant(vcf, annotation = anno, gene_id = "GeneA", upstream = 1000, downstream = 500, min_variant_number = 1)
+#' hap <- hap_gene_variant(
+#'   vcf, annotation = anno, gene_id = "GeneA",
+#'   upstream = 1000, downstream = 500, min_variant_number = 1
+#' )
 #' hap
 #' hap$haplotypes
-#' hap_tx <- hap_gene_variant(vcf, annotation = anno, transcript_id = "TxA1", genotype_mode = "string", min_variant_number = 1)
+#' hap_tx <- hap_gene_variant(
+#'   vcf, annotation = anno, transcript_id = "TxA1",
+#'   genotype_mode = "string", min_variant_number = 1
+#' )
 #' hap_tx$haplotypes
 #' @export
 hap_gene_variant <- function(vcf,
@@ -88,7 +94,10 @@ hap_gene_variant <- function(vcf,
 #' @examples
 #' vcf_file <- system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")
 #' vcf <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
-#' hap <- hap_region_variant(vcf, chrom = "chr1", start = 12339700, end = 12352000, genotype_mode = "code", min_variant_number = 1)
+#' hap <- hap_region_variant(
+#'   vcf, chrom = "chr1", start = 12339700, end = 12352000,
+#'   genotype_mode = "code", min_variant_number = 1
+#' )
 #' hap
 #' hap$haplotypes
 #' @export
@@ -155,9 +164,15 @@ hap_region_variant <- function(vcf,
 #' anno_file <- system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR")
 #' vcf <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
 #' anno <- read_genepred(anno_file, format = "genePredExt", verbose = FALSE)
-#' hap <- hap_variant(vcf, annotation = anno, gene_id = "GeneA", genotype_mode = "code", min_variant_number = 1)
+#' hap <- hap_variant(
+#'   vcf, annotation = anno, gene_id = "GeneA",
+#'   genotype_mode = "code", min_variant_number = 1
+#' )
 #' hap
-#' hap_region <- hap_variant(vcf, chrom = "chr1", start = 12339700, end = 12352000, min_variant_number = 1)
+#' hap_region <- hap_variant(
+#'   vcf, chrom = "chr1", start = 12339700, end = 12352000,
+#'   min_variant_number = 1
+#' )
 #' hap_region$haplotypes
 #' @export
 hap_variant <- function(vcf,

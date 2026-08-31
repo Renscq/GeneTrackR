@@ -124,7 +124,10 @@ vcf_file <- system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrack
 anno_file <- system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR")
 vcf <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
 anno <- read_genepred(anno_file, format = "genePredExt", verbose = FALSE)
-hap <- hap_variant(vcf, annotation = anno, gene_id = "GeneA", genotype_mode = "string", min_variant_number = 1)
+hap <- hap_variant(
+  vcf, annotation = anno, gene_id = "GeneA",
+  genotype_mode = "string", min_variant_number = 1
+)
 plot_hap_variant(hap, annotation = anno, min_hap_samples = 1)
 plot_hap_variant(
   hap,

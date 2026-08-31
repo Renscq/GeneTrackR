@@ -62,7 +62,10 @@ anno_file <- system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrack
 vcf <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
 pheno <- read_pheno(pheno_file, verbose = FALSE)
 anno <- read_genepred(anno_file, format = "genePredExt", verbose = FALSE)
-hap <- hap_variant(vcf, annotation = anno, gene_id = "GeneA", genotype_mode = "string", min_variant_number = 1)
+hap <- hap_variant(
+  vcf, annotation = anno, gene_id = "GeneA",
+  genotype_mode = "string", min_variant_number = 1
+)
 refined <- refine_haplotype(
   hap,
   phenotype = pheno,
@@ -71,5 +74,8 @@ refined <- refine_haplotype(
   effect_threshold = 0.5
 )
 refined$refined_haplotypes
-plot_hap_pheno(refined$refined_hap, phenotype = pheno, traits = "protein_content", min_hap_samples = 3)
+plot_hap_pheno(
+  refined$refined_hap, phenotype = pheno,
+  traits = "protein_content", min_hap_samples = 3
+)
 }

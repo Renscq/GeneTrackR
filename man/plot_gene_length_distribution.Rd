@@ -72,6 +72,9 @@ Use \code{NA} to hide borders.}
 
 \item{return_data}{Logical. If \code{TRUE}, return a list containing the plot and
 the underlying length table.}
+
+\item{...}{Deprecated compatibility arguments forwarded by
+\code{plot_genepred_length_distribution()} to \code{plot_gene_length_distribution()}.}
 }
 \value{
 A ggplot object, or a list with \code{plot} and \code{data} when

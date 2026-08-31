@@ -20,7 +20,7 @@ At formal submission, the GitHub default branch must contain only the package tr
 Rscript tools/prepare_bioc_submission.001.R . ../GeneTrackR-bioc-submission
 ```
 
-The package-only tree contains `DESCRIPTION`, `NAMESPACE`, `NEWS.md`, `README.md`, package license metadata, `R/`, `man/`, `inst/`, `tests/`, and `vignettes/`, plus one top-level `.gitignore`.
+The package-only tree contains `DESCRIPTION`, `NAMESPACE`, `README.md`, `R/`, `man/`, `inst/`, `tests/`, and `vignettes/`, plus one top-level `.gitignore`. GeneTrackR uses the standard `GPL-3` identifier in `DESCRIPTION` and does not ship separate `NEWS.md` or `LICENSE` files.
 
 Do not copy `.github/`, `dev/`, `docs/`, `tools/`, `README.qmd`, `_pkgdown.yml`, `.Rbuildignore`, `pkgdown-site/`, or an RStudio project file into the submission branch.
 

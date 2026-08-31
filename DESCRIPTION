@@ -1,7 +1,7 @@
 Package: GeneTrackR
 Type: Package
 Title: Genomic Track Visualization and Haplotype Analysis
-Version: 0.8.3
+Version: 0.8.4
 Authors@R: person("Rensc", role = c("aut", "cre"), email = "rensc0718@163.com")
 Description: Provides tools to read, validate, query, transform, write,
     and visualize gene annotations, genomic signal tracks, and variant
@@ -12,7 +12,7 @@ Description: Provides tools to read, validate, query, transform, write,
     and variant-effect analysis. The package interoperates with
     GenomicRanges objects and uses a pure-R signal I/O layer so core
     workflows do not require a compiled extension.
-License: GPL + file LICENSE
+License: GPL-3
 URL: https://renscq.github.io/GeneTrackR/, https://github.com/Renscq/GeneTrackR
 BugReports: https://github.com/Renscq/GeneTrackR/issues
 biocViews: Software, GenomeAnnotation, Coverage, Sequencing, Visualization

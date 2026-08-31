@@ -115,6 +115,8 @@ alleles are compressed as \code{iN}, where \code{N} is allele length.}
 
 \item{strip_border_color}{Strip border color. Default NULL removes the strip border.}
 
+\item{strip_text_lineheight}{Line height used for wrapped facet-strip labels.}
+
 \item{text_size}{Text size.}
 }
 \value{

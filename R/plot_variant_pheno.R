@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-08-19
-# Version: dev003
+# Version: dev004
 # Function: Plot phenotype distributions grouped by a single variant genotype
 # Input: VariantTrack/VCF/HapVariant objects and phenotype tables
 # Output: ggplot figures with pairwise test annotations
@@ -52,6 +52,7 @@
 #' @param strip_label_width Maximum character width for wrapping long facet strip labels.
 #' @param strip_fill Strip background fill color. Default is white.
 #' @param strip_border_color Strip border color. Default NULL removes the strip border.
+#' @param strip_text_lineheight Line height used for wrapped facet-strip labels.
 #' @param text_size Text size.
 #' @return A list with `figure` and `pvalue` elements. Additional elements include
 #' `summary`, `bracket`, `plot_data`, and `variant_data`.

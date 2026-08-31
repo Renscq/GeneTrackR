@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-07-30
-# Version: dev007
+# Version: dev008
 # Function: Plot haplotype-variant and haplotype-phenotype figures
 # Input: HapVariant and phenotype objects
 # Output: ggplot or patchwork figures
@@ -57,7 +57,10 @@
 #' anno_file <- system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR")
 #' vcf <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
 #' anno <- read_genepred(anno_file, format = "genePredExt", verbose = FALSE)
-#' hap <- hap_variant(vcf, annotation = anno, gene_id = "GeneA", genotype_mode = "string", min_variant_number = 1)
+#' hap <- hap_variant(
+#'   vcf, annotation = anno, gene_id = "GeneA",
+#'   genotype_mode = "string", min_variant_number = 1
+#' )
 #' plot_hap_variant(hap, annotation = anno, min_hap_samples = 1)
 #' plot_hap_variant(
 #'   hap,
@@ -1189,7 +1192,10 @@ make_hap_variant_fill_scale <- function(gene_features,
 #' pheno_file <- system.file("extdata", "gtr_demo_pheno.tsv", package = "GeneTrackR")
 #' vcf <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
 #' anno <- read_genepred(anno_file, format = "genePredExt", verbose = FALSE)
-#' hap <- hap_variant(vcf, annotation = anno, gene_id = "GeneA", genotype_mode = "code", min_variant_number = 1)
+#' hap <- hap_variant(
+#'   vcf, annotation = anno, gene_id = "GeneA",
+#'   genotype_mode = "code", min_variant_number = 1
+#' )
 #' pheno <- read_pheno(pheno_file, verbose = FALSE)
 #' plot_hap_pheno(hap, phenotype = pheno, traits = "seed_weight", min_hap_samples = 3)
 #' plot_hap_pheno(hap, phenotype = pheno, traits = "seed_weight", min_hap_samples = 3,

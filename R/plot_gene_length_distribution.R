@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-08-31
-# Version: dev002
+# Version: dev003
 # Function: Extract and plot unified gene feature length distributions
 # Input: GenePred object and feature selection
 # Output: Length table or ggplot object
@@ -29,6 +29,8 @@
 #' @param mode Region selection mode passed to [retrieve_feature()].
 #' @param keep_zero Logical. Whether to keep zero-length transcript-level CDS/UTR
 #' records. Default is `FALSE`.
+#' @param ... Deprecated compatibility arguments forwarded by
+#' `get_genepred_length_table()` to `get_gene_length_distribution_table()`.
 #' @details
 #' Use `unit = "segment"` to inspect each exon/CDS/UTR segment separately,
 #' and `unit = "transcript"` to summarize feature lengths per transcript.
@@ -135,6 +137,8 @@ get_gene_length_distribution_table <- function(object,
 #' Use `NA` to hide borders.
 #' @param return_data Logical. If `TRUE`, return a list containing the plot and
 #' the underlying length table.
+#' @param ... Deprecated compatibility arguments forwarded by
+#' `plot_genepred_length_distribution()` to `plot_gene_length_distribution()`.
 #' @details
 #' `fill_colors` follows the values of `group_by`. For example, if
 #' `group_by = "gene_type"`, names should match `coding` and `non-coding`; if

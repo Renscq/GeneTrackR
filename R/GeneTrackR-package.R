@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-08-31
-# Version: dev006
+# Version: dev007
 # Function: Package-level documentation for GeneTrackR
 # Input: Genomic annotations, signal tracks, variants, and phenotype data
 # Output: Integrated genomic tracks, haplotype analyses, and variant prioritization
@@ -38,5 +38,22 @@ utils::globalVariables(c(
   "source", "gene_biotype", "transcript_biotype", "transcript_type", "rank_pos",
   "exon_row_key", "strand_key", "phase_int", "tabix_empty_fallback", "tabix_backend",
   "use_tabix", "has_tabix", "tid", "start0", "valid_count", "min_value", "max_value",
-  "sum_data", "sum_squared", "size", "chrom_order__", "chrom_size__", "previous_end__"
+  "sum_data", "sum_squared", "size", "chrom_order__", "chrom_size__", "previous_end__",
+  "..keep_cols", "FORMAT", "abs_effect", "abs_mean_diff", "attr_exon_id", "attr_gene_id",
+  "attr_gene_name", "attr_gene_type", "attr_id", "attr_name", "attr_parent", "attr_transcript_id",
+  "available_backend", "bar_width", "bar_xmid", "bracket_index", "can_merge", "cds_len",
+  "chromEnd", "chromStart", "chrom_rank", "color_group", "cum_before", "display_index",
+  "effect", "exon_frames", "exon_rank", "feature_rank", "feature_width", "first_source_index",
+  "frame", "gene_id.tx", "genomic_pos", "genotype", "genotype_group", "genotype_label",
+  "genotype_missing", "group1", "group2", "group_end", "group_index", "group_n",
+  "group_start", "hap_fill", "hap_id", "hap_pattern", "hap_y", "heatmap_bin",
+  "last_y", "ld", "mapped_gene_id", "mean_diff", "mean_group1", "mean_group2",
+  "mean_value", "median_value", "merge_id", "merge_source_index", "name", "non_missing_variant_n",
+  "original_hap_id", "p_adj", "p_display", "p_value", "plot_end", "plot_log10_padj",
+  "plot_pos", "plot_start", "r2", "refined_hap_id", "refined_key", "region",
+  "row_label", "rsamtools_tabix", "sample_n", "samples", "sort_group", "sort_start",
+  "source_count", "span", "strand_rank", "system_tabix", "track_y", "trait",
+  "trait_group", "transcript_pos", "tx_feature_end", "tx_feature_start", "tx_xend", "tx_xstart",
+  "type", "unit", "x1", "x2", "x_value", "y_max",
+  "y_min", "y_range"
 ))

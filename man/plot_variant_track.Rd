@@ -19,6 +19,8 @@ plot_variant_track(
 )
 }
 \arguments{
+\item{track}{A VariantTrack object.}
+
 \item{chrom}{Chromosome name. If NULL, all chromosomes in \code{variant} are used.}
 
 \item{start}{Region start in 1-based coordinates. If NULL, the minimum variant position is used.}

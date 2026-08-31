@@ -133,6 +133,16 @@ plot_tracks(
 
 \item{bin_size}{Optional signal bin size.}
 
+\item{heatmap_bin_size}{Optional bin size used only for heatmap rendering.
+\code{NULL} uses adaptive binning.}
+
+\item{heatmap_max_bins}{Maximum number of heatmap bins when
+\code{heatmap_bin_size = NULL}.}
+
+\item{heatmap_summary}{Summary statistic used to aggregate signal into
+heatmap bins: \code{mean}, \code{max}, \code{sum}, or \code{median}.}
+
+
 \item{highlight}{Optional data frame used to shade intervals on signal and gene model tracks. It must contain \code{start} and \code{end} columns in genomic coordinates. Optional columns are allowed but ignored by the default renderer.}
 
 \item{layout}{Track layout. Use \code{signal_top} to place signal above gene model, or \code{gene_top} to place gene model above signal.}

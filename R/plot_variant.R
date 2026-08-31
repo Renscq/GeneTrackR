@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-29
-# Version: dev002
+# Version: dev003
 # Function: Plot variant records from VariantTrack objects
 # Input: VariantTrack objects and genomic regions
 # Output: ggplot variant figures
@@ -179,6 +179,7 @@ plot_variant <- function(variant,
 #' Plot a VariantTrack object
 #'
 #' @description Backward-compatible alias of `plot_variant()`.
+#' @param track A VariantTrack object.
 #' @inheritParams plot_variant
 #' @return A ggplot object.
 #' @export

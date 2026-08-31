@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-07-30
-# Version: dev007
+# Version: dev008
 # Function: Refine haplotypes and prioritize phenotype-associated variant effects
 # Input: HapVariant objects and phenotype tables
 # Output: Refined haplotype objects, variant-effect tables, and ggplot figures
@@ -37,7 +37,10 @@
 #' vcf <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
 #' pheno <- read_pheno(pheno_file, verbose = FALSE)
 #' anno <- read_genepred(anno_file, format = "genePredExt", verbose = FALSE)
-#' hap <- hap_variant(vcf, annotation = anno, gene_id = "GeneA", genotype_mode = "string", min_variant_number = 1)
+#' hap <- hap_variant(
+#'   vcf, annotation = anno, gene_id = "GeneA",
+#'   genotype_mode = "string", min_variant_number = 1
+#' )
 #' refined <- refine_haplotype(
 #'   hap,
 #'   phenotype = pheno,
@@ -46,7 +49,10 @@
 #'   effect_threshold = 0.5
 #' )
 #' refined$refined_haplotypes
-#' plot_hap_pheno(refined$refined_hap, phenotype = pheno, traits = "protein_content", min_hap_samples = 3)
+#' plot_hap_pheno(
+#'   refined$refined_hap, phenotype = pheno,
+#'   traits = "protein_content", min_hap_samples = 3
+#' )
 #' @export
 refine_haplotype <- function(hap,
                              phenotype,
@@ -274,7 +280,10 @@ refine_haplotype <- function(hap,
 #' vcf <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
 #' pheno <- read_pheno(pheno_file, verbose = FALSE)
 #' anno <- read_genepred(anno_file, format = "genePredExt", verbose = FALSE)
-#' hap <- hap_variant(vcf, annotation = anno, gene_id = "GeneA", genotype_mode = "string", min_variant_number = 1)
+#' hap <- hap_variant(
+#'   vcf, annotation = anno, gene_id = "GeneA",
+#'   genotype_mode = "string", min_variant_number = 1
+#' )
 #' refined <- refine_haplotype(
 #'   hap,
 #'   phenotype = pheno,
@@ -282,7 +291,10 @@ refine_haplotype <- function(hap,
 #'   min_hap_samples = 3,
 #'   effect_threshold = 0.5
 #' )
-#' plot_refined_hap_pheno(refined, phenotype = pheno, traits = "protein_content", min_hap_samples = 3)
+#' plot_refined_hap_pheno(
+#'   refined, phenotype = pheno, traits = "protein_content",
+#'   min_hap_samples = 3
+#' )
 #' @export
 plot_refined_hap_pheno <- function(refined_hap,
                                    phenotype,
@@ -412,7 +424,10 @@ plot_refined_hap_pheno <- function(refined_hap,
 #' vcf <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
 #' pheno <- read_pheno(pheno_file, verbose = FALSE)
 #' anno <- read_genepred(anno_file, format = "genePredExt", verbose = FALSE)
-#' hap <- hap_variant(vcf, annotation = anno, gene_id = "GeneA", genotype_mode = "string", min_variant_number = 1)
+#' hap <- hap_variant(
+#'   vcf, annotation = anno, gene_id = "GeneA",
+#'   genotype_mode = "string", min_variant_number = 1
+#' )
 #' refined <- refine_haplotype(
 #'   hap,
 #'   phenotype = pheno,
@@ -953,8 +968,14 @@ get_refined_hap_variant <- function(refined_hap) {
 #' vcf <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
 #' pheno <- read_pheno(pheno_file, verbose = FALSE)
 #' anno <- read_genepred(anno_file, format = "genePredExt", verbose = FALSE)
-#' hap <- hap_variant(vcf, annotation = anno, gene_id = "GeneA", genotype_mode = "code", min_variant_number = 1)
-#' plot_variant_effect(hap, phenotype = pheno, traits = "protein_content", min_group_samples = 3)
+#' hap <- hap_variant(
+#'   vcf, annotation = anno, gene_id = "GeneA",
+#'   genotype_mode = "code", min_variant_number = 1
+#' )
+#' plot_variant_effect(
+#'   hap, phenotype = pheno, traits = "protein_content",
+#'   min_group_samples = 3
+#' )
 #' @export
 plot_variant_effect <- function(hap,
                                 phenotype,

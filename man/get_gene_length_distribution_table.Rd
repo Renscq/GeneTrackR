@@ -44,6 +44,9 @@ of exon lengths. \code{genomic} uses transcript span length.}
 
 \item{keep_zero}{Logical. Whether to keep zero-length transcript-level CDS/UTR
 records. Default is \code{FALSE}.}
+
+\item{...}{Deprecated compatibility arguments forwarded by
+\code{get_genepred_length_table()} to \code{get_gene_length_distribution_table()}.}
 }
 \value{
 A data.table with feature-length records.

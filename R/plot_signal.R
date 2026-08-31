@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-08-31
-# Version: dev007
+# Version: dev008
 # Function: Plot signal tracks for transcripts, genes, and genomic regions
 # Input: BwgTrack and optional GenePred objects
 # Output: ggplot signal figures
@@ -18,6 +18,12 @@
 #' @param plot_type Signal plot type: `bar`, `line`, `heatmap`, or `frame`. `frame` is designed for Ribo-seq style transcript plots and colors CDS positions by frame0/frame1/frame2.
 #' @param strand Strand selector. Use `auto` to use the transcript strand.
 #' @param bin_size Optional bin size for signal aggregation.
+#' @param heatmap_bin_size Optional bin size used only for heatmap rendering.
+#' `NULL` uses adaptive binning.
+#' @param heatmap_max_bins Maximum number of heatmap bins when
+#' `heatmap_bin_size = NULL`.
+#' @param heatmap_summary Summary statistic used to aggregate signal into
+#' heatmap bins: `mean`, `max`, `sum`, or `median`.
 #' @param highlight Optional data frame used to shade intervals on the signal and gene model tracks. It must contain `start` and `end` columns. For `coordinate = "genomic"`, these are genomic coordinates; for `coordinate = "transcript"`, these are spliced transcript coordinates.
 #' @param show_gene_model Whether to append the transcript gene model track. Default TRUE.
 #' @param signal_track_height Relative height of the signal panel when the gene model is shown. Default 3.
@@ -304,6 +310,12 @@ plot_signal_transcript <- function(
 #' @param plot_type Signal plot type: `bar`, `line`, or `heatmap`.
 #' @param strand Strand selector. Use `auto` to use the gene strand.
 #' @param bin_size Optional bin size for signal aggregation.
+#' @param heatmap_bin_size Optional bin size used only for heatmap rendering.
+#' `NULL` uses adaptive binning.
+#' @param heatmap_max_bins Maximum number of heatmap bins when
+#' `heatmap_bin_size = NULL`.
+#' @param heatmap_summary Summary statistic used to aggregate signal into
+#' heatmap bins: `mean`, `max`, `sum`, or `median`.
 #' @param highlight Optional data frame used to shade intervals on the signal and gene model tracks. It must contain `start` and `end` columns in genomic coordinates.
 #' @param show_gene_model Whether to append the gene model track.
 #' @param signal_track_height Relative height of the signal panel when the gene model is shown. Default 3.
@@ -528,6 +540,12 @@ plot_signal_gene <- function(
 #' @param plot_type Signal plot type: `bar`, `line`, or `heatmap`.
 #' @param strand Strand selector.
 #' @param bin_size Optional bin size for signal aggregation.
+#' @param heatmap_bin_size Optional bin size used only for heatmap rendering.
+#' `NULL` uses adaptive binning.
+#' @param heatmap_max_bins Maximum number of heatmap bins when
+#' `heatmap_bin_size = NULL`.
+#' @param heatmap_summary Summary statistic used to aggregate signal into
+#' heatmap bins: `mean`, `max`, `sum`, or `median`.
 #' @param highlight Optional data frame used to shade intervals on the signal and gene model tracks. It must contain `start` and `end` columns in genomic coordinates.
 #' @param annotation Optional GenePred object.
 #' @param show_gene_model Whether to append a gene model track. Default TRUE.

@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-05-27
-# Version: dev007
+# Version: dev008
 # Function: Combined genome-browser-like track plotting
 # Input: GenePred and BwgTrack objects
 # Output: Combined patchwork track figure
@@ -52,6 +52,12 @@
 #' @param collapse Gene model collapse mode for region-level plotting.
 #' @param strand Signal strand selector.
 #' @param bin_size Optional signal bin size.
+#' @param heatmap_bin_size Optional bin size used only for heatmap rendering.
+#' `NULL` uses adaptive binning.
+#' @param heatmap_max_bins Maximum number of heatmap bins when
+#' `heatmap_bin_size = NULL`.
+#' @param heatmap_summary Summary statistic used to aggregate signal into
+#' heatmap bins: `mean`, `max`, `sum`, or `median`.
 #' @param highlight Optional data frame used to shade intervals on signal and gene model tracks. It must contain `start` and `end` columns in genomic coordinates. Optional columns are allowed but ignored by the default renderer.
 #' @param layout Track layout. Use `signal_top` to place signal above gene model, or `gene_top` to place gene model above signal.
 #' @param heights Relative panel heights. Must contain at least `signal`, `gene`, `feature`, and `variant` names when those tracks are used.

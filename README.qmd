@@ -60,4 +60,4 @@ citation("GeneTrackR")
 
 ## License
 
-GeneTrackR is distributed under the GPL license declared in `DESCRIPTION`; see the top-level `LICENSE` file for the package copyright holder and year.
+GeneTrackR is distributed under the GNU General Public License version 3 (GPL-3), as declared in `DESCRIPTION`.
