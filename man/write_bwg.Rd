@@ -46,17 +46,11 @@ not loaded; if the requested format matches the original file format, the
 original files are copied to the output directory.
 }
 \examples{
-\dontrun{
 rnaseq <- read_bwg(
-  system.file(
-    "extdata",
-    c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph"),
-    package = "GeneTrackR"
-  ),
-  sample_names = c("RNA_seq_plus", "RNA_seq_minus"),
-  strand = c("+", "-"),
-  mode = "memory"
+  system.file("extdata", "gtr_demo_rnaseq_plus.bedgraph", package = "GeneTrackR"),
+  format = "bedgraph", sample_names = "RNA_seq_plus", strand = "+",
+  mode = "memory", verbose = FALSE
 )
-write_bwg(rnaseq, outdir = tempdir(), format = "bedgraph", overwrite = TRUE)
-}
+outdir <- tempfile("gtr_signal_")
+write_bwg(rnaseq, outdir = outdir, format = "bedgraph", overwrite = TRUE)
 }

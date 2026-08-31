@@ -24,27 +24,16 @@ A merged BwgTrack object.
 Merge signal track objects
 }
 \examples{
-\dontrun{
-rnaseq <- read_bwg(
-  system.file(
-    "extdata",
-    c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph"),
-    package = "GeneTrackR"
-  ),
-  sample_names = c("RNA_seq_plus", "RNA_seq_minus"),
-  strand = c("+", "-"),
-  mode = "memory"
+plus <- read_bwg(
+  system.file("extdata", "gtr_demo_rnaseq_plus.bedgraph", package = "GeneTrackR"),
+  format = "bedgraph", sample_names = "RNA_seq_plus", strand = "+",
+  mode = "memory", verbose = FALSE
 )
-riboseq <- read_bwg(
-  system.file(
-    "extdata",
-    c("gtr_demo_riboseq_plus.bedgraph", "gtr_demo_riboseq_minus.bedgraph"),
-    package = "GeneTrackR"
-  ),
-  sample_names = c("Ribo_seq_plus", "Ribo_seq_minus"),
-  strand = c("+", "-"),
-  mode = "memory"
+minus <- read_bwg(
+  system.file("extdata", "gtr_demo_rnaseq_minus.bedgraph", package = "GeneTrackR"),
+  format = "bedgraph", sample_names = "RNA_seq_minus", strand = "-",
+  mode = "memory", verbose = FALSE
 )
-signal_all <- merge_bwg(rnaseq, riboseq)
-}
+signal_all <- merge_bwg(plus, minus)
+signal_all
 }

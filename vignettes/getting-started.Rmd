@@ -1,70 +1,50 @@
 ---
 title: "Getting started with GeneTrackR"
+author: "Rensc"
+date: "2026-08-31"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Getting started with GeneTrackR}
+  %\VignetteIndexEntry{01 Getting started with GeneTrackR}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
+gtr_pkgdown <- tolower(Sys.getenv("GENETRACKR_PKGDOWN", "false")) %in%
+  c("1", "true", "yes")
+gtr_vignette_dpi <- if (gtr_pkgdown) 300 else 144
+
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.width = 10.5,
   fig.height = 6,
-  dpi = 300,
+  dpi = gtr_vignette_dpi,
   fig.retina = 1,
   out.width = "100%",
   fig.align = "center"
 )
 ```
 
+## Introduction
+
 GeneTrackR is an R package for annotation, genomic signal, variant, haplotype, phenotype, linkage-disequilibrium, and variant-effect workflows. This page is the shortest path from installation to a first reproducible analysis. The examples use the deterministic `gtr_demo_*` files shipped with the package, so no external data download is required.
+
+Package documentation: <https://renscq.github.io/GeneTrackR/>.
 
 ## Installation
 
-GeneTrackR depends on CRAN and Bioconductor packages. Install the Bioconductor dependencies first, then install GeneTrackR from GitHub.
+After Bioconductor acceptance, install GeneTrackR with `BiocManager`:
 
-```{r install, eval=FALSE}
+```{r installation, eval=FALSE}
 if (!requireNamespace("BiocManager", quietly = TRUE)) {
   install.packages("BiocManager")
 }
-
-BiocManager::install(
-  c("GenomicRanges", "IRanges", "S4Vectors"),
-  ask = FALSE,
-  update = FALSE
-)
-
-# Optional indexed-query acceleration
-BiocManager::install("Rsamtools", ask = FALSE, update = FALSE)
-
-if (!requireNamespace("remotes", quietly = TRUE)) {
-  install.packages("remotes")
-}
-
-remotes::install_github(
-  "Renscq/GeneTrackR",
-  dependencies = TRUE,
-  build_vignettes = FALSE
-)
+BiocManager::install("GeneTrackR")
+library(GeneTrackR)
 ```
 
-`Rsamtools` is optional for basic in-memory analyses but is recommended for indexed VCF and tabix-backed genomic queries.
-
-For local package development:
-
-```bash
-# Clone the source repository.
-git clone https://github.com/Renscq/GeneTrackR.git
-cd GeneTrackR
-```
-
-```{r local-development, eval=FALSE}
-devtools::document()
-devtools::install(build_vignettes = FALSE)
-```
+The development version remains available from the GeneTrackR GitHub repository.
 
 ## Load GeneTrackR
 
@@ -222,3 +202,9 @@ Use the Getting Started articles in this order:
 3. **GeneTrackR core workflow** — the full candidate-locus workflow from input validation and browser-like inspection through haplotypes, phenotype association, LD, refinement, variant effects, and export.
 
 For signal-specific analyses, continue with **Strand-specific RNA-seq and Ribo-seq signal tracks**.
+
+## Session information
+
+```{r session-info}
+sessionInfo()
+```

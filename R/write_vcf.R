@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-05-28
-# Version: dev001
+# Date: 2026-08-31
+# Version: dev002
 # Function: Write VariantTrack objects to VCF files
 # Input: VariantTrack object
 # Output: VCF file
@@ -13,10 +13,12 @@
 #' @param include_header Whether to include minimal VCF header lines.
 #' @return Invisibly returns the output file path.
 #' @examples
-#' \dontrun{
-#' vcf <- read_vcf("variants.vcf")
-#' write_vcf(vcf, "variants.out.vcf")
-#' }
+#' vcf <- read_vcf(
+#'   system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR"),
+#'   mode = "memory", verbose = FALSE, progress = FALSE
+#' )
+#' outfile <- tempfile(fileext = ".vcf")
+#' write_vcf(vcf, outfile, overwrite = TRUE)
 #' @export
 write_vcf <- function(object, file, overwrite = FALSE, include_header = TRUE) {
   stop_if_not(inherits(object, "VariantTrack"), "`object` must be a VariantTrack object.")

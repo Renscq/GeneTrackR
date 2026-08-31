@@ -18,24 +18,13 @@ A binned signal table.
 Bin signal tracks into fixed-width windows
 }
 \examples{
-\dontrun{
 rnaseq <- read_bwg(
-  system.file(
-    "extdata",
-    c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph"),
-    package = "GeneTrackR"
-  ),
-  sample_names = c("RNA_seq_plus", "RNA_seq_minus"),
-  strand = c("+", "-"),
-  mode = "memory"
+  system.file("extdata", "gtr_demo_rnaseq_plus.bedgraph", package = "GeneTrackR"),
+  format = "bedgraph", sample_names = "RNA_seq_plus", strand = "+",
+  mode = "memory", verbose = FALSE
 )
 dt <- retrieve_bwg(
-  rnaseq,
-  chrom = "chr1",
-  start = 12339001,
-  end = 12352000,
-  strand = "+"
+  rnaseq, chrom = "chr1", start = 12339001, end = 12352000, strand = "+"
 )
 bin_bwg(dt, bin_size = 50)
-}
 }

@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-05-27
-# Version: dev001
+# Date: 2026-08-31
+# Version: dev002
 # Function: Plot transcript, gene, and genomic region structures
 # Input: GenePred objects and feature identifiers or regions
 # Output: ggplot gene model figures
@@ -30,19 +30,11 @@
 #' spliced transcript positions. See also [GeneTrackR-advanced-parameters].
 #' @return A ggplot object.
 #' @examples
-#' \dontrun{
-#' gp <- read_genepred("annotation.genePredExt", format = "genePredExt")
-#' plot_transcript(gp, transcript_id = "EAA28783")
-#' plot_transcript(
-#'   gp,
-#'   transcript_id = "EAA28783",
-#'   coordinate = "transcript",
-#'   gene_colors = c(UTR = "#b2df8a", CDS = "#33a02c", exon = "#fb9a99"),
-#'   gene_border_color = "black",
-#'   highlight = data.frame(start = 100, end = 250),
-#'   label_position = "feature",
+#' gp <- read_genepred(
+#'   system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR"),
+#'   format = "genePredExt", verbose = FALSE, progress = FALSE
 #' )
-#' }
+#' plot_transcript(gp, transcript_id = "TxA1", coordinate = "transcript")
 #' @export
 plot_transcript <- function(object, transcript_id, coordinate = c("transcript", "genomic"), show_cds = TRUE, cds_height = 0.50, utr_height = 0.25, direction_mode = c("transcript", "gene", "end", "none"), highlight = NULL, gene_palette = "Paired", gene_colors = NULL, gene_border_color = NA, label_position = c("axis", "feature"), label_by = c("gene", "transcript"), text_size = 14, plot_theme = c("bw", "classic", "light", "minimal"), show_panel_border = NULL) {
   stop_if_not(is_gene_model_feature(object), "`object` must be a GenePred object or a Feature object with transcript/exon records.")
@@ -108,21 +100,11 @@ plot_transcript <- function(object, transcript_id, coordinate = c("transcript", 
 #' spliced transcript positions. See also [GeneTrackR-advanced-parameters].
 #' @return A ggplot object.
 #' @examples
-#' \dontrun{
-#' gp <- read_genepred("annotation.genePredExt", format = "genePredExt")
-#' plot_gene(gp, gene_id = "NCU01404")
-#' plot_gene(
-#'   gp,
-#'   gene_id = "NCU01404",
-#'   collapse = "none",
-#'   gene_colors = c(UTR = "#b2df8a", CDS = "#33a02c", exon = "#fb9a99"),
-#'   gene_border_color = NA,
-#'   label_position = "feature",
-#'   direction_mode = "end",
-#'   highlight = data.frame(start = 100000, end = 101000),
-#'   text_size = 14
+#' gp <- read_genepred(
+#'   system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR"),
+#'   format = "genePredExt", verbose = FALSE, progress = FALSE
 #' )
-#' }
+#' plot_gene(gp, gene_id = "GeneA")
 #' @export
 plot_gene <- function(object, gene_id, collapse = c("none", "union_exon", "longest"), coordinate = c("genomic", "transcript"), show_cds = TRUE, cds_height = 0.50, utr_height = 0.25, direction_mode = c("transcript", "gene", "end", "none"), highlight = NULL, gene_palette = "Paired", gene_colors = NULL, gene_border_color = NA, label_position = c("axis", "feature"), label_by = c("gene", "transcript"), text_size = 14, plot_theme = c("bw", "classic", "light", "minimal"), show_panel_border = NULL) {
   stop_if_not(is_gene_model_feature(object), "`object` must be a GenePred object or a Feature object with transcript/exon records.")
@@ -192,19 +174,11 @@ plot_gene <- function(object, gene_id, collapse = c("none", "union_exon", "longe
 #' spliced transcript positions. See also [GeneTrackR-advanced-parameters].
 #' @return A ggplot object.
 #' @examples
-#' \dontrun{
-#' gp <- read_genepred("annotation.genePredExt", format = "genePredExt")
-#' plot_region(gp, chrom = "I", start = 100000, end = 120000)
-#' plot_region(
-#'   gp,
-#'   chrom = "I",
-#'   start = 100000,
-#'   end = 120000,
-#'   mode = "trim",
-#'   label_position = "feature",
-#'   highlight = data.frame(start = 105000, end = 106000)
+#' gp <- read_genepred(
+#'   system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR"),
+#'   format = "genePredExt", verbose = FALSE, progress = FALSE
 #' )
-#' }
+#' plot_region(gp, chrom = "chr1", start = 12339001, end = 12352000)
 #' @export
 plot_region <- function(object, chrom, start, end, mode = c("within", "overlap", "trim"), collapse = c("none", "union_exon", "longest"), show_cds = TRUE, cds_height = 0.50, utr_height = 0.25, direction_mode = c("transcript", "gene", "end", "none"), highlight = NULL, gene_palette = "Paired", gene_colors = NULL, gene_border_color = NA, label_position = c("axis", "feature"), label_by = c("gene", "transcript"), text_size = 14, plot_theme = c("bw", "classic", "light", "minimal"), show_panel_border = NULL) {
   stop_if_not(is_gene_model_feature(object), "`object` must be a GenePred object or a Feature object with transcript/exon records.")

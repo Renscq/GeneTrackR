@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-05-27
-# Version: dev006
+# Date: 2026-08-31
+# Version: dev007
 # Function: Plot signal tracks for transcripts, genes, and genomic regions
 # Input: BwgTrack and optional GenePred objects
 # Output: ggplot signal figures
@@ -50,31 +50,19 @@
 #' [GeneTrackR-advanced-parameters].
 #' @return A ggplot or patchwork object.
 #' @examples
-#' \dontrun{
 #' gp <- read_genepred(
 #'   system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR"),
-#'   format = "genePredExt",
-#'   verbose = FALSE
+#'   format = "genePredExt", verbose = FALSE, progress = FALSE
 #' )
-#' riboseq <- read_bwg(
-#'   system.file(
-#'     "extdata",
-#'     c("gtr_demo_riboseq_plus.bedgraph", "gtr_demo_riboseq_minus.bedgraph"),
-#'     package = "GeneTrackR"
-#'   ),
-#'   format = "bedgraph",
-#'   sample_names = c("Ribo_seq_plus", "Ribo_seq_minus"),
-#'   strand = c("+", "-"),
-#'   mode = "memory"
+#' rnaseq <- read_bwg(
+#'   system.file("extdata", "gtr_demo_rnaseq_plus.bedgraph", package = "GeneTrackR"),
+#'   format = "bedgraph", sample_names = "RNA_seq_plus", strand = "+",
+#'   mode = "memory", verbose = FALSE
 #' )
 #' plot_signal_transcript(
-#'   signal = riboseq,
-#'   annotation = gp,
-#'   transcript_id = "TxA1",
-#'   coordinate = "transcript",
-#'   plot_type = "frame"
+#'   signal = rnaseq, annotation = gp, transcript_id = "TxA1",
+#'   coordinate = "transcript", plot_type = "bar"
 #' )
-#' }
 #' @export
 plot_signal_transcript <- function(
   signal,
@@ -345,36 +333,16 @@ plot_signal_transcript <- function(
 #' queried signal table is not modified. See also [GeneTrackR-advanced-parameters].
 #' @return A ggplot or patchwork object.
 #' @examples
-#' \dontrun{
 #' gp <- read_genepred(
 #'   system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR"),
-#'   format = "genePredExt",
-#'   verbose = FALSE
+#'   format = "genePredExt", verbose = FALSE, progress = FALSE
 #' )
 #' rnaseq <- read_bwg(
-#'   system.file(
-#'     "extdata",
-#'     c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph"),
-#'     package = "GeneTrackR"
-#'   ),
-#'   format = "bedgraph",
-#'   sample_names = c("RNA_seq_plus", "RNA_seq_minus"),
-#'   strand = c("+", "-"),
-#'   mode = "memory"
+#'   system.file("extdata", "gtr_demo_rnaseq_plus.bedgraph", package = "GeneTrackR"),
+#'   format = "bedgraph", sample_names = "RNA_seq_plus", strand = "+",
+#'   mode = "memory", verbose = FALSE
 #' )
-#' plot_signal_gene(
-#'   signal = rnaseq,
-#'   annotation = gp,
-#'   gene_id = "GeneA",
-#'   plot_type = "bar",
-#'   signal_palette = "Paired",
-#'   signal_palette_direction = -1,
-#'   signal_y_scale = "fixed",
-#'   signal_y_ticks = "pretty",
-#'   signal_track_height = 4,
-#'   gene_track_height = 1
-#' )
-#' }
+#' plot_signal_gene(signal = rnaseq, annotation = gp, gene_id = "GeneA")
 #' @export
 plot_signal_gene <- function(
   signal,
@@ -590,36 +558,22 @@ plot_signal_gene <- function(
 #' `signal_color_by = "group"`. See also [GeneTrackR-advanced-parameters].
 #' @return A ggplot or patchwork object.
 #' @examples
-#' \dontrun{
 #' gp <- read_genepred(
 #'   system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR"),
-#'   format = "genePredExt",
-#'   verbose = FALSE
+#'   format = "genePredExt", verbose = FALSE, progress = FALSE
 #' )
-#' signal_all <- read_bwg(
+#' rnaseq <- read_bwg(
 #'   system.file(
-#'     "extdata",
-#'     c(
-#'       "gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph",
-#'       "gtr_demo_riboseq_plus.bedgraph", "gtr_demo_riboseq_minus.bedgraph"
-#'     ),
+#'     "extdata", c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph"),
 #'     package = "GeneTrackR"
 #'   ),
-#'   format = "bedgraph",
-#'   sample_names = c("RNA_seq_plus", "RNA_seq_minus", "Ribo_seq_plus", "Ribo_seq_minus"),
-#'   strand = c("+", "-", "+", "-"),
-#'   mode = "memory"
+#'   format = "bedgraph", sample_names = c("RNA_seq_plus", "RNA_seq_minus"),
+#'   strand = c("+", "-"), mode = "memory", verbose = FALSE
 #' )
 #' plot_signal_region(
-#'   signal = signal_all,
-#'   annotation = gp,
-#'   chrom = "chr1",
-#'   start = 12339001,
-#'   end = 12374500,
-#'   strand = "both",
-#'   plot_type = "bar"
+#'   signal = rnaseq, annotation = gp, chrom = "chr1",
+#'   start = 12339001, end = 12352000, strand = "both", plot_type = "bar"
 #' )
-#' }
 #' @export
 plot_signal_region <- function(
   signal,

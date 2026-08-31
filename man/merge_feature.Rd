@@ -55,16 +55,13 @@ identifiers in later inputs are renamed, and all hierarchical references are
 updated together.
 }
 \examples{
-\dontrun{
+annotation <- read_genepred(
+  system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR"),
+  format = "genePredExt", verbose = FALSE, progress = FALSE
+)
 gene_a <- retrieve_feature(annotation, gene_id = "GeneA")
 gene_b <- retrieve_feature(annotation, gene_id = "GeneB")
 merged_genes <- merge_feature(gene_a, gene_b)
-
-merged_formats <- merge_feature(
-  list(genepred_annotation, gtf_annotation),
-  source_names = c("genePred", "GTF"),
-  conflict = "rename"
-)
-}
+merged_genes
 
 }

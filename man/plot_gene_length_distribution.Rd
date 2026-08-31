@@ -91,31 +91,9 @@ the exact groups before assigning named colors. See also
 \link{GeneTrackR-advanced-parameters}.
 }
 \examples{
-\dontrun{
-gp <- read_genepred("annotation.genePredExt", format = "genePredExt")
-plot_gene_length_distribution(gp, feature = "gene", group_by = "gene_type")
-plot_gene_length_distribution(
-  gp,
-  feature = "gene",
-  group_by = "gene_type",
-  fill_colors = c(coding = "#1f78b4", `non-coding` = "#a6cee3"),
-  border_color = NA
+gp <- read_genepred(
+  system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR"),
+  format = "genePredExt", verbose = FALSE, progress = FALSE
 )
-plot_gene_length_distribution(
-  gp,
-  feature = "all",
-  group_by = "feature",
-  plot_type = "density",
-  facet = TRUE
-)
-res <- plot_gene_length_distribution(
-  gp,
-  feature = "all",
-  group_by = "feature",
-  return_data = TRUE
-)
-unique(res$data$feature)
-length_table <- get_gene_length_distribution_table(gp, feature = "cds")
-head(length_table)
-}
+plot_gene_length_distribution(gp, feature = "gene", plot_type = "histogram")
 }

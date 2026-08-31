@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-07-28
-# Version: dev001
+# Date: 2026-08-31
+# Version: dev002
 # Function: Merge Feature/GenePred-compatible annotation objects
 # Input: Feature-compatible annotation objects
 # Output: Merged Feature/GenePred-compatible object
@@ -479,17 +479,14 @@ strip_feature_merge_columns <- function(dt) {
 #' the result also inherits from `GenePred`.
 #'
 #' @examples
-#' \dontrun{
+#' annotation <- read_genepred(
+#'   system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR"),
+#'   format = "genePredExt", verbose = FALSE, progress = FALSE
+#' )
 #' gene_a <- retrieve_feature(annotation, gene_id = "GeneA")
 #' gene_b <- retrieve_feature(annotation, gene_id = "GeneB")
 #' merged_genes <- merge_feature(gene_a, gene_b)
-#'
-#' merged_formats <- merge_feature(
-#'   list(genepred_annotation, gtf_annotation),
-#'   source_names = c("genePred", "GTF"),
-#'   conflict = "rename"
-#' )
-#' }
+#' merged_genes
 #'
 #' @export
 merge_feature <- function(...,

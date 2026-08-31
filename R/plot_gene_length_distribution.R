@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-05-27
-# Version: dev001
+# Date: 2026-08-31
+# Version: dev002
 # Function: Extract and plot unified gene feature length distributions
 # Input: GenePred object and feature selection
 # Output: Length table or ggplot object
@@ -36,19 +36,11 @@
 #' uses transcript span length including introns.
 #' @return A data.table with feature-length records.
 #' @examples
-#' \dontrun{
-#' gp <- read_genepred("annotation.genePredExt", format = "genePredExt")
-#' get_gene_length_distribution_table(gp, feature = "cds", unit = "transcript")
-#' get_gene_length_distribution_table(gp, feature = "five_utr", unit = "segment")
-#' get_gene_length_distribution_table(
-#'   gp,
-#'   feature = "transcript",
-#'   transcript_length = "spliced",
-#'   chrom = "chr1",
-#'   start = 1,
-#'   end = 1000
+#' gp <- read_genepred(
+#'   system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR"),
+#'   format = "genePredExt", verbose = FALSE, progress = FALSE
 #' )
-#' }
+#' get_gene_length_distribution_table(gp, feature = "cds", unit = "transcript")
 #' @export
 get_gene_length_distribution_table <- function(object,
                                       feature = c("all", "gene", "transcript", "exon", "cds", "utr", "five_utr", "three_utr"),
@@ -153,33 +145,11 @@ get_gene_length_distribution_table <- function(object,
 #' @return A ggplot object, or a list with `plot` and `data` when
 #' `return_data = TRUE`.
 #' @examples
-#' \dontrun{
-#' gp <- read_genepred("annotation.genePredExt", format = "genePredExt")
-#' plot_gene_length_distribution(gp, feature = "gene", group_by = "gene_type")
-#' plot_gene_length_distribution(
-#'   gp,
-#'   feature = "gene",
-#'   group_by = "gene_type",
-#'   fill_colors = c(coding = "#1f78b4", `non-coding` = "#a6cee3"),
-#'   border_color = NA
+#' gp <- read_genepred(
+#'   system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR"),
+#'   format = "genePredExt", verbose = FALSE, progress = FALSE
 #' )
-#' plot_gene_length_distribution(
-#'   gp,
-#'   feature = "all",
-#'   group_by = "feature",
-#'   plot_type = "density",
-#'   facet = TRUE
-#' )
-#' res <- plot_gene_length_distribution(
-#'   gp,
-#'   feature = "all",
-#'   group_by = "feature",
-#'   return_data = TRUE
-#' )
-#' unique(res$data$feature)
-#' length_table <- get_gene_length_distribution_table(gp, feature = "cds")
-#' head(length_table)
-#' }
+#' plot_gene_length_distribution(gp, feature = "gene", plot_type = "histogram")
 #' @export
 plot_gene_length_distribution <- function(object,
                                               feature = c("all", "gene", "transcript", "exon", "cds", "utr", "five_utr", "three_utr"),

@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-08-30
-# Version: dev009
+# Date: 2026-08-31
+# Version: dev010
 # Function: Write BwgTrack objects through the unified pure R I/O layer
 # Input: BwgTrack object
 # Output: Signal track files
@@ -29,19 +29,13 @@
 #' @param compress Whether to gzip-compress bedGraph or wig output.
 #' @return Invisibly returns a data.table containing sample IDs and output files.
 #' @examples
-#' \dontrun{
 #' rnaseq <- read_bwg(
-#'   system.file(
-#'     "extdata",
-#'     c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph"),
-#'     package = "GeneTrackR"
-#'   ),
-#'   sample_names = c("RNA_seq_plus", "RNA_seq_minus"),
-#'   strand = c("+", "-"),
-#'   mode = "memory"
+#'   system.file("extdata", "gtr_demo_rnaseq_plus.bedgraph", package = "GeneTrackR"),
+#'   format = "bedgraph", sample_names = "RNA_seq_plus", strand = "+",
+#'   mode = "memory", verbose = FALSE
 #' )
-#' write_bwg(rnaseq, outdir = tempdir(), format = "bedgraph", overwrite = TRUE)
-#' }
+#' outdir <- tempfile("gtr_signal_")
+#' write_bwg(rnaseq, outdir = outdir, format = "bedgraph", overwrite = TRUE)
 #' @export
 write_bwg <- function(object,
                       outdir,

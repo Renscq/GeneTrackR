@@ -1,24 +1,32 @@
 ---
 title: "Haplotype analysis"
+author: "Rensc"
+date: "2026-08-31"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Haplotype analysis}
+  %\VignetteIndexEntry{09 Haplotype analysis}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
+gtr_pkgdown <- tolower(Sys.getenv("GENETRACKR_PKGDOWN", "false")) %in%
+  c("1", "true", "yes")
+gtr_vignette_dpi <- if (gtr_pkgdown) 300 else 144
+
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.width = 12.5,
   fig.height = 8,
-  dpi = 300,
+  dpi = gtr_vignette_dpi,
   fig.retina = 1,
   out.width = "100%",
   fig.align = "center"
 )
 ```
+
+## Introduction
 
 ```{r load-package}
 library(GeneTrackR)
@@ -40,6 +48,22 @@ This article follows one continuous workflow:
 8. pass the haplotype object to downstream phenotype and refinement workflows.
 
 The main example uses the designed `GeneA` locus. Its gene body contains 11 variants and 36 complete samples that form four balanced haplotypes with nine samples per haplotype.
+
+Package documentation: <https://renscq.github.io/GeneTrackR/>.
+
+## Installation
+
+After Bioconductor acceptance, install GeneTrackR with `BiocManager`:
+
+```{r installation, eval=FALSE}
+if (!requireNamespace("BiocManager", quietly = TRUE)) {
+  install.packages("BiocManager")
+}
+BiocManager::install("GeneTrackR")
+library(GeneTrackR)
+```
+
+The development version remains available from the GeneTrackR GitHub repository.
 
 ## Step 1. Prepare VCF genotypes and annotation
 
@@ -436,3 +460,9 @@ Do not reconstruct haplotypes separately for each downstream analysis. The `hap_
 ```
 
 Keeping one well-defined `HapVariant` as the common input ensures that the variant set, sample set, missing-data rule, and haplotype assignment remain consistent across visualization, phenotype association, refinement, and variant-effect analysis.
+
+## Session information
+
+```{r session-info}
+sessionInfo()
+```

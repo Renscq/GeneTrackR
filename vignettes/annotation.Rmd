@@ -1,24 +1,32 @@
 ---
 title: "Annotation I/O and conversion"
+author: "Rensc"
+date: "2026-08-31"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Annotation I/O and conversion}
+  %\VignetteIndexEntry{04 Annotation I/O and conversion}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
+gtr_pkgdown <- tolower(Sys.getenv("GENETRACKR_PKGDOWN", "false")) %in%
+  c("1", "true", "yes")
+gtr_vignette_dpi <- if (gtr_pkgdown) 300 else 144
+
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.width = 10.5,
   fig.height = 6,
-  dpi = 300,
+  dpi = gtr_vignette_dpi,
   fig.retina = 1,
   out.width = "100%",
   fig.align = "center"
 )
 ```
+
+## Introduction
 
 GeneTrackR provides one annotation workflow for **GenePred**, **GenePredExt**, **GTF**, **GFF3**, and **BED** files. The readers normalize file-level coordinate conventions into a common internal representation, and the downstream API works on compatible `GenePred` / `FeatureTrack` objects instead of requiring format-specific code at every step.
 
@@ -35,6 +43,22 @@ This article follows the normal analysis order:
 ```{r load-package}
 library(GeneTrackR)
 ```
+
+Package documentation: <https://renscq.github.io/GeneTrackR/>.
+
+## Installation
+
+After Bioconductor acceptance, install GeneTrackR with `BiocManager`:
+
+```{r installation, eval=FALSE}
+if (!requireNamespace("BiocManager", quietly = TRUE)) {
+  install.packages("BiocManager")
+}
+BiocManager::install("GeneTrackR")
+library(GeneTrackR)
+```
+
+The development version remains available from the GeneTrackR GitHub repository.
 
 ## Supported formats and coordinate conventions
 
@@ -496,3 +520,9 @@ For external annotation projects, a robust sequence is:
 8. **Visualize representative loci** before integrating signal, variants, haplotypes, or LD.
 
 The annotation object produced here is the common structural input for the remaining GeneTrackR workflows. The dedicated visualization, signal, variant, haplotype, and association articles build on the same object contract rather than introducing a second annotation representation.
+
+## Session information
+
+```{r session-info}
+sessionInfo()
+```

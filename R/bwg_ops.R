@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-08-30
-# Version: dev007
+# Date: 2026-08-31
+# Version: dev008
 # Function: Query, normalize, summarize, slice, merge, and write signal tracks
 # Input: BwgTrack objects and genomic regions
 # Output: Signal tables, subset objects, and exported signal files
@@ -411,19 +411,15 @@ query_bedgraph_full_file <- function(file, sample_id, chrom, start, end, strand 
 #' @param object A BwgTrack object created by `read_bwg()`.
 #' @return A data.table reporting index presence, backend availability, and whether indexed querying is enabled.
 #' @examples
-#' \dontrun{
 #' rnaseq <- read_bwg(
-#'   system.file(
-#'     "extdata",
-#'     c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph"),
-#'     package = "GeneTrackR"
-#'   ),
-#'   sample_names = c("RNA_seq_plus", "RNA_seq_minus"),
-#'   strand = c("+", "-"),
-#'   mode = "lazy"
+#'   system.file("extdata", "gtr_demo_rnaseq_plus.bedgraph", package = "GeneTrackR"),
+#'   format = "bedgraph",
+#'   sample_names = "RNA_seq_plus",
+#'   strand = "+",
+#'   mode = "lazy",
+#'   verbose = FALSE
 #' )
 #' diagnose_tabix(rnaseq)
-#' }
 #' @export
 diagnose_tabix <- function(object) {
   stop_if_not(inherits(object, "BwgTrack"), "`object` must be a BwgTrack object.")
@@ -517,23 +513,15 @@ benchmark_tabix_query <- function(object, chrom, start, end, samples = NULL) {
 #' @param custom_factor Optional named custom factors.
 #' @return A normalized BwgTrack object.
 #' @examples
-#' \dontrun{
 #' rnaseq <- read_bwg(
-#'   system.file(
-#'     "extdata",
-#'     c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph"),
-#'     package = "GeneTrackR"
-#'   ),
-#'   sample_names = c("RNA_seq_plus", "RNA_seq_minus"),
-#'   strand = c("+", "-"),
-#'   mode = "memory"
+#'   system.file("extdata", "gtr_demo_rnaseq_plus.bedgraph", package = "GeneTrackR"),
+#'   format = "bedgraph",
+#'   sample_names = "RNA_seq_plus",
+#'   strand = "+",
+#'   mode = "memory",
+#'   verbose = FALSE
 #' )
-#' norm_bwg(
-#'   rnaseq,
-#'   method = "scale",
-#'   scale_factor = c(RNA_seq_plus = 0.5, RNA_seq_minus = 0.5)
-#' )
-#' }
+#' norm_bwg(rnaseq, method = "scale", scale_factor = c(RNA_seq_plus = 0.5))
 #' @export
 norm_bwg <- function(object, method = c("none", "RPM", "CPM", "scale", "custom"), library_size = NULL, scale_factor = NULL, custom_factor = NULL) {
   stop_if_not(inherits(object, "BwgTrack"), "`object` must be a BwgTrack object.")
@@ -629,26 +617,15 @@ summary_bwg <- function(object, chrom = NULL, start = NULL, end = NULL, samples 
 #' @param as Return type. Use `BwgTrack` to keep the object structure, `data.frame` for a plain table, or `GRanges` for genomic interval operations.
 #' @return A BwgTrack, data.table, or GRanges object.
 #' @examples
-#' \dontrun{
 #' rnaseq <- read_bwg(
-#'   system.file(
-#'     "extdata",
-#'     c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph"),
-#'     package = "GeneTrackR"
-#'   ),
-#'   sample_names = c("RNA_seq_plus", "RNA_seq_minus"),
-#'   strand = c("+", "-"),
-#'   mode = "memory"
+#'   system.file("extdata", "gtr_demo_rnaseq_plus.bedgraph", package = "GeneTrackR"),
+#'   format = "bedgraph", sample_names = "RNA_seq_plus", strand = "+",
+#'   mode = "memory", verbose = FALSE
 #' )
 #' slice_bwg(
-#'   rnaseq,
-#'   chrom = "chr1",
-#'   start = 12339001,
-#'   end = 12352000,
-#'   strand = "+",
-#'   as = "BwgTrack"
+#'   rnaseq, chrom = "chr1", start = 12339001, end = 12352000,
+#'   strand = "+", as = "BwgTrack"
 #' )
-#' }
 #' @export
 slice_bwg <- function(object, chrom, start, end, samples = NULL, strand = "ignore", as = c("BwgTrack", "data.frame", "GRanges")) {
   as <- match.arg(as)
@@ -692,29 +669,18 @@ slice_bwg <- function(object, chrom, start, end, samples = NULL, strand = "ignor
 #' @param require_same_norm Require identical normalization labels before merging.
 #' @return A merged BwgTrack object.
 #' @examples
-#' \dontrun{
-#' rnaseq <- read_bwg(
-#'   system.file(
-#'     "extdata",
-#'     c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph"),
-#'     package = "GeneTrackR"
-#'   ),
-#'   sample_names = c("RNA_seq_plus", "RNA_seq_minus"),
-#'   strand = c("+", "-"),
-#'   mode = "memory"
+#' plus <- read_bwg(
+#'   system.file("extdata", "gtr_demo_rnaseq_plus.bedgraph", package = "GeneTrackR"),
+#'   format = "bedgraph", sample_names = "RNA_seq_plus", strand = "+",
+#'   mode = "memory", verbose = FALSE
 #' )
-#' riboseq <- read_bwg(
-#'   system.file(
-#'     "extdata",
-#'     c("gtr_demo_riboseq_plus.bedgraph", "gtr_demo_riboseq_minus.bedgraph"),
-#'     package = "GeneTrackR"
-#'   ),
-#'   sample_names = c("Ribo_seq_plus", "Ribo_seq_minus"),
-#'   strand = c("+", "-"),
-#'   mode = "memory"
+#' minus <- read_bwg(
+#'   system.file("extdata", "gtr_demo_rnaseq_minus.bedgraph", package = "GeneTrackR"),
+#'   format = "bedgraph", sample_names = "RNA_seq_minus", strand = "-",
+#'   mode = "memory", verbose = FALSE
 #' )
-#' signal_all <- merge_bwg(rnaseq, riboseq)
-#' }
+#' signal_all <- merge_bwg(plus, minus)
+#' signal_all
 #' @export
 merge_bwg <- function(..., sample_conflict = c("error", "rename", "sum", "mean", "keep_first"), require_same_norm = TRUE) {
   objs <- list(...)
@@ -835,26 +801,15 @@ merge_bwg <- function(..., sample_conflict = c("error", "rename", "sum", "mean",
 #' @param bin_size Bin size in bases.
 #' @return A binned signal table.
 #' @examples
-#' \dontrun{
 #' rnaseq <- read_bwg(
-#'   system.file(
-#'     "extdata",
-#'     c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph"),
-#'     package = "GeneTrackR"
-#'   ),
-#'   sample_names = c("RNA_seq_plus", "RNA_seq_minus"),
-#'   strand = c("+", "-"),
-#'   mode = "memory"
+#'   system.file("extdata", "gtr_demo_rnaseq_plus.bedgraph", package = "GeneTrackR"),
+#'   format = "bedgraph", sample_names = "RNA_seq_plus", strand = "+",
+#'   mode = "memory", verbose = FALSE
 #' )
 #' dt <- retrieve_bwg(
-#'   rnaseq,
-#'   chrom = "chr1",
-#'   start = 12339001,
-#'   end = 12352000,
-#'   strand = "+"
+#'   rnaseq, chrom = "chr1", start = 12339001, end = 12352000, strand = "+"
 #' )
 #' bin_bwg(dt, bin_size = 50)
-#' }
 #' @export
 bin_bwg <- function(data, bin_size = 50L) {
   dt <- data.table::copy(data.table::as.data.table(data))

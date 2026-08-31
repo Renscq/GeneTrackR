@@ -69,31 +69,10 @@ bedGraph, WIG, and BigWig memory reads are dispatched through one internal
 pure-R I/O layer so all formats return the same canonical signal schema.
 }
 \examples{
-\dontrun{
-rnaseq_files <- system.file(
-  "extdata",
-  c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph"),
-  package = "GeneTrackR"
-)
-riboseq_files <- system.file(
-  "extdata",
-  c("gtr_demo_riboseq_plus.bedgraph", "gtr_demo_riboseq_minus.bedgraph"),
-  package = "GeneTrackR"
-)
-
 rnaseq <- read_bwg(
-  rnaseq_files,
-  format = "bedgraph",
-  sample_names = c("RNA_seq_plus", "RNA_seq_minus"),
-  strand = c("+", "-"),
-  mode = "memory"
+  system.file("extdata", "gtr_demo_rnaseq_plus.bedgraph", package = "GeneTrackR"),
+  format = "bedgraph", sample_names = "RNA_seq_plus", strand = "+",
+  mode = "memory", verbose = FALSE
 )
-riboseq <- read_bwg(
-  riboseq_files,
-  format = "bedgraph",
-  sample_names = c("Ribo_seq_plus", "Ribo_seq_minus"),
-  strand = c("+", "-"),
-  mode = "memory"
-)
-}
+rnaseq
 }

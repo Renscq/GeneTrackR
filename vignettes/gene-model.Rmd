@@ -1,24 +1,32 @@
 ---
 title: "Gene model visualization"
+author: "Rensc"
+date: "2026-08-31"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Gene model visualization}
+  %\VignetteIndexEntry{05 Gene model visualization}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
+gtr_pkgdown <- tolower(Sys.getenv("GENETRACKR_PKGDOWN", "false")) %in%
+  c("1", "true", "yes")
+gtr_vignette_dpi <- if (gtr_pkgdown) 300 else 144
+
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.width = 10.5,
   fig.height = 6,
-  dpi = 300,
+  dpi = gtr_vignette_dpi,
   fig.retina = 1,
   out.width = "100%",
   fig.align = "center"
 )
 ```
+
+## Introduction
 
 GeneTrackR treats the gene model as the structural coordinate frame for downstream signal, variant, haplotype, and LD visualization. The three primary plotting functions differ only in how the target interval is selected:
 
@@ -44,6 +52,22 @@ gp <- read_genepred(
   progress = FALSE
 )
 ```
+
+Package documentation: <https://renscq.github.io/GeneTrackR/>.
+
+## Installation
+
+After Bioconductor acceptance, install GeneTrackR with `BiocManager`:
+
+```{r installation, eval=FALSE}
+if (!requireNamespace("BiocManager", quietly = TRUE)) {
+  install.packages("BiocManager")
+}
+BiocManager::install("GeneTrackR")
+library(GeneTrackR)
+```
+
+The development version remains available from the GeneTrackR GitHub repository.
 
 ## Plot a gene
 
@@ -283,3 +307,9 @@ A useful rule is to select the coordinate system before adjusting appearance:
 5. only then adjust collapse, labels, direction arrows, highlights, and colors.
 
 The same annotation object can be passed directly to `plot_signal_gene()`, `plot_signal_transcript()`, `plot_signal_region()`, and `plot_tracks()`, so the structural coordinate definition remains consistent when signal or variant layers are added.
+
+## Session information
+
+```{r session-info}
+sessionInfo()
+```

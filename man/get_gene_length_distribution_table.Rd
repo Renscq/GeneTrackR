@@ -61,17 +61,9 @@ and \code{unit = "transcript"} to summarize feature lengths per transcript.
 uses transcript span length including introns.
 }
 \examples{
-\dontrun{
-gp <- read_genepred("annotation.genePredExt", format = "genePredExt")
-get_gene_length_distribution_table(gp, feature = "cds", unit = "transcript")
-get_gene_length_distribution_table(gp, feature = "five_utr", unit = "segment")
-get_gene_length_distribution_table(
-  gp,
-  feature = "transcript",
-  transcript_length = "spliced",
-  chrom = "chr1",
-  start = 1,
-  end = 1000
+gp <- read_genepred(
+  system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR"),
+  format = "genePredExt", verbose = FALSE, progress = FALSE
 )
-}
+get_gene_length_distribution_table(gp, feature = "cds", unit = "transcript")
 }

@@ -1,30 +1,54 @@
 ---
 title: "GeneTrackR deterministic example data"
+author: "Rensc"
+date: "2026-08-31"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{GeneTrackR deterministic example data}
+  %\VignetteIndexEntry{02 GeneTrackR deterministic example data}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
+gtr_pkgdown <- tolower(Sys.getenv("GENETRACKR_PKGDOWN", "false")) %in%
+  c("1", "true", "yes")
+gtr_vignette_dpi <- if (gtr_pkgdown) 300 else 144
+
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.width = 10.5,
   fig.height = 6,
-  dpi = 300,
+  dpi = gtr_vignette_dpi,
   fig.retina = 1,
   out.width = "100%",
   fig.align = "center"
 )
 ```
 
+## Introduction
+
 GeneTrackR ships one deterministic demo genome under `inst/extdata`. The files are small enough for package examples but deliberately share the same chromosomes, genes, variants, samples, and phenotype truth so that different modules can be demonstrated without silently changing the biological context.
 
 ```{r load-package}
 library(GeneTrackR)
 ```
+
+Package documentation: <https://renscq.github.io/GeneTrackR/>.
+
+## Installation
+
+After Bioconductor acceptance, install GeneTrackR with `BiocManager`:
+
+```{r installation, eval=FALSE}
+if (!requireNamespace("BiocManager", quietly = TRUE)) {
+  install.packages("BiocManager")
+}
+BiocManager::install("GeneTrackR")
+library(GeneTrackR)
+```
+
+The development version remains available from the GeneTrackR GitHub repository.
 
 ## File inventory
 
@@ -178,3 +202,9 @@ Use the bundled files as one connected model:
 5. compare results against the designed positive and negative controls when validating workflows.
 
 The **GeneTrackR core workflow** article applies this model end to end for a candidate locus.
+
+## Session information
+
+```{r session-info}
+sessionInfo()
+```

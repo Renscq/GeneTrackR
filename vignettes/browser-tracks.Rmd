@@ -1,24 +1,32 @@
 ---
 title: "Integrated browser tracks"
+author: "Rensc"
+date: "2026-08-31"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Integrated browser tracks}
+  %\VignetteIndexEntry{08 Integrated browser tracks}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
+gtr_pkgdown <- tolower(Sys.getenv("GENETRACKR_PKGDOWN", "false")) %in%
+  c("1", "true", "yes")
+gtr_vignette_dpi <- if (gtr_pkgdown) 300 else 144
+
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.width = 12.5,
   fig.height = 8,
-  dpi = 300,
+  dpi = gtr_vignette_dpi,
   fig.retina = 1,
   out.width = "100%",
   fig.align = "center"
 )
 ```
+
+## Introduction
 
 `plot_tracks()` builds a genome-browser-like view in which gene models, quantitative genomic signals, interval features, and variants share one genomic x-axis. It is intended for **integrated locus inspection**. Use the dedicated `plot_gene()`, `plot_signal_*()`, `plot_feature_track()`, or `plot_variant()` functions when one track needs detailed track-specific annotation.
 
@@ -29,6 +37,22 @@ The browser workflow is:
 3. choose which track classes should be displayed;
 4. control sample selection, strand, panel layout, heights, and styling;
 5. keep regional data access lazy or targeted for large datasets.
+
+Package documentation: <https://renscq.github.io/GeneTrackR/>.
+
+## Installation
+
+After Bioconductor acceptance, install GeneTrackR with `BiocManager`:
+
+```{r installation, eval=FALSE}
+if (!requireNamespace("BiocManager", quietly = TRUE)) {
+  install.packages("BiocManager")
+}
+BiocManager::install("GeneTrackR")
+library(GeneTrackR)
+```
+
+The development version remains available from the GeneTrackR GitHub repository.
 
 ## Prepare the track objects
 
@@ -377,3 +401,9 @@ For real whole-genome datasets, keep the browser query regional:
 - use dedicated track functions when one data type needs detailed labels or diagnostics.
 
 `plot_tracks()` returns the assembled ggplot/patchwork figure. Figure export is handled by the standard GeneTrackR export workflow rather than duplicated here.
+
+## Session information
+
+```{r session-info}
+sessionInfo()
+```

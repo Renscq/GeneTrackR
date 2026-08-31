@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-08-30
-# Version: dev008
+# Date: 2026-08-31
+# Version: dev009
 # Function: Read signal tracks through the unified pure R I/O layer
 # Input: Signal track file paths
 # Output: Schema-v2 BwgTrack object
@@ -42,33 +42,12 @@
 #' pure-R I/O layer so all formats return the same canonical signal schema.
 #' @return A BwgTrack object.
 #' @examples
-#' \dontrun{
-#' rnaseq_files <- system.file(
-#'   "extdata",
-#'   c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph"),
-#'   package = "GeneTrackR"
-#' )
-#' riboseq_files <- system.file(
-#'   "extdata",
-#'   c("gtr_demo_riboseq_plus.bedgraph", "gtr_demo_riboseq_minus.bedgraph"),
-#'   package = "GeneTrackR"
-#' )
-#'
 #' rnaseq <- read_bwg(
-#'   rnaseq_files,
-#'   format = "bedgraph",
-#'   sample_names = c("RNA_seq_plus", "RNA_seq_minus"),
-#'   strand = c("+", "-"),
-#'   mode = "memory"
+#'   system.file("extdata", "gtr_demo_rnaseq_plus.bedgraph", package = "GeneTrackR"),
+#'   format = "bedgraph", sample_names = "RNA_seq_plus", strand = "+",
+#'   mode = "memory", verbose = FALSE
 #' )
-#' riboseq <- read_bwg(
-#'   riboseq_files,
-#'   format = "bedgraph",
-#'   sample_names = c("Ribo_seq_plus", "Ribo_seq_minus"),
-#'   strand = c("+", "-"),
-#'   mode = "memory"
-#' )
-#' }
+#' rnaseq
 #' @export
 read_bwg <- function(files,
                      format = c("auto", "bedgraph", "bigwig", "wig"),

@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-05-28
-# Version: dev001
+# Date: 2026-08-31
+# Version: dev002
 # Function: Write unified Feature annotation objects to GenePred, GFF, GTF, BED6, or BED12 files
 # Input: Feature/GenePred-compatible annotation object
 # Output: Annotation files
@@ -25,13 +25,12 @@
 #' @param chrom_order Optional chromosome order used for sorting. It can be NULL, a character vector of chromosome names, a data frame whose first column contains chromosome names, or a FASTA index `.fai` file path. If NULL, a natural chromosome order is used.
 #' @return Invisibly returns the output file path.
 #' @examples
-#' \dontrun{
-#' write_feature(gp, "annotation.genePredExt", format = "genepredext")
-#' write_feature(gtf, "annotation.gtf", format = "gtf")
-#' write_feature(gff, "annotation.gff3", format = "gff")
-#' write_feature(gp, "annotation.bed6", format = "bed6")
-#' write_feature(gp, "annotation.bed12", format = "bed12")
-#' }
+#' gp <- read_genepred(
+#'   system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR"),
+#'   format = "genePredExt", verbose = FALSE, progress = FALSE
+#' )
+#' outfile <- tempfile(fileext = ".bed")
+#' write_feature(gp, outfile, format = "bed12", overwrite = TRUE)
 #' @export
 write_feature <- function(object,
                           file,

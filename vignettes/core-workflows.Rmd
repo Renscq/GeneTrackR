@@ -1,28 +1,52 @@
 ---
 title: "Core GeneTrackR workflow"
+author: "Rensc"
+date: "2026-08-31"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Core GeneTrackR workflow}
+  %\VignetteIndexEntry{03 Core GeneTrackR workflow}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
+gtr_pkgdown <- tolower(Sys.getenv("GENETRACKR_PKGDOWN", "false")) %in%
+  c("1", "true", "yes")
+gtr_vignette_dpi <- if (gtr_pkgdown) 300 else 144
+
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.width = 12,
   fig.height = 7.5,
-  dpi = 300,
+  dpi = gtr_vignette_dpi,
   fig.retina = 1,
   out.width = "100%",
   fig.align = "center"
 )
 ```
 
+## Introduction
+
 If you are new to the package, read **Getting started with GeneTrackR** first, then **GeneTrackR deterministic example data** for the shared file inventory, coordinate conventions, and designed truth. This article assumes that installation and the demo data model are already familiar. It is intentionally compact; use **Complete candidate-locus workflow** for the production-oriented path that also integrates signal tracks, interval features, browser inspection, reproducible export, and large-data guidance.
 
 This vignette uses the single deterministic `gtr_demo_*` dataset shipped with GeneTrackR. The same annotation, VCF, phenotype table, and designed truth are shared across annotation, variant, haplotype, LD, refinement, and variant-effect workflows.
+
+Package documentation: <https://renscq.github.io/GeneTrackR/>.
+
+## Installation
+
+After Bioconductor acceptance, install GeneTrackR with `BiocManager`:
+
+```{r installation, eval=FALSE}
+if (!requireNamespace("BiocManager", quietly = TRUE)) {
+  install.packages("BiocManager")
+}
+BiocManager::install("GeneTrackR")
+library(GeneTrackR)
+```
+
+The development version remains available from the GeneTrackR GitHub repository.
 
 ## Load the canonical demo inputs
 
@@ -258,3 +282,9 @@ effect_res$effect
 ```
 
 The deterministic model is intended to make documentation examples and regression tests share the same biological and statistical expectations rather than maintaining separate example datasets for each module.
+
+## Session information
+
+```{r session-info}
+sessionInfo()
+```

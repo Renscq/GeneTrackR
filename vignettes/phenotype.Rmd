@@ -1,24 +1,32 @@
 ---
 title: "Phenotype association"
+author: "Rensc"
+date: "2026-08-31"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Phenotype association}
+  %\VignetteIndexEntry{10 Phenotype association}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
+gtr_pkgdown <- tolower(Sys.getenv("GENETRACKR_PKGDOWN", "false")) %in%
+  c("1", "true", "yes")
+gtr_vignette_dpi <- if (gtr_pkgdown) 300 else 144
+
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.width = 10.5,
   fig.height = 6.5,
-  dpi = 300,
+  dpi = gtr_vignette_dpi,
   fig.retina = 1,
   out.width = "100%",
   fig.align = "center"
 )
 ```
+
+## Introduction
 
 ```{r load-package}
 library(GeneTrackR)
@@ -46,6 +54,22 @@ The bundled phenotype data contain four numeric traits and one categorical trait
 | `protein_content` | numeric | strong `varA03` effect aligned with the `Hap1/Hap2` versus `Hap3/Hap4` genotype split |
 | `flowering_time` | numeric | negative control for GeneA haplotypes |
 | `flower_color` | categorical | categorical phenotype example |
+
+Package documentation: <https://renscq.github.io/GeneTrackR/>.
+
+## Installation
+
+After Bioconductor acceptance, install GeneTrackR with `BiocManager`:
+
+```{r installation, eval=FALSE}
+if (!requireNamespace("BiocManager", quietly = TRUE)) {
+  install.packages("BiocManager")
+}
+BiocManager::install("GeneTrackR")
+library(GeneTrackR)
+```
+
+The development version remains available from the GeneTrackR GitHub repository.
 
 ## Step 1. Prepare phenotype and genotype inputs
 
@@ -437,3 +461,9 @@ The resulting workflow keeps one consistent chain:
 `VCF + annotation -> HapVariant -> phenotype association -> refinement / variant-effect analysis`.
 
 For reproducible analysis, export `$pvalue`, `$summary`, and the matched sample-level `$plot_data` together with `$figure` rather than saving only the visual result.
+
+## Session information
+
+```{r session-info}
+sessionInfo()
+```

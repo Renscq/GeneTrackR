@@ -1,24 +1,32 @@
 ---
 title: "Export and reproducibility"
+author: "Rensc"
+date: "2026-08-31"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Export and reproducibility}
+  %\VignetteIndexEntry{15 Export and reproducibility}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
+gtr_pkgdown <- tolower(Sys.getenv("GENETRACKR_PKGDOWN", "false")) %in%
+  c("1", "true", "yes")
+gtr_vignette_dpi <- if (gtr_pkgdown) 300 else 144
+
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.width = 10.5,
   fig.height = 6.5,
-  dpi = 300,
+  dpi = gtr_vignette_dpi,
   fig.retina = 1,
   out.width = "100%",
   fig.align = "center"
 )
 ```
+
+## Introduction
 
 GeneTrackR outputs are intentionally heterogeneous. Genomic tracks should be written with the corresponding GeneTrackR writer, plotting functions may return a figure directly or store it inside a structured result object, statistical analyses contain several tables with different biological meanings, and complete S3 objects preserve the state needed to resume an analysis. Saving only the final image or flattening an entire result class into one table loses important provenance.
 
@@ -258,7 +266,7 @@ The current `write_vcf()` writes the standard site columns `CHROM`, `POS`, `ID`,
 
 Use the actual figure object rather than passing an entire GeneTrackR result class to `ggsave()`.
 
-Define a small local helper when both PDF and PNG are required:
+Define a small local helper when both PDF and PNG are required. The helper keeps a publication-oriented default of 500 dpi, while the executable vignette calls below pass the build-aware `gtr_vignette_dpi` value so package checks do not spend time rendering manuscript-scale raster files. Set `dpi = 300` to `500` explicitly for final publication export.
 
 ```{r}
 save_gtr_figure <- function(
@@ -301,7 +309,8 @@ save_gtr_figure(
   stem = "GeneA_haplotype_variant",
   outdir = figure_dir,
   width = 10,
-  height = 7
+  height = 7,
+  dpi = gtr_vignette_dpi
 )
 ```
 
@@ -313,7 +322,8 @@ save_gtr_figure(
   stem = "GeneA_seed_weight_haplotype",
   outdir = figure_dir,
   width = 7,
-  height = 5
+  height = 5,
+  dpi = gtr_vignette_dpi
 )
 
 save_gtr_figure(
@@ -321,7 +331,8 @@ save_gtr_figure(
   stem = "GeneA_LD_gradient",
   outdir = figure_dir,
   width = 10,
-  height = 8
+  height = 8,
+  dpi = gtr_vignette_dpi
 )
 
 save_gtr_figure(
@@ -329,7 +340,8 @@ save_gtr_figure(
   stem = "GeneA_refined_haplotype_variant",
   outdir = figure_dir,
   width = 10,
-  height = 7
+  height = 7,
+  dpi = gtr_vignette_dpi
 )
 
 save_gtr_figure(
@@ -337,7 +349,8 @@ save_gtr_figure(
   stem = "GeneA_refined_protein_content",
   outdir = figure_dir,
   width = 7,
-  height = 5
+  height = 5,
+  dpi = gtr_vignette_dpi
 )
 
 save_gtr_figure(
@@ -345,7 +358,8 @@ save_gtr_figure(
   stem = "GeneA_protein_variant_effect",
   outdir = figure_dir,
   width = 9,
-  height = 5
+  height = 5,
+  dpi = gtr_vignette_dpi
 )
 ```
 
@@ -595,3 +609,24 @@ head(ld_reloaded$data)
 ```
 
 For a complete project, keep the **original inputs**, **standard-format track exports**, **PDF/PNG figures**, **tabular results**, **RDS analysis objects**, and **session information** together. This makes the analysis both easy to inspect and reproducible at the object level.
+
+Package documentation: <https://renscq.github.io/GeneTrackR/>.
+## Installation
+
+After Bioconductor acceptance, install GeneTrackR with `BiocManager`:
+
+```{r installation, eval=FALSE}
+if (!requireNamespace("BiocManager", quietly = TRUE)) {
+  install.packages("BiocManager")
+}
+BiocManager::install("GeneTrackR")
+library(GeneTrackR)
+```
+
+The development version remains available from the GeneTrackR GitHub repository.
+
+## Session information
+
+```{r session-info}
+sessionInfo()
+```

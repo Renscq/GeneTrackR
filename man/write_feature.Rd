@@ -44,11 +44,10 @@ GTF, or BED format. This is the main output function for annotation tracks
 produced by \code{read_genepred()}, \code{read_gff()}, \code{read_gtf()}, or \code{read_bed()}.
 }
 \examples{
-\dontrun{
-write_feature(gp, "annotation.genePredExt", format = "genepredext")
-write_feature(gtf, "annotation.gtf", format = "gtf")
-write_feature(gff, "annotation.gff3", format = "gff")
-write_feature(gp, "annotation.bed6", format = "bed6")
-write_feature(gp, "annotation.bed12", format = "bed12")
-}
+gp <- read_genepred(
+  system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR"),
+  format = "genePredExt", verbose = FALSE, progress = FALSE
+)
+outfile <- tempfile(fileext = ".bed")
+write_feature(gp, outfile, format = "bed12", overwrite = TRUE)
 }

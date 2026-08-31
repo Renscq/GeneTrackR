@@ -118,34 +118,14 @@ on comparable bins. \code{signal_transform} changes the plotted y value only; th
 queried signal table is not modified. See also \link{GeneTrackR-advanced-parameters}.
 }
 \examples{
-\dontrun{
 gp <- read_genepred(
   system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR"),
-  format = "genePredExt",
-  verbose = FALSE
+  format = "genePredExt", verbose = FALSE, progress = FALSE
 )
 rnaseq <- read_bwg(
-  system.file(
-    "extdata",
-    c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph"),
-    package = "GeneTrackR"
-  ),
-  format = "bedgraph",
-  sample_names = c("RNA_seq_plus", "RNA_seq_minus"),
-  strand = c("+", "-"),
-  mode = "memory"
+  system.file("extdata", "gtr_demo_rnaseq_plus.bedgraph", package = "GeneTrackR"),
+  format = "bedgraph", sample_names = "RNA_seq_plus", strand = "+",
+  mode = "memory", verbose = FALSE
 )
-plot_signal_gene(
-  signal = rnaseq,
-  annotation = gp,
-  gene_id = "GeneA",
-  plot_type = "bar",
-  signal_palette = "Paired",
-  signal_palette_direction = -1,
-  signal_y_scale = "fixed",
-  signal_y_ticks = "pretty",
-  signal_track_height = 4,
-  gene_track_height = 1
-)
-}
+plot_signal_gene(signal = rnaseq, annotation = gp, gene_id = "GeneA")
 }

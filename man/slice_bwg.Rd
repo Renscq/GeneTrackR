@@ -36,24 +36,13 @@ A BwgTrack, data.table, or GRanges object.
 Slice signal tracks by genomic region
 }
 \examples{
-\dontrun{
 rnaseq <- read_bwg(
-  system.file(
-    "extdata",
-    c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph"),
-    package = "GeneTrackR"
-  ),
-  sample_names = c("RNA_seq_plus", "RNA_seq_minus"),
-  strand = c("+", "-"),
-  mode = "memory"
+  system.file("extdata", "gtr_demo_rnaseq_plus.bedgraph", package = "GeneTrackR"),
+  format = "bedgraph", sample_names = "RNA_seq_plus", strand = "+",
+  mode = "memory", verbose = FALSE
 )
 slice_bwg(
-  rnaseq,
-  chrom = "chr1",
-  start = 12339001,
-  end = 12352000,
-  strand = "+",
-  as = "BwgTrack"
+  rnaseq, chrom = "chr1", start = 12339001, end = 12352000,
+  strand = "+", as = "BwgTrack"
 )
-}
 }

@@ -124,34 +124,20 @@ or a named vector. Named values are matched to sample IDs when
 \code{signal_color_by = "group"}. See also \link{GeneTrackR-advanced-parameters}.
 }
 \examples{
-\dontrun{
 gp <- read_genepred(
   system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR"),
-  format = "genePredExt",
-  verbose = FALSE
+  format = "genePredExt", verbose = FALSE, progress = FALSE
 )
-signal_all <- read_bwg(
+rnaseq <- read_bwg(
   system.file(
-    "extdata",
-    c(
-      "gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph",
-      "gtr_demo_riboseq_plus.bedgraph", "gtr_demo_riboseq_minus.bedgraph"
-    ),
+    "extdata", c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph"),
     package = "GeneTrackR"
   ),
-  format = "bedgraph",
-  sample_names = c("RNA_seq_plus", "RNA_seq_minus", "Ribo_seq_plus", "Ribo_seq_minus"),
-  strand = c("+", "-", "+", "-"),
-  mode = "memory"
+  format = "bedgraph", sample_names = c("RNA_seq_plus", "RNA_seq_minus"),
+  strand = c("+", "-"), mode = "memory", verbose = FALSE
 )
 plot_signal_region(
-  signal = signal_all,
-  annotation = gp,
-  chrom = "chr1",
-  start = 12339001,
-  end = 12374500,
-  strand = "both",
-  plot_type = "bar"
+  signal = rnaseq, annotation = gp, chrom = "chr1",
+  start = 12339001, end = 12352000, strand = "both", plot_type = "bar"
 )
-}
 }

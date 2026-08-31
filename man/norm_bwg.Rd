@@ -30,21 +30,13 @@ A normalized BwgTrack object.
 Normalize signal tracks
 }
 \examples{
-\dontrun{
 rnaseq <- read_bwg(
-  system.file(
-    "extdata",
-    c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_rnaseq_minus.bedgraph"),
-    package = "GeneTrackR"
-  ),
-  sample_names = c("RNA_seq_plus", "RNA_seq_minus"),
-  strand = c("+", "-"),
-  mode = "memory"
+  system.file("extdata", "gtr_demo_rnaseq_plus.bedgraph", package = "GeneTrackR"),
+  format = "bedgraph",
+  sample_names = "RNA_seq_plus",
+  strand = "+",
+  mode = "memory",
+  verbose = FALSE
 )
-norm_bwg(
-  rnaseq,
-  method = "scale",
-  scale_factor = c(RNA_seq_plus = 0.5, RNA_seq_minus = 0.5)
-)
-}
+norm_bwg(rnaseq, method = "scale", scale_factor = c(RNA_seq_plus = 0.5))
 }

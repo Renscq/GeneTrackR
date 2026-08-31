@@ -22,8 +22,10 @@ Invisibly returns the output file path.
 Write a VariantTrack object to VCF
 }
 \examples{
-\dontrun{
-vcf <- read_vcf("variants.vcf")
-write_vcf(vcf, "variants.out.vcf")
-}
+vcf <- read_vcf(
+  system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR"),
+  mode = "memory", verbose = FALSE, progress = FALSE
+)
+outfile <- tempfile(fileext = ".vcf")
+write_vcf(vcf, outfile, overwrite = TRUE)
 }

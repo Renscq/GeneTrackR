@@ -128,29 +128,17 @@ to collapse replicates within groups. \code{signal_colors} overrides
 \link{GeneTrackR-advanced-parameters}.
 }
 \examples{
-\dontrun{
 gp <- read_genepred(
   system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR"),
-  format = "genePredExt",
-  verbose = FALSE
+  format = "genePredExt", verbose = FALSE, progress = FALSE
 )
-riboseq <- read_bwg(
-  system.file(
-    "extdata",
-    c("gtr_demo_riboseq_plus.bedgraph", "gtr_demo_riboseq_minus.bedgraph"),
-    package = "GeneTrackR"
-  ),
-  format = "bedgraph",
-  sample_names = c("Ribo_seq_plus", "Ribo_seq_minus"),
-  strand = c("+", "-"),
-  mode = "memory"
+rnaseq <- read_bwg(
+  system.file("extdata", "gtr_demo_rnaseq_plus.bedgraph", package = "GeneTrackR"),
+  format = "bedgraph", sample_names = "RNA_seq_plus", strand = "+",
+  mode = "memory", verbose = FALSE
 )
 plot_signal_transcript(
-  signal = riboseq,
-  annotation = gp,
-  transcript_id = "TxA1",
-  coordinate = "transcript",
-  plot_type = "frame"
+  signal = rnaseq, annotation = gp, transcript_id = "TxA1",
+  coordinate = "transcript", plot_type = "bar"
 )
-}
 }

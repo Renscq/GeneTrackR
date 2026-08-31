@@ -78,17 +78,9 @@ plots these are genomic positions; in transcript coordinate plots they are
 spliced transcript positions. See also \link{GeneTrackR-advanced-parameters}.
 }
 \examples{
-\dontrun{
-gp <- read_genepred("annotation.genePredExt", format = "genePredExt")
-plot_region(gp, chrom = "I", start = 100000, end = 120000)
-plot_region(
-  gp,
-  chrom = "I",
-  start = 100000,
-  end = 120000,
-  mode = "trim",
-  label_position = "feature",
-  highlight = data.frame(start = 105000, end = 106000)
+gp <- read_genepred(
+  system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR"),
+  format = "genePredExt", verbose = FALSE, progress = FALSE
 )
-}
+plot_region(gp, chrom = "chr1", start = 12339001, end = 12352000)
 }
