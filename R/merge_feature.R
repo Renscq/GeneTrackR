@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-08-31
-# Version: dev003
+# Version: dev004
 # Function: Merge Feature/GenePred-compatible annotation objects
 # Input: Feature-compatible annotation objects
 # Output: Merged Feature/GenePred-compatible object
@@ -448,9 +448,11 @@ strip_feature_merge_columns <- function(dt) {
 #' Inputs may represent different genes, genomic regions, annotation formats, or
 #' independently retrieved subsets.
 #'
-#' Duplicate identifiers are detected across input objects. A warning reports
-#' duplicated gene, transcript, and feature IDs before the selected conflict
-#' strategy is applied.
+#' Duplicate identifiers are detected across input objects. For non-error
+#' conflict strategies, a warning reports duplicated gene, transcript, and
+#' feature IDs before the selected strategy is applied. With
+#' `conflict = "error"`, the function stops directly without a preliminary
+#' warning.
 #'
 #' With `conflict = "deduplicate"`, input order defines precedence. The first
 #' complete copy of a duplicated transcript is retained, duplicated feature

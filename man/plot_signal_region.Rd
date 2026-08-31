@@ -66,6 +66,16 @@ plot_signal_region(
 
 \item{bin_size}{Optional bin size for signal aggregation.}
 
+\item{heatmap_bin_size}{Optional bin size used only for heatmap rendering.
+\code{NULL} uses adaptive binning.}
+
+\item{heatmap_max_bins}{Maximum number of heatmap bins when
+\code{heatmap_bin_size = NULL}.}
+
+\item{heatmap_summary}{Summary statistic used to aggregate signal into
+heatmap bins: \code{mean}, \code{max}, \code{sum}, or \code{median}.}
+
+
 \item{highlight}{Optional data frame used to shade intervals on the signal and gene model tracks. It must contain \code{start} and \code{end} columns in genomic coordinates.}
 
 \item{annotation}{Optional GenePred object.}
@@ -87,15 +97,6 @@ plot_signal_region(
 \item{signal_y_scale}{Signal y-axis scale mode. Use \code{free} for each sample to have its own y-axis range, or \code{fixed} to force all samples to share the same y-axis range.}
 
 \item{signal_y_ticks}{Signal y-axis tick mode. Use \code{range} to show only integer axis limits as the minimum and maximum ticks, or \code{pretty} to use ggplot2 default-style breaks.}
-
-\item{heatmap_bin_size}{Optional bin size used only for heatmap rendering.
-\code{NULL} uses adaptive binning.}
-
-\item{heatmap_max_bins}{Maximum number of heatmap bins when
-\code{heatmap_bin_size = NULL}.}
-
-\item{heatmap_summary}{Summary statistic used to aggregate signal into
-heatmap bins: \code{mean}, \code{max}, \code{sum}, or \code{median}.}
 
 \item{cds_height}{Vertical thickness of CDS rectangles in the gene model track.}
 

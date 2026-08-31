@@ -2,9 +2,21 @@
 % Please edit documentation in R/class_feature_track.R
 \name{as_feature}
 \alias{as_feature}
+\alias{as_feature.Feature}
+\alias{as_feature.FeatureTrack}
+\alias{as_feature.GenePred}
+\alias{as_feature.data.frame}
 \title{Coerce an annotation object to a unified Feature object}
 \usage{
 as_feature(object)
+
+\method{as_feature}{Feature}(object)
+
+\method{as_feature}{FeatureTrack}(object)
+
+\method{as_feature}{GenePred}(object)
+
+\method{as_feature}{data.frame}(object)
 }
 \arguments{
 \item{object}{A GenePred, FeatureTrack, or data.frame-like object.}
@@ -18,4 +30,13 @@ Coerce an annotation object to a unified Feature object
 \examples{
 x <- data.frame(chrom = "chr1", start = 1L, end = 100L)
 as_feature(x)
+
+gp_file <- system.file(
+  "extdata", "gtr_demo.genePredExt", package = "GeneTrackR"
+)
+gp <- read_genepred(
+  gp_file, format = "genePredExt", verbose = FALSE, progress = FALSE
+)
+feature <- as_feature(gp)
+feature
 }

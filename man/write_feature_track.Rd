@@ -32,10 +32,13 @@ Invisibly returns the output file path.
 Backward-compatible wrapper around \code{write_feature()}.
 }
 \examples{
-bed_file <- system.file(
-  "extdata", "gtr_demo_features.bed", package = "GeneTrackR"
+gp_file <- system.file(
+  "extdata", "gtr_demo.genePredExt", package = "GeneTrackR"
 )
-features <- read_bed(bed_file, verbose = FALSE, progress = FALSE)
+gp <- read_genepred(
+  gp_file, format = "genePredExt", verbose = FALSE, progress = FALSE
+)
+features <- as_feature(gp)
 outfile <- tempfile(fileext = ".bed")
 write_feature_track(features, outfile)
 }

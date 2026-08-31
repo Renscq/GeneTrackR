@@ -1,3 +1,20 @@
+# GeneTrackR 0.8.8
+
+## Runnable writer example hotfix
+
+- Fixed the `write_feature_track()` runnable example to use bundled GenePred gene-model data converted with `as_feature()`, matching the wrapper's default BED12 requirement for transcript and exon information.
+- Added a regression test that exercises the same GenePred-to-Feature-to-BED12 path used by the help example.
+- Kept `write_feature_track()` implementation and all annotation-writing behavior unchanged.
+
+# GeneTrackR 0.8.7
+
+## Documentation and regression hotfix
+
+- Linked all `as_feature()` S3 methods to the shared roxygen topic so `devtools::document()` no longer creates a nameless `as_feature.GenePred` topic.
+- Updated the GenePred coercion example to exercise `as_feature()` directly with bundled demo annotation data.
+- Aligned the duplicated-identifier regression test with the 0.8.6 BiocCheck-compliant error path: `conflict = "error"` now expects a direct error without a preliminary warning.
+- Kept merge semantics, annotation conversion behavior, and all analysis algorithms unchanged.
+
 # GeneTrackR 0.8.6
 
 ## Bioconductor compliance cleanup

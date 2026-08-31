@@ -173,11 +173,8 @@ test_that("merge_feature can reject duplicated identifiers", {
   first <- make_merge_test_annotation()
   second <- make_merge_test_annotation()
 
-  expect_warning(
-    expect_error(
-      merge_feature(first, second, conflict = "error"),
-      "cannot be merged"
-    ),
-    "Duplicated annotation identifiers"
+  expect_error(
+    merge_feature(first, second, conflict = "error"),
+    "cannot be merged"
   )
 })

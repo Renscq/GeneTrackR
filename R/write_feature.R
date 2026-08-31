@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-08-31
-# Version: dev003
+# Date: 2026-09-01
+# Version: dev004
 # Function: Write unified Feature annotation objects to GenePred, GFF, GTF, BED6, or BED12 files
 # Input: Feature/GenePred-compatible annotation object
 # Output: Annotation files
@@ -605,10 +605,13 @@ write_genepred <- function(object, file, format = c("genePred", "genePredExt"), 
 #' @inheritParams write_feature
 #' @return Invisibly returns the output file path.
 #' @examples
-#' bed_file <- system.file(
-#'   "extdata", "gtr_demo_features.bed", package = "GeneTrackR"
+#' gp_file <- system.file(
+#'   "extdata", "gtr_demo.genePredExt", package = "GeneTrackR"
 #' )
-#' features <- read_bed(bed_file, verbose = FALSE, progress = FALSE)
+#' gp <- read_genepred(
+#'   gp_file, format = "genePredExt", verbose = FALSE, progress = FALSE
+#' )
+#' features <- as_feature(gp)
 #' outfile <- tempfile(fileext = ".bed")
 #' write_feature_track(features, outfile)
 #' @export

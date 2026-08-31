@@ -17,7 +17,8 @@ Keep the full development workspace on a non-submission branch. It may contain:
 At formal submission, the GitHub default branch must contain only the package tree used by Bioconductor. Prepare it from the development checkout with:
 
 ```bash
-Rscript tools/prepare_bioc_submission.003.R . ../GeneTrackR-bioc-submission
+Rscript tools/bioc_preflight.008.R .
+Rscript tools/prepare_bioc_submission.004.R . ../GeneTrackR-bioc-submission
 ```
 
 The package-only tree contains `DESCRIPTION`, `NAMESPACE`, `NEWS.md`, `README.md`, `R/`, `man/`, `inst/`, `tests/`, and `vignettes/`, plus one top-level `.gitignore`. GeneTrackR uses the standard `GPL-3` identifier in `DESCRIPTION`, retains `NEWS.md` as the package release history, and does not ship a separate `LICENSE` file.

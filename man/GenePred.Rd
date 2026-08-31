@@ -29,3 +29,12 @@ A GenePred object.
 \description{
 Create a GenePred object
 }
+\examples{
+gp_file <- system.file(
+  "extdata", "gtr_demo.genePredExt", package = "GeneTrackR"
+)
+gp <- read_genepred(
+  gp_file, format = "genePredExt", verbose = FALSE, progress = FALSE
+)
+GenePred(gp$transcripts, gp$exons, gp$genes)
+}

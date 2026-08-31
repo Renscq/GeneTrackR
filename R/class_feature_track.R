@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-08-31
-# Version: dev003
+# Version: dev004
 # Function: Define unified Feature annotation class and GenePred-compatible constructor
 # Input: Standardized annotation or variant tables
 # Output: Unified S3 track objects
@@ -281,12 +281,15 @@ as_feature <- function(object) {
   UseMethod("as_feature")
 }
 
+#' @rdname as_feature
 #' @export
 as_feature.Feature <- function(object) object
 
+#' @rdname as_feature
 #' @export
 as_feature.FeatureTrack <- function(object) object
 
+#' @rdname as_feature
 #' @examples
 #' gp_file <- system.file(
 #'   "extdata", "gtr_demo.genePredExt", package = "GeneTrackR"
@@ -294,7 +297,8 @@ as_feature.FeatureTrack <- function(object) object
 #' gp <- read_genepred(
 #'   gp_file, format = "genePredExt", verbose = FALSE, progress = FALSE
 #' )
-#' GenePred(gp$transcripts, gp$exons, gp$genes)
+#' feature <- as_feature(gp)
+#' feature
 #' @export
 as_feature.GenePred <- function(object) {
   Feature(
@@ -307,6 +311,7 @@ as_feature.GenePred <- function(object) {
   )
 }
 
+#' @rdname as_feature
 #' @export
 as_feature.data.frame <- function(object) Feature(object)
 

@@ -273,6 +273,24 @@ test_that("demo strand-specific RNA-seq tracks round-trip through pure R BigWig"
 })
 
 
+
+test_that("write_feature_track default BED12 example uses a gene-model Feature", {
+  gp <- read_genepred(
+    gtr_extdata("gtr_demo.genePredExt"),
+    format = "genePredExt",
+    verbose = FALSE,
+    progress = FALSE
+  )
+  features <- as_feature(gp)
+  outfile <- tempfile(fileext = ".bed")
+
+  written <- write_feature_track(features, outfile)
+
+  expect_identical(written, outfile)
+  expect_true(file.exists(outfile))
+  expect_gt(file.info(outfile)$size, 0)
+})
+
 test_that("write_bwg keeps a single pure R bigWig backend", {
   args <- names(formals(write_bwg))
   expect_false("bigwig_backend" %in% args)
