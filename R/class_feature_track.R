@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-08-31
-# Version: dev002
+# Version: dev003
 # Function: Define unified Feature annotation class and GenePred-compatible constructor
 # Input: Standardized annotation or variant tables
 # Output: Unified S3 track objects
@@ -26,6 +26,9 @@
 #' @param exons Optional exon-level table.
 #' @param validation Optional validation list.
 #' @return A Feature object, also inheriting from FeatureTrack.
+#' @examples
+#' x <- data.frame(chrom = "chr1", start = 1L, end = 100L)
+#' Feature(x)
 #' @export
 Feature <- function(data,
                     meta = list(),
@@ -56,6 +59,9 @@ Feature <- function(data,
 #'
 #' @inheritParams Feature
 #' @return A Feature object inheriting from FeatureTrack.
+#' @examples
+#' x <- data.frame(chrom = "chr1", start = 1L, end = 100L)
+#' FeatureTrack(x)
 #' @export
 FeatureTrack <- function(data, meta = list(), genes = NULL, transcripts = NULL, exons = NULL, validation = make_empty_validation()) {
   Feature(data = data, meta = meta, genes = genes, transcripts = transcripts, exons = exons, validation = validation)
@@ -267,6 +273,9 @@ derive_feature_hierarchy <- function(dt, genes = NULL, transcripts = NULL, exons
 #'
 #' @param object A GenePred, FeatureTrack, or data.frame-like object.
 #' @return A Feature object.
+#' @examples
+#' x <- data.frame(chrom = "chr1", start = 1L, end = 100L)
+#' as_feature(x)
 #' @export
 as_feature <- function(object) {
   UseMethod("as_feature")
@@ -278,6 +287,14 @@ as_feature.Feature <- function(object) object
 #' @export
 as_feature.FeatureTrack <- function(object) object
 
+#' @examples
+#' gp_file <- system.file(
+#'   "extdata", "gtr_demo.genePredExt", package = "GeneTrackR"
+#' )
+#' gp <- read_genepred(
+#'   gp_file, format = "genePredExt", verbose = FALSE, progress = FALSE
+#' )
+#' GenePred(gp$transcripts, gp$exons, gp$genes)
 #' @export
 as_feature.GenePred <- function(object) {
   Feature(
@@ -297,6 +314,9 @@ as_feature.data.frame <- function(object) Feature(object)
 #'
 #' @param object A Feature, FeatureTrack, or GenePred object.
 #' @return A data.table with standardized feature columns.
+#' @examples
+#' x <- Feature(data.frame(chrom = "chr1", start = 1L, end = 100L))
+#' as_feature_table(x)
 #' @export
 as_feature_table <- function(object) {
   if (inherits(object, "GenePred") && !is.null(object$data)) return(data.table::copy(object$data))
@@ -308,6 +328,14 @@ as_feature_table <- function(object) {
 #'
 #' @param object A Feature object containing transcript and exon features.
 #' @return A GenePred object.
+#' @examples
+#' gp_file <- system.file(
+#'   "extdata", "gtr_demo.genePredExt", package = "GeneTrackR"
+#' )
+#' gp <- read_genepred(
+#'   gp_file, format = "genePredExt", verbose = FALSE, progress = FALSE
+#' )
+#' as_genepred(gp)
 #' @export
 as_genepred <- function(object) {
   if (inherits(object, "GenePred")) return(object)
@@ -405,6 +433,14 @@ summary.FeatureTrack <- function(object, ...) {
 #'
 #' @param object A GenePred object.
 #' @return A data.table with transcript-level annotation.
+#' @examples
+#' gp_file <- system.file(
+#'   "extdata", "gtr_demo.genePredExt", package = "GeneTrackR"
+#' )
+#' gp <- read_genepred(
+#'   gp_file, format = "genePredExt", verbose = FALSE, progress = FALSE
+#' )
+#' head(as_transcript_table(gp))
 #' @export
 as_transcript_table <- function(object) {
   stop_if_not(inherits(object, "GenePred"), "`object` must be a GenePred object.")
@@ -415,6 +451,14 @@ as_transcript_table <- function(object) {
 #'
 #' @param object A GenePred object.
 #' @return A data.table with exon-level annotation.
+#' @examples
+#' gp_file <- system.file(
+#'   "extdata", "gtr_demo.genePredExt", package = "GeneTrackR"
+#' )
+#' gp <- read_genepred(
+#'   gp_file, format = "genePredExt", verbose = FALSE, progress = FALSE
+#' )
+#' head(as_exon_table(gp))
 #' @export
 as_exon_table <- function(object) {
   stop_if_not(inherits(object, "GenePred"), "`object` must be a GenePred object.")
@@ -425,6 +469,14 @@ as_exon_table <- function(object) {
 #'
 #' @param object A GenePred object.
 #' @return A data.table with gene-level annotation.
+#' @examples
+#' gp_file <- system.file(
+#'   "extdata", "gtr_demo.genePredExt", package = "GeneTrackR"
+#' )
+#' gp <- read_genepred(
+#'   gp_file, format = "genePredExt", verbose = FALSE, progress = FALSE
+#' )
+#' head(as_gene_table(gp))
 #' @export
 as_gene_table <- function(object) {
   stop_if_not(inherits(object, "GenePred"), "`object` must be a GenePred object.")

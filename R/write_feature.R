@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-08-31
-# Version: dev002
+# Version: dev003
 # Function: Write unified Feature annotation objects to GenePred, GFF, GTF, BED6, or BED12 files
 # Input: Feature/GenePred-compatible annotation object
 # Output: Annotation files
@@ -582,6 +582,16 @@ normalize_gtf_feature_type <- function(x) {
 #'
 #' @description Backward-compatible wrapper around `write_feature()`.
 #' @inheritParams write_feature
+#' @return Invisibly returns the output file path.
+#' @examples
+#' gp_file <- system.file(
+#'   "extdata", "gtr_demo.genePredExt", package = "GeneTrackR"
+#' )
+#' gp <- read_genepred(
+#'   gp_file, format = "genePredExt", verbose = FALSE, progress = FALSE
+#' )
+#' outfile <- tempfile(fileext = ".genePred")
+#' write_genepred(gp, outfile)
 #' @export
 write_genepred <- function(object, file, format = c("genePred", "genePredExt"), coordinate = c("ucsc", "granges"), sort_output = TRUE, chrom_order = NULL) {
   format <- match.arg(format)
@@ -593,6 +603,14 @@ write_genepred <- function(object, file, format = c("genePred", "genePredExt"), 
 #'
 #' @description Backward-compatible wrapper around `write_feature()`.
 #' @inheritParams write_feature
+#' @return Invisibly returns the output file path.
+#' @examples
+#' bed_file <- system.file(
+#'   "extdata", "gtr_demo_features.bed", package = "GeneTrackR"
+#' )
+#' features <- read_bed(bed_file, verbose = FALSE, progress = FALSE)
+#' outfile <- tempfile(fileext = ".bed")
+#' write_feature_track(features, outfile)
 #' @export
 write_feature_track <- function(object,
                                 file,

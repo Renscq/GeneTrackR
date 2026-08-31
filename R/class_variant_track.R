@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-05-28
-# Version: dev001
+# Date: 2026-08-31
+# Version: dev002
 # Function: Define VariantTrack class for genome-level variant data
 # Input: VCF-like variant tables
 # Output: VariantTrack S3 objects
@@ -14,6 +14,8 @@
 #' @param data A data.frame or data.table containing at least `chrom` and `pos`.
 #' @param meta A list of metadata.
 #' @return A VariantTrack object.
+#' @examples
+#' VariantTrack(data.frame(chrom = "chr1", pos = 10L, ref = "A", alt = "G"))
 #' @export
 VariantTrack <- function(data = NULL, meta = list()) {
   if (is.null(data)) {

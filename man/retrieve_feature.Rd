@@ -59,3 +59,12 @@ A Feature/GenePred-compatible object or a data.table.
 annotation object. By default it returns a Feature/GenePred-compatible object.
 Use \code{as = "data.table"} only when a plain table is required.
 }
+\examples{
+gp_file <- system.file(
+  "extdata", "gtr_demo.genePredExt", package = "GeneTrackR"
+)
+gp <- read_genepred(
+  gp_file, format = "genePredExt", verbose = FALSE, progress = FALSE
+)
+retrieve_feature(gp, gene_id = "GeneA")
+}

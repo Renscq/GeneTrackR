@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-08-31
-# Version: dev003
+# Version: dev004
 # Function: Extract and plot unified gene feature length distributions
 # Input: GenePred object and feature selection
 # Output: Length table or ggplot object
@@ -245,14 +245,12 @@ plot_gene_length_distribution <- function(object,
 #' @rdname get_gene_length_distribution_table
 #' @export
 get_genepred_length_table <- function(...) {
-  .Deprecated("get_gene_length_distribution_table")
   get_gene_length_distribution_table(...)
 }
 
 #' @rdname plot_gene_length_distribution
 #' @export
 plot_genepred_length_distribution <- function(...) {
-  .Deprecated("plot_gene_length_distribution")
   plot_gene_length_distribution(...)
 }
 

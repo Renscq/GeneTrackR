@@ -23,3 +23,13 @@ A data.table summary.
 \description{
 Summarize signal tracks within a region
 }
+\examples{
+signal_file <- system.file(
+  "extdata", "gtr_demo_rnaseq_plus.bedgraph", package = "GeneTrackR"
+)
+signal <- read_bwg(
+  signal_file, format = "bedgraph", sample_names = "RNA_plus",
+  strand = "+", mode = "memory", verbose = FALSE
+)
+summary_bwg(signal)
+}

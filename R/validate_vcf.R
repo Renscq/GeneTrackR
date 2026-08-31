@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-05-28
-# Version: dev001
+# Date: 2026-08-31
+# Version: dev002
 # Function: Validate VCF-like VariantTrack objects
 # Input: VariantTrack objects
 # Output: Validation reports
@@ -18,6 +18,14 @@
 #' @return A validation list with `invalid_records`, `invalid_summary`, and
 #' `warnings`.
 #'
+#' @examples
+#' vcf_file <- system.file(
+#'   "extdata", "gtr_demo_variants.vcf", package = "GeneTrackR"
+#' )
+#' vcf <- read_vcf(
+#'   vcf_file, mode = "memory", verbose = FALSE, progress = FALSE
+#' )
+#' validate_vcf(vcf)
 #' @export
 validate_vcf <- function(object) {
   stop_if_not(inherits(object, "VariantTrack"), "`object` must be a VariantTrack object.")

@@ -22,3 +22,13 @@ Schema-v2 objects return stored sequence metadata directly. Legacy objects
 without a \code{seqinfo} slot query chromosome metadata from bigWig source files
 through the built-in pure-R backend.
 }
+\examples{
+signal_file <- system.file(
+  "extdata", "gtr_demo_rnaseq_plus.bedgraph", package = "GeneTrackR"
+)
+signal <- read_bwg(
+  signal_file, format = "bedgraph", sample_names = "RNA_plus",
+  strand = "+", mode = "memory", verbose = FALSE
+)
+seqinfo_bwg(signal)
+}

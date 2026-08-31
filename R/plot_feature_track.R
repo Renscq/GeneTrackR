@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-05-28
-# Version: dev003
+# Date: 2026-08-31
+# Version: dev004
 # Function: Plot generic feature and variant tracks
 # Input: FeatureTrack or VariantTrack objects
 # Output: ggplot track panels
@@ -29,6 +29,14 @@
 #' @param show_panel_border Whether to draw the panel border. `NULL` preserves the selected theme default.
 #' @param text_size Text size.
 #' @return A ggplot object.
+#' @examples
+#' bed_file <- system.file(
+#'   "extdata", "gtr_demo_features.bed", package = "GeneTrackR"
+#' )
+#' features <- read_bed(bed_file, verbose = FALSE, progress = FALSE)
+#' plot_feature_track(
+#'   features, chrom = "chr1", start = 12339001L, end = 12352000L
+#' )
 #' @export
 plot_feature_track <- function(track,
                                chrom,

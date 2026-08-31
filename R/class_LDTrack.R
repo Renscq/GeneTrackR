@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-07-02
-# Version: dev001
+# Date: 2026-08-31
+# Version: dev002
 # Function: LDTrack class definition
 # Input: LD calculation outputs
 # Output: LDTrack S3 objects
@@ -23,6 +23,8 @@
 #' @param plot Deprecated alias for `figure`, kept only for compatibility with
 #' older development versions.
 #' @return An LDTrack object.
+#' @examples
+#' LDTrack(region = list(chrom = "chr1", start = 1L, end = 100L))
 #' @export
 LDTrack <- function(data = NULL,
                     matrix = NULL,

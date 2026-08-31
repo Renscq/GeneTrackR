@@ -19,5 +19,35 @@ data.frame.}
 A \code{GeneTrackRPhenoPlot} object returned by \code{plot_hap_pheno()}.
 }
 \description{
-Deprecated compatibility alias of \code{plot_refined_hap_pheno()}.
+Legacy compatibility alias of \code{plot_refined_hap_pheno()}.
+}
+\examples{
+vcf_file <- system.file(
+  "extdata", "gtr_demo_variants.vcf", package = "GeneTrackR"
+)
+vcf <- read_vcf(
+  vcf_file, mode = "memory", verbose = FALSE, progress = FALSE
+)
+pheno_file <- system.file(
+  "extdata", "gtr_demo_pheno.tsv", package = "GeneTrackR"
+)
+pheno <- read_pheno(pheno_file, verbose = FALSE)
+gp_file <- system.file(
+  "extdata", "gtr_demo.genePredExt", package = "GeneTrackR"
+)
+gp <- read_genepred(
+  gp_file, format = "genePredExt", verbose = FALSE, progress = FALSE
+)
+hap <- hap_variant(
+  vcf, annotation = gp, gene_id = "GeneA",
+  genotype_mode = "string", min_variant_number = 1
+)
+refined <- refine_haplotype(
+  hap, phenotype = pheno, traits = "protein_content",
+  min_hap_samples = 3, effect_threshold = 0.5
+)
+plot_hap_refined(
+  refined, phenotype = pheno, traits = "protein_content",
+  min_hap_samples = 3
+)
 }

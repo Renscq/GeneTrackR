@@ -60,3 +60,12 @@ A ggplot object.
 Draws BED/GFF/GTF-derived interval features in a genomic region. This function
 is designed to be compatible with \code{plot_tracks()}.
 }
+\examples{
+bed_file <- system.file(
+  "extdata", "gtr_demo_features.bed", package = "GeneTrackR"
+)
+features <- read_bed(bed_file, verbose = FALSE, progress = FALSE)
+plot_feature_track(
+  features, chrom = "chr1", start = 12339001L, end = 12352000L
+)
+}

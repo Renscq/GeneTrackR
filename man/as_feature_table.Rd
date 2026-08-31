@@ -15,3 +15,7 @@ A data.table with standardized feature columns.
 \description{
 Extract the standardized feature table
 }
+\examples{
+x <- Feature(data.frame(chrom = "chr1", start = 1L, end = 100L))
+as_feature_table(x)
+}

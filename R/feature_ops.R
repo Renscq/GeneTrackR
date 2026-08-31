@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-05-28
-# Version: dev001
+# Date: 2026-08-31
+# Version: dev002
 # Function: Unified summary API for Feature-compatible annotation objects
 # Input: Feature, FeatureTrack, or GenePred-compatible annotation objects
 # Output: Summary tables
@@ -19,6 +19,14 @@
 #' @param by Grouping columns used when `level = "feature"`.
 #'
 #' @return A data.table summary.
+#' @examples
+#' gp_file <- system.file(
+#'   "extdata", "gtr_demo.genePredExt", package = "GeneTrackR"
+#' )
+#' gp <- read_genepred(
+#'   gp_file, format = "genePredExt", verbose = FALSE, progress = FALSE
+#' )
+#' summary_feature(gp, level = "gene")
 #' @export
 summary_feature <- function(object,
                             chrom = NULL,

@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-05-28
-# Version: dev001
+# Date: 2026-08-31
+# Version: dev002
 # Function: Shared parsers for feature annotation files
 # Input: GFF/GTF attribute strings and feature tables
 # Output: Standardized feature tables
@@ -24,7 +24,8 @@ make_stage_progress <- function(total, progress = TRUE, prefix = "[GeneTrackR]")
     ))
   }
 
-  current <- 0L
+  state <- new.env(parent = emptyenv())
+  state$current <- 0L
   width <- 30L
 
   render <- function(value) {
@@ -44,12 +45,12 @@ make_stage_progress <- function(total, progress = TRUE, prefix = "[GeneTrackR]")
   list(
     tick = function(value = NULL) {
       if (is.null(value)) {
-        current <<- min(total, current + 1L)
+        state$current <- min(total, state$current + 1L)
       } else {
-        current <<- min(total, max(0L, as.integer(value)[1L]))
+        state$current <- min(total, max(0L, as.integer(value)[1L]))
       }
-      message(render(current))
-      invisible(current)
+      message(render(state$current))
+      invisible(state$current)
     },
     close = function() invisible(NULL)
   )

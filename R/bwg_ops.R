@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-08-31
-# Version: dev008
+# Version: dev009
 # Function: Query, normalize, summarize, slice, merge, and write signal tracks
 # Input: BwgTrack objects and genomic regions
 # Output: Signal tables, subset objects, and exported signal files
@@ -458,6 +458,15 @@ diagnose_tabix <- function(object) {
 #' @param end Region end.
 #' @param samples Optional sample IDs.
 #' @return A data.table with per-sample query timing and number of records.
+#' @examples
+#' signal_file <- system.file(
+#'   "extdata", "gtr_demo_rnaseq_plus.bedgraph", package = "GeneTrackR"
+#' )
+#' signal <- read_bwg(
+#'   signal_file, format = "bedgraph", sample_names = "RNA_plus",
+#'   strand = "+", mode = "lazy", verbose = FALSE
+#' )
+#' benchmark_tabix_query(signal, "chr1", 12339001L, 12340000L)
 #' @export
 benchmark_tabix_query <- function(object, chrom, start, end, samples = NULL) {
   stop_if_not(inherits(object, "BwgTrack"), "`object` must be a BwgTrack object.")
@@ -578,6 +587,15 @@ norm_bwg <- function(object, method = c("none", "RPM", "CPM", "scale", "custom")
 #' @param end Optional region end.
 #' @param samples Optional sample IDs.
 #' @return A data.table summary.
+#' @examples
+#' signal_file <- system.file(
+#'   "extdata", "gtr_demo_rnaseq_plus.bedgraph", package = "GeneTrackR"
+#' )
+#' signal <- read_bwg(
+#'   signal_file, format = "bedgraph", sample_names = "RNA_plus",
+#'   strand = "+", mode = "memory", verbose = FALSE
+#' )
+#' summary_bwg(signal)
 #' @export
 summary_bwg <- function(object, chrom = NULL, start = NULL, end = NULL, samples = NULL) {
   stop_if_not(inherits(object, "BwgTrack"), "`object` must be a BwgTrack object.")
@@ -847,6 +865,15 @@ bin_bwg <- function(data, bin_size = 50L) {
 #' Schema-v2 objects return stored sequence metadata directly. Legacy objects
 #' without a `seqinfo` slot query chromosome metadata from bigWig source files
 #' through the built-in pure-R backend.
+#' @examples
+#' signal_file <- system.file(
+#'   "extdata", "gtr_demo_rnaseq_plus.bedgraph", package = "GeneTrackR"
+#' )
+#' signal <- read_bwg(
+#'   signal_file, format = "bedgraph", sample_names = "RNA_plus",
+#'   strand = "+", mode = "memory", verbose = FALSE
+#' )
+#' seqinfo_bwg(signal)
 #' @export
 seqinfo_bwg <- function(object, samples = NULL) {
   stop_if_not(inherits(object, "BwgTrack"), "`object` must be a BwgTrack object.")

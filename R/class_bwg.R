@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-08-30
-# Version: dev003
+# Date: 2026-08-31
+# Version: dev004
 # Function: BwgTrack S3 class constructors, schema normalization, and print methods
 # Input: Signal sample metadata, optional in-memory signal table, and sequence metadata
 # Output: Schema-v2 BwgTrack object
@@ -150,6 +150,9 @@ subset_bwg_seqinfo <- function(object, sample_ids = NULL, chrom = NULL) {
 #' samples. Unknown chromosome lengths can be represented by `NA`.
 #' @return A BwgTrack object with `samples`, `data`, `seqinfo`, `meta`, and
 #' `validation` slots.
+#' @examples
+#' samples <- data.frame(sample_id = "sample1")
+#' BwgTrack(samples)
 #' @export
 BwgTrack <- function(samples,
                      data = NULL,

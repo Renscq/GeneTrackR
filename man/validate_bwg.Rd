@@ -15,3 +15,13 @@ A validation list.
 \description{
 Validate a BwgTrack object
 }
+\examples{
+signal_file <- system.file(
+  "extdata", "gtr_demo_rnaseq_plus.bedgraph", package = "GeneTrackR"
+)
+signal <- read_bwg(
+  signal_file, format = "bedgraph", sample_names = "RNA_plus",
+  strand = "+", mode = "memory", verbose = FALSE
+)
+validate_bwg(signal)
+}

@@ -25,6 +25,17 @@ write_feature_track(
 
 \item{chrom_order}{Optional chromosome order used for sorting. It can be NULL, a character vector of chromosome names, a data frame whose first column contains chromosome names, or a FASTA index \code{.fai} file path. If NULL, a natural chromosome order is used.}
 }
+\value{
+Invisibly returns the output file path.
+}
 \description{
 Backward-compatible wrapper around \code{write_feature()}.
+}
+\examples{
+bed_file <- system.file(
+  "extdata", "gtr_demo_features.bed", package = "GeneTrackR"
+)
+features <- read_bed(bed_file, verbose = FALSE, progress = FALSE)
+outfile <- tempfile(fileext = ".bed")
+write_feature_track(features, outfile)
 }

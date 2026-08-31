@@ -15,3 +15,12 @@ A GenePred object.
 \description{
 Convert a Feature object with gene-model information to GenePred
 }
+\examples{
+gp_file <- system.file(
+  "extdata", "gtr_demo.genePredExt", package = "GeneTrackR"
+)
+gp <- read_genepred(
+  gp_file, format = "genePredExt", verbose = FALSE, progress = FALSE
+)
+as_genepred(gp)
+}

@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-05-28
-# Version: dev002
+# Date: 2026-08-31
+# Version: dev003
 # Function: Read BED track files into unified Feature objects
 # Input: BED interval files
 # Output: Feature objects
@@ -52,7 +52,7 @@ read_bed <- function(file,
   progress_msg("[GeneTrackR] Detected input format: BED")
 
   old_names <- names(dt)
-  data.table::setnames(dt, old_names[1:3], c("chrom", "bed_start", "bed_end"))
+  data.table::setnames(dt, old_names[seq_len(3L)], c("chrom", "bed_start", "bed_end"))
   dt[, "start" := if (coordinate == "bed") as.integer(dt[["bed_start"]]) + 1L else as.integer(dt[["bed_start"]])]
   dt[, "end" := as.integer(dt[["bed_end"]])]
   dt[, "feature_id" := paste0("BED_", seq_len(.N))]

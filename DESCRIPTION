@@ -1,7 +1,7 @@
 Package: GeneTrackR
 Type: Package
 Title: Genomic Track Visualization and Haplotype Analysis
-Version: 0.8.5
+Version: 0.8.6
 Authors@R: person("Rensc", role = c("aut", "cre"), email = "rensc0718@163.com")
 Description: Provides tools to read, validate, query, transform, write,
     and visualize gene annotations, genomic signal tracks, and variant
@@ -15,11 +15,11 @@ Description: Provides tools to read, validate, query, transform, write,
 License: GPL-3
 URL: https://renscq.github.io/GeneTrackR/, https://github.com/Renscq/GeneTrackR
 BugReports: https://github.com/Renscq/GeneTrackR/issues
-biocViews: Software, GenomeAnnotation, Coverage, Sequencing, Visualization
+biocViews: Software, GenomeAnnotation, VariantAnnotation, Coverage, Sequencing, Visualization
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
-Depends: R (>= 4.2.0)
+Depends: R (>= 4.5.0)
 Imports: data.table, ggplot2, patchwork, rlang, utils, stats, grid,
         grDevices, tools, GenomicRanges, IRanges, S4Vectors, RColorBrewer
 Suggests: testthat (>= 3.0.0), roxygen2, knitr, rmarkdown, Rsamtools, openxlsx

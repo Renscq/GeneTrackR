@@ -18,3 +18,6 @@ A VariantTrack object.
 \code{VariantTrack()} stores VCF-like variant records as genomic point features.
 Coordinates are stored internally as 1-based positions with \code{start == end}.
 }
+\examples{
+VariantTrack(data.frame(chrom = "chr1", pos = 10L, ref = "A", alt = "G"))
+}

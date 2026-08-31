@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-05-29
-# Version: dev003
+# Date: 2026-08-31
+# Version: dev004
 # Function: Plot variant records from VariantTrack objects
 # Input: VariantTrack objects and genomic regions
 # Output: ggplot variant figures
@@ -29,6 +29,16 @@
 #' @param show_panel_border Whether to draw the panel border. `NULL` preserves the selected theme default.
 #' @param text_size Text size.
 #' @return A ggplot object.
+#' @examples
+#' vcf_file <- system.file(
+#'   "extdata", "gtr_demo_variants.vcf", package = "GeneTrackR"
+#' )
+#' vcf <- read_vcf(
+#'   vcf_file, mode = "memory", verbose = FALSE, progress = FALSE
+#' )
+#' plot_variant(
+#'   vcf, chrom = "chr1", start = 12339701L, end = 12352000L
+#' )
 #' @export
 plot_variant <- function(variant,
                          chrom = NULL,
@@ -182,6 +192,16 @@ plot_variant <- function(variant,
 #' @param track A VariantTrack object.
 #' @inheritParams plot_variant
 #' @return A ggplot object.
+#' @examples
+#' vcf_file <- system.file(
+#'   "extdata", "gtr_demo_variants.vcf", package = "GeneTrackR"
+#' )
+#' vcf <- read_vcf(
+#'   vcf_file, mode = "memory", verbose = FALSE, progress = FALSE
+#' )
+#' plot_variant_track(
+#'   vcf, chrom = "chr1", start = 12339701L, end = 12352000L
+#' )
 #' @export
 plot_variant_track <- function(track,
                                chrom,

@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-05-28
-# Version: dev001
+# Date: 2026-08-31
+# Version: dev002
 # Function: Retrieve Feature/GenePred-compatible annotation sub-objects or tables
 # Input: Feature-compatible annotation object
 # Output: Retrieved Feature/GenePred-compatible sub-object or data.table
@@ -31,6 +31,14 @@
 #' for a plain table.
 #'
 #' @return A Feature/GenePred-compatible object or a data.table.
+#' @examples
+#' gp_file <- system.file(
+#'   "extdata", "gtr_demo.genePredExt", package = "GeneTrackR"
+#' )
+#' gp <- read_genepred(
+#'   gp_file, format = "genePredExt", verbose = FALSE, progress = FALSE
+#' )
+#' retrieve_feature(gp, gene_id = "GeneA")
 #' @export
 retrieve_feature <- function(object,
                              pattern = NULL,

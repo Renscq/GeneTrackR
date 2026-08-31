@@ -29,6 +29,19 @@ write_genepred(
 
 \item{chrom_order}{Optional chromosome order used for sorting. It can be NULL, a character vector of chromosome names, a data frame whose first column contains chromosome names, or a FASTA index \code{.fai} file path. If NULL, a natural chromosome order is used.}
 }
+\value{
+Invisibly returns the output file path.
+}
 \description{
 Backward-compatible wrapper around \code{write_feature()}.
+}
+\examples{
+gp_file <- system.file(
+  "extdata", "gtr_demo.genePredExt", package = "GeneTrackR"
+)
+gp <- read_genepred(
+  gp_file, format = "genePredExt", verbose = FALSE, progress = FALSE
+)
+outfile <- tempfile(fileext = ".genePred")
+write_genepred(gp, outfile)
 }

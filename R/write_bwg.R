@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-08-31
-# Version: dev010
+# Version: dev011
 # Function: Write BwgTrack objects through the unified pure R I/O layer
 # Input: BwgTrack object
 # Output: Signal track files
@@ -157,12 +157,12 @@ prepare_chrom_sizes_table <- function(chrom_sizes) {
   if (is.character(chrom_sizes) && length(chrom_sizes) == 1L) {
     stop_if_not(
       file.exists(chrom_sizes),
-      paste0("Chromosome size file does not exist: ", chrom_sizes)
+      sprintf("Chromosome size file does not exist: %s", chrom_sizes)
     )
     cs <- data.table::fread(
       chrom_sizes,
       header = FALSE,
-      select = 1:2,
+      select = seq_len(2L),
       col.names = c("chrom", "size"),
       showProgress = FALSE
     )

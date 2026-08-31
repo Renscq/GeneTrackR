@@ -17,3 +17,10 @@ A data.table summarizing trait type, missing values, and basic statistics.
 \description{
 Summarize phenotype traits
 }
+\examples{
+pheno_file <- system.file(
+  "extdata", "gtr_demo_pheno.tsv", package = "GeneTrackR"
+)
+pheno <- read_pheno(pheno_file, verbose = FALSE)
+summary_pheno(pheno)
+}

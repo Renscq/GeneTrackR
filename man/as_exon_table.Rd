@@ -15,3 +15,12 @@ A data.table with exon-level annotation.
 \description{
 Extract exon table from a GenePred object
 }
+\examples{
+gp_file <- system.file(
+  "extdata", "gtr_demo.genePredExt", package = "GeneTrackR"
+)
+gp <- read_genepred(
+  gp_file, format = "genePredExt", verbose = FALSE, progress = FALSE
+)
+head(as_exon_table(gp))
+}

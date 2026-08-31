@@ -15,6 +15,19 @@ write_variant_track(object, file, overwrite = FALSE, include_header = TRUE)
 
 \item{include_header}{Whether to include minimal VCF header lines.}
 }
+\value{
+Invisibly returns the output file path.
+}
 \description{
 Backward-compatible wrapper around \code{write_vcf()}.
+}
+\examples{
+vcf_file <- system.file(
+  "extdata", "gtr_demo_variants.vcf", package = "GeneTrackR"
+)
+vcf <- read_vcf(
+  vcf_file, mode = "memory", verbose = FALSE, progress = FALSE
+)
+outfile <- tempfile(fileext = ".vcf")
+write_variant_track(vcf, outfile, overwrite = TRUE)
 }

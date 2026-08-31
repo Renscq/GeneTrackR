@@ -38,3 +38,11 @@ A VariantTrack object.
 \description{
 Backward-compatible alias of \code{read_vcf()}.
 }
+\examples{
+vcf_file <- system.file(
+  "extdata", "gtr_demo_variants.vcf", package = "GeneTrackR"
+)
+read_vcf_track(
+  vcf_file, mode = "memory", verbose = FALSE, progress = FALSE
+)
+}

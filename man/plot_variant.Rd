@@ -62,3 +62,14 @@ Draws VCF-derived variant records in a genomic region. This function is
 dedicated to variant visualization and can be used directly or through
 \code{plot_tracks()}.
 }
+\examples{
+vcf_file <- system.file(
+  "extdata", "gtr_demo_variants.vcf", package = "GeneTrackR"
+)
+vcf <- read_vcf(
+  vcf_file, mode = "memory", verbose = FALSE, progress = FALSE
+)
+plot_variant(
+  vcf, chrom = "chr1", start = 12339701L, end = 12352000L
+)
+}

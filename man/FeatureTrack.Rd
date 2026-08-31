@@ -36,3 +36,7 @@ A Feature object inheriting from FeatureTrack.
 \code{FeatureTrack()} is kept as a user-facing alias of \code{Feature()} for interval
 tracks. It returns an object inheriting from both \code{Feature} and \code{FeatureTrack}.
 }
+\examples{
+x <- data.frame(chrom = "chr1", start = 1L, end = 100L)
+FeatureTrack(x)
+}

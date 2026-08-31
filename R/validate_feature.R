@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-05-28
-# Version: dev001
+# Date: 2026-08-31
+# Version: dev002
 # Function: Validate unified Feature annotation objects
 # Input: Feature-compatible annotation objects
 # Output: Validation reports
@@ -162,6 +162,14 @@ merge_validation_reports <- function(...) {
 #' @return A validation list with `invalid_records`, `invalid_summary`, and
 #' `warnings`.
 #'
+#' @examples
+#' gp_file <- system.file(
+#'   "extdata", "gtr_demo.genePredExt", package = "GeneTrackR"
+#' )
+#' gp <- read_genepred(
+#'   gp_file, format = "genePredExt", verbose = FALSE, progress = FALSE
+#' )
+#' validate_feature(gp)
 #' @export
 validate_feature <- function(object, check_gene_model = TRUE) {
   stop_if_not(inherits(object, "Feature") || inherits(object, "FeatureTrack") || inherits(object, "GenePred"),

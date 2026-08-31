@@ -19,3 +19,12 @@ A validation list with \code{invalid_records}, \code{invalid_summary}, and
 fields, duplicated variant IDs, and consistency between \code{pos}, \code{start}, and
 \code{end} when those columns are available.
 }
+\examples{
+vcf_file <- system.file(
+  "extdata", "gtr_demo_variants.vcf", package = "GeneTrackR"
+)
+vcf <- read_vcf(
+  vcf_file, mode = "memory", verbose = FALSE, progress = FALSE
+)
+validate_vcf(vcf)
+}

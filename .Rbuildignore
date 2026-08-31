@@ -7,3 +7,5 @@
 ^pkgdown-site$
 ^\.github$
 ^tools$
+^GeneTrackR\.BiocCheck$
+^.*\.BiocCheck$

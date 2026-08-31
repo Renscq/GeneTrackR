@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-08-31
-# Version: dev009
+# Version: dev010
 # Function: Read signal tracks through the unified pure R I/O layer
 # Input: Signal track file paths
 # Output: Schema-v2 BwgTrack object
@@ -226,6 +226,15 @@ infer_sample_has_strand <- function(strand, formats) {
 #'
 #' @param object A BwgTrack object.
 #' @return A validation list.
+#' @examples
+#' signal_file <- system.file(
+#'   "extdata", "gtr_demo_rnaseq_plus.bedgraph", package = "GeneTrackR"
+#' )
+#' signal <- read_bwg(
+#'   signal_file, format = "bedgraph", sample_names = "RNA_plus",
+#'   strand = "+", mode = "memory", verbose = FALSE
+#' )
+#' validate_bwg(signal)
 #' @export
 validate_bwg <- function(object) {
   stop_if_not(inherits(object, "BwgTrack"), "`object` must be a BwgTrack object.")

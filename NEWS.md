@@ -1,3 +1,13 @@
+# GeneTrackR 0.8.6
+
+## Bioconductor compliance cleanup
+
+- Expanded runnable examples across exported help pages to satisfy the Bioconductor documentation coverage requirement.
+- Added missing return-value documentation for compatibility writer functions.
+- Updated the R dependency floor to 4.5.0 and added the suggested `VariantAnnotation` biocView.
+- Replaced avoidable `1:` sequences, `<<-` state mutation, and BiocCheck-flagged condition patterns without changing analysis outputs.
+- Kept large-scale formatting, long-function refactoring, and legitimate warning suppression out of this focused compatibility release.
+
 # GeneTrackR 0.8.5
 
 ## Restore Bioconductor release notes

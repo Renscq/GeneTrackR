@@ -15,3 +15,7 @@ A Feature object.
 \description{
 Coerce an annotation object to a unified Feature object
 }
+\examples{
+x <- data.frame(chrom = "chr1", start = 1L, end = 100L)
+as_feature(x)
+}

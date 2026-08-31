@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-08-31
-# Version: dev002
+# Version: dev003
 # Function: Write VariantTrack objects to VCF files
 # Input: VariantTrack object
 # Output: VCF file
@@ -47,6 +47,16 @@ write_vcf <- function(object, file, overwrite = FALSE, include_header = TRUE) {
 #'
 #' @description Backward-compatible wrapper around `write_vcf()`.
 #' @inheritParams write_vcf
+#' @return Invisibly returns the output file path.
+#' @examples
+#' vcf_file <- system.file(
+#'   "extdata", "gtr_demo_variants.vcf", package = "GeneTrackR"
+#' )
+#' vcf <- read_vcf(
+#'   vcf_file, mode = "memory", verbose = FALSE, progress = FALSE
+#' )
+#' outfile <- tempfile(fileext = ".vcf")
+#' write_variant_track(vcf, outfile, overwrite = TRUE)
 #' @export
 write_variant_track <- function(object, file, overwrite = FALSE, include_header = TRUE) {
   write_vcf(object = object, file = file, overwrite = overwrite, include_header = include_header)

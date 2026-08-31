@@ -36,3 +36,7 @@ sample metadata, optional in-memory signal records, optional chromosome
 metadata, object metadata, and validation results in stable named slots.
 Public signal coordinates use 1-based closed intervals.
 }
+\examples{
+samples <- data.frame(sample_id = "sample1")
+BwgTrack(samples)
+}

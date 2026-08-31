@@ -41,3 +41,7 @@ allowing the same object to be used by gene model plotting functions.
 
 Required coordinate convention is 1-based closed intervals.
 }
+\examples{
+x <- data.frame(chrom = "chr1", start = 1L, end = 100L)
+Feature(x)
+}

@@ -23,3 +23,13 @@ A data.table with per-sample query timing and number of records.
 \description{
 Test whether a bedGraph tabix query returns records without full-file fallback
 }
+\examples{
+signal_file <- system.file(
+  "extdata", "gtr_demo_rnaseq_plus.bedgraph", package = "GeneTrackR"
+)
+signal <- read_bwg(
+  signal_file, format = "bedgraph", sample_names = "RNA_plus",
+  strand = "+", mode = "lazy", verbose = FALSE
+)
+benchmark_tabix_query(signal, "chr1", 12339001L, 12340000L)
+}

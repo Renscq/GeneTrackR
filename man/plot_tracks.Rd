@@ -179,3 +179,12 @@ signal track combined with gene, feature, and variant tracks. The genomic
 interval can be specified in three ways: by \code{gene_id}, by \code{transcript_id},
 or by explicit \code{chrom}, \code{start}, and \code{end} coordinates.
 }
+\examples{
+gp_file <- system.file(
+  "extdata", "gtr_demo.genePredExt", package = "GeneTrackR"
+)
+gp <- read_genepred(
+  gp_file, format = "genePredExt", verbose = FALSE, progress = FALSE
+)
+plot_tracks(annotation = gp, gene_id = "GeneA")
+}

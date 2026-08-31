@@ -33,3 +33,12 @@ A data.table summary.
 \code{summary_feature()} is the unified summary API for GenePred, GTF, GFF, and
 BED-derived annotation objects.
 }
+\examples{
+gp_file <- system.file(
+  "extdata", "gtr_demo.genePredExt", package = "GeneTrackR"
+)
+gp <- read_genepred(
+  gp_file, format = "genePredExt", verbose = FALSE, progress = FALSE
+)
+summary_feature(gp, level = "gene")
+}

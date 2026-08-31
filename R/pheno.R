@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-05-29
-# Version: dev002
+# Date: 2026-08-31
+# Version: dev003
 # Function: Read, summarize, and plot phenotype tables
 # Input: Phenotype files
 # Output: Phenotype tables and ggplot figures
@@ -64,6 +64,12 @@ read_pheno <- function(file,
 #' @param pheno A phenotype data.frame/data.table returned by `read_pheno()`.
 #' @param sample_col Sample column name.
 #' @return A data.table summarizing trait type, missing values, and basic statistics.
+#' @examples
+#' pheno_file <- system.file(
+#'   "extdata", "gtr_demo_pheno.tsv", package = "GeneTrackR"
+#' )
+#' pheno <- read_pheno(pheno_file, verbose = FALSE)
+#' summary_pheno(pheno)
 #' @export
 summary_pheno <- function(pheno, sample_col = "sample_id") {
   dt <- data.table::as.data.table(pheno)
@@ -98,6 +104,12 @@ summary_pheno <- function(pheno, sample_col = "sample_id") {
 #' @param bins Histogram bins for numeric traits.
 #' @param text_size Text size.
 #' @return A ggplot object.
+#' @examples
+#' pheno_file <- system.file(
+#'   "extdata", "gtr_demo_pheno.tsv", package = "GeneTrackR"
+#' )
+#' pheno <- read_pheno(pheno_file, verbose = FALSE)
+#' plot_pheno(pheno, traits = "protein_content")
 #' @export
 plot_pheno <- function(pheno,
                        traits = NULL,

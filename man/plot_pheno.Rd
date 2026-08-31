@@ -29,3 +29,10 @@ A ggplot object.
 \description{
 Plot phenotype distributions
 }
+\examples{
+pheno_file <- system.file(
+  "extdata", "gtr_demo_pheno.tsv", package = "GeneTrackR"
+)
+pheno <- read_pheno(pheno_file, verbose = FALSE)
+plot_pheno(pheno, traits = "protein_content")
+}

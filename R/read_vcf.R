@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-05-31
-# Version: dev002
+# Date: 2026-08-31
+# Version: dev003
 # Function: Read VCF files into genome-level VariantTrack objects
 # Input: VCF files
 # Output: VariantTrack objects
@@ -137,6 +137,13 @@ read_vcf <- function(file,
 #' @description Backward-compatible alias of `read_vcf()`.
 #' @inheritParams read_vcf
 #' @return A VariantTrack object.
+#' @examples
+#' vcf_file <- system.file(
+#'   "extdata", "gtr_demo_variants.vcf", package = "GeneTrackR"
+#' )
+#' read_vcf_track(
+#'   vcf_file, mode = "memory", verbose = FALSE, progress = FALSE
+#' )
 #' @export
 read_vcf_track <- function(file,
                            keep_genotype = TRUE,

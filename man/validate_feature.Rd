@@ -22,3 +22,12 @@ validates BED/GFF/GTF/GenePred-derived \code{Feature} objects. If gene-model tab
 are present, transcript/exon consistency is checked in addition to the flat
 standardized feature table.
 }
+\examples{
+gp_file <- system.file(
+  "extdata", "gtr_demo.genePredExt", package = "GeneTrackR"
+)
+gp <- read_genepred(
+  gp_file, format = "genePredExt", verbose = FALSE, progress = FALSE
+)
+validate_feature(gp)
+}

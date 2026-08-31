@@ -47,3 +47,14 @@ A ggplot object.
 \description{
 Backward-compatible alias of \code{plot_variant()}.
 }
+\examples{
+vcf_file <- system.file(
+  "extdata", "gtr_demo_variants.vcf", package = "GeneTrackR"
+)
+vcf <- read_vcf(
+  vcf_file, mode = "memory", verbose = FALSE, progress = FALSE
+)
+plot_variant_track(
+  vcf, chrom = "chr1", start = 12339701L, end = 12352000L
+)
+}

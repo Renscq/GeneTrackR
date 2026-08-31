@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-05-27
-# Version: dev008
+# Date: 2026-08-31
+# Version: dev009
 # Function: Combined genome-browser-like track plotting
 # Input: GenePred and BwgTrack objects
 # Output: Combined patchwork track figure
@@ -71,6 +71,14 @@
 #' @param text_size Text size in points for axis text, axis titles, legends, and facet labels.
 #'
 #' @return A patchwork object or ggplot object.
+#' @examples
+#' gp_file <- system.file(
+#'   "extdata", "gtr_demo.genePredExt", package = "GeneTrackR"
+#' )
+#' gp <- read_genepred(
+#'   gp_file, format = "genePredExt", verbose = FALSE, progress = FALSE
+#' )
+#' plot_tracks(annotation = gp, gene_id = "GeneA")
 #' @export
 plot_tracks <- function(annotation,
                         signal = NULL,

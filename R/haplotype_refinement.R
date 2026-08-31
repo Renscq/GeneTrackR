@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-07-30
-# Version: dev008
+# Date: 2026-08-31
+# Version: dev009
 # Function: Refine haplotypes and prioritize phenotype-associated variant effects
 # Input: HapVariant objects and phenotype tables
 # Output: Refined haplotype objects, variant-effect tables, and ggplot figures
@@ -901,7 +901,7 @@ plot_refined_hap_variant <- function(refined_hap,
 #' Plot phenotype distributions for refined haplotypes
 #'
 #' @description
-#' Deprecated compatibility alias of `plot_refined_hap_pheno()`.
+#' Legacy compatibility alias of `plot_refined_hap_pheno()`.
 #'
 #' @param refined_hap A `HapRefined` object returned by `refine_haplotype()` or
 #' a refined `HapVariant` object.
@@ -909,9 +909,37 @@ plot_refined_hap_variant <- function(refined_hap,
 #' data.frame.
 #' @param ... Additional parameters passed to `plot_refined_hap_pheno()`.
 #' @return A `GeneTrackRPhenoPlot` object returned by `plot_hap_pheno()`.
+#' @examples
+#' vcf_file <- system.file(
+#'   "extdata", "gtr_demo_variants.vcf", package = "GeneTrackR"
+#' )
+#' vcf <- read_vcf(
+#'   vcf_file, mode = "memory", verbose = FALSE, progress = FALSE
+#' )
+#' pheno_file <- system.file(
+#'   "extdata", "gtr_demo_pheno.tsv", package = "GeneTrackR"
+#' )
+#' pheno <- read_pheno(pheno_file, verbose = FALSE)
+#' gp_file <- system.file(
+#'   "extdata", "gtr_demo.genePredExt", package = "GeneTrackR"
+#' )
+#' gp <- read_genepred(
+#'   gp_file, format = "genePredExt", verbose = FALSE, progress = FALSE
+#' )
+#' hap <- hap_variant(
+#'   vcf, annotation = gp, gene_id = "GeneA",
+#'   genotype_mode = "string", min_variant_number = 1
+#' )
+#' refined <- refine_haplotype(
+#'   hap, phenotype = pheno, traits = "protein_content",
+#'   min_hap_samples = 3, effect_threshold = 0.5
+#' )
+#' plot_hap_refined(
+#'   refined, phenotype = pheno, traits = "protein_content",
+#'   min_hap_samples = 3
+#' )
 #' @export
 plot_hap_refined <- function(refined_hap, phenotype, ...) {
-  .Deprecated("plot_refined_hap_pheno")
   plot_refined_hap_pheno(refined_hap = refined_hap, phenotype = phenotype, ...)
 }
 

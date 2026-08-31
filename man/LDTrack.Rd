@@ -42,3 +42,6 @@ metadata, the selected genomic region, and optionally the dosage matrix and
 the generated figure. It follows the same lightweight S3 list-class style used
 by \code{VariantTrack} and \code{HapVariant}.
 }
+\examples{
+LDTrack(region = list(chrom = "chr1", start = 1L, end = 100L))
+}
