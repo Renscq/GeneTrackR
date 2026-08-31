@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-08-31
-# Version: dev004
+# Date: 2026-09-01
+# Version: dev005
 # Function: Merge Feature/GenePred-compatible annotation objects
 # Input: Feature-compatible annotation objects
 # Output: Merged Feature/GenePred-compatible object
@@ -667,7 +667,7 @@ merge_feature <- function(...,
 
   if (has_duplicates && identical(conflict, "error")) {
     stop(
-      "Duplicated annotation identifiers cannot be merged with `conflict = \"error\"`.",
+      "Duplicated annotation identifiers cannot be merged under strict conflict handling.",
       call. = FALSE
     )
   }

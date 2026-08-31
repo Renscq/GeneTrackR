@@ -3,6 +3,9 @@
 \name{GeneTrackR-advanced-parameters}
 \alias{GeneTrackR-advanced-parameters}
 \title{Advanced parameter guide for GeneTrackR}
+\value{
+No value is returned; this is a documentation-only help topic.
+}
 \description{
 This help topic summarizes frequently used advanced parameters that are shared
 by several GeneTrackR functions. It is intended as a quick reference for

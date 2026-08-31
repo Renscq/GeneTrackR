@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-05-27
-# Version: dev004
+# Date: 2026-09-01
+# Version: dev005
 # Function: Shared documentation for advanced plotting and query parameters
 # Input: None
 # Output: R documentation topic
@@ -108,6 +108,8 @@
 #' `strand_policy = "ignore_unstranded"` lets `strand = "+"` or `"-"` return the
 #' same unstranded signal. Use `strand_policy = "strict"` when you only want
 #' records with explicit strand information, such as plus/minus bedGraph tracks.
+#'
+#' @return No value is returned; this is a documentation-only help topic.
 #'
 #' @seealso [plot_gene()], [plot_transcript()], [plot_region()],
 #' [plot_signal_gene()], [plot_signal_transcript()], [plot_signal_region()],

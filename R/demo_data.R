@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-08-31
-# Version: dev001
+# Date: 2026-09-01
+# Version: dev002
 # Function: Package documentation for deterministic GeneTrackR demo files
 # Input: None
 # Output: R documentation topic
@@ -34,6 +34,8 @@
 #' output follows the conventions of GenePredExt, BED, bedGraph, GTF, GFF3,
 #' and VCF, and GeneTrackR readers convert those inputs to their documented
 #' internal coordinate representation.
+#'
+#' @return No value is returned; this is a documentation-only help topic.
 #'
 #' @examples
 #' system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR")

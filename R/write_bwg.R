@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-08-31
-# Version: dev011
+# Date: 2026-09-01
+# Version: dev012
 # Function: Write BwgTrack objects through the unified pure R I/O layer
 # Input: BwgTrack object
 # Output: Signal track files
@@ -267,7 +267,7 @@ prepare_bigwig_signal <- function(dt, chrom_sizes, sample_id = NULL) {
 
 check_output_file <- function(file, overwrite = FALSE) {
   if (file.exists(file) && !isTRUE(overwrite)) {
-    stop(paste0("File exists: ", file), call. = FALSE)
+    stop(sprintf("File exists: %s", file), call. = FALSE)
   }
   invisible(TRUE)
 }

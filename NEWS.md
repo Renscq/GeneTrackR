@@ -1,3 +1,12 @@
+# GeneTrackR 0.8.9
+
+## Final BiocCheck source cleanup
+
+- Added explicit return-value documentation to the advanced-parameter and deterministic-demo help topics so BiocCheck no longer reports missing `\value` sections.
+- Moved the `GenePred()` runnable example into its roxygen source block so `devtools::document()` preserves the example instead of overwriting a manually synchronized Rd example.
+- Replaced a `stop(paste0(...))` condition with `sprintf()` and reworded the strict merge-conflict error message to avoid BiocCheck condition-signaling false positives without changing control flow.
+- Kept network-dependent repository warnings, submission versioning, Support Site registration, ORCID/funding metadata, long-function notices, and package-wide formatting notes outside this source hotfix.
+
 # GeneTrackR 0.8.8
 
 ## Runnable writer example hotfix

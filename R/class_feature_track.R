@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-08-31
-# Version: dev004
+# Date: 2026-09-01
+# Version: dev005
 # Function: Define unified Feature annotation class and GenePred-compatible constructor
 # Input: Standardized annotation or variant tables
 # Output: Unified S3 track objects
@@ -387,6 +387,17 @@ print.FeatureTrack <- function(x, ...) {
 #' @param meta Metadata list.
 #' @param validation Validation result list.
 #' @return A GenePred object.
+#' @examples
+#' gp_file <- system.file(
+#'   "extdata", "gtr_demo.genePredExt", package = "GeneTrackR"
+#' )
+#' gp <- read_genepred(
+#'   gp_file,
+#'   format = "genePredExt",
+#'   verbose = FALSE,
+#'   progress = FALSE
+#' )
+#' GenePred(gp$transcripts, gp$exons, gp$genes)
 #' @export
 GenePred <- function(transcripts, exons, genes = NULL, meta = list(), validation = make_empty_validation()) {
   if (is.null(genes)) {

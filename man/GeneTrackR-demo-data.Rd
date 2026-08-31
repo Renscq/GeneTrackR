@@ -3,6 +3,9 @@
 \name{GeneTrackR-demo-data}
 \alias{GeneTrackR-demo-data}
 \title{GeneTrackR deterministic demo files}
+\value{
+No value is returned; this is a documentation-only help topic.
+}
 \description{
 GeneTrackR ships a small deterministic genomic dataset under
 \code{inst/extdata}. The files support executable examples, tests, and
