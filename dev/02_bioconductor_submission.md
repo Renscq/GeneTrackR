@@ -14,7 +14,7 @@ Keep the full development workspace on a non-default development branch. It may 
 
 ## Package-only submission branch
 
-GeneTrackR 0.99.0 is the formal submission candidate. Prepare the package-only tree with:
+GeneTrackR 0.99.2 is the formal submission candidate. Prepare the package-only tree with:
 
 ```bash
 Rscript tools/bioc_preflight.011.R .
@@ -53,12 +53,12 @@ Also build a source tarball and run BiocCheck on the tarball so package-size che
 
 ```bash
 R CMD build .
-R CMD check --as-cran GeneTrackR_0.99.0.tar.gz
+R CMD check --as-cran GeneTrackR_0.99.2.tar.gz
 ```
 
 ```r
 BiocCheck::BiocCheck(
-  "GeneTrackR_0.99.0.tar.gz",
+  "GeneTrackR_0.99.2.tar.gz",
   `new-package` = TRUE,
   `quit-with-status` = FALSE
 )
@@ -73,13 +73,13 @@ Before opening the submission issue:
 3. ensure the submitting GitHub user is also the maintainer listed in `DESCRIPTION`;
 4. add at least one SSH public key to that GitHub account;
 5. make the package-only branch the GitHub repository default branch;
-6. ensure the default branch contains GeneTrackR 0.99.0 and only package code.
+6. ensure the default branch contains GeneTrackR 0.99.2 and only package code.
 
 ## Formal submission
 
 Starting in 2026, new packages are submitted through the `Bioconductor/BiocContributions` GitHub repository. Open a new submission issue, use `GeneTrackR` as the issue title, provide the GitHub repository URL, and confirm the submission/maintenance checkboxes in the issue template.
 
-Opening the issue triggers the 2026 automated validation. If validation passes, read the policy comment and reply exactly `/accept-policies`. The submission service then clones the package into the Bioconductor staging organization and registers it with the submission R-universe. Follow the issue comment to add/push to that staging repository; subsequent review builds are triggered from the staging location, not from the original personal GitHub repository. Every build-triggering revision must increment only the patch component (`0.99.1`, `0.99.2`, and so on).
+Opening the issue triggers the 2026 automated validation. If validation passes, read the policy comment and reply exactly `/accept-policies`. The submission service then clones the package into the Bioconductor staging organization and registers it with the submission R-universe. Follow the issue comment to add/push to that staging repository; subsequent review builds are triggered from the staging location, not from the original personal GitHub repository. Every build-triggering revision after this candidate must increment only the patch component (`0.99.2`, `0.99.3`, and so on).
 
 Only after acceptance is the package moved to the canonical `git.bioconductor.org` devel repository and a BiocCredentials account created for SSH-based maintenance.
 

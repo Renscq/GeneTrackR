@@ -34,7 +34,7 @@
 
 ## Installation
 
-GeneTrackR 0.99.0 is the formal Bioconductor submission candidate. After acceptance, the recommended installation path is `BiocManager::install("GeneTrackR")`. GeneTrackR is a pure-R package and does not require a GeneTrackR-specific C/C++ compilation toolchain.
+GeneTrackR 0.99.2 is the current Bioconductor submission candidate. After acceptance, the recommended installation path is `BiocManager::install("GeneTrackR")`. GeneTrackR is a pure-R package and does not require a GeneTrackR-specific C/C++ compilation toolchain.
 
 ```r
 if (!requireNamespace("BiocManager", quietly = TRUE)) {
@@ -5129,10 +5129,25 @@ annotation + signal + VCF + phenotype
 
 ## Citation
 
-If you use GeneTrackR in a publication, please cite the package version used in the analysis. The installed package citation can be inspected with:
+If you use GeneTrackR in a publication, please cite the package version used in the analysis:
+
+> Shuchao Ren (2026). *GeneTrackR: Genomic Track Visualization and Haplotype Analysis*. R package version 0.99.2.
+
+The citation is generated automatically from `DESCRIPTION` metadata and can be inspected with:
 
 ```r
 citation("GeneTrackR")
+```
+
+BibTeX:
+
+```bibtex
+@Manual{,
+  title = {GeneTrackR: Genomic Track Visualization and Haplotype Analysis},
+  author = {{Shuchao Ren}},
+  year = {2026},
+  note = {R package version 0.99.2},
+}
 ```
 
 ## License

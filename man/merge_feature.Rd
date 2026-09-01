@@ -43,9 +43,11 @@ files into one unified \code{Feature} object for downstream retrieval and plotti
 Inputs may represent different genes, genomic regions, annotation formats, or
 independently retrieved subsets.
 
-Duplicate identifiers are detected across input objects. A warning reports
-duplicated gene, transcript, and feature IDs before the selected conflict
-strategy is applied.
+Duplicate identifiers are detected across input objects. For non-error
+conflict strategies, a warning reports duplicated gene, transcript, and
+feature IDs before the selected strategy is applied. With
+\code{conflict = "error"}, the function stops directly without a preliminary
+warning.
 
 With \code{conflict = "deduplicate"}, input order defines precedence. The first
 complete copy of a duplicated transcript is retained, duplicated feature

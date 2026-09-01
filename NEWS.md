@@ -1,3 +1,21 @@
+# GeneTrackR 0.99.2
+
+## Author identity correction
+
+- Corrected the package author and maintainer display name to Shuchao Ren across DESCRIPTION, package help, vignettes, README citation guidance, and Bioconductor submission metadata.
+- Updated the recommended package citation to: Shuchao Ren (2026). *GeneTrackR: Genomic Track Visualization and Haplotype Analysis*. R package version 0.99.2.
+- Retained the GitHub account name `Renscq` in repository URLs; it is an account identifier rather than the package author name.
+- Preserved all production R code and analysis behavior from GeneTrackR 0.99.1.
+
+# GeneTrackR 0.99.1
+
+## Package metadata and citation normalization
+
+- Synchronized the package version, title, author identity, release date, README citation guidance, and Bioconductor submission metadata for the 0.99.1 review candidate.
+- Standardized the recommended package citation as: Shuchao Ren (2026). *GeneTrackR: Genomic Track Visualization and Haplotype Analysis*. R package version 0.99.1.
+- Kept package citation generation based on `DESCRIPTION` metadata instead of adding a custom `inst/CITATION`, avoiding a BiocCheck warning for a package-only citation without an associated publication DOI.
+- Preserved all production analysis code, statistical behavior, genomic I/O behavior, tests, vignettes, and generated help content from 0.99.0.
+
 # GeneTrackR 0.99.0
 
 ## Bioconductor submission candidate

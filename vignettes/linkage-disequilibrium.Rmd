@@ -1,6 +1,6 @@
 ---
 title: "Linkage disequilibrium analysis"
-author: "Rensc"
+author: "Shuchao Ren"
 date: "2026-08-31"
 output: rmarkdown::html_vignette
 vignette: >
