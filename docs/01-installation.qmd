@@ -1,6 +1,6 @@
 ## Installation
 
-GeneTrackR is being prepared for Bioconductor submission. After acceptance, the recommended installation path is `BiocManager::install("GeneTrackR")`. GeneTrackR is a pure-R package and does not require a GeneTrackR-specific C/C++ compilation toolchain.
+GeneTrackR 0.99.0 is the formal Bioconductor submission candidate. After acceptance, the recommended installation path is `BiocManager::install("GeneTrackR")`. GeneTrackR is a pure-R package and does not require a GeneTrackR-specific C/C++ compilation toolchain.
 
 ```{r}
 if (!requireNamespace("BiocManager", quietly = TRUE)) {

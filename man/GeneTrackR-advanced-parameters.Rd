@@ -3,9 +3,6 @@
 \name{GeneTrackR-advanced-parameters}
 \alias{GeneTrackR-advanced-parameters}
 \title{Advanced parameter guide for GeneTrackR}
-\value{
-No value is returned; this is a documentation-only help topic.
-}
 \description{
 This help topic summarizes frequently used advanced parameters that are shared
 by several GeneTrackR functions. It is intended as a quick reference for
@@ -114,6 +111,9 @@ same unstranded signal. Use \code{strand_policy = "strict"} when you only want
 records with explicit strand information, such as plus/minus bedGraph tracks.
 }
 
+\value{
+No value is returned; this is a documentation-only help topic.
+}
 \seealso{
 \code{\link[=plot_gene]{plot_gene()}}, \code{\link[=plot_transcript]{plot_transcript()}}, \code{\link[=plot_region]{plot_region()}},
 \code{\link[=plot_signal_gene]{plot_signal_gene()}}, \code{\link[=plot_signal_transcript]{plot_signal_transcript()}}, \code{\link[=plot_signal_region]{plot_signal_region()}},

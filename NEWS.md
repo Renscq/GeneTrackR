@@ -1,3 +1,13 @@
+# GeneTrackR 0.99.0
+
+## Bioconductor submission candidate
+
+- Promoted GeneTrackR from the 0.8.x Bioconductor-readiness series to the required 0.99.0 pre-release version for formal new-package submission.
+- Raised the R dependency floor to R 4.6.0 so the submission candidate matches the current Bioconductor 3.24 devel build environment.
+- Froze the public analysis APIs and pure-R genomic I/O implementation from GeneTrackR 0.8.9; this release does not introduce new analysis algorithms or change statistical behavior.
+- Added final submission preparation and preflight tooling for a package-only GitHub default branch, Bioconductor devel validation, and the 2026 BiocContributions review workflow.
+- Retained NEWS, executable vignettes, runnable help examples, deterministic bundled demo data, GRanges interoperability, and the GPL-3 license declaration required by the submission candidate.
+
 # GeneTrackR 0.8.9
 
 ## Final BiocCheck source cleanup

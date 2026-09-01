@@ -127,6 +127,12 @@ plot_tracks(
 
 \item{signal_y_ticks}{Signal y-axis tick mode. Use \code{range} to show only integer minimum and maximum limits or \code{pretty} for default-style breaks.}
 
+\item{collapse}{Gene model collapse mode for region-level plotting.}
+
+\item{strand}{Signal strand selector.}
+
+\item{bin_size}{Optional signal bin size.}
+
 \item{heatmap_bin_size}{Optional bin size used only for heatmap rendering.
 \code{NULL} uses adaptive binning.}
 
@@ -136,11 +142,6 @@ plot_tracks(
 \item{heatmap_summary}{Summary statistic used to aggregate signal into
 heatmap bins: \code{mean}, \code{max}, \code{sum}, or \code{median}.}
 
-\item{collapse}{Gene model collapse mode for region-level plotting.}
-
-\item{strand}{Signal strand selector.}
-
-\item{bin_size}{Optional signal bin size.}
 
 \item{highlight}{Optional data frame used to shade intervals on signal and gene model tracks. It must contain \code{start} and \code{end} columns in genomic coordinates. Optional columns are allowed but ignored by the default renderer.}
 
