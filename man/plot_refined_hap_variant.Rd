@@ -39,7 +39,8 @@ plot_refined_hap_variant(
   table_alpha = 0.6,
   reference_fill = "white",
   variant_palette = "Paired",
-  variant_colors = NULL
+  variant_colors = NULL,
+  variant_view = c("original", "blocks")
 )
 }
 \arguments{
@@ -123,10 +124,23 @@ For allele-string haplotypes, use a vector named \code{A}, \code{T}, \code{C}, \
 \item{variant_palette}{RColorBrewer palette name used for solid variant-type triangle marker colors.}
 
 \item{variant_colors}{Optional custom colors for solid variant-type triangle markers.}
+
+\item{variant_view}{\code{original} displays original variant columns.
+\code{blocks} displays exact genotype blocks on the original variant grid.
+Singleton sites retain their original labels and all source markers
+remain at their original genomic positions. Each merged block occupies
+up to three consecutive member slots on the original grid. Its fill uses
+the representative allele, and its text lists all member alleles in
+genomic order, separated by hyphens.
+Blue branches join at one endpoint per merged block. Singleton
+connectors remain individually traceable at crossings.
+Cells with multiple states list the original haplotypes and their sequences.}
 }
 \value{
 A patchwork object with attributes \code{plot_data}, \code{variant_data},
 \code{gene_data}, \code{refined_haplotype_map}, and \code{refined_haplotypes} when available.
+The block view also attaches \code{variant_map}. The \code{table_x} column of
+\code{variant_data} records the connector endpoint for every original site.
 }
 \description{
 Draw a refined haplotype-variant table. By default, when the input is a

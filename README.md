@@ -34,7 +34,7 @@
 
 ## Installation
 
-GeneTrackR 0.99.2 is the current Bioconductor submission candidate. After acceptance, the recommended installation path is `BiocManager::install("GeneTrackR")`. GeneTrackR is a pure-R package and does not require a GeneTrackR-specific C/C++ compilation toolchain.
+GeneTrackR 0.99.3 is the current development version. After Bioconductor acceptance, the recommended installation path is `BiocManager::install("GeneTrackR")`. GeneTrackR is a pure-R package and does not require a GeneTrackR-specific C/C++ compilation toolchain.
 
 ```r
 if (!requireNamespace("BiocManager", quietly = TRUE)) {
@@ -3234,7 +3234,7 @@ For real GWAS loci, it is usually preferable to define the LD query around a lea
 
 ## Haplotype refinement
 
-`refine_haplotype()` performs **phenotype-guided grouping of existing haplotypes**. It does not discover new variants and it does not rebuild the original genotype patterns. Instead, it starts from an existing `HapVariant`, compares the phenotype distributions of the original haplotypes, and groups haplotypes that are sufficiently similar for the selected trait or traits.
+The default `refine_haplotype()` strategy performs phenotype-guided grouping of existing haplotypes. The opt-in `strategy = "genotype_aware"` uses raw genotype calls, reversible variant blocks, protected genotype differences, and phenotype equivalence for one continuous trait. See the [genotype-aware workflow](vignettes/haplotype-refinement.Rmd#genotype-aware-refinement-and-candidate-ranking) for inputs, ranking tables, and the block view.
 
 This module uses the same `GeneA` haplotypes created in the haplotype workflow and the same phenotype table used in the phenotype workflow. The demo is deliberately structured so that the refinement behavior can be checked against known expectations:
 
@@ -3400,7 +3400,7 @@ Hap1 + Hap2                  low protein_content
 Hap3 + Hap4                  high protein_content
 ```
 
-`varA03` follows the same cluster split: `Hap1/Hap2` carry the REF class and `Hap3/Hap4` carry the ALT class. The main refinement example therefore groups haplotypes that are similar in both multi-variant genotype structure and phenotype, rather than joining genetically distant haplotypes only because their phenotype means happen to match.
+`varA03` follows the same cluster split. `Hap1/Hap2` carry the REF class, and `Hap3/Hap4` carry the ALT class. The demo was constructed so that the phenotype groups align with the nearest genotype pairs. The default phenotype strategy uses the phenotype criteria to decide merges.
 
 ### Step 3. Refine haplotypes using `protein_content`
 
@@ -3429,7 +3429,7 @@ Hap1 + Hap2  -> one refined group
 Hap3 + Hap4  -> one refined group
 ```
 
-This is the key truth condition for the example: refinement follows the two nearest genotype clusters rather than crossing between them.
+The two phenotype groups align with the two nearest genotype pairs in this demo.
 
 The two refinement criteria have different roles:
 
@@ -3690,7 +3690,7 @@ refined_protein$haplotype_map
 refined_protein$refined_haplotypes
 ```
 
-For the `protein_content` demo, the final grouping is expected to be `Hap1/Hap2` versus `Hap3/Hap4`. The two groups retain different allele classes at `varA03` and at the broader `p13` cluster, including `varA01`, `varLD01`-`varLD06`, and `varA04`. Within the low group, `varA02` is heterogeneous; within the high group, `varA02` and `varA05` are heterogeneous. These positions appear as `mixed` in the collapsed view. This is the intended refinement logic: genetically close haplotypes with the same phenotype class are combined, while the variants that consistently separate the two genotype/phenotype clusters remain visible.
+For the `protein_content` demo, the phenotype groups are `Hap1/Hap2` and `Hap3/Hap4`. The groups retain different allele classes at `varA03` and at the broader `p13` cluster, including `varA01`, `varLD01`-`varLD06`, and `varA04`. The low group varies at `varA02`. The high group varies at `varA02` and `varA05`. These positions appear as `mixed` in the collapsed view.
 
 The refined object can be passed directly to the refined plotting wrappers, while the **original** `hap_gene` remains the preferred input for variant-level effect prioritization:
 
@@ -5131,7 +5131,7 @@ annotation + signal + VCF + phenotype
 
 If you use GeneTrackR in a publication, please cite the package version used in the analysis:
 
-> Shuchao Ren (2026). *GeneTrackR: Genomic Track Visualization and Haplotype Analysis*. R package version 0.99.2.
+> Shuchao Ren (2026). *GeneTrackR: Genomic Track Visualization and Haplotype Analysis*. R package version 0.99.3.
 
 The citation is generated automatically from `DESCRIPTION` metadata and can be inspected with:
 
@@ -5146,7 +5146,7 @@ BibTeX:
   title = {GeneTrackR: Genomic Track Visualization and Haplotype Analysis},
   author = {{Shuchao Ren}},
   year = {2026},
-  note = {R package version 0.99.2},
+  note = {R package version 0.99.3},
 }
 ```
 

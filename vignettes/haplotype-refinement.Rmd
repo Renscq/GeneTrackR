@@ -204,7 +204,7 @@ Hap1 + Hap2                  low protein_content
 Hap3 + Hap4                  high protein_content
 ```
 
-`varA03` follows the same cluster split: `Hap1/Hap2` carry the REF class and `Hap3/Hap4` carry the ALT class. The main refinement example therefore groups haplotypes that are similar in both multi-variant genotype structure and phenotype, rather than joining genetically distant haplotypes only because their phenotype means happen to match.
+`varA03` follows the same cluster split. `Hap1/Hap2` carry the REF class, and `Hap3/Hap4` carry the ALT class. The demo was constructed so that the phenotype groups align with the nearest genotype pairs. The default phenotype strategy uses the phenotype criteria to decide merges.
 
 ## Step 3. Refine haplotypes using `protein_content`
 
@@ -232,7 +232,7 @@ Hap1 + Hap2  -> one refined group
 Hap3 + Hap4  -> one refined group
 ```
 
-This is the key truth condition for the example: refinement follows the two nearest genotype clusters rather than crossing between them.
+The two phenotype groups align with the two nearest genotype pairs in this demo.
 
 The two refinement criteria have different roles:
 
@@ -490,7 +490,7 @@ refined_protein$haplotype_map
 refined_protein$refined_haplotypes
 ```
 
-For the `protein_content` demo, the final grouping is expected to be `Hap1/Hap2` versus `Hap3/Hap4`. The two groups retain different allele classes at `varA03` and at the broader `p13` cluster, including `varA01`, `varLD01`-`varLD06`, and `varA04`. Within the low group, `varA02` is heterogeneous; within the high group, `varA02` and `varA05` are heterogeneous. These positions appear as `mixed` in the collapsed view. This is the intended refinement logic: genetically close haplotypes with the same phenotype class are combined, while the variants that consistently separate the two genotype/phenotype clusters remain visible.
+For the `protein_content` demo, the phenotype groups are `Hap1/Hap2` and `Hap3/Hap4`. The groups retain different allele classes at `varA03` and at the broader `p13` cluster, including `varA01`, `varLD01`-`varLD06`, and `varA04`. The low group varies at `varA02`. The high group varies at `varA02` and `varA05`. These positions appear as `mixed` in the collapsed view.
 
 The refined object can be passed directly to the refined plotting wrappers, while the **original** `hap_gene` remains the preferred input for variant-level effect prioritization:
 
@@ -518,6 +518,53 @@ For reproducible analysis, retain and export at least:
 - the grouped and/or collapsed figure.
 
 This preserves the evidence needed to explain why each original haplotype was or was not merged.
+
+## Genotype-aware refinement and candidate ranking
+
+Use the optional genotype-aware strategy when important variant differences
+should constrain merging. Set one continuous trait, the preferred direction,
+and an equivalence margin in the trait's original units. The margin below is
+for the bundled demo. Set an appropriate margin before analyzing a real trait.
+The default permits a difference at one exact variant block. This example
+checks pairs differing at up to two blocks and protects the `varA03` signal.
+
+```{r haplotype-refinement-genotype-aware, dpi=500}
+genotype_refined <- refine_haplotype(
+  hap_gene, phenotype = pheno, traits = "protein_content",
+  strategy = "genotype_aware",
+  control = list(
+    direction = "higher", equivalence_margin = 0.5,
+    protect_variants = "varA03", max_diff_blocks = 2L
+  )
+)
+genotype_refined$variant_map[, c("variant_id", "block_id", "protected")]
+genotype_refined$haplotype_rank
+genotype_refined$merge_audit[, c("group1", "group2", "reason", "merged")]
+plot_refined_hap_variant(
+  genotype_refined, annotation = gp, variant_view = "blocks",
+  collapse_refined = TRUE, text_size = 9
+)
+```
+
+The GeneA demo compresses 11 variant columns into three displayed columns.
+Singletons retain their original IDs and table positions. The merged block
+uses up to three consecutive member slots and the representative allele's fill
+color. Its cells show the alleles at all member sites in genomic order. All 11
+markers stay on the original genomic axis, and the merged members' connectors
+meet at the center of the expanded column. A variable cell lists its original
+haplotypes and their sequences.
+`sample_map` links every carrier to its input haplotype, raw genotype pattern,
+and refined group. It includes the original trait value, when available.
+Heterozygous patterns are interpreted as unphased multilocus genotypes.
+
+Inspect `variant_rank` and `variant_contrasts` for marginal and conditional
+evidence. `combination_rank` ranks observed states within a bounded candidate
+panel. `control$candidate_variants` can force a variant into this panel.
+`haplotype_rank` reports adjusted differences from one fixed reference
+and ranks supported groups by the favorable confidence bound. Treat
+discovery ranks and phenotype plots as exploratory. With
+`control$validation_samples`, check `validation` for holdout prediction
+coverage, prediction error, and equivalence of the frozen merge pairs.
 
 ## Session information
 

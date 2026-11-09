@@ -1,3 +1,15 @@
+# GeneTrackR 0.99.3
+
+- Added the opt-in genotype-aware refinement strategy with reversible exact
+  genotype blocks, protected variants, equivalence-based merging, and
+  single-trait variant, haplotype, and observed-combination rankings.
+- Added optional population covariates, a named relationship matrix, held-out
+  phenotype checks, and a ranked genotype-block view.
+- Aligned the original and refined genotype matrices, preserved unmerged locus
+  labels, and displayed ordered allele sequences in wider tiles for merged
+  blocks. Added phenotype comparisons for refined haplotypes.
+- Fixed pairwise phenotype comparisons when a trait has only one group.
+
 # GeneTrackR 0.99.2
 
 ## Author identity correction

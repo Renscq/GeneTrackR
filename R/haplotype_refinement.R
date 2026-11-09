@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-08-31
-# Version: dev009
+# Version: dev011
 # Function: Refine haplotypes and prioritize phenotype-associated variant effects
 # Input: HapVariant objects and phenotype tables
 # Output: Refined haplotype objects, variant-effect tables, and ggplot figures
@@ -8,28 +8,71 @@
 #' Refine haplotypes by phenotype similarity
 #'
 #' @description
-#' Collapse original haplotypes into refined haplotype groups according to
-#' phenotype similarity. Haplotypes are merged only when their pairwise
-#' phenotype difference is not significant and, optionally, the absolute mean
-#' difference is smaller than `effect_threshold`.
+#' Collapse original haplotypes into refined groups. The phenotype strategy
+#' uses pairwise differences and an optional mean-difference cutoff. The
+#' genotype-aware strategy combines exact variant blocks, genotype protection,
+#' and phenotype equivalence.
 #'
 #' @param hap A HapVariant object from `hap_variant()`.
 #' @param phenotype A phenotype table returned by `read_pheno()` or a compatible data.frame.
-#' @param traits Phenotype trait names. If NULL, all numeric traits are used.
+#' @param traits Phenotype trait names. NULL selects all numeric traits for
+#'   `phenotype`. Supply one continuous trait for `genotype_aware`.
 #' @param sample_col Sample column name in phenotype table.
-#' @param min_hap_samples Minimum sample number required for an original haplotype.
+#' @param min_hap_samples Minimum sample number required for an original
+#'   haplotype. When omitted, `genotype_aware` uses six complete training lines.
 #' @param test_method Pairwise test method. One of `t.test`, `wilcox.test`, or `ks.test`.
 #' @param p_adjust P-value adjustment method passed to `p.adjust()`.
-#' @param alpha Adjusted p-value cutoff. Pairs with adjusted p-value larger than
-#' `alpha` are considered statistically indistinguishable.
+#' @param alpha Significance level. With `phenotype`, adjusted p-values above
+#'   `alpha` meet the pairwise grouping rule. With `genotype_aware`, this
+#'   is the level of each one-sided equivalence test and the association cutoff.
 #' @param effect_threshold Optional maximum absolute mean difference for merging
 #' haplotypes. If NULL, only the significance criterion is used.
 #' @param group_prefix Prefix for refined haplotype IDs.
 #' @param mixed_label Label used for variant states that are heterogeneous within
 #' a refined haplotype group.
+#' @param strategy Refinement strategy. `phenotype` uses the original grouping.
+#'   `genotype_aware` analyzes one numeric trait, protects important genotype
+#'   differences, and adds reversible variant blocks and candidate rankings.
+#' @param control Named list for `genotype_aware`. See Details for its options.
+#' @details
+#' The genotype-aware strategy requires one explicit `traits` value and
+#' `control$direction` (`"higher"` or `"lower"`). It reads diploid biallelic
+#' GT calls from the original HapVariant or from `control$genotypes`, a
+#' numeric 0/1/2/NA matrix with sample row names and variant ID column names.
+#' The unit of analysis is a line; heterozygous patterns are unphased
+#' multi-locus genotypes. The default sample minimum is six per original
+#' pattern, counting complete training phenotypes and covariates.
+#'
+#' Set `equivalence_margin` in the original trait units to enable merges.
+#' `variant_effect_margin` defaults to that margin and bounds the tolerated
+#' conditional genotype contrast. `protect_variants` contains variant IDs
+#' whose genotype differences prohibit merging. `candidate_variants` forces
+#' specified variants into the candidate panel without manually locking them.
+#' `max_diff_blocks` defaults
+#' to one. A merge requires a two one-sided equivalence test using `alpha`,
+#' adequate support for the genotype contrasts, and all original pairs to
+#' pass. `test_method`, `p_adjust`, and `effect_threshold` are used by the
+#' phenotype strategy.
+#'
+#' Optional `covariates` is a data frame with a `sample_id` column and numeric
+#' PCs or categorical covariates such as population groups. Optional
+#' `kinship` is an ID-named positive semidefinite relationship matrix.
+#' `reference_hap` selects an original pattern or a uniquely mapped input
+#' haplotype; the default is the largest eligible original pattern.
+#' `max_markers` (default 10) and `max_order` (default 3, zero disables the
+#' combination search) bound the observed combination search.
+#' `validation_samples` withholds sample IDs from phenotype-based model
+#' fitting and selection. `validation_min_coverage` (default 0.8) and
+#' `validation_max_rmse_increase` define the holdout criteria. Candidate
+#' rankings from the discovery cohort are exploratory. The GRM model uses
+#' REML with approximate plug-in GLS tests and confidence intervals.
 #' @return A HapRefined object. The object contains `refined_hap`, which is a
 #' HapVariant-compatible object and can be passed to `plot_hap_pheno()` and
-#' `plot_hap_variant()`.
+#' `plot_hap_variant()`. Genotype-aware results also include
+#' `variant_map`, `sample_map`, `variant_rank`, `variant_contrasts`, `haplotype_rank`,
+#' `combination_rank`, `merge_audit`, `validation`, and `qc`. In its
+#' `haplotype_map`, `hap_id` is the raw genotype pattern ID and
+#' `original_hap_ids` records the corresponding input labels.
 #' @examples
 #' vcf_file <- system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")
 #' pheno_file <- system.file("extdata", "gtr_demo_pheno.tsv", package = "GeneTrackR")
@@ -64,8 +107,19 @@ refine_haplotype <- function(hap,
                              alpha = 0.05,
                              effect_threshold = NULL,
                              group_prefix = "RHap",
-                             mixed_label = "mixed") {
+                             mixed_label = "mixed",
+                             strategy = c("phenotype", "genotype_aware"),
+                             control = list()) {
   stop_if_not(inherits(hap, "HapVariant"), "`hap` must be a HapVariant object.")
+  strategy <- match.arg(strategy)
+  if (identical(strategy, "genotype_aware")) {
+    stop_if_not(is.null(effect_threshold),
+                "Use `control$equivalence_margin` for genotype-aware refinement.")
+    min_n <- if (missing(min_hap_samples)) 6L else min_hap_samples
+    return(refine_genotype_aware(hap, phenotype, traits, sample_col, min_n,
+                                 alpha, group_prefix, mixed_label, control))
+  }
+  stop_if_not(!length(control), "`control` is used by the genotype-aware strategy.")
   test_method <- match.arg(test_method)
 
   min_hap_samples <- as.integer(min_hap_samples)[1L]
@@ -415,8 +469,20 @@ plot_refined_hap_pheno <- function(refined_hap,
 #' @param reference_fill Background fill color for the REF and ALT reference rows.
 #' @param variant_palette RColorBrewer palette name used for solid variant-type triangle marker colors.
 #' @param variant_colors Optional custom colors for solid variant-type triangle markers.
+#' @param variant_view `original` displays original variant columns.
+#'   `blocks` displays exact genotype blocks on the original variant grid.
+#'   Singleton sites retain their original labels and all source markers
+#'   remain at their original genomic positions. Each merged block occupies
+#'   up to three consecutive member slots on the original grid. Its fill uses
+#'   the representative allele, and its text lists all member alleles in
+#'   genomic order, separated by hyphens.
+#'   Blue branches join at one endpoint per merged block. Singleton
+#'   connectors remain individually traceable at crossings.
+#'   Cells with multiple states list the original haplotypes and their sequences.
 #' @return A patchwork object with attributes `plot_data`, `variant_data`,
 #' `gene_data`, `refined_haplotype_map`, and `refined_haplotypes` when available.
+#' The block view also attaches `variant_map`. The `table_x` column of
+#' `variant_data` records the connector endpoint for every original site.
 #' @examples
 #' vcf_file <- system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")
 #' pheno_file <- system.file("extdata", "gtr_demo_pheno.tsv", package = "GeneTrackR")
@@ -471,9 +537,21 @@ plot_refined_hap_variant <- function(refined_hap,
                                      table_alpha = 0.6,
                                      reference_fill = "white",
                                      variant_palette = "Paired",
-                                     variant_colors = NULL) {
-  if (!inherits(refined_hap, "HapRefined") || isTRUE(collapse_refined)) {
-    hap_obj <- get_refined_hap_variant(refined_hap)
+                                     variant_colors = NULL,
+                                     variant_view = c("original", "blocks")) {
+  variant_view <- match.arg(variant_view)
+  block_view <- identical(variant_view, "blocks")
+  genotype_aware <- inherits(refined_hap, "HapRefined") &&
+    !is.null(refined_hap$genotype_dosage) && !is.null(refined_hap$variant_map)
+  stop_if_not(!block_view || genotype_aware, "The block view requires genotype-aware refinement.")
+  display_hap <- NULL
+  if (genotype_aware) {
+    display_hap <- prepare_refined_variant_plot(
+      refined_hap, collapse_refined, variant_view, show_group_label, group_label_prefix
+    )
+  }
+  if (block_view || !inherits(refined_hap, "HapRefined") || isTRUE(collapse_refined)) {
+    hap_obj <- display_hap %||% get_refined_hap_variant(refined_hap)
     p <- plot_hap_variant(
       hap = hap_obj,
       annotation = annotation,
@@ -508,13 +586,33 @@ plot_refined_hap_variant <- function(refined_hap,
       attr(p, "refined_haplotype_map") <- refined_hap$haplotype_map
       attr(p, "refined_haplotypes") <- refined_hap$refined_haplotypes
     }
+    if (block_view) {
+      mapping <- refined_hap$variant_map
+      cells <- attr(p, "plot_data")
+      states <- attr(display_hap, "gtr_refined_plot_layout", exact = TRUE)$states
+      indices <- cbind(match(cells$hap_id, rownames(states)), match(cells$variant_id, colnames(states)))
+      group_ids <- if (isTRUE(collapse_refined)) cells$hap_id else {
+        hap_map <- refined_hap$haplotype_map
+        hap_map$refined_hap_id[match(cells$hap_id, hap_map$hap_id)]
+      }
+      data.table::set(cells, j = "refined_hap_id", value = group_ids)
+      data.table::set(cells, j = "block_id", value = factor(
+        mapping$block_id[match(cells$variant_id, mapping$variant_id)], levels = unique(mapping$block_id)
+      ))
+      data.table::set(cells, j = "row", value = factor(
+        cells$row_label, levels = unique(cells$row_label[order(cells$hap_y)])
+      ))
+      data.table::set(cells, j = "state", value = states[indices])
+      attr(p, "plot_data") <- cells
+      attr(p, "variant_map") <- mapping
+    }
     return(p)
   }
 
   stop_if_not(inherits(refined_hap$original_hap, "HapVariant"),
               "`refined_hap` does not contain the original HapVariant object. Please rerun refine_haplotype() with the updated GeneTrackR version.")
 
-  original_hap <- refined_hap$original_hap
+  original_hap <- display_hap %||% refined_hap$pattern_hap %||% refined_hap$original_hap
   vars <- data.table::as.data.table(original_hap$variants)
   haps <- data.table::as.data.table(original_hap$haplotypes)
   map <- data.table::as.data.table(refined_hap$haplotype_map)
@@ -602,6 +700,12 @@ plot_refined_hap_variant <- function(refined_hap,
   row_n <- nrow(display_rows)
   display_rows[, "hap_y" := row_n - display_index + 1 + (group_n - group_index) * group_gap]
   display_rows[, "row_label" := paste0(hap_id, " (n=", sample_n, ")")]
+  if (genotype_aware) {
+    labels <- attr(display_hap, "gtr_refined_plot_layout", exact = TRUE)$row_labels
+    data.table::set(display_rows, j = "row_label", value = paste0(
+      labels[display_rows$hap_id], " (n=", display_rows$sample_n, ")"
+    ))
+  }
 
   id_vars <- intersect(c("hap_id", "sample_n", "samples", "refined_hap_id"), names(haps))
   table_long <- data.table::melt(
@@ -626,12 +730,16 @@ plot_refined_hap_variant <- function(refined_hap,
     all.x = TRUE,
     sort = FALSE
   )
-  table_long[, "genotype_label" := format_hap_table_genotype_label(
-    genotype = genotype,
-    ref = ref,
-    alt = alt,
-    genotype_mode = original_hap$meta$genotype_mode %||% NA_character_
-  )]
+  if (genotype_aware) {
+    data.table::set(table_long, j = "genotype_label", value = table_long$genotype)
+  } else {
+    table_long[, "genotype_label" := format_hap_table_genotype_label(
+      genotype = genotype,
+      ref = ref,
+      alt = alt,
+      genotype_mode = original_hap$meta$genotype_mode %||% NA_character_
+    )]
+  }
   table_long[is.na(genotype_label), "genotype_label" := "NA"]
   table_long[, "genotype_fill_class" := normalize_hap_table_fill_class(
     genotype_label,
@@ -711,9 +819,8 @@ plot_refined_hap_variant <- function(refined_hap,
   x_limits <- c(0.5, length(variant_ids) + 0.5)
   x_breaks <- vars$variant_index
   x_labels <- vars$variant_label
-  table_mapper <- make_hap_table_mapper(vars)
   gene_mapper <- make_hap_gene_mapper(vars, original_hap$region)
-  vars[, "table_x" := table_mapper(pos)]
+  data.table::set(vars, j = "table_x", value = vars$variant_index)
   vars[, "gene_x" := gene_mapper(pos)]
 
   gene_data <- NULL

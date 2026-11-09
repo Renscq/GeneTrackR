@@ -15,7 +15,9 @@ refine_haplotype(
   alpha = 0.05,
   effect_threshold = NULL,
   group_prefix = "RHap",
-  mixed_label = "mixed"
+  mixed_label = "mixed",
+  strategy = c("phenotype", "genotype_aware"),
+  control = list()
 )
 }
 \arguments{
@@ -23,18 +25,21 @@ refine_haplotype(
 
 \item{phenotype}{A phenotype table returned by \code{read_pheno()} or a compatible data.frame.}
 
-\item{traits}{Phenotype trait names. If NULL, all numeric traits are used.}
+\item{traits}{Phenotype trait names. NULL selects all numeric traits for
+\code{phenotype}. Supply one continuous trait for \code{genotype_aware}.}
 
 \item{sample_col}{Sample column name in phenotype table.}
 
-\item{min_hap_samples}{Minimum sample number required for an original haplotype.}
+\item{min_hap_samples}{Minimum sample number required for an original
+haplotype. When omitted, \code{genotype_aware} uses six complete training lines.}
 
 \item{test_method}{Pairwise test method. One of \code{t.test}, \code{wilcox.test}, or \code{ks.test}.}
 
 \item{p_adjust}{P-value adjustment method passed to \code{p.adjust()}.}
 
-\item{alpha}{Adjusted p-value cutoff. Pairs with adjusted p-value larger than
-\code{alpha} are considered statistically indistinguishable.}
+\item{alpha}{Significance level. With \code{phenotype}, adjusted p-values above
+\code{alpha} meet the pairwise grouping rule. With \code{genotype_aware}, this
+is the level of each one-sided equivalence test and the association cutoff.}
 
 \item{effect_threshold}{Optional maximum absolute mean difference for merging
 haplotypes. If NULL, only the significance criterion is used.}
@@ -43,17 +48,60 @@ haplotypes. If NULL, only the significance criterion is used.}
 
 \item{mixed_label}{Label used for variant states that are heterogeneous within
 a refined haplotype group.}
+
+\item{strategy}{Refinement strategy. \code{phenotype} uses the original grouping.
+\code{genotype_aware} analyzes one numeric trait, protects important genotype
+differences, and adds reversible variant blocks and candidate rankings.}
+
+\item{control}{Named list for \code{genotype_aware}. See Details for its options.}
 }
 \value{
 A HapRefined object. The object contains \code{refined_hap}, which is a
 HapVariant-compatible object and can be passed to \code{plot_hap_pheno()} and
-\code{plot_hap_variant()}.
+\code{plot_hap_variant()}. Genotype-aware results also include
+\code{variant_map}, \code{sample_map}, \code{variant_rank}, \code{variant_contrasts}, \code{haplotype_rank},
+\code{combination_rank}, \code{merge_audit}, \code{validation}, and \code{qc}. In its
+\code{haplotype_map}, \code{hap_id} is the raw genotype pattern ID and
+\code{original_hap_ids} records the corresponding input labels.
 }
 \description{
-Collapse original haplotypes into refined haplotype groups according to
-phenotype similarity. Haplotypes are merged only when their pairwise
-phenotype difference is not significant and, optionally, the absolute mean
-difference is smaller than \code{effect_threshold}.
+Collapse original haplotypes into refined groups. The phenotype strategy
+uses pairwise differences and an optional mean-difference cutoff. The
+genotype-aware strategy combines exact variant blocks, genotype protection,
+and phenotype equivalence.
+}
+\details{
+The genotype-aware strategy requires one explicit \code{traits} value and
+\code{control$direction} (\code{"higher"} or \code{"lower"}). It reads diploid biallelic
+GT calls from the original HapVariant or from \code{control$genotypes}, a
+numeric 0/1/2/NA matrix with sample row names and variant ID column names.
+The unit of analysis is a line; heterozygous patterns are unphased
+multi-locus genotypes. The default sample minimum is six per original
+pattern, counting complete training phenotypes and covariates.
+
+Set \code{equivalence_margin} in the original trait units to enable merges.
+\code{variant_effect_margin} defaults to that margin and bounds the tolerated
+conditional genotype contrast. \code{protect_variants} contains variant IDs
+whose genotype differences prohibit merging. \code{candidate_variants} forces
+specified variants into the candidate panel without manually locking them.
+\code{max_diff_blocks} defaults
+to one. A merge requires a two one-sided equivalence test using \code{alpha},
+adequate support for the genotype contrasts, and all original pairs to
+pass. \code{test_method}, \code{p_adjust}, and \code{effect_threshold} are used by the
+phenotype strategy.
+
+Optional \code{covariates} is a data frame with a \code{sample_id} column and numeric
+PCs or categorical covariates such as population groups. Optional
+\code{kinship} is an ID-named positive semidefinite relationship matrix.
+\code{reference_hap} selects an original pattern or a uniquely mapped input
+haplotype; the default is the largest eligible original pattern.
+\code{max_markers} (default 10) and \code{max_order} (default 3, zero disables the
+combination search) bound the observed combination search.
+\code{validation_samples} withholds sample IDs from phenotype-based model
+fitting and selection. \code{validation_min_coverage} (default 0.8) and
+\code{validation_max_rmse_increase} define the holdout criteria. Candidate
+rankings from the discovery cohort are exploratory. The GRM model uses
+REML with approximate plug-in GLS tests and confidence intervals.
 }
 \examples{
 vcf_file <- system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")

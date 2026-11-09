@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-07-30
-# Version: dev008
+# Version: dev012
 # Function: Plot haplotype-variant and haplotype-phenotype figures
 # Input: HapVariant and phenotype objects
 # Output: ggplot or patchwork figures
@@ -106,6 +106,7 @@ plot_hap_variant <- function(hap,
 
   vars <- data.table::as.data.table(hap$variants)
   haps <- data.table::as.data.table(hap$haplotypes)
+  layout <- attr(hap, "gtr_refined_plot_layout", exact = TRUE)
   stop_if_not(nrow(vars) > 0L, "No variants are available in `hap$variants`.")
   stop_if_not(nrow(haps) > 0L, "No haplotypes are available in `hap$haplotypes`.")
 
@@ -150,7 +151,7 @@ plot_hap_variant <- function(hap,
   stop_if_not(nrow(haps) > 0L, "No haplotypes remained after `min_hap_samples` filtering.")
 
   variant_ids <- vars[["variant_id"]]
-  variant_ids <- variant_ids[variant_ids %in% names(haps)]
+  if (is.null(layout)) variant_ids <- variant_ids[variant_ids %in% names(haps)]
   stop_if_not(length(variant_ids) > 0L, "No variant genotype columns were found in `hap$haplotypes`.")
 
   vars <- vars[match(variant_ids, variant_id)]
@@ -174,12 +175,30 @@ plot_hap_variant <- function(hap,
   }
   vars[, "variant_label" := as.character(.SD[[1L]]), .SDcols = variant_label]
   vars[is.na(variant_label) | variant_label == "", "variant_label" := as.character(variant_id)]
+  data.table::set(vars, j = "table_x", value = vars$variant_index)
+  data.table::set(vars, j = "tile_width", value = 0.96)
+  table_vars <- vars
+  if (!is.null(layout)) {
+    mapping <- layout$variants[match(variant_ids, layout$variants$variant_id), ]
+    table_index <- match(mapping$representative_id, variant_ids)
+    geometry <- hap_block_column_geometry(table_index)
+    data.table::set(vars, j = "table_x", value = geometry$x)
+    data.table::set(vars, j = "tile_width", value = geometry$width)
+    table_vars <- vars[vars$variant_id == mapping$representative_id, ]
+    table_mapping <- mapping[match(table_vars$variant_id, mapping$variant_id), ]
+    merged <- table_mapping$block_n > 1L
+    data.table::set(table_vars, i = which(merged), j = "variant_label",
+                    value = table_mapping$block_id[merged])
+    data.table::set(vars, j = "table_label",
+                    value = table_vars$variant_label[match(table_index, table_vars$variant_index)])
+    data.table::setorderv(table_vars, "table_x")
+  }
 
   id_vars <- intersect(c("hap_id", "sample_n", "samples"), names(haps))
   table_long <- data.table::melt(
     haps,
     id.vars = id_vars,
-    measure.vars = variant_ids,
+    measure.vars = table_vars$variant_id,
     variable.name = "variant_id",
     value.name = "genotype",
     variable.factor = FALSE
@@ -187,47 +206,72 @@ plot_hap_variant <- function(hap,
 
   table_long <- merge(
     table_long,
-    vars[, .(variant_id, variant_index, variant_label, ref, alt)],
+    table_vars[, c("variant_id", "variant_index", "variant_label", "table_x", "tile_width", "ref", "alt"),
+               with = FALSE],
     by = "variant_id",
     all.x = TRUE,
     sort = FALSE
   )
 
-  haps[, "hap_sort_number" := parse_hap_numeric_id(hap_id)]
-  data.table::setorderv(haps, c("sample_n", "hap_sort_number", "hap_id"), order = c(-1L, 1L, 1L))
-  hap_order <- haps$hap_id
-  table_long[, "row_label" := paste0(hap_id, " (n=", sample_n, ")")]
-  hap_label_levels <- haps[, paste0(hap_id, " (n=", sample_n, ")")]
+  if (is.null(layout)) {
+    haps[, "hap_sort_number" := parse_hap_numeric_id(hap_id)]
+    data.table::setorderv(haps, c("sample_n", "hap_sort_number", "hap_id"), order = c(-1L, 1L, 1L))
+  } else {
+    haps <- haps[order(match(haps$hap_id, names(layout$row_labels))), ]
+  }
+  hap_names <- if (is.null(layout)) haps$hap_id else unname(layout$row_labels[haps$hap_id])
+  hap_label_levels <- paste0(hap_names, " (n=", haps$sample_n, ")")
+  data.table::set(table_long, j = "row_label",
+                  value = hap_label_levels[match(table_long$hap_id, haps$hap_id)])
   row_levels <- rev(hap_label_levels)
 
-  table_long[, "genotype_label" := format_hap_table_genotype_label(
-    genotype = genotype,
-    ref = ref,
-    alt = alt,
-    genotype_mode = hap$meta$genotype_mode %||% NA_character_
-  )]
+  if (is.null(layout)) {
+    table_long[, "genotype_label" := format_hap_table_genotype_label(
+      genotype = genotype,
+      ref = ref,
+      alt = alt,
+      genotype_mode = hap$meta$genotype_mode %||% NA_character_
+    )]
+  } else {
+    data.table::set(table_long, j = "genotype_label", value = table_long$genotype)
+  }
   table_long[is.na(genotype_label), "genotype_label" := "NA"]
   table_long[, "genotype_fill_class" := normalize_hap_table_fill_class(
     genotype_label,
     genotype_mode = hap$meta$genotype_mode %||% NA_character_
   )]
+  block_columns <- colnames(layout$reference_sequences)
+  if (length(block_columns) > 0L) {
+    block_rows <- which(table_long$variant_id %in% block_columns)
+    indices <- cbind(match(table_long$hap_id[block_rows], rownames(layout$states)),
+                     match(table_long$variant_id[block_rows], colnames(layout$states)))
+    states <- layout$states[indices]
+    allele <- ifelse(states == "0/0", table_long$ref[block_rows],
+                     ifelse(states == "1/1", table_long$alt[block_rows], NA_character_))
+    data.table::set(table_long, i = block_rows, j = "genotype_fill_class",
+                    value = normalize_hap_table_fill_class(format_hap_allele(allele), "string"))
+  }
 
   if (show_reference_row) {
     ref_row_label <- "REF"
     alt_row_label <- "ALT"
-    ref_row <- vars[, .(
+    ref_row <- table_vars[, .(
       variant_id,
       variant_index,
       variant_label,
+      table_x = get("table_x"),
+      tile_width = get("tile_width"),
       row_label = ref_row_label,
       genotype = format_hap_allele(ref),
       genotype_label = format_hap_allele(ref),
       allele_label = format_hap_allele(ref)
     )]
-    alt_row <- vars[, .(
+    alt_row <- table_vars[, .(
       variant_id,
       variant_index,
       variant_label,
+      table_x = get("table_x"),
+      tile_width = get("tile_width"),
       row_label = alt_row_label,
       genotype = vapply(strsplit(as.character(alt), ",", fixed = TRUE), function(x) {
         x <- x[!is.na(x) & nzchar(x)]
@@ -252,6 +296,15 @@ plot_hap_variant <- function(hap,
       }, character(1L))
     )]
     ref_alt <- data.table::rbindlist(list(alt_row, ref_row), fill = TRUE)
+    if (length(block_columns) > 0L) {
+      block_rows <- which(ref_alt$variant_id %in% block_columns)
+      indices <- cbind(match(ref_alt$row_label[block_rows], rownames(layout$reference_sequences)),
+                       match(ref_alt$variant_id[block_rows], block_columns))
+      sequences <- layout$reference_sequences[indices]
+      for (column in c("genotype", "genotype_label", "allele_label")) {
+        data.table::set(ref_alt, i = block_rows, j = column, value = sequences)
+      }
+    }
     for (nm in setdiff(names(table_long), names(ref_alt))) {
       ref_alt[, (nm) := NA]
     }
@@ -263,12 +316,10 @@ plot_hap_variant <- function(hap,
   table_long[, "hap_y" := match(row_label, row_levels)]
 
   x_limits <- c(0.5, length(variant_ids) + 0.5)
-  x_breaks <- vars$variant_index
-  x_labels <- vars$variant_label
+  x_breaks <- table_vars$table_x
+  x_labels <- table_vars$variant_label
 
-  table_mapper <- make_hap_table_mapper(vars)
   gene_mapper <- make_hap_gene_mapper(vars, hap$region)
-  vars[, "table_x" := table_mapper(pos)]
   vars[, "gene_x" := gene_mapper(pos)]
 
   gene_data <- NULL
@@ -304,17 +355,50 @@ plot_hap_variant <- function(hap,
     }
   }
 
-  p_connector <- ggplot2::ggplot(vars) +
-    ggplot2::geom_segment(
-      ggplot2::aes(x = .data$gene_x, xend = .data$table_x, y = 1, yend = 0),
-      linewidth = 0.35,
-      color = "grey35",
-      lineend = "butt"
-    ) +
+  direct <- ggplot2::aes(x = .data$gene_x, xend = .data$table_x, y = 1, yend = 0)
+  merged <- duplicated(vars$table_x) | duplicated(vars$table_x, fromLast = TRUE)
+  p_connector <- ggplot2::ggplot(vars)
+  if (any(merged)) {
+    branches <- vars[merged, ]
+    junctions <- branches[!duplicated(branches$table_x), ]
+    singletons <- vars[!merged, ]
+    junction_y <- 0.25
+    block_colour <- "#286787"
+    p_connector <- p_connector +
+      ggplot2::geom_segment(
+        data = branches,
+        ggplot2::aes(x = .data$gene_x, xend = .data$table_x, y = 1, yend = junction_y),
+        linewidth = 0.35, colour = block_colour, lineend = "butt"
+      ) +
+      ggplot2::geom_segment(
+        data = junctions,
+        ggplot2::aes(x = .data$table_x, xend = .data$table_x, y = junction_y, yend = 0),
+        linewidth = 0.60, colour = block_colour, lineend = "butt"
+      )
+    if (nrow(singletons) > 0L) {
+      # A white casing separates crossings from actual junctions.
+      p_connector <- p_connector +
+        ggplot2::geom_segment(direct, data = singletons, linewidth = 1.3, colour = "white") +
+        ggplot2::geom_segment(direct, data = singletons, linewidth = 0.40, colour = "grey25")
+    }
+    p_connector <- p_connector +
+      ggplot2::geom_point(
+        data = junctions, ggplot2::aes(x = .data$table_x, y = junction_y),
+        size = 1.35, colour = block_colour
+      )
+  } else {
+    p_connector <- p_connector +
+      ggplot2::geom_segment(direct, linewidth = 0.35, colour = "grey35", lineend = "butt")
+  }
+  p_connector <- p_connector +
     ggplot2::scale_x_continuous(limits = x_limits, expand = c(0, 0)) +
     ggplot2::scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
     ggplot2::theme_void() +
     ggplot2::theme(plot.margin = ggplot2::margin(0, 12, 0, 8))
+  if (any(merged)) {
+    p_connector <- p_connector +
+      ggplot2::theme(panel.background = ggplot2::element_rect(fill = "white", colour = NA))
+  }
 
   n_rows <- length(row_levels)
   table_genotype <- table_long
@@ -326,35 +410,57 @@ plot_hap_variant <- function(hap,
   if (!"allele_label" %in% names(table_reference)) {
     table_reference[, "allele_label" := character()]
   }
+  genotype_labels <- table_genotype$genotype_label
+  reference_labels <- table_reference$allele_label
+  if (length(block_columns) > 0L) {
+    block_genotypes <- table_genotype$variant_id %in% block_columns
+    block_references <- table_reference$variant_id %in% block_columns
+    genotype_labels[block_genotypes] <- wrap_hap_block_sequence(
+      genotype_labels[block_genotypes], table_genotype$tile_width[block_genotypes]
+    )
+    reference_labels[block_references] <- wrap_hap_block_sequence(
+      reference_labels[block_references], table_reference$tile_width[block_references]
+    )
+  }
+  cell_size <- genotype_text_size
+  reference_size <- genotype_text_size * 0.95
+  if (!is.null(layout)) {
+    cell_size <- cell_size * pmin(1, 2 / pmax(1, lengths(strsplit(genotype_labels, "\n", fixed = TRUE))))
+    reference_size <- reference_size *
+      pmin(1, 2 / pmax(1, lengths(strsplit(reference_labels, "\n", fixed = TRUE))))
+  }
 
   p_table <- ggplot2::ggplot() +
     ggplot2::geom_tile(
       data = table_genotype,
-      ggplot2::aes(x = .data$variant_index, y = .data$hap_y, fill = .data$genotype_fill_class),
+      ggplot2::aes(x = .data$table_x, y = .data$hap_y, width = .data$tile_width,
+                   fill = .data$genotype_fill_class),
       color = "grey80",
       linewidth = 0.28,
-      width = 0.96,
       height = 0.86
     ) +
     ggplot2::geom_tile(
       data = table_reference,
-      ggplot2::aes(x = .data$variant_index, y = .data$hap_y),
+      ggplot2::aes(x = .data$table_x, y = .data$hap_y, width = .data$tile_width),
       fill = reference_fill,
       color = "grey70",
       linewidth = 0.28,
-      width = 0.96,
       height = 0.86
     ) +
     ggplot2::geom_text(
       data = table_genotype,
-      ggplot2::aes(x = .data$variant_index, y = .data$hap_y, label = .data$genotype_label),
-      size = genotype_text_size,
+      ggplot2::aes(x = .data$table_x, y = .data$hap_y),
+      label = genotype_labels,
+      size = cell_size,
+      lineheight = 0.88,
       color = "black"
     ) +
     ggplot2::geom_text(
       data = table_reference,
-      ggplot2::aes(x = .data$variant_index, y = .data$hap_y, label = .data$allele_label),
-      size = genotype_text_size * 0.95,
+      ggplot2::aes(x = .data$table_x, y = .data$hap_y),
+      label = reference_labels,
+      size = reference_size,
+      lineheight = 0.88,
       color = "black",
       vjust = 0.5
     ) +
@@ -375,7 +481,10 @@ plot_hap_variant <- function(hap,
     ggplot2::theme_bw() +
     ggplot2::theme(
       text = ggplot2::element_text(color = "black"),
-      axis.text.x = ggplot2::element_text(size = text_size, angle = table_x_angle, hjust = 1, vjust = 0.5, color = "black"),
+      axis.text.x = ggplot2::element_text(
+        size = text_size, angle = table_x_angle,
+        hjust = if (table_x_angle == 0) 0.5 else 1, vjust = 0.5, color = "black"
+      ),
       axis.ticks.x = ggplot2::element_blank(),
       axis.text.y = ggplot2::element_text(size = text_size, color = "black"),
       axis.title.y = ggplot2::element_text(size = text_size, color = "black"),
@@ -468,13 +577,38 @@ parse_hap_numeric_id <- function(hap_id) {
   num
 }
 
-make_hap_table_mapper <- function(vars) {
-  pos <- sort(unique(as.numeric(vars[["pos"]])))
-  idx <- seq_along(pos)
-  function(x) {
-    x <- as.numeric(x)
-    idx[match(x, pos)]
+hap_block_column_geometry <- function(table_index) {
+  if (!anyDuplicated(table_index)) {
+    return(list(x = table_index, width = rep(0.96, length(table_index))))
   }
+  representatives <- unique(table_index)
+  slots_by_block <- split(seq_along(table_index), factor(table_index, levels = representatives))
+  geometry <- vapply(slots_by_block, function(slots) {
+    representative <- table_index[slots[1L]]
+    runs <- split(slots, cumsum(c(TRUE, diff(slots) > 1L)))
+    width <- min(3L, max(lengths(runs)))
+    starts <- unlist(lapply(runs[lengths(runs) >= width], function(run) {
+      utils::head(run, length(run) - width + 1L)
+    }), use.names = FALSE)
+    centers <- starts + (width - 1L) / 2
+    c(x = centers[which.min(abs(centers - representative))], width = width - 0.04)
+  }, c(x = 0, width = 0))
+  index <- match(table_index, representatives)
+  centers <- unname(geometry["x", index])
+  if (all(centers == floor(centers))) centers <- as.integer(centers)
+  list(x = centers, width = unname(geometry["width", index]))
+}
+
+wrap_hap_block_sequence <- function(labels, cell_width) {
+  lines <- strsplit(labels, "\n", fixed = TRUE)
+  vapply(seq_along(lines), function(i) {
+    width <- floor(17 * max(1, cell_width[i]))
+    wrapped <- lapply(lines[[i]], function(line) {
+      chunks <- strwrap(gsub("-", "- ", line, fixed = TRUE), width = width)
+      gsub("- ", "-", chunks, fixed = TRUE)
+    })
+    paste(unlist(wrapped, use.names = FALSE), collapse = "\n")
+  }, character(1L))
 }
 
 make_hap_gene_mapper <- function(vars, region) {
@@ -1527,16 +1661,17 @@ pairwise_hap_test <- function(long,
   out <- long[, {
     haps <- as.character(stats::na.omit(unique(hap_id)))
     if (length(haps) < 2L) {
-      return(data.table::data.table(group1 = character(), group2 = character(), p_value = numeric()))
+      data.table::data.table(group1 = character(), group2 = character(), p_value = numeric())
+    } else {
+      pairs <- utils::combn(haps, 2L, simplify = FALSE)
+      res <- lapply(pairs, function(pair) {
+        x <- value[as.character(hap_id) == pair[1L]]
+        y <- value[as.character(hap_id) == pair[2L]]
+        pval <- run_hap_pair_test(x, y, method = method)
+        data.table::data.table(group1 = pair[1L], group2 = pair[2L], p_value = pval)
+      })
+      data.table::rbindlist(res)
     }
-    pairs <- utils::combn(haps, 2L, simplify = FALSE)
-    res <- lapply(pairs, function(pair) {
-      x <- value[as.character(hap_id) == pair[1L]]
-      y <- value[as.character(hap_id) == pair[2L]]
-      pval <- run_hap_pair_test(x, y, method = method)
-      data.table::data.table(group1 = pair[1L], group2 = pair[2L], p_value = pval)
-    })
-    data.table::rbindlist(res)
   }, by = trait]
   out[, "p_adj" := stats::p.adjust(p_value, method = p_adjust), by = trait]
   out[, "method" := method]
