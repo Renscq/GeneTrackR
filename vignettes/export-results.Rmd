@@ -1,631 +1,176 @@
 ---
-title: "Export and reproducibility"
+title: "Export, browser use and reproducibility"
 author: "Shuchao Ren"
-date: "2026-08-31"
-output: rmarkdown::html_vignette
+date: "2026-11-19"
+output:
+  BiocStyle::html_document:
+    toc: true
+    number_sections: true
+    fig_crop: false
 vignette: >
-  %\VignetteIndexEntry{15 Export and reproducibility}
+  %\VignetteIndexEntry{06 Export, browser use and reproducibility}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
-gtr_pkgdown <- tolower(Sys.getenv("GENETRACKR_PKGDOWN", "false")) %in%
-  c("1", "true", "yes")
-gtr_vignette_dpi <- if (gtr_pkgdown) 300 else 144
-
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  fig.width = 10.5,
-  fig.height = 6.5,
-  dpi = gtr_vignette_dpi,
-  fig.retina = 1,
-  out.width = "100%",
-  fig.align = "center"
-)
-```
-
-## Introduction
-
-GeneTrackR outputs are intentionally heterogeneous. Genomic tracks should be written with the corresponding GeneTrackR writer, plotting functions may return a figure directly or store it inside a structured result object, statistical analyses contain several tables with different biological meanings, and complete S3 objects preserve the state needed to resume an analysis. Saving only the final image or flattening an entire result class into one table loses important provenance.
-
-```{r load-package}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 10,
+  fig.height = 6, dpi = 500, fig.retina = 1, crop = FALSE, dev = "png", dev.args = list(type = "cairo"), out.width = "100%", fig.align = "center")
 library(GeneTrackR)
+library(patchwork)
+plain_text <- ggplot2::element_text(family = "Arial", colour = "black", face = "plain")
+tutorial_text <- ggplot2::theme(text = plain_text, axis.text = plain_text,
+  axis.title = plain_text, plot.title = plain_text, plot.subtitle = plain_text,
+  plot.caption = plain_text, legend.text = plain_text, legend.title = plain_text,
+  strip.text = plain_text)
+classic_style <- ggplot2::theme_classic(base_family = "Arial") + tutorial_text
+ggplot2::theme_set(classic_style)
+demo_file <- function(name) system.file("extdata", name, package = "GeneTrackR", mustWork = TRUE)
 ```
 
-This article defines a practical export contract around the deterministic GeneA demo. A reproducible project separates four output layers:
+# Introduction
 
-1. genomic track files for use by GeneTrackR or genome browsers;
-2. PDF/PNG figures for reports and manuscripts;
-3. tabular results for inspection and downstream statistics;
-4. complete R objects for exact reloading without recalculation.
+This workflow exports standard genomic tracks for downstream software and
+retains structured R results for reproducibility. It uses the same synthetic
+inputs as the [complete workflow](complete-workflow.html), with no external
+downloads or persistent user-file overwrites. Package website:
+<https://renscq.github.io/GeneTrackR/>.
 
-This module follows eight steps:
+# Prepare inputs and a temporary output directory
 
-1. prepare a structured output directory and representative GeneTrackR objects;
-2. export annotation, signal, and variant tracks;
-3. save direct and class-contained figures as PDF/PNG;
-4. export haplotype, phenotype, LD, refinement, and variant-effect tables;
-5. export matrix-shaped results such as the LD matrix;
-6. optionally collect related tables into an Excel workbook;
-7. save complete GeneTrackR objects with `saveRDS()`;
-8. record a manifest and session information and verify that saved objects reload correctly.
-
-### Step 1. Prepare output directories and representative objects
-
-Create separate directories for track files, figures, tables, and serialized R objects:
-
-```{r export-results-01}
-export_root <- file.path(tempdir(), "GeneTrackR_export")
-export_dirs <- file.path(
-  export_root,
-  c("tracks", "figures", "tables", "objects")
-)
-
-invisible(lapply(
-  export_dirs,
-  dir.create,
-  recursive = TRUE,
-  showWarnings = FALSE
-))
-
-track_dir <- export_dirs[1]
-figure_dir <- export_dirs[2]
-table_dir <- export_dirs[3]
-object_dir <- export_dirs[4]
+```{r inputs}
+input_files <- c(annotation = demo_file("gtr_demo.genePredExt"),
+  variants = demo_file("gtr_demo_variants.vcf"),
+  phenotype = demo_file("gtr_demo_pheno.tsv"),
+  signal = demo_file("gtr_demo_rnaseq_plus.bedgraph"))
+stopifnot(length(input_files) == 4L, all(file.exists(input_files)))
+gp <- read_genepred(input_files[["annotation"]], format = "genePredExt",
+  verbose = FALSE, progress = FALSE)
+vcf <- read_vcf(input_files[["variants"]], mode = "memory",
+  verbose = FALSE, progress = FALSE)
+pheno <- read_pheno(input_files[["phenotype"]], verbose = FALSE, progress = FALSE)
+signal <- read_bwg(input_files[["signal"]],
+  sample_names = "RNA_seq_plus", strand = "+", mode = "memory", verbose = FALSE)
+hap <- hap_gene_variant(vcf, annotation = gp, gene_id = "GeneA", genotype_mode = "string")
+association <- plot_hap_pheno(hap, phenotype = pheno, traits = "protein_content",
+  min_hap_samples = 3, test_method = "t.test", p_adjust = "BH",
+  p_value_type = "adjusted", text_size = 10)
+association$figure <- association$figure & classic_style
+output_dir <- tempfile("GeneTrackR-export-")
+dir.create(output_dir)
 ```
 
-Read the demo inputs and build representative downstream objects. These are the same object classes used in the preceding workflow modules:
+For a production analysis, choose a deliberate output directory and keep input
+files immutable. Record assembly, coordinate convention, signal units and
+normalization, sample inclusion and all analysis parameters alongside outputs.
 
-```{r export-results-02}
-gp <- read_genepred(
-  system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR"),
-  format = "genePredExt",
-  verbose = FALSE,
-  progress = FALSE
-)
+# Standard-format tracks
 
-vcf <- read_vcf(
-  system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR"),
-  mode = "memory",
-  keep_genotype = TRUE,
-  verbose = FALSE,
-  progress = FALSE
-)
+## Annotation
 
-pheno <- read_pheno(
-  system.file("extdata", "gtr_demo_pheno.tsv", package = "GeneTrackR"),
-  verbose = FALSE,
-  progress = FALSE
-)
-
-hap_gene <- hap_gene_variant(
-  vcf,
-  annotation = gp,
-  gene_id = "GeneA",
-  genotype_mode = "string"
-)
-
-hap_effect <- hap_gene_variant(
-  vcf,
-  annotation = gp,
-  gene_id = "GeneA",
-  genotype_mode = "code"
-)
-
-hap_pheno <- plot_hap_pheno(
-  hap_gene,
-  phenotype = pheno,
-  traits = "seed_weight",
-  min_hap_samples = 3,
-  p_value_type = "adjusted",
-  text_size = 10
-)
-
-ld_result <- compute_ld_block(
-  vcf,
-  chrom = "chr1",
-  start = 12342620,
-  end = 12355500,
-  variant_type = "snp",
-  method = "r2",
-  verbose = FALSE
-)
-
-ld_result <- plot_ld_block(
-  ld_result,
-  annotation = gp,
-  show_region = TRUE,
-  show_variant_labels = FALSE,
-  font = 10
-)
-
-refined <- refine_haplotype(
-  hap_gene,
-  phenotype = pheno,
-  traits = "protein_content",
-  min_hap_samples = 3,
-  effect_threshold = 0.5
-)
-
-refined_variant_figure <- plot_refined_hap_variant(
-  refined,
-  annotation = gp,
-  min_hap_samples = 3,
-  text_size = 10
-)
-
-refined_pheno <- plot_refined_hap_pheno(
-  refined,
-  phenotype = pheno,
-  traits = "protein_content",
-  min_hap_samples = 3,
-  p_value_type = "adjusted",
-  text_size = 10
-)
-
-effect_result <- plot_variant_effect(
-  hap_effect,
-  phenotype = pheno,
-  traits = "protein_content",
-  min_group_samples = 3,
-  effect_type = "absolute",
-  x_axis = "position",
-  text_size = 10
-)
+```{r annotation-output}
+annotation_file <- file.path(output_dir, "annotation.genePredExt")
+write_feature(gp, file = annotation_file, format = "genepredext", overwrite = TRUE)
+write_feature(gp, file = file.path(output_dir, "annotation.bed12"),
+  format = "bed12", overwrite = TRUE)
+restored_annotation <- read_genepred(annotation_file, format = "genePredExt",
+  verbose = FALSE, progress = FALSE)
+stopifnot(nrow(restored_annotation$genes) == 20L,
+  nrow(restored_annotation$transcripts) == 24L)
 ```
 
-Keeping these objects separate is useful because their public contracts differ. `plot_hap_variant()` returns a figure directly, whereas `plot_hap_pheno()` and `plot_variant_effect()` return result objects containing `$figure`; `plot_ld_block()` returns an updated `LDTrack` with its figure stored in `$figure`.
+Writers apply the target-format coordinate convention. GTF/GFF3, BED and
+GenePred represent different attributes and hierarchy information, so a
+standard-format export should not be treated as a lossless copy of an entire
+R workflow object. Use the function reference for supported formats and their
+attribute/identifier policies; retain an RDS object when all metadata matter.
 
-### Step 2. Export genomic track files
+## Signal and VCF
 
-#### Annotation tracks
-
-Use `write_feature()` for annotation conversion. Annotation coordinate conventions and format-specific details are covered in the annotation module; the export module only centralizes representative calls:
-
-```{r export-results-03}
-write_feature(
-  gp,
-  file = file.path(track_dir, "GeneA_demo.genePredExt"),
-  format = "genepredext",
-  overwrite = TRUE
-)
-
-write_feature(
-  gp,
-  file = file.path(track_dir, "GeneA_demo.bed12"),
-  format = "bed12",
-  overwrite = TRUE
-)
+```{r signal-and-variant-output}
+signal_files <- write_bwg(signal, outdir = output_dir, format = "bedgraph", overwrite = TRUE)
+variant_file <- file.path(output_dir, "variants.vcf")
+write_vcf(vcf, file = variant_file, overwrite = TRUE)
+restored_variants <- read_vcf(variant_file, mode = "memory", verbose = FALSE, progress = FALSE)
+stopifnot(nrow(restored_variants$data) == nrow(vcf$data),
+  identical(restored_variants$meta$sample_names, character()))
+stopifnot(file.copy(input_files[["variants"]], file.path(output_dir, "original-genotypes.vcf")))
+signal_files
 ```
 
-#### Signal tracks
+Signal export supports the existing bedGraph/WIG/BigWig layer. Consult
+`?write_bwg` for chromosome-size and sample-splitting requirements, especially
+for BigWig. Raw and normalized values are distinct outputs and should be
+labelled with units and normalization parameters.
 
-Read an in-memory signal track and export it with `write_bwg()`:
+**Current VCF writer limitation:** `write_vcf()` and its compatibility wrapper
+write the eight core site fields only. They omit FORMAT and sample genotype
+columns and write a minimal metadata header. The read-back assertion above
+therefore checks a sites-only export, not a genotype-preserving round trip.
+Keep the original VCF/header and complete RDS when genotypes or typed metadata
+are required; the example copies the unchanged original file separately.
+Genotype-preserving VCF export and standard-VCF interchange remain future work.
+The [class/I/O rationale](annotation.html#design-decisions) describes that boundary.
 
-```{r export-results-04}
-rnaseq_plus <- read_bwg(
-  system.file(
-    "extdata",
-    "gtr_demo_rnaseq_plus.bedgraph",
-    package = "GeneTrackR"
-  ),
-  format = "bedgraph",
-  sample_names = "RNA_seq_plus",
-  strand = "+",
-  mode = "memory",
-  verbose = FALSE
-)
+# Save statistical tables, figures and complete objects
 
-bedgraph_files <- write_bwg(
-  rnaseq_plus,
-  outdir = track_dir,
-  format = "bedgraph",
-  overwrite = TRUE
-)
-
-bedgraph_files
+```{r analysis-output}
+utils::write.csv(as.data.frame(association$summary),
+  file.path(output_dir, "phenotype-summary.csv"), row.names = FALSE, na = "NA")
+utils::write.csv(as.data.frame(association$pvalue),
+  file.path(output_dir, "pairwise-tests.csv"), row.names = FALSE, na = "NA")
+ggplot2::ggsave(file.path(output_dir, "phenotype-comparison.png"),
+  plot = association$figure, width = 8, height = 5, units = "in", dpi = 500,
+  device = grDevices::png, type = "cairo")
+bundle <- list(annotation = gp, variants = vcf, signal = signal,
+  haplotypes = hap, phenotype = pheno, association = association,
+  parameters = list(gene_id = "GeneA", genotype_mode = "string", min_hap_samples = 3,
+    trait = "protein_content", test_method = "t.test", p_adjust = "BH"))
+saveRDS(bundle, file.path(output_dir, "analysis.rds"))
+restored <- readRDS(file.path(output_dir, "analysis.rds"))
+stopifnot(identical(restored$variants$meta$sample_names, vcf$meta$sample_names),
+  identical(restored$haplotypes$haplotypes$sample_n, hap$haplotypes$sample_n))
 ```
 
-bigWig output uses GeneTrackR's built-in pure-R writer and requires chromosome sizes:
+`plot_hap_variant()` and integrated-track functions return figures directly.
+Phenotype and variant-effect functions return tables plus `$figure`;
+`plot_ld_block()` normally returns LDTrack with `$figure`. Select the figure
+component explicitly when calling `ggsave()`.
 
-```{r export-results-05}
-chrom_sizes_file <- system.file(
-  "extdata",
-  "gtr_demo.chrom.sizes",
-  package = "GeneTrackR"
-)
+Report sample sizes, trait units, effect direction, adjustment method and
+appropriate uncertainty, not only P values or significance symbols. For the
+example's single trait, the six pairwise Welch t-tests use BH adjustment.
+The complete object preserves interpretation context that is lost in a CSV
+or image alone.
 
-bigwig_files <- write_bwg(
-  rnaseq_plus,
-  outdir = track_dir,
-  format = "bigwig",
-  chrom_sizes = chrom_sizes_file,
-  overwrite = TRUE
-)
+# Browser use and provenance {#browser-export}
 
-bigwig_files
+For real IGV/UCSC-style browser inspection, use a reference/assembly matching
+the exported coordinates and chromosome names. The demo coordinates describe
+a synthetic model and are not a claim about a real reference genome. Load
+annotation, signal and VCF tracks at the same interval and check strand,
+sample labels and y-axis scale before comparing views.
+
+GeneTrackR's integrated browser-like plot is generated in R, as demonstrated
+in the [complete workflow](complete-workflow.html#integrated-browser). External
+browser applications and network services are not required to execute these
+vignettes.
+
+```{r provenance}
+provenance <- data.frame(role = names(input_files), input = basename(input_files),
+  md5 = unname(tools::md5sum(input_files)))
+stopifnot(nrow(provenance) == 4L, !anyNA(provenance$md5), all(nchar(provenance$md5) == 32L))
+utils::write.csv(provenance, file.path(output_dir, "input-checksums.csv"), row.names = FALSE)
+writeLines(capture.output(sessionInfo()), file.path(output_dir, "session-info.txt"))
+list.files(output_dir)
 ```
 
-#### Variant tracks
-
-Use `write_vcf()` when a standardized site-level VCF is required:
-
-```{r export-results-06}
-write_vcf(
-  vcf,
-  file = file.path(track_dir, "gtr_demo.sites.vcf"),
-  overwrite = TRUE
-)
-```
-
-The current `write_vcf()` writes the standard site columns `CHROM`, `POS`, `ID`, `REF`, `ALT`, `QUAL`, `FILTER`, and `INFO`. It does **not** guarantee round-trip preservation of `FORMAT` and sample genotype columns. Keep the original genotype-containing VCF as the archival source whenever genotypes must be preserved exactly.
-
-### Step 3. Save figures as PDF and PNG
-
-Use the actual figure object rather than passing an entire GeneTrackR result class to `ggsave()`.
-
-Define a small local helper when both PDF and PNG are required. The helper keeps a publication-oriented default of 500 dpi, while the executable vignette calls below pass the build-aware `gtr_vignette_dpi` value so package checks do not spend time rendering manuscript-scale raster files. Set `dpi = 300` to `500` explicitly for final publication export.
-
-```{r export-results-07}
-save_gtr_figure <- function(
-  plot,
-  stem,
-  outdir,
-  width = 8,
-  height = 6,
-  dpi = 500
-) {
-  ggplot2::ggsave(
-    filename = file.path(outdir, paste0(stem, ".pdf")),
-    plot = plot,
-    width = width,
-    height = height
-  )
-
-  ggplot2::ggsave(
-    filename = file.path(outdir, paste0(stem, ".png")),
-    plot = plot,
-    width = width,
-    height = height,
-    dpi = dpi
-  )
-}
-```
-
-A direct-return figure can be saved immediately:
-
-```{r export-results-08}
-hap_variant_figure <- plot_hap_variant(
-  hap_gene,
-  annotation = gp,
-  min_hap_samples = 3,
-  text_size = 10
-)
-
-save_gtr_figure(
-  hap_variant_figure,
-  stem = "GeneA_haplotype_variant",
-  outdir = figure_dir,
-  width = 10,
-  height = 7,
-  dpi = gtr_vignette_dpi
-)
-```
-
-For structured result classes, extract `$figure` explicitly:
-
-```{r export-results-09}
-save_gtr_figure(
-  hap_pheno$figure,
-  stem = "GeneA_seed_weight_haplotype",
-  outdir = figure_dir,
-  width = 7,
-  height = 5,
-  dpi = gtr_vignette_dpi
-)
-
-save_gtr_figure(
-  ld_result$figure,
-  stem = "GeneA_LD_gradient",
-  outdir = figure_dir,
-  width = 10,
-  height = 8,
-  dpi = gtr_vignette_dpi
-)
-
-save_gtr_figure(
-  refined_variant_figure,
-  stem = "GeneA_refined_haplotype_variant",
-  outdir = figure_dir,
-  width = 10,
-  height = 7,
-  dpi = gtr_vignette_dpi
-)
-
-save_gtr_figure(
-  refined_pheno$figure,
-  stem = "GeneA_refined_protein_content",
-  outdir = figure_dir,
-  width = 7,
-  height = 5,
-  dpi = gtr_vignette_dpi
-)
-
-save_gtr_figure(
-  effect_result$figure,
-  stem = "GeneA_protein_variant_effect",
-  outdir = figure_dir,
-  width = 9,
-  height = 5,
-  dpi = gtr_vignette_dpi
-)
-```
-
-The same rule applies to `plot_variant_pheno()` and `plot_refined_hap_pheno()`: save their `$figure` component. `plot_refined_hap_variant()` returns its figure directly.
-
-### Step 4. Export analysis tables
-
-A `HapVariant` contains several biologically different tables. Export them separately instead of flattening the complete class:
-
-```{r export-results-10}
-data.table::fwrite(
-  hap_gene$variants,
-  file.path(table_dir, "GeneA.variants.tsv"),
-  sep = "\t"
-)
-
-data.table::fwrite(
-  hap_gene$haplotypes,
-  file.path(table_dir, "GeneA.haplotypes.tsv"),
-  sep = "\t"
-)
-
-data.table::fwrite(
-  hap_gene$sample_haplotypes,
-  file.path(table_dir, "GeneA.sample_haplotypes.tsv"),
-  sep = "\t"
-)
-
-data.table::fwrite(
-  hap_gene$genotype_long,
-  file.path(table_dir, "GeneA.genotype_long.tsv"),
-  sep = "\t"
-)
-```
-
-For phenotype association results, retain the statistical tables used to create the figure:
-
-```{r export-results-11}
-data.table::fwrite(
-  hap_pheno$pvalue,
-  file.path(table_dir, "GeneA.seed_weight.pvalue.tsv"),
-  sep = "\t"
-)
-
-data.table::fwrite(
-  hap_pheno$summary,
-  file.path(table_dir, "GeneA.seed_weight.summary.tsv"),
-  sep = "\t"
-)
-
-data.table::fwrite(
-  hap_pheno$plot_data,
-  file.path(table_dir, "GeneA.seed_weight.plot_data.tsv"),
-  sep = "\t"
-)
-```
-
-Export pairwise LD rather than only the heatmap image:
-
-```{r export-results-12}
-data.table::fwrite(
-  ld_result$data,
-  file.path(table_dir, "GeneA.LD_pairs.tsv"),
-  sep = "\t"
-)
-
-data.table::fwrite(
-  ld_result$variants,
-  file.path(table_dir, "GeneA.LD_variants.tsv"),
-  sep = "\t"
-)
-```
-
-For phenotype-guided refinement, the mapping and decision tables are essential for explaining why original haplotypes were merged:
-
-```{r export-results-13}
-data.table::fwrite(
-  refined$haplotype_map,
-  file.path(table_dir, "GeneA.refined_haplotype_map.tsv"),
-  sep = "\t"
-)
-
-data.table::fwrite(
-  refined$refined_haplotypes,
-  file.path(table_dir, "GeneA.refined_haplotypes.tsv"),
-  sep = "\t"
-)
-
-data.table::fwrite(
-  refined$sample_refined_haplotypes,
-  file.path(table_dir, "GeneA.sample_refined_haplotypes.tsv"),
-  sep = "\t"
-)
-
-data.table::fwrite(
-  refined$pairwise_test,
-  file.path(table_dir, "GeneA.refinement_pairwise_test.tsv"),
-  sep = "\t"
-)
-
-data.table::fwrite(
-  refined$phenotype_summary,
-  file.path(table_dir, "GeneA.refinement_pheno_summary.tsv"),
-  sep = "\t"
-)
-
-data.table::fwrite(
-  refined_pheno$pvalue,
-  file.path(table_dir, "GeneA.refined_protein.pvalue.tsv"),
-  sep = "\t"
-)
-
-data.table::fwrite(
-  refined_pheno$summary,
-  file.path(table_dir, "GeneA.refined_protein.summary.tsv"),
-  sep = "\t"
-)
-```
-
-For regional variant-effect prioritization, retain both the summarized effects and the sample-level plotting table:
-
-```{r export-results-14}
-data.table::fwrite(
-  effect_result$effect,
-  file.path(table_dir, "GeneA.protein_variant_effect.tsv"),
-  sep = "\t"
-)
-
-data.table::fwrite(
-  effect_result$plot_data,
-  file.path(table_dir, "GeneA.protein_variant_effect_plot_data.tsv"),
-  sep = "\t"
-)
-```
-
-### Step 5. Export the LD matrix cleanly
-
-A matrix should be converted to a rectangular table with an explicit row identifier before writing it:
-
-```{r export-results-15}
-ld_matrix_table <- data.table::as.data.table(
-  ld_result$matrix,
-  keep.rownames = "variant_id"
-)
-
-data.table::fwrite(
-  ld_matrix_table,
-  file.path(table_dir, "GeneA.LD_matrix.tsv"),
-  sep = "\t"
-)
-```
-
-This preserves both row and column variant IDs and is easier to reopen in R, Python, spreadsheet software, or downstream matrix tools than a matrix written without row names.
-
-### Step 6. Optionally collect tables in an Excel workbook
-
-For collaborators who prefer one multi-sheet workbook, the same result tables can be collected with the optional `openxlsx` package. This is an interoperability step rather than a GeneTrackR dependency:
-
-```{r export-results-16}
-if (requireNamespace("openxlsx", quietly = TRUE)) {
-  openxlsx::write.xlsx(
-    list(
-      variants = as.data.frame(hap_gene$variants),
-      haplotypes = as.data.frame(hap_gene$haplotypes),
-      sample_haps = as.data.frame(hap_gene$sample_haplotypes),
-      hap_pvalue = as.data.frame(hap_pheno$pvalue),
-      hap_summary = as.data.frame(hap_pheno$summary),
-      LD_pairs = as.data.frame(ld_result$data),
-      LD_matrix = as.data.frame(ld_matrix_table),
-      refined_map = as.data.frame(refined$haplotype_map),
-      refined_test = as.data.frame(refined$pairwise_test),
-      variant_effect = as.data.frame(effect_result$effect)
-    ),
-    file = file.path(table_dir, "GeneA.analysis.xlsx"),
-    overwrite = TRUE
-  )
-}
-```
-
-TSV remains the dependency-free default and is preferable for very large tables. Excel is most useful for compact result summaries intended for manual inspection.
-
-### Step 7. Save complete GeneTrackR objects with RDS
-
-Tabular exports are easy to inspect, but they do not preserve the complete object state. Save the corresponding S3 objects when an analysis may need to be reopened without recomputation:
-
-```{r export-results-17}
-saveRDS(
-  hap_gene,
-  file.path(object_dir, "GeneA.HapVariant.rds")
-)
-
-saveRDS(
-  hap_pheno,
-  file.path(object_dir, "GeneA.seed_weight.GeneTrackRPhenoPlot.rds")
-)
-
-saveRDS(
-  ld_result,
-  file.path(object_dir, "GeneA.LDTrack.rds")
-)
-
-saveRDS(
-  refined,
-  file.path(object_dir, "GeneA.HapRefined.rds")
-)
-
-saveRDS(
-  effect_result,
-  file.path(object_dir, "GeneA.VariantEffect.rds")
-)
-```
-
-The RDS file preserves class information, metadata, parameters, intermediate tables, and stored figures. It complements rather than replaces human-readable tables and standard genomic track files.
-
-### Step 8. Record provenance and verify the export
-
-Record the package/session environment together with the result directory:
-
-```{r export-results-18}
-writeLines(
-  capture.output(sessionInfo()),
-  con = file.path(export_root, "sessionInfo.txt")
-)
-
-export_manifest <- data.table::data.table(
-  file = list.files(export_root, recursive = TRUE)
-)
-
-data.table::fwrite(
-  export_manifest,
-  file.path(export_root, "manifest.tsv"),
-  sep = "\t"
-)
-
-export_manifest
-```
-
-Finally, verify that a serialized analysis object can be restored with its expected class and results:
-
-```{r export-results-19}
-ld_reloaded <- readRDS(
-  file.path(object_dir, "GeneA.LDTrack.rds")
-)
-
-class(ld_reloaded)
-head(ld_reloaded$data)
-```
-
-For a complete project, keep the **original inputs**, **standard-format track exports**, **PDF/PNG figures**, **tabular results**, **RDS analysis objects**, and **session information** together. This makes the analysis both easy to inspect and reproducible at the object level.
-
-Package documentation: <https://renscq.github.io/GeneTrackR/>.
-## Installation
-
-After Bioconductor acceptance, install GeneTrackR with `BiocManager`:
-
-```{r installation, eval=FALSE}
-if (!requireNamespace("BiocManager", quietly = TRUE)) {
-  install.packages("BiocManager")
-}
-BiocManager::install("GeneTrackR")
-library(GeneTrackR)
-```
-
-The development version remains available from the GeneTrackR GitHub repository.
-
-## Session information
+Before sharing results, verify record counts, sample/ID alignment, missing
+values, coordinate conventions, fields required by the target format and
+read-back results. Keep original inputs and complete R objects. The
+[annotation workflow](annotation.html) checks that direct transcript-level
+CDS summaries match explicit segment aggregation, with one observation per
+transcript and feature.
 
 ```{r session-info}
 sessionInfo()

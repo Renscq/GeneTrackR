@@ -18,58 +18,28 @@ navbar:
       href: articles/getting-started.html
 
 articles:
-  - title: Getting Started
+  - title: Six workflows
     desc: >
-      Begin with Getting started, then use Core workflow for a compact
-      analysis. Consult Example data for the file inventory and designed truth;
-      the expanded analysis is under Workflow & reproducibility.
+      Start with the data model, then choose a numbered workflow. The complete
+      example connects the preceding modules; export retains results and provenance.
     contents:
       - getting-started
-      - example-data
-      - core-workflows
-
-  - title: Data & annotation
-    desc: >
-      Read GenePred/GenePredExt, GTF, GFF3, and BED annotations into unified
-      GeneTrackR objects, then validate, retrieve, convert, merge, write, and
-      visualize them.
-    navbar: Data & annotation
-    contents:
       - annotation
-
-  - title: Visualization
-    desc: >
-      Build gene-model, continuous-signal, VCF-variant, and integrated
-      genome-browser-like views from one shared genomic coordinate framework.
-    navbar: Visualization
-    contents:
-      - gene-model
-      - signal-tracks
-      - variant-tracks
-      - browser-tracks
-
-  - title: Haplotype & association
-    desc: >
-      Construct and test haplotypes, quantify regional linkage disequilibrium,
-      refine haplotype groups with phenotype evidence, and prioritize natural
-      variants by phenotype-associated effect size.
-    navbar: Haplotype & association
-    contents:
       - haplotype
       - phenotype
-      - linkage-disequilibrium
-      - haplotype-refinement
-      - variant-effect
-
-  - title: Workflow & reproducibility
-    desc: >
-      Run the complete candidate-locus workflow and preserve genomic tracks,
-      figures, statistical tables, analysis objects, and provenance for
-      reproducible downstream use.
-    navbar: Workflow & reproducibility
-    contents:
       - complete-workflow
       - export-results
+
+redirects:
+  - ["articles/example-data.html", "articles/getting-started.html#demo-data"]
+  - ["articles/core-workflows.html", "articles/complete-workflow.html"]
+  - ["articles/gene-model.html", "articles/annotation.html#gene-models"]
+  - ["articles/signal-tracks.html", "articles/annotation.html#signal-tracks"]
+  - ["articles/variant-tracks.html", "articles/haplotype.html#variants"]
+  - ["articles/linkage-disequilibrium.html", "articles/haplotype.html#ld"]
+  - ["articles/browser-tracks.html", "articles/complete-workflow.html#integrated-browser"]
+  - ["articles/haplotype-refinement.html", "articles/phenotype.html#refinement"]
+  - ["articles/variant-effect.html", "articles/phenotype.html#variant-effects"]
 
 reference:
   - title: Core objects

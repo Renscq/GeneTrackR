@@ -1,225 +1,179 @@
 ---
-title: "Getting started with GeneTrackR"
+title: "Getting started and the example data"
 author: "Shuchao Ren"
-date: "2026-08-31"
-output: rmarkdown::html_vignette
+date: "2026-11-19"
+output:
+  BiocStyle::html_document:
+    toc: true
+    number_sections: true
+    fig_crop: false
 vignette: >
-  %\VignetteIndexEntry{01 Getting started with GeneTrackR}
+  %\VignetteIndexEntry{01 Getting started and the example data}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
 ```{r setup, include=FALSE}
-gtr_pkgdown <- tolower(Sys.getenv("GENETRACKR_PKGDOWN", "false")) %in%
-  c("1", "true", "yes")
-gtr_vignette_dpi <- if (gtr_pkgdown) 300 else 144
-
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  fig.width = 10.5,
-  fig.height = 6,
-  dpi = gtr_vignette_dpi,
-  fig.retina = 1,
-  out.width = "100%",
-  fig.align = "center"
-)
-```
-
-## Introduction
-
-GeneTrackR is an R package for annotation, genomic signal, variant, haplotype, phenotype, linkage-disequilibrium, and variant-effect workflows. This page is the shortest path from installation to a first reproducible analysis. The examples use the deterministic `gtr_demo_*` files shipped with the package, so no external data download is required.
-
-Package documentation: <https://renscq.github.io/GeneTrackR/>.
-
-## Recommended entry points
-
-Use `Feature()` to construct annotations from an interval table, or a
-format-specific reader (`read_genepred()`, `read_gtf()`, `read_gff()`,
-`read_bed()`) to import annotation files. Use `read_bwg()` for signal tracks
-and `read_vcf()` for variants. Readers return the objects used by downstream
-retrieval, plotting and analysis functions.
-
-`FeatureTrack()` and `read_vcf_track()` remain supported compatibility aliases
-of `Feature()` and `read_vcf()`. Their arguments and return objects are unchanged;
-existing workflows can continue to use them.
-
-## Installation
-
-After Bioconductor acceptance, install GeneTrackR with `BiocManager`:
-
-```{r installation, eval=FALSE}
-if (!requireNamespace("BiocManager", quietly = TRUE)) {
-  install.packages("BiocManager")
-}
-BiocManager::install("GeneTrackR")
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 10,
+  fig.height = 6, dpi = 500, fig.retina = 1, crop = FALSE, dev = "png", dev.args = list(type = "cairo"), out.width = "100%", fig.align = "center")
 library(GeneTrackR)
+library(patchwork)
+plain_text <- ggplot2::element_text(family = "Arial", colour = "black", face = "plain")
+tutorial_text <- ggplot2::theme(text = plain_text, axis.text = plain_text,
+  axis.title = plain_text, plot.title = plain_text, plot.subtitle = plain_text,
+  plot.caption = plain_text, legend.text = plain_text, legend.title = plain_text,
+  strip.text = plain_text)
+classic_style <- ggplot2::theme_classic(base_family = "Arial") + tutorial_text
+ggplot2::theme_set(classic_style)
+demo_file <- function(name) system.file("extdata", name, package = "GeneTrackR", mustWork = TRUE)
 ```
 
-The development version remains available from the GeneTrackR GitHub repository.
+# Introduction
 
-## Load GeneTrackR
+GeneTrackR connects annotation, genomic signal, variants, haplotypes and
+phenotypes in a shared coordinate workflow. The intended use is to inspect a
+candidate locus, construct genotype-defined groups, compare measured traits,
+and retain the resulting tables and figures. Genomic plots provide context;
+phenotype association alone does not establish a causal variant.
 
-```{r load-package}
-library(GeneTrackR)
+This is the first of six executable workflows. The examples use bundled
+synthetic data and require no external data download. The package website is
+<https://renscq.github.io/GeneTrackR/>.
+
+## Position within Bioconductor
+
+| Tool | Primary role | Relationship to this workflow |
+|---|---|---|
+| [Gviz](https://bioconductor.org/packages/Gviz/) | Track-oriented genomic visualization and annotation views | A mature option for genome-coordinate displays. GeneTrackR joins locus inspection to its haplotype and phenotype result objects. |
+| [rtracklayer](https://bioconductor.org/packages/rtracklayer/) | Genomic file import/export and genome-browser infrastructure | Standard I/O infrastructure relevant to annotation and signal exchange. GeneTrackR currently retains its existing readers and writers. |
+| [VariantAnnotation](https://bioconductor.org/packages/VariantAnnotation/) | Standard VCF/genotype representation and variant annotation | The appropriate infrastructure for typed VCF data and annotation tasks. GeneTrackR's VariantTrack currently stores point positions and raw sample fields for its analysis workflow. |
+| GeneTrackR | Coordinated annotation/signal/variant visualization and haplotype-to-phenotype workflows | Provides connected analysis and plotting entry points, structured results and GRanges interchange. |
+
+The comparison describes scope, not a performance ranking. GeneTrackR does not
+implement all the capabilities of these packages. Its GRanges input/output is
+implemented; a lossless VCF-class adapter and replacement I/O backends are future
+work. The [class and I/O rationale](annotation.html#design-decisions) explains
+the current boundaries and the evidence still needed for further reuse.
+
+# Installation
+
+GeneTrackR requires R >= 4.6.0 and is a Bioconductor submission candidate.
+Until it is included in a release, development installation is:
+
+```r
+BiocManager::install(c("GenomicRanges", "IRanges", "S4Vectors"))
+remotes::install_github("Renscq/GeneTrackR", dependencies = TRUE)
 ```
 
-## Locate the bundled example data
+Install `BiocManager` and `remotes` first if they are not present. After
+acceptance, use `BiocManager::install("GeneTrackR")` for the appropriate release.
+`Rsamtools` is optional for indexed regional access. In-memory examples work
+without it. `BiocStyle` is a suggested documentation dependency.
 
-The core demo files are installed under `extdata`:
+# Data model and designed truth {#demo-data}
 
-```{r demo-paths}
-gp_file <- system.file(
-  "extdata",
-  "gtr_demo.genePredExt",
-  package = "GeneTrackR"
-)
+All `gtr_demo_*` files describe one deterministic synthetic system. Values are
+demonstration data, not measurements from biological samples.
 
-vcf_file <- system.file(
-  "extdata",
-  "gtr_demo_variants.vcf",
-  package = "GeneTrackR"
-)
+| Input | Main contract |
+|---|---|
+| `gtr_demo.genePredExt`, `.gtf`, `.gff3` | Equivalent 20-gene, 24-transcript annotation |
+| `gtr_demo_features.bed` | Fifteen interval annotations around the designed loci |
+| `gtr_demo_*plus.bedgraph`, `gtr_demo_*minus.bedgraph` | Strand-specific RNA-seq/Ribo-seq signals |
+| `gtr_demo_variants.vcf` | 56 variants and 36 samples, with FORMAT/sample fields |
+| `gtr_demo_pheno.tsv` | Numeric and categorical traits keyed by `sample_id` |
+| `scripts/demo_model/truth.tsv` | Packaged source table for selected designed effects |
 
-pheno_file <- system.file(
-  "extdata",
-  "gtr_demo_pheno.tsv",
-  package = "GeneTrackR"
-)
+GeneA has four genotype-defined haplotypes with nine samples each. Its synthetic
+traits contain designed positive controls; `flowering_time` is a negative
+control with the same group distributions. The LD example contains twelve
+variants with a perfect six-variant core and weaker downstream relationships.
+These controls demonstrate expected behavior and do not validate a biological
+mechanism.
 
-c(
-  annotation = gp_file,
-  variants = vcf_file,
-  phenotype = pheno_file
-)
+```{r inputs}
+gp <- read_genepred(demo_file("gtr_demo.genePredExt"), format = "genePredExt",
+  verbose = FALSE, progress = FALSE)
+vcf <- read_vcf(demo_file("gtr_demo_variants.vcf"), mode = "memory",
+  verbose = FALSE, progress = FALSE)
+pheno <- read_pheno(demo_file("gtr_demo_pheno.tsv"), verbose = FALSE, progress = FALSE)
+stopifnot(nrow(gp$genes) == 20L, nrow(gp$transcripts) == 24L,
+  nrow(vcf$data) == 56L, length(vcf$meta$sample_names) == 36L, nrow(pheno) == 36L)
+head(list.files(system.file("extdata", package = "GeneTrackR"), pattern = "^gtr_demo_"))
 ```
 
-The complete demo also includes GTF/GFF3/BED annotation files and strand-specific RNA-seq/Ribo-seq bedGraph tracks. See the **GeneTrackR deterministic example data** article for the complete data model and designed truth.
+## Coordinates and sample identifiers
 
-## Read the three core inputs
+Internal intervals are **1-based closed**. BED/bedGraph file coordinates are
+converted at the file boundary. VCF records are stored as 1-based point
+positions, including indels. Check genome assembly, chromosome names, strand,
+units and sample identifiers before combining real inputs.
 
-```{r read-core-inputs}
-gp <- read_genepred(
-  gp_file,
-  format = "genePredExt",
-  verbose = FALSE,
-  progress = FALSE
-)
+The phenotype rows deliberately differ from VCF sample order. Matching uses
+`sample_id`, never row position. Report both input sizes and losses before
+joining data:
 
-vcf <- read_vcf(
-  vcf_file,
-  mode = "memory",
-  keep_genotype = TRUE,
-  verbose = FALSE,
-  progress = FALSE
-)
-
-pheno <- read_pheno(
-  pheno_file,
-  verbose = FALSE,
-  progress = FALSE
-)
+```{r sample-alignment}
+vcf_ids <- vcf$meta$sample_names
+pheno_ids <- as.character(pheno$sample_id)
+shared_ids <- intersect(vcf_ids, pheno_ids)
+data.frame(vcf_samples = length(vcf_ids), phenotype_samples = length(pheno_ids),
+  shared = length(shared_ids), vcf_only = length(setdiff(vcf_ids, pheno_ids)),
+  phenotype_only = length(setdiff(pheno_ids, vcf_ids)))
+stopifnot(!anyDuplicated(vcf_ids), !anyDuplicated(pheno_ids),
+  length(shared_ids) == 36L, !identical(vcf_ids, pheno_ids))
 ```
 
-These objects preserve the data needed by downstream modules. In particular, keep VCF genotype columns when the analysis will include haplotypes or LD.
+# First locus and haplotypes
 
-## Inspect a candidate gene
-
-`GeneA` is the primary positive-strand demo locus.
-
-```{r inspect-gene}
-genea <- retrieve_feature(
-  gp,
-  gene_id = "GeneA"
-)
-
+```{r first-gene}
+genea <- retrieve_feature(gp, gene_id = "GeneA")
 genea$genes
+plot_gene(gp, gene_id = "GeneA", text_size = 10) & classic_style
 ```
 
-A gene model can be drawn directly from the same annotation object:
-
-```{r plot-gene}
-plot_gene(
-  gp,
-  gene_id = "GeneA",
-  text_size = 10
-)
+```{r first-haplotypes}
+hap <- hap_gene_variant(vcf, annotation = gp, gene_id = "GeneA", genotype_mode = "string")
+hap$haplotypes
+stopifnot(nrow(hap$haplotypes) == 4L, all(hap$haplotypes$sample_n == 9L))
 ```
 
-## Retrieve variants for the same locus
+Genotype encoding, missing calls, phasing and grouping choices should be made
+explicit for real data. The [variant and haplotype workflow](haplotype.html)
+explains those decisions before association testing.
 
-```{r retrieve-variants}
-genea_variants <- retrieve_vcf(
-  vcf,
-  annotation = gp,
-  gene_id = "GeneA",
-  as = "data.table",
-  verbose = FALSE,
-  progress = FALSE
-)
+# Entry points and returned objects
 
-genea_variants[, .(
-  variant_id,
-  chrom,
-  pos,
-  ref,
-  alt,
-  variant_type
-)]
-```
+| Task | Recommended entry | Result |
+|---|---|---|
+| Read annotation | `read_genepred()`, `read_gtf()`, `read_gff()`, `read_bed()` | Feature-compatible annotation |
+| Construct intervals | `Feature()` or `as_feature(gr)` | Feature, also inheriting FeatureTrack |
+| Read signals | `read_bwg()` | BwgTrack with sample/mode metadata |
+| Read variants | `read_vcf()` | VariantTrack |
+| Construct haplotypes | `hap_gene_variant()`, `hap_region_variant()` | HapVariant |
+| Compare numeric traits | `plot_hap_pheno()`, `plot_variant_pheno()` | Tables and `$figure` |
+| Compute/plot LD | `compute_ld_block()`, `plot_ld_block()` | LDTrack; plot stored in `$figure` |
 
-The annotation object defines the interval; no manual coordinate copy is needed.
+`FeatureTrack()` and `read_vcf_track()` remain supported aliases of `Feature()`
+and `read_vcf()`. Existing names, argument defaults and return objects remain
+supported. Plotting functions that return a result object require `$figure`
+when a ggplot/patchwork is needed for saving or composition.
 
-## Build gene haplotypes
+# Reading order and migrated tutorials
 
-```{r build-haplotypes}
-hap <- hap_gene_variant(
-  vcf,
-  annotation = gp,
-  gene_id = "GeneA",
-  genotype_mode = "string"
-)
+1. This introduction and data model.
+2. [Annotation, signal and Bioconductor ranges](annotation.html).
+3. [Variants, haplotypes and LD](haplotype.html).
+4. [Phenotypes, refinement and variant effects](phenotype.html).
+5. [Complete candidate-locus workflow](complete-workflow.html).
+6. [Export, browser use and reproducibility](export-results.html).
 
-hap$haplotypes[, c(
-  "hap_id",
-  "sample_n",
-  "samples"
-), with = FALSE]
-```
-
-The deterministic GeneA example contains four balanced haplotype groups. Keep the returned `HapVariant` object: it carries sample assignments and genotype tables into phenotype, refinement, and variant-effect analyses.
-
-## Test a phenotype association
-
-```{r haplotype-phenotype}
-hap_pheno <- plot_hap_pheno(
-  hap,
-  phenotype = pheno,
-  traits = "protein_content",
-  min_hap_samples = 3,
-  text_size = 10
-)
-
-hap_pheno$pvalue
-```
-
-GeneTrackR aligns phenotype and genotype records by `sample_id`. Row order should never be used as the sample-matching rule.
-
-## Where to go next
-
-This page is the starting point. Choose the next article for your task rather
-than reading all 15 tutorials in sequence:
-
-- [Core workflow](core-workflows.html) provides a compact analysis path through
-  haplotypes, phenotype association, LD, refinement and variant effects.
-- [Complete candidate-locus workflow](complete-workflow.html) expands that path
-  with signal tracks, browser inspection, export and reproducibility guidance.
-- [Deterministic example data](example-data.html) documents the file inventory,
-  coordinate conventions, sample design and known positive/negative controls.
-- [Signal tracks](signal-tracks.html) covers strand-specific RNA-seq and
-  Ribo-seq analyses; the other topic tutorials serve as focused references.
-
-## Session information
+The former fifteen tutorials are consolidated into these six workflows.
+Retired website article URLs redirect to the relevant new workflow/section.
+Local `browseVignettes("GeneTrackR")` lists the six current names; retired
+local vignette names are no longer installed. Full argument descriptions and
+specialized plotting controls remain in the function reference and
+`help("GeneTrackR-advanced-parameters", package = "GeneTrackR")`.
 
 ```{r session-info}
 sessionInfo()

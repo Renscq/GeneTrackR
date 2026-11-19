@@ -62,6 +62,12 @@ Use \code{unit = "segment"} to inspect each exon/CDS/UTR segment separately,
 and \code{unit = "transcript"} to summarize feature lengths per transcript.
 \code{transcript_length = "spliced"} uses exon lengths, whereas \code{"genomic"}
 uses transcript span length including introns.
+
+Transcript-level exon/CDS/UTR totals contain one row per transcript and
+selected feature, including CDS/UTR with \code{unit = "auto"}. Lengths sum the
+feature's segments rather than the genomic span between the first and last
+segment. Distinct transcripts remain separate even when their lengths match.
+Non-coding transcripts without CDS/UTR segments do not acquire summary rows.
 }
 \examples{
 gp <- read_genepred(

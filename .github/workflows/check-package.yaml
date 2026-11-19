@@ -1,0 +1,73 @@
+name: Package checks
+
+"on":
+  push:
+    branches: [devel, development]
+  pull_request:
+    branches: [devel, development]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: package-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bioc-devel:
+    name: Linux Bioconductor devel
+    runs-on: ubuntu-latest
+    container: bioconductor/bioconductor_docker:devel
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: "yes"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: r-lib/actions/setup-pandoc@v2
+      - uses: r-lib/actions/setup-tinytex@v2
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::BiocCheck
+          needs: check
+      - name: Run complete package checks
+        run: Rscript tools/check_package.R --output-dir temp/package-check
+      - name: Retain reports and source archive
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: checks-bioc-devel-linux
+          path: temp/package-check
+          if-no-files-found: error
+
+  cross-platform:
+    name: ${{ matrix.os }} R release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: "yes"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: r-lib/actions/setup-pandoc@v2
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-tinytex@v2
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::BiocCheck
+          needs: check
+      - name: Run complete package checks
+        run: Rscript tools/check_package.R --output-dir temp/package-check
+      - name: Retain reports and source archive
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: checks-${{ matrix.os }}-release
+          path: temp/package-check
+          if-no-files-found: error

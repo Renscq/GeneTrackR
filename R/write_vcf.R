@@ -1,11 +1,17 @@
 # Author: Rensc
-# Date: 2026-08-31
-# Version: dev003
+# Date: 2026-11-19
+# Version: dev004
 # Function: Write VariantTrack objects to VCF files
 # Input: VariantTrack object
 # Output: VCF file
 
 #' Write a VariantTrack object to VCF
+#'
+#' @description
+#' Write the eight site-level VCF fields with an optional minimal metadata
+#' header. FORMAT definitions, sample columns and genotypes are not exported.
+#' Keep the original VCF for genotype-preserving exchange, or save the complete
+#' object with [base::saveRDS()] for reuse in R.
 #'
 #' @param object A `VariantTrack` object created by `read_vcf()`.
 #' @param file Output VCF file path.
@@ -45,7 +51,9 @@ write_vcf <- function(object, file, overwrite = FALSE, include_header = TRUE) {
 
 #' Write a VariantTrack object
 #'
-#' @description Backward-compatible wrapper around `write_vcf()`.
+#' @description Backward-compatible wrapper around `write_vcf()`. The output
+#' contains eight site-level fields and omits FORMAT, sample columns and
+#' genotypes. See [write_vcf()] for preservation options.
 #' @inheritParams write_vcf
 #' @return Invisibly returns the output file path.
 #' @examples

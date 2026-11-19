@@ -78,7 +78,7 @@ For an existing `GRanges` object, use `as_feature(gr)` to enter the interval
 workflow and `as_granges(feature, level = "feature")` to return to Bioconductor.
 The feature-level round trip retains sequence information, range names and
 metadata, with standard annotation columns following Feature's normalization
-and genomic sorting. See the [Core workflow](https://renscq.github.io/GeneTrackR/articles/core-workflows.html)
+and genomic sorting. See [Annotation and Bioconductor ranges](https://renscq.github.io/GeneTrackR/articles/annotation.html#existing-granges)
 for an executable example and the supported metadata rules.
 
 ## Quick start: inspect a gene locus
@@ -182,19 +182,20 @@ adjusted P values. All 36 samples are retained in the comparison.
 
 ## Documentation
 
-The full tutorials remain in `vignettes/` and are published on the package
-website. Start with **Getting started**, then choose **Core workflow** for a
-compact analysis or **Complete workflow** for the expanded candidate-locus
-analysis. Use the example-data and topic tutorials as references for the tasks
-you need; reading all 15 tutorials in sequence is not required.
+The six numbered workflows in `vignettes/` are published on the package
+website. Start with **Getting started and the example data**, then choose the
+workflow for your task. **Complete workflow** connects locus inspection to
+haplotype and phenotype analysis. Retired article URLs redirect to the
+corresponding workflow or section.
 
 | Task | Tutorials |
 |---|---|
-| Start here | [Getting started](https://renscq.github.io/GeneTrackR/articles/getting-started.html), [Core workflow](https://renscq.github.io/GeneTrackR/articles/core-workflows.html) |
-| Understand data and annotation | [Example data](https://renscq.github.io/GeneTrackR/articles/example-data.html), [Annotation](https://renscq.github.io/GeneTrackR/articles/annotation.html) |
-| Visualize genomic tracks | [Gene models](https://renscq.github.io/GeneTrackR/articles/gene-model.html), [Signals](https://renscq.github.io/GeneTrackR/articles/signal-tracks.html), [Variants](https://renscq.github.io/GeneTrackR/articles/variant-tracks.html), [Integrated tracks](https://renscq.github.io/GeneTrackR/articles/browser-tracks.html) |
-| Analyze haplotypes and traits | [Haplotypes](https://renscq.github.io/GeneTrackR/articles/haplotype.html), [Phenotypes](https://renscq.github.io/GeneTrackR/articles/phenotype.html), [LD](https://renscq.github.io/GeneTrackR/articles/linkage-disequilibrium.html), [Refinement](https://renscq.github.io/GeneTrackR/articles/haplotype-refinement.html), [Variant effects](https://renscq.github.io/GeneTrackR/articles/variant-effect.html) |
-| Complete and export an analysis | [Complete workflow](https://renscq.github.io/GeneTrackR/articles/complete-workflow.html), [Export and reproducibility](https://renscq.github.io/GeneTrackR/articles/export-results.html) |
+| 01 Start and inspect the data model | [Getting started and example data](https://renscq.github.io/GeneTrackR/articles/getting-started.html) |
+| 02 Work with annotations, signals and GRanges | [Annotation and Bioconductor ranges](https://renscq.github.io/GeneTrackR/articles/annotation.html) |
+| 03 Analyze variants, haplotypes and LD | [Variants, haplotypes and LD](https://renscq.github.io/GeneTrackR/articles/haplotype.html) |
+| 04 Compare traits and inspect refinement/effects | [Phenotypes and refinement](https://renscq.github.io/GeneTrackR/articles/phenotype.html) |
+| 05 Connect the candidate-locus evidence | [Complete workflow](https://renscq.github.io/GeneTrackR/articles/complete-workflow.html) |
+| 06 Export tracks, results and provenance | [Export and reproducibility](https://renscq.github.io/GeneTrackR/articles/export-results.html) |
 
 All internal genomic coordinates are **1-based closed**. Readers and writers
 handle the source-format coordinate conventions; consult the annotation and

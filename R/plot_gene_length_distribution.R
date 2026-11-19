@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-08-31
-# Version: dev004
+# Date: 2026-11-19
+# Version: dev006
 # Function: Extract and plot unified gene feature length distributions
 # Input: GenePred object and feature selection
 # Output: Length table or ggplot object
@@ -36,6 +36,12 @@
 #' and `unit = "transcript"` to summarize feature lengths per transcript.
 #' `transcript_length = "spliced"` uses exon lengths, whereas `"genomic"`
 #' uses transcript span length including introns.
+#'
+#' Transcript-level exon/CDS/UTR totals contain one row per transcript and
+#' selected feature, including CDS/UTR with `unit = "auto"`. Lengths sum the
+#' feature's segments rather than the genomic span between the first and last
+#' segment. Distinct transcripts remain separate even when their lengths match.
+#' Non-coding transcripts without CDS/UTR segments do not acquire summary rows.
 #' @return A data.table with feature-length records.
 #' @examples
 #' gp <- read_genepred(
@@ -146,6 +152,12 @@ get_gene_length_distribution_table <- function(object,
 #' `cds`, `utr`, `five_utr`, and `three_utr`. Use `return_data = TRUE` to inspect
 #' the exact groups before assigning named colors. See also
 #' [GeneTrackR-advanced-parameters].
+#'
+#' Transcript-level exon/CDS/UTR summaries contribute one observation per
+#' transcript and feature, including CDS/UTR selected by `unit = "auto"`.
+#' Exons with `unit = "auto"` remain individual segment observations. Use
+#' `return_data = TRUE` to inspect the exact observations used in the plot.
+#' See [get_gene_length_distribution_table()] and the annotation vignette.
 #' @return A ggplot object, or a list with `plot` and `data` when
 #' `return_data = TRUE`.
 #' @examples
@@ -472,8 +484,10 @@ summarise_segments_by_transcript <- function(segment_dt, feature, keep_zero = FA
     return(empty_gene_length_distribution_table())
   }
 
+  # Keep the scalar argument outside data.table's column lookup.
+  feature_label <- feature
   out <- segment_dt[, .(
-    feature = feature,
+    feature = feature_label,
     unit = "transcript",
     feature_id = transcript_id[1L],
     gene_id = gene_id[1L],

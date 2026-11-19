@@ -1,0 +1,10 @@
+Package: GeneTrackR
+Version: 0.99.5
+Scope: tests
+Metric: line
+Exclusions: none requested
+Engine: covr 4.0.0
+R: R version 4.6.1 (2026-06-24 ucrt)
+Platform: x86_64-w64-mingw32
+SourceRef: 7c801dd5fda8006dd67a4cdaa962a71463a145e2
+CreatedUTC: 2026-11-19T13:15:37Z

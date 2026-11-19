@@ -92,6 +92,12 @@ quality control and comparison of coding versus non-coding feature lengths.
 \code{cds}, \code{utr}, \code{five_utr}, and \code{three_utr}. Use \code{return_data = TRUE} to inspect
 the exact groups before assigning named colors. See also
 \link{GeneTrackR-advanced-parameters}.
+
+Transcript-level exon/CDS/UTR summaries contribute one observation per
+transcript and feature, including CDS/UTR selected by \code{unit = "auto"}.
+Exons with \code{unit = "auto"} remain individual segment observations. Use
+\code{return_data = TRUE} to inspect the exact observations used in the plot.
+See \code{\link[=get_gene_length_distribution_table]{get_gene_length_distribution_table()}} and the annotation vignette.
 }
 \examples{
 gp <- read_genepred(

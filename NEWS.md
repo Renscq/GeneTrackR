@@ -1,3 +1,41 @@
+# GeneTrackR 0.99.6
+
+## Review documentation and validation
+
+- Consolidated fifteen tutorials into six numbered, executable BiocStyle
+  workflows. Updated reading paths and mapped retired website article URLs to
+  the corresponding workflow or section.
+- Applied explicit Arial/plain black text in tutorial displays and exports,
+  with classic styling for continuous plots and retained haplotype/LD layouts.
+- Added a comparison with Gviz, rtracklayer and VariantAnnotation, and documented
+  the current class/I/O choices, implemented interoperability and remaining
+  standard-VCF/reader reuse work.
+- Established a reproducible covr tests-only line-coverage baseline with
+  per-file reports and provenance; added package-check and coverage CI.
+- Added behavioral tests for annotation summaries/validation, length extraction
+  and plotting, result printing, variant conflict policies and real indexed VCF
+  queries, including sample schema, missing calls and empty regions.
+- Preserved public APIs, compatibility aliases, object classes and all VCF/I/O
+  backends. Analysis behavior is unchanged apart from the length-summary
+  correction below.
+
+## Length-summary correction
+
+- Fixed repeated transcript-level exon/CDS/UTR totals caused by a data.table
+  column masking the feature argument. Summaries now contain one row per
+  transcript and feature, including CDS/UTR selected with `unit = "auto"`.
+- Retained segment records, inclusive length formulas, strand-aware UTR sides,
+  coordinates, output schema and compatibility aliases. Distinct transcripts
+  with equal lengths remain separate; plots use the corrected observation count.
+- Added multi-exon and both-strand regressions, zero/empty input checks and
+  histogram-count checks, and synchronized the annotation examples and help.
+
+## Known limitations retained
+
+- The existing VCF writer remains sites-only: its eight core fields omit FORMAT
+  and sample genotype columns. The export workflow explicitly checks this
+  boundary and retains the original VCF and complete RDS for genotype data.
+
 # GeneTrackR 0.99.5
 
 ## Metadata fidelity fixes

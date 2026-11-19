@@ -19,7 +19,10 @@ write_vcf(object, file, overwrite = FALSE, include_header = TRUE)
 Invisibly returns the output file path.
 }
 \description{
-Write a VariantTrack object to VCF
+Write the eight site-level VCF fields with an optional minimal metadata
+header. FORMAT definitions, sample columns and genotypes are not exported.
+Keep the original VCF for genotype-preserving exchange, or save the complete
+object with \code{\link[base:saveRDS]{base::saveRDS()}} for reuse in R.
 }
 \examples{
 vcf <- read_vcf(

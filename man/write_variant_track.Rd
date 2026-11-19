@@ -19,7 +19,9 @@ write_variant_track(object, file, overwrite = FALSE, include_header = TRUE)
 Invisibly returns the output file path.
 }
 \description{
-Backward-compatible wrapper around \code{write_vcf()}.
+Backward-compatible wrapper around \code{write_vcf()}. The output
+contains eight site-level fields and omits FORMAT, sample columns and
+genotypes. See \code{\link[=write_vcf]{write_vcf()}} for preservation options.
 }
 \examples{
 vcf_file <- system.file(
