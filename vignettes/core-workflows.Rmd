@@ -98,6 +98,62 @@ The BED file contains promoters, enhancers, candidate regions, a QTL interval, r
 head(features$data)
 ```
 
+## Enter from existing GRanges
+
+An existing Bioconductor `GRanges` object can enter the interval-feature
+workflow directly. This example constructs two external intervals at the demo
+locus; it does not reread them through a GeneTrackR file parser.
+
+```{r bioconductor-feature-input}
+external_ranges <- GenomicRanges::GRanges(
+  "chr1",
+  IRanges::IRanges(c(12341000L, 12339900L), c(12341100L, 12340000L))
+)
+names(external_ranges) <- c("region_late", "region_early")
+S4Vectors::mcols(external_ranges)$score <- c(4.5, 2.5)
+S4Vectors::metadata(external_ranges) <- list(source = "external_workflow")
+
+external_features <- as_feature(external_ranges)
+plot_feature_track(
+  external_features,
+  chrom = "chr1", start = 12339001L, end = 12352000L,
+  plot_theme = "classic", text_size = 10
+) + ggplot2::theme(
+  text = ggplot2::element_text(family = "Arial", colour = "black", face = "plain")
+)
+```
+
+Convert back at the feature level before using Bioconductor interval methods:
+
+```{r bioconductor-feature-output}
+returned_ranges <- as_granges(external_features, level = "feature")
+query <- GenomicRanges::GRanges(
+  "chr1", IRanges::IRanges(12339950L, 12340050L)
+)
+hits <- GenomicRanges::findOverlaps(returned_ranges, query)
+returned_ranges[S4Vectors::queryHits(hits)]
+
+stopifnot(
+  length(returned_ranges) == length(external_ranges),
+  identical(names(returned_ranges), c("region_early", "region_late")),
+  identical(S4Vectors::mcols(returned_ranges)$score, c(2.5, 4.5))
+)
+```
+
+The two input records are retained without coordinate shifts. Feature's usual
+genomic sorting changes their order, with range names and metadata kept aligned.
+Sequence information, object metadata and column annotations are also retained. Standard annotation
+columns follow Feature's existing normalization; additional factor, list, Rle
+and Bioconductor List columns are supported. Matrix-valued metadata and columns
+that collide with structural names are rejected explicitly. See `?as_feature`
+for the complete conversion rules.
+
+Ordinary intervals do not define exons or CDS records. Use `plot_feature_track()`
+for these inputs; gene-model functions require the corresponding annotation
+records. When retaining custom per-feature metadata in a gene model, subset the
+GRanges before conversion: rebuilding a gene model can replace feature records,
+and conversion back reports missing metadata rather than silently losing it.
+
 ## Variant retrieval
 
 The main GeneA interval contains SNPs, insertions, deletions, a high-LD block, and a deliberately incomplete upstream variant.

@@ -23,6 +23,17 @@ transcript, exon, and feature levels. In-memory \code{BwgTrack} objects expose
 \code{sample_id} and signal \code{score} metadata, while \code{VariantTrack} objects retain
 their VCF-derived metadata columns. Lazy signal or variant objects should be
 retrieved by genomic region before conversion.
+
+At \code{level = "feature"}, all Feature table metadata columns are exported.
+Existing fields retain their names and values; previously omitted columns
+such as score, source, phase, and custom annotations are included as well.
+For objects created by \code{as_feature()} from GRanges, the original sequence
+information, object metadata, column annotations, and aligned range names
+are restored. Metadata names reserved by GRanges, such as \code{width} or
+\code{seqnames}, are rejected explicitly. Standard
+annotation fields follow Feature's normalization rules, and row order follows
+Feature's genomic sorting. Gene, transcript, and exon levels remain summary
+projections with their existing fields and behavior.
 }
 \examples{
 gp_file <- system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR")
@@ -41,4 +52,7 @@ as_granges(signal)
 vcf_file <- system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")
 vcf <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
 as_granges(vcf)
+}
+\seealso{
+\code{\link[=as_feature]{as_feature()}}
 }

@@ -87,9 +87,11 @@ reference:
 
   - title: Bioconductor interoperability
     desc: >
-      Convert GeneTrackR annotation, signal, and variant tracks to standard
-      GenomicRanges objects for downstream Bioconductor interval workflows.
+      Bring existing GRanges into the Feature interval workflow with as_feature(),
+      and return feature-level metadata to Bioconductor with as_granges().
+      Signal and variant tracks retain their existing GRanges export paths.
     contents:
+      - as_feature
       - as_granges
 
   - title: Annotation I/O
@@ -108,7 +110,6 @@ reference:
     desc: >
       Convert, query, merge, validate, summarize, and inspect annotation objects.
     contents:
-      - as_feature
       - as_genepred
       - as_gene_table
       - as_transcript_table

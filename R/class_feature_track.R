@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-09-01
-# Version: dev005
+# Date: 2026-11-19
+# Version: dev006
 # Function: Define unified Feature annotation class and GenePred-compatible constructor
 # Input: Standardized annotation or variant tables
 # Output: Unified S3 track objects
@@ -82,9 +82,9 @@ standardize_feature_table <- function(data) {
   stop_if_not(all(required_cols %in% names(dt)), "`data` must contain `chrom`, `start`, and `end` columns.")
 
   if (!"feature_id" %in% names(dt)) dt[, "feature_id" := paste0("feature_", seq_len(.N))]
-  if (!"name" %in% names(dt)) dt[, "name" := as.character(dt[["feature_id"]])]
+  if (!"name" %in% names(dt)) data.table::set(dt, j = "name", value = as.character(dt[["feature_id"]]))
   if (!"type" %in% names(dt)) dt[, "type" := "feature"]
-  if (!"level" %in% names(dt)) dt[, "level" := infer_feature_level(dt[["type"]])]
+  if (!"level" %in% names(dt)) data.table::set(dt, j = "level", value = infer_feature_level(dt[["type"]]))
   if (!"score" %in% names(dt)) dt[, "score" := NA_real_]
   if (!"strand" %in% names(dt)) dt[, "strand" := "*"]
   if (!"source" %in% names(dt)) dt[, "source" := NA_character_]
@@ -96,25 +96,25 @@ standardize_feature_table <- function(data) {
   if (!"phase" %in% names(dt)) dt[, "phase" := NA_character_]
   if (!"attribute" %in% names(dt)) dt[, "attribute" := NA_character_]
 
-  dt[, "chrom" := as.character(dt[["chrom"]])]
-  dt[, "start" := as.integer(dt[["start"]])]
-  dt[, "end" := as.integer(dt[["end"]])]
-  dt[, "feature_id" := as.character(dt[["feature_id"]])]
-  dt[, "name" := as.character(dt[["name"]])]
-  dt[, "type" := as.character(dt[["type"]])]
-  dt[, "level" := as.character(dt[["level"]])]
-  dt[, "score" := suppressWarnings(as.numeric(dt[["score"]]))]
-  dt[, "strand" := as.character(dt[["strand"]])]
+  data.table::set(dt, j = "chrom", value = as.character(dt[["chrom"]]))
+  data.table::set(dt, j = "start", value = as.integer(dt[["start"]]))
+  data.table::set(dt, j = "end", value = as.integer(dt[["end"]]))
+  data.table::set(dt, j = "feature_id", value = as.character(dt[["feature_id"]]))
+  data.table::set(dt, j = "name", value = as.character(dt[["name"]]))
+  data.table::set(dt, j = "type", value = as.character(dt[["type"]]))
+  data.table::set(dt, j = "level", value = as.character(dt[["level"]]))
+  data.table::set(dt, j = "score", value = suppressWarnings(as.numeric(dt[["score"]])))
+  data.table::set(dt, j = "strand", value = as.character(dt[["strand"]]))
   dt[is.na(strand) | !strand %in% c("+", "-", "*", "."), "strand" := "*"]
   dt[strand == ".", "strand" := "*"]
-  dt[, "source" := as.character(dt[["source"]])]
-  dt[, "gene_id" := as.character(dt[["gene_id"]])]
-  dt[, "transcript_id" := as.character(dt[["transcript_id"]])]
-  dt[, "parent_id" := as.character(dt[["parent_id"]])]
-  dt[, "gene_type" := as.character(dt[["gene_type"]])]
-  dt[, "exon_number" := suppressWarnings(as.integer(dt[["exon_number"]]))]
-  dt[, "phase" := as.character(dt[["phase"]])]
-  dt[, "attribute" := as.character(dt[["attribute"]])]
+  data.table::set(dt, j = "source", value = as.character(dt[["source"]]))
+  data.table::set(dt, j = "gene_id", value = as.character(dt[["gene_id"]]))
+  data.table::set(dt, j = "transcript_id", value = as.character(dt[["transcript_id"]]))
+  data.table::set(dt, j = "parent_id", value = as.character(dt[["parent_id"]]))
+  data.table::set(dt, j = "gene_type", value = as.character(dt[["gene_type"]]))
+  data.table::set(dt, j = "exon_number", value = suppressWarnings(as.integer(dt[["exon_number"]])))
+  data.table::set(dt, j = "phase", value = as.character(dt[["phase"]]))
+  data.table::set(dt, j = "attribute", value = as.character(dt[["attribute"]]))
 
   dt[is.na(gene_id) | gene_id == "", "gene_id" := NA_character_]
   dt[is.na(transcript_id) | transcript_id == "", "transcript_id" := NA_character_]
@@ -157,10 +157,10 @@ derive_feature_hierarchy <- function(dt, genes = NULL, transcripts = NULL, exons
   }
 
   x <- data.table::copy(data.table::as.data.table(dt))
-  gene_rows <- x[tolower(x[["level"]]) == "gene" | tolower(x[["type"]]) == "gene"]
-  tx_rows <- x[tolower(x[["level"]]) == "transcript" | is_transcript_feature_type(x[["type"]])]
-  exon_rows <- x[tolower(x[["level"]]) == "exon" | tolower(x[["type"]]) == "exon"]
-  cds_rows <- x[tolower(x[["type"]]) == "cds"]
+  gene_rows <- x[tolower(level) == "gene" | tolower(type) == "gene"]
+  tx_rows <- x[tolower(level) == "transcript" | is_transcript_feature_type(type)]
+  exon_rows <- x[tolower(level) == "exon" | tolower(type) == "exon"]
+  cds_rows <- x[tolower(type) == "cds"]
 
   if (is.null(transcripts)) {
     if (nrow(tx_rows) > 0L) {
@@ -280,11 +280,56 @@ derive_feature_hierarchy <- function(dt, genes = NULL, transcripts = NULL, exons
 
 #' Coerce an annotation object to a unified Feature object
 #'
-#' @param object A GenePred, FeatureTrack, or data.frame-like object.
+#' @description
+#' Converts existing annotation objects, interval tables, or Bioconductor
+#' `GenomicRanges::GRanges` into a Feature object. GRanges coordinates are
+#' already 1-based closed and are not shifted. All records, including repeated
+#' feature IDs, are retained and follow the existing Feature genomic sorting.
+#'
+#' @details
+#' For GRanges input, standard annotation columns follow Feature's existing
+#' normalization: identifiers and annotation labels become character vectors,
+#' scores become numeric, and exon numbers become integers. Additional atomic,
+#' factor, list, Rle, and Bioconductor List columns retain their values and
+#' classes, element names, and column annotations in the feature-level round
+#' trip. Matrix-valued and other unsupported S4 metadata columns are rejected.
+#' Metadata names must be unique and cannot collide with `chrom`, `start`,
+#' `end`, `strand`, or data.table's reserved names `.N`, `.I`, `.SD`, `.BY`,
+#' and `.GRP`. Start coordinates must be positive and intervals must have
+#' positive width.
+#'
+#' Range names, sequence information (including unused sequence levels), and
+#' object metadata are retained for `as_granges(x, level = "feature")`. A
+#' collision-safe internal column in `x$data` tracks source rows for both named
+#' and unnamed ranges during sorting and ordinary interval subsetting; it is
+#' not exported as metadata. Annotations and metadata on the input metadata
+#' DataFrame are also retained.
+#' Names are also used as display labels if no `name` metadata column is supplied.
+#'
+#' Gene-model information is derived only from the supplied annotation records
+#' using the existing Feature rules and canonical columns such as `type`,
+#' `gene_id`, and `transcript_id`; other metadata names are not mapped to them.
+#' Ordinary ranges do not supply exon or CDS records. Gene-model rebuilding
+#' operations can discard per-feature metadata;
+#' conversion back then fails explicitly rather than silently dropping fields.
+#' Subset GRanges before conversion when such metadata must be retained.
+#'
+#' @param object A GenePred, FeatureTrack, data.frame-like, or GRanges object.
 #' @return A Feature object.
 #' @examples
 #' x <- data.frame(chrom = "chr1", start = 1L, end = 100L)
 #' as_feature(x)
+#'
+#' gr <- GenomicRanges::GRanges(
+#'   "chr1", IRanges::IRanges(c(20L, 5L), c(25L, 9L))
+#' )
+#' names(gr) <- c("late", "early")
+#' S4Vectors::mcols(gr)$score <- c(4.5, 2.5)
+#' feature <- as_feature(gr)
+#' restored <- as_granges(feature, level = "feature")
+#' names(restored)
+#' S4Vectors::mcols(restored)$score
+#' @seealso [as_granges()], [plot_feature_track()]
 #' @export
 as_feature <- function(object) {
   UseMethod("as_feature")

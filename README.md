@@ -16,7 +16,7 @@ haplotypes and phenotypes in one programmable workflow. It supports:
 - bedGraph, wig and bigWig signals, plus VCF variants;
 - integrated locus plots, haplotype construction, phenotype comparisons,
   linkage disequilibrium and haplotype refinement;
-- structured analysis tables, standard-format export and `GRanges` conversion.
+- structured analysis tables, standard-format export and `GRanges` interchange.
 
 ![GeneA gene models with strand-specific RNA-seq and Ribo-seq signals on a shared genomic axis](man/figures/readme-tracks.png)
 
@@ -61,12 +61,20 @@ in-memory workflows and the examples below do not require it.
 |---|---|
 | Read annotation files | `read_genepred()`, `read_gtf()`, `read_gff()`, `read_bed()` |
 | Construct annotations from an interval table | `Feature()` |
+| Enter from existing Bioconductor ranges | `as_feature(gr)` |
 | Read signal tracks | `read_bwg()` |
 | Read variants | `read_vcf()` |
 
 `FeatureTrack()` and `read_vcf_track()` remain supported compatibility aliases
 of `Feature()` and `read_vcf()`, respectively. Each alias accepts the same
 arguments and returns the same objects as its recommended entry point.
+
+For an existing `GRanges` object, use `as_feature(gr)` to enter the interval
+workflow and `as_granges(feature, level = "feature")` to return to Bioconductor.
+The feature-level round trip retains sequence information, range names and
+metadata, with standard annotation columns following Feature's normalization
+and genomic sorting. See the [Core workflow](https://renscq.github.io/GeneTrackR/articles/core-workflows.html)
+for an executable example and the supported metadata rules.
 
 ## Quick start: inspect a gene locus
 

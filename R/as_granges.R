@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-08-31
-# Version: dev001
+# Date: 2026-11-19
+# Version: dev002
 # Function: Convert GeneTrackR genomic track objects to GenomicRanges
 # Input: Annotation, signal, or variant track objects
 # Output: GenomicRanges::GRanges objects
@@ -50,17 +50,7 @@ annotation_as_granges <- function(object, level) {
   }
 
   if (level == "feature") {
-    dt <- as_feature_table(object)
-    return(GenomicRanges::GRanges(
-      seqnames = dt$chrom,
-      ranges = IRanges::IRanges(start = dt$start, end = dt$end),
-      strand = dt$strand,
-      feature_id = dt$feature_id,
-      name = dt$name,
-      type = dt$type,
-      gene_id = dt$gene_id,
-      transcript_id = dt$transcript_id
-    ))
+    return(feature_as_granges(object))
   }
 
   if (level == "gene") {
@@ -159,6 +149,17 @@ variant_as_granges <- function(object) {
 #' their VCF-derived metadata columns. Lazy signal or variant objects should be
 #' retrieved by genomic region before conversion.
 #'
+#' At `level = "feature"`, all Feature table metadata columns are exported.
+#' Existing fields retain their names and values; previously omitted columns
+#' such as score, source, phase, and custom annotations are included as well.
+#' For objects created by `as_feature()` from GRanges, the original sequence
+#' information, object metadata, column annotations, and aligned range names
+#' are restored. Metadata names reserved by GRanges, such as `width` or
+#' `seqnames`, are rejected explicitly. Standard
+#' annotation fields follow Feature's normalization rules, and row order follows
+#' Feature's genomic sorting. Gene, transcript, and exon levels remain summary
+#' projections with their existing fields and behavior.
+#'
 #' @param object A GenePred, Feature, FeatureTrack, BwgTrack, or VariantTrack object.
 #' @param level Annotation feature level. One of `gene`, `transcript`, `exon`,
 #' or `feature`. Ignored for BwgTrack and VariantTrack objects.
@@ -180,6 +181,7 @@ variant_as_granges <- function(object) {
 #' vcf_file <- system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")
 #' vcf <- read_vcf(vcf_file, mode = "memory", verbose = FALSE)
 #' as_granges(vcf)
+#' @seealso [as_feature()]
 #' @export
 as_granges <- function(object, level = c("gene", "transcript", "exon", "feature")) {
   if (inherits(object, "BwgTrack")) {

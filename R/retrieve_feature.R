@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-08-31
-# Version: dev002
+# Date: 2026-11-19
+# Version: dev003
 # Function: Retrieve Feature/GenePred-compatible annotation sub-objects or tables
 # Input: Feature-compatible annotation object
 # Output: Retrieved Feature/GenePred-compatible sub-object or data.table
@@ -110,7 +110,8 @@ retrieve_feature <- function(object,
     if (!field %in% names(dt)) {
       return(dt[0])
     }
-    dt[as.character(dt[[field]]) %in% values]
+    keep <- as.character(dt[[field]]) %in% values
+    dt[keep]
   }
 
   region_filter <- function(dt, start_col, end_col) {
@@ -135,10 +136,11 @@ retrieve_feature <- function(object,
         "`start` and `end` must be valid integers with start <= end."
       )
       if (identical(mode, "within")) {
-        dt <- dt[as.integer(dt[[start_col]]) >= query_start & as.integer(dt[[end_col]]) <= query_end]
+        keep <- as.integer(dt[[start_col]]) >= query_start & as.integer(dt[[end_col]]) <= query_end
       } else {
-        dt <- dt[as.integer(dt[[start_col]]) <= query_end & as.integer(dt[[end_col]]) >= query_start]
+        keep <- as.integer(dt[[start_col]]) <= query_end & as.integer(dt[[end_col]]) >= query_start
       }
+      dt <- dt[keep]
     }
     dt
   }

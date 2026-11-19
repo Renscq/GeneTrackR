@@ -1,3 +1,23 @@
+# GeneTrackR 0.99.4
+
+## GRanges and Feature interoperability
+
+- Added `as_feature()` support for existing `GRanges` objects without changing
+  public function signatures or the `FeatureTrack()` compatibility alias.
+- Extended feature-level `as_granges()` output to retain all annotation table
+  metadata, including score, source, phase and custom columns.
+- Replaced fixed-range metadata indexing with `seq_len()` to remove the
+  BiocCheck coding-practice note while preserving column order and values.
+- Preserved sequence information, object metadata, range names and column
+  annotations through conversion, sorting and ordinary interval subsetting;
+  supported additional factor, list, Rle and Bioconductor List metadata columns.
+- Added explicit diagnostics for unsupported coordinate or metadata layouts and
+  for metadata lost during gene-model rebuilding.
+- Prevented custom metadata names such as `x` and `dt` from masking local
+  variables during Feature normalization, hierarchy lookup and interval filtering.
+- Kept gene/transcript/exon projections, VCF and signal paths, I/O backends,
+  annotation hierarchy derivation and all analysis algorithms unchanged.
+
 # GeneTrackR 0.99.3
 
 ## Preliminary review: metadata and API guidance

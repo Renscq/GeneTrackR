@@ -2,6 +2,7 @@
 
 S3method(as_feature,Feature)
 S3method(as_feature,FeatureTrack)
+S3method(as_feature,GRanges)
 S3method(as_feature,GenePred)
 S3method(as_feature,data.frame)
 S3method(head,BwgTrack)

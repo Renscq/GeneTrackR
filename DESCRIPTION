@@ -1,7 +1,7 @@
 Package: GeneTrackR
 Type: Package
 Title: Genomic Track Visualization and Haplotype Analysis
-Version: 0.99.3
+Version: 0.99.4
 Date: 2026-11-19
 Authors@R: person(given = "Shuchao", family = "Ren", role = c("aut", "cre"),
     email = "rensc0718@163.com")
@@ -21,7 +21,7 @@ biocViews: Software, GenomeAnnotation, VariantAnnotation, Coverage, Sequencing, 
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 Depends: R (>= 4.6.0)
-Imports: data.table, ggplot2, patchwork, rlang, utils, stats, grid,
+Imports: data.table, ggplot2, patchwork, rlang, utils, stats, grid, methods,
         grDevices, tools, GenomicRanges, IRanges, S4Vectors, RColorBrewer
 Suggests: testthat (>= 3.0.0), knitr, rmarkdown, Rsamtools, openxlsx
 VignetteBuilder: knitr
