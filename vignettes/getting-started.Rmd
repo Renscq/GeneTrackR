@@ -32,6 +32,18 @@ GeneTrackR is an R package for annotation, genomic signal, variant, haplotype, p
 
 Package documentation: <https://renscq.github.io/GeneTrackR/>.
 
+## Recommended entry points
+
+Use `Feature()` to construct annotations from an interval table, or a
+format-specific reader (`read_genepred()`, `read_gtf()`, `read_gff()`,
+`read_bed()`) to import annotation files. Use `read_bwg()` for signal tracks
+and `read_vcf()` for variants. Readers return the objects used by downstream
+retrieval, plotting and analysis functions.
+
+`FeatureTrack()` and `read_vcf_track()` remain supported compatibility aliases
+of `Feature()` and `read_vcf()`. Their arguments and return objects are unchanged;
+existing workflows can continue to use them.
+
 ## Installation
 
 After Bioconductor acceptance, install GeneTrackR with `BiocManager`:
@@ -195,13 +207,17 @@ GeneTrackR aligns phenotype and genotype records by `sample_id`. Row order shoul
 
 ## Where to go next
 
-Use the Getting Started articles in this order:
+This page is the starting point. Choose the next article for your task rather
+than reading all 15 tutorials in sequence:
 
-1. **Getting started with GeneTrackR** — installation and the minimal analysis above.
-2. **GeneTrackR deterministic example data** — file inventory, coordinate conventions, sample design, and known positive/negative controls.
-3. **GeneTrackR core workflow** — the full candidate-locus workflow from input validation and browser-like inspection through haplotypes, phenotype association, LD, refinement, variant effects, and export.
-
-For signal-specific analyses, continue with **Strand-specific RNA-seq and Ribo-seq signal tracks**.
+- [Core workflow](core-workflows.html) provides a compact analysis path through
+  haplotypes, phenotype association, LD, refinement and variant effects.
+- [Complete candidate-locus workflow](complete-workflow.html) expands that path
+  with signal tracks, browser inspection, export and reproducibility guidance.
+- [Deterministic example data](example-data.html) documents the file inventory,
+  coordinate conventions, sample design and known positive/negative controls.
+- [Signal tracks](signal-tracks.html) covers strand-specific RNA-seq and
+  Ribo-seq analyses; the other topic tutorials serve as focused references.
 
 ## Session information
 

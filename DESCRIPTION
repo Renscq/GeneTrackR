@@ -1,8 +1,8 @@
 Package: GeneTrackR
 Type: Package
 Title: Genomic Track Visualization and Haplotype Analysis
-Version: 0.99.2
-Date: 2026-09-01
+Version: 0.99.3
+Date: 2026-11-19
 Authors@R: person(given = "Shuchao", family = "Ren", role = c("aut", "cre"),
     email = "rensc0718@163.com")
 Description: Provides tools to read, validate, query, transform, write,
@@ -23,9 +23,9 @@ Roxygen: list(markdown = TRUE)
 Depends: R (>= 4.6.0)
 Imports: data.table, ggplot2, patchwork, rlang, utils, stats, grid,
         grDevices, tools, GenomicRanges, IRanges, S4Vectors, RColorBrewer
-Suggests: testthat (>= 3.0.0), roxygen2, knitr, rmarkdown, Rsamtools, openxlsx
+Suggests: testthat (>= 3.0.0), knitr, rmarkdown, Rsamtools, openxlsx
 VignetteBuilder: knitr
 Config/testthat/edition: 3
-Config/Needs/website: pkgdown
+Config/Needs/website: pkgdown, png
 NeedsCompilation: no
 Config/roxygen2/version: 8.1.0

@@ -40,8 +40,16 @@ inputs additionally store derived \code{genes}, \code{transcripts}, and \code{ex
 allowing the same object to be used by gene model plotting functions.
 
 Required coordinate convention is 1-based closed intervals.
+
+Use \code{Feature()} when constructing annotations from an interval table.
+\code{FeatureTrack()} remains a supported compatibility alias with the same
+arguments and return object.
 }
 \examples{
 x <- data.frame(chrom = "chr1", start = 1L, end = 100L)
 Feature(x)
+}
+\seealso{
+\code{\link[=FeatureTrack]{FeatureTrack()}}, \code{\link[=as_feature]{as_feature()}}, \code{\link[=read_genepred]{read_genepred()}}, \code{\link[=read_gtf]{read_gtf()}},
+\code{\link[=read_gff]{read_gff()}}, \code{\link[=read_bed]{read_bed()}}
 }

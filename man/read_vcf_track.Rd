@@ -2,7 +2,7 @@
 % Please edit documentation in R/read_vcf.R
 \name{read_vcf_track}
 \alias{read_vcf_track}
-\title{Read a VCF file as a VariantTrack}
+\title{Read a VCF file using the compatibility alias}
 \usage{
 read_vcf_track(
   file,
@@ -36,7 +36,8 @@ read_vcf_track(
 A VariantTrack object.
 }
 \description{
-Backward-compatible alias of \code{read_vcf()}.
+Supported backward-compatible alias of \code{read_vcf()} with the same arguments
+and return object. Use \code{read_vcf()} for new code.
 }
 \examples{
 vcf_file <- system.file(
@@ -45,4 +46,7 @@ vcf_file <- system.file(
 read_vcf_track(
   vcf_file, mode = "memory", verbose = FALSE, progress = FALSE
 )
+}
+\seealso{
+\code{\link[=read_vcf]{read_vcf()}}
 }

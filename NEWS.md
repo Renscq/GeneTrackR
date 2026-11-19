@@ -1,3 +1,26 @@
+# GeneTrackR 0.99.3
+
+## Preliminary review: metadata and API guidance
+
+- Removed `roxygen2` from Suggests; it remains a developer tool for generating
+  help pages from the maintained roxygen sources.
+- Identified `Feature()` and `read_vcf()` as the recommended entry points while
+  retaining the supported `FeatureTrack()` and `read_vcf_track()` aliases.
+- Clarified README and getting-started reading paths and grouped compatibility
+  aliases separately in the website reference index.
+- Preserved all public APIs, return objects, analysis algorithms, I/O backends,
+  bundled README figures and the 15 existing vignette sources.
+
+## README and documentation website
+
+- Replaced the long README manual with a compact introduction, installation
+  guidance, runnable quick-start examples and links to all existing tutorials.
+- Added reproducible bundled-data gallery figures for genomic tracks,
+  haplotypes and phenotype comparisons, with a developer regeneration script.
+- Restored pkgdown article/reference navigation and a GitHub Actions workflow
+  that validates both maintained branches and publishes only the default branch.
+- Preserved package APIs, analysis behavior, example data and vignette sources.
+
 # GeneTrackR 0.99.2
 
 ## Author identity correction

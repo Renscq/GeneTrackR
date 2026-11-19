@@ -14,6 +14,9 @@
 #' index, `chrom`, `start`, and `end` can be supplied to load only a genomic
 #' interval instead of parsing the whole VCF file.
 #'
+#' `read_vcf()` is the recommended VCF reader. `read_vcf_track()` remains a
+#' supported compatibility alias with the same arguments and return object.
+#'
 #' @param file VCF file path. Plain VCF, gzip-compressed VCF, and bgzip VCF are supported.
 #' @param keep_genotype Logical. Whether to keep FORMAT and sample genotype columns.
 #' @param mode Reading mode. `memory` parses records immediately, `lazy` stores indexed VCF metadata only, and `auto` uses lazy mode for indexed VCF files when no region is supplied.
@@ -35,6 +38,7 @@
 #'   verbose = FALSE
 #' )
 #' plot_variant(region_variants, chrom = "chr1", start = 12339700, end = 12343200)
+#' @seealso [read_vcf_track()], [retrieve_vcf()], [VariantTrack()]
 #' @export
 read_vcf <- function(file,
                      keep_genotype = TRUE,
@@ -132,9 +136,11 @@ read_vcf <- function(file,
   vt
 }
 
-#' Read a VCF file as a VariantTrack
+#' Read a VCF file using the compatibility alias
 #'
-#' @description Backward-compatible alias of `read_vcf()`.
+#' @description
+#' Supported backward-compatible alias of `read_vcf()` with the same arguments
+#' and return object. Use `read_vcf()` for new code.
 #' @inheritParams read_vcf
 #' @return A VariantTrack object.
 #' @examples
@@ -144,6 +150,7 @@ read_vcf <- function(file,
 #' read_vcf_track(
 #'   vcf_file, mode = "memory", verbose = FALSE, progress = FALSE
 #' )
+#' @seealso [read_vcf()]
 #' @export
 read_vcf_track <- function(file,
                            keep_genotype = TRUE,

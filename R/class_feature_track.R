@@ -16,6 +16,10 @@
 #'
 #' Required coordinate convention is 1-based closed intervals.
 #'
+#' Use `Feature()` when constructing annotations from an interval table.
+#' `FeatureTrack()` remains a supported compatibility alias with the same
+#' arguments and return object.
+#'
 #' @param data A data.frame or data.table containing standardized interval columns.
 #' Required columns are `chrom`, `start`, and `end`. Recommended columns include
 #' `feature_id`, `name`, `type`, `score`, `strand`, `source`, `gene_id`,
@@ -29,6 +33,8 @@
 #' @examples
 #' x <- data.frame(chrom = "chr1", start = 1L, end = 100L)
 #' Feature(x)
+#' @seealso [FeatureTrack()], [as_feature()], [read_genepred()], [read_gtf()],
+#'   [read_gff()], [read_bed()]
 #' @export
 Feature <- function(data,
                     meta = list(),
@@ -51,17 +57,20 @@ Feature <- function(data,
   )
 }
 
-#' Create a FeatureTrack object
+#' Create a Feature object using the compatibility alias
 #'
 #' @description
 #' `FeatureTrack()` is kept as a user-facing alias of `Feature()` for interval
 #' tracks. It returns an object inheriting from both `Feature` and `FeatureTrack`.
+#' Use `Feature()` for new code. The alias remains supported with the same
+#' arguments and return object.
 #'
 #' @inheritParams Feature
 #' @return A Feature object inheriting from FeatureTrack.
 #' @examples
 #' x <- data.frame(chrom = "chr1", start = 1L, end = 100L)
 #' FeatureTrack(x)
+#' @seealso [Feature()]
 #' @export
 FeatureTrack <- function(data, meta = list(), genes = NULL, transcripts = NULL, exons = NULL, validation = make_empty_validation()) {
   Feature(data = data, meta = meta, genes = genes, transcripts = transcripts, exons = exons, validation = validation)

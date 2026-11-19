@@ -1,0 +1,87 @@
+name: pkgdown
+
+on:
+  push:
+    branches: [devel, development]
+  pull_request:
+    branches: [devel, development]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pkgdown-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build and validate pkgdown
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: yes
+      GENETRACKR_PKGDOWN: "true"
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: |
+            any::pkgdown
+          needs: website
+
+      - name: Check README and committed figures
+        run: Rscript tools/render_readme.R --check
+
+      - name: Check pkgdown configuration
+        run: pkgdown::check_pkgdown()
+        shell: Rscript {0}
+
+      - name: Build website including articles and examples
+        run: |
+          pkgdown::build_site_github_pages(
+            dest_dir = "pkgdown-site",
+            new_process = FALSE,
+            install = TRUE
+          )
+        shell: Rscript {0}
+
+      - name: Upload website preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: pkgdown-site-preview
+          path: pkgdown-site
+          if-no-files-found: error
+
+      - name: Upload GitHub Pages artifact
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: pkgdown-site
+
+  deploy:
+    name: Publish default-branch documentation
+    if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Deploy pkgdown artifact
+        id: deployment
+        uses: actions/deploy-pages@v4

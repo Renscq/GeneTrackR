@@ -1,0 +1,12 @@
+^\.git$
+^temp$
+^GeneTrackR\.BiocCheck$
+^texput\.log$
+^GeneTrackR_.*\.tar\.gz$
+^.*\.Rcheck$
+^\.github$
+^_pkgdown\.yml$
+^pkgdown-site$
+^README\.qmd$
+^tools$
+^pkgdown$

@@ -41,6 +41,9 @@ columns are always imported. If genotype sample columns are present, they are
 preserved for haplotype analysis. For bgzip-compressed VCF files with a tabix
 index, \code{chrom}, \code{start}, and \code{end} can be supplied to load only a genomic
 interval instead of parsing the whole VCF file.
+
+\code{read_vcf()} is the recommended VCF reader. \code{read_vcf_track()} remains a
+supported compatibility alias with the same arguments and return object.
 }
 \examples{
 vcf_file <- system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR")
@@ -54,4 +57,7 @@ region_variants <- retrieve_vcf(
   verbose = FALSE
 )
 plot_variant(region_variants, chrom = "chr1", start = 12339700, end = 12343200)
+}
+\seealso{
+\code{\link[=read_vcf_track]{read_vcf_track()}}, \code{\link[=retrieve_vcf]{retrieve_vcf()}}, \code{\link[=VariantTrack]{VariantTrack()}}
 }

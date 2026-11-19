@@ -2,7 +2,7 @@
 % Please edit documentation in R/class_feature_track.R
 \name{FeatureTrack}
 \alias{FeatureTrack}
-\title{Create a FeatureTrack object}
+\title{Create a Feature object using the compatibility alias}
 \usage{
 FeatureTrack(
   data,
@@ -35,8 +35,13 @@ A Feature object inheriting from FeatureTrack.
 \description{
 \code{FeatureTrack()} is kept as a user-facing alias of \code{Feature()} for interval
 tracks. It returns an object inheriting from both \code{Feature} and \code{FeatureTrack}.
+Use \code{Feature()} for new code. The alias remains supported with the same
+arguments and return object.
 }
 \examples{
 x <- data.frame(chrom = "chr1", start = 1L, end = 100L)
 FeatureTrack(x)
+}
+\seealso{
+\code{\link[=Feature]{Feature()}}
 }
