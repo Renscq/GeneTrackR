@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-11-19
-# Version: dev006
+# Version: dev008
 # Function: Define unified Feature annotation class and GenePred-compatible constructor
 # Input: Standardized annotation or variant tables
 # Output: Unified S3 track objects
@@ -298,6 +298,15 @@ derive_feature_hierarchy <- function(dt, genes = NULL, transcripts = NULL, exons
 #' and `.GRP`. Start coordinates must be positive and intervals must have
 #' positive width.
 #'
+#' When editing `x$data`, current column values are authoritative. New factor
+#' levels are retained. Rle columns keep their containers and annotations, with
+#' run values using the current Feature column's type. Typed List columns retain
+#' their original class only when reconstruction is lossless. Exact integer and
+#' double storage conversions are accepted; conversions that truncate values,
+#' overflow, change missing-value semantics, or discard attributes are rejected.
+#' Empty List columns retain their source container's type-specific metadata,
+#' including shared factor levels.
+#'
 #' Range names, sequence information (including unused sequence levels), and
 #' object metadata are retained for `as_granges(x, level = "feature")`. A
 #' collision-safe internal column in `x$data` tracks source rows for both named
@@ -325,10 +334,15 @@ derive_feature_hierarchy <- function(dt, genes = NULL, transcripts = NULL, exons
 #' )
 #' names(gr) <- c("late", "early")
 #' S4Vectors::mcols(gr)$score <- c(4.5, 2.5)
+#' S4Vectors::mcols(gr)$category <- factor(c("late", "early"))
 #' feature <- as_feature(gr)
+#' feature$data$category <- factor(
+#'   c("reviewed", "late"), levels = c("early", "late", "reviewed")
+#' )
 #' restored <- as_granges(feature, level = "feature")
 #' names(restored)
 #' S4Vectors::mcols(restored)$score
+#' S4Vectors::mcols(restored)$category
 #' @seealso [as_granges()], [plot_feature_track()]
 #' @export
 as_feature <- function(object) {

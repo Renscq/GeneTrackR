@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-11-19
-# Version: dev002
+# Version: dev004
 # Function: Adapt GRanges and Feature objects at the interval-feature level
 # Input: GRanges or Feature-compatible annotation objects
 # Output: Feature or GRanges objects with aligned interval metadata
@@ -111,24 +111,62 @@ as_feature.GRanges <- function(object) {
   )
 }
 
-restore_granges_feature_column <- function(source, rows, value, standard) {
+granges_metadata_values_identical <- function(actual, expected) {
+  if (is.list(actual) && is.list(expected) && !is.object(actual) && !is.object(expected)) {
+    if (length(actual) != length(expected) || !identical(attributes(actual), attributes(expected))) {
+      return(FALSE)
+    }
+    return(all(vapply(seq_along(actual), function(i) {
+      granges_metadata_values_identical(actual[[i]], expected[[i]])
+    }, logical(1L))))
+  }
+  numeric_types <- c("integer", "double")
+  if (!is.object(actual) && !is.object(expected) &&
+      typeof(actual) %in% numeric_types && typeof(expected) %in% numeric_types &&
+      typeof(actual) != typeof(expected)) {
+    storage.mode(actual) <- "double"
+    storage.mode(expected) <- "double"
+  }
+  identical(actual, expected)
+}
+
+restore_granges_feature_column <- function(source, rows, value, standard, name = "metadata") {
   selected <- source[rows]
-  if (standard && !isS4(selected)) {
+  if (!isS4(selected)) {
     names(value) <- names(selected)
     return(value)
   }
-  if (inherits(selected, "Vector")) {
-    annotations <- S4Vectors::mcols(selected)
-    metadata <- S4Vectors::metadata(selected)
+  annotations <- S4Vectors::mcols(source)
+  if (!is.null(annotations)) annotations <- annotations[rows, , drop = FALSE]
+  fail_restore <- function(condition = NULL) {
+    stop(sprintf(
+      "GRanges metadata column '%s' cannot be restored as %s without loss.",
+      name, class(source)[1L]
+    ), call. = FALSE)
   }
-  selected_names <- names(selected)
-  selected[] <- value
-  if (inherits(selected, "Vector")) {
-    S4Vectors::mcols(selected) <- annotations
-    S4Vectors::metadata(selected) <- metadata
+  restored <- tryCatch({
+    if (inherits(selected, "Rle")) {
+      S4Vectors::Rle(value)
+    } else if (length(value) == 0L) {
+      selected
+    } else {
+      tryCatch(methods::as(value, class(selected)[1L]), error = function(condition) {
+        selected[] <- value
+        selected
+      })
+    }
+  }, warning = fail_restore, error = fail_restore)
+  decoded <- if (inherits(restored, "Rle")) S4Vectors::decode(restored) else as.list(restored)
+  actual <- unname(decoded)
+  expected <- unname(value)
+  lossless <- if (standard) identical(actual, expected) else {
+    granges_metadata_values_identical(actual, expected)
   }
-  names(selected) <- selected_names
-  selected
+  if (!lossless) fail_restore()
+  S4Vectors::mcols(restored) <- annotations
+  S4Vectors::metadata(restored) <- S4Vectors::metadata(source)
+  names(restored) <- names(selected)
+  restored
 }
 
 feature_granges_metadata <- function(data, context, rows) {
@@ -153,7 +191,7 @@ feature_granges_metadata <- function(data, context, rows) {
     value <- data.table::copy(data[[name]])
     if (name %in% names(context$source_mcols)) {
       value <- restore_granges_feature_column(
-        context$source_mcols[[name]], rows, value, name %in% standard
+        context$source_mcols[[name]], rows, value, name %in% standard, name
       )
     }
     metadata[[name]] <- value

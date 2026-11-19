@@ -1,3 +1,22 @@
+# GeneTrackR 0.99.5
+
+## Metadata fidelity fixes
+
+- Preserved edited factor values and levels during feature-level GRanges export,
+  including filtered and empty Feature objects.
+- Rebuilt Rle columns from current Feature values while retaining row-aligned
+  annotations and object metadata. Standard fields retain their normalized
+  numeric, integer or character value types inside the Rle container.
+- Rejected lossy typed List reconstruction instead of silently truncating values,
+  overflowing integers or changing missing-value semantics. Exact integer/double
+  storage conversions remain supported.
+- Added regressions for metadata edits, missing and empty values, sorting,
+  subsetting, annotation retention, List element names and factor levels,
+  classed list elements, and failed-conversion immutability.
+- Retained source container metadata, including shared factor levels, for empty
+  List columns after filtering or importing empty GRanges.
+- Preserved public APIs, analysis algorithms, object classes, VCF and I/O backends.
+
 # GeneTrackR 0.99.4
 
 ## GRanges and Feature interoperability

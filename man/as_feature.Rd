@@ -45,6 +45,15 @@ Metadata names must be unique and cannot collide with \code{chrom}, \code{start}
 and \code{.GRP}. Start coordinates must be positive and intervals must have
 positive width.
 
+When editing \code{x$data}, current column values are authoritative. New factor
+levels are retained. Rle columns keep their containers and annotations, with
+run values using the current Feature column's type. Typed List columns retain
+their original class only when reconstruction is lossless. Exact integer and
+double storage conversions are accepted; conversions that truncate values,
+overflow, change missing-value semantics, or discard attributes are rejected.
+Empty List columns retain their source container's type-specific metadata,
+including shared factor levels.
+
 Range names, sequence information (including unused sequence levels), and
 object metadata are retained for \code{as_granges(x, level = "feature")}. A
 collision-safe internal column in \code{x$data} tracks source rows for both named
@@ -70,10 +79,15 @@ gr <- GenomicRanges::GRanges(
 )
 names(gr) <- c("late", "early")
 S4Vectors::mcols(gr)$score <- c(4.5, 2.5)
+S4Vectors::mcols(gr)$category <- factor(c("late", "early"))
 feature <- as_feature(gr)
+feature$data$category <- factor(
+  c("reviewed", "late"), levels = c("early", "late", "reviewed")
+)
 restored <- as_granges(feature, level = "feature")
 names(restored)
 S4Vectors::mcols(restored)$score
+S4Vectors::mcols(restored)$category
 gp_file <- system.file(
   "extdata", "gtr_demo.genePredExt", package = "GeneTrackR"
 )

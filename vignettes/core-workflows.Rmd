@@ -142,11 +142,16 @@ stopifnot(
 
 The two input records are retained without coordinate shifts. Feature's usual
 genomic sorting changes their order, with range names and metadata kept aligned.
-Sequence information, object metadata and column annotations are also retained. Standard annotation
-columns follow Feature's existing normalization; additional factor, list, Rle
-and Bioconductor List columns are supported. Matrix-valued metadata and columns
-that collide with structural names are rejected explicitly. See `?as_feature`
-for the complete conversion rules.
+Sequence information, object metadata and column annotations are also retained.
+Standard annotation columns follow Feature's existing normalization; additional
+factor, list, Rle and Bioconductor List columns are supported. Edits to factor
+levels are retained. Rle containers keep current Feature value types and aligned
+annotations. Typed List edits must be representable without loss: exact numeric
+integer values are accepted in IntegerList columns, while fractional or
+overflowing values are rejected rather than truncated. Empty List columns retain
+their source container metadata, including shared factor levels. Matrix-valued
+metadata and columns that collide with structural names are rejected explicitly. See
+`?as_feature` for the complete conversion rules.
 
 Ordinary intervals do not define exons or CDS records. Use `plot_feature_track()`
 for these inputs; gene-model functions require the corresponding annotation
