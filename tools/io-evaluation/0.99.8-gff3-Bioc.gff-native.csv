@@ -1,0 +1,9 @@
+"chrom","start","end","strand","score","type","source","phase","id","name","parent"
+"chr1",1,5,"+",2.5,"exon","fixture",NA,"e1","Exon1","t1,t2"
+"chr1",1,20,"+",NA,"gene","fixture",NA,"g1","Gene1",NA
+"chr1",1,20,"+",NA,"mRNA","fixture",NA,"t1","Tx1","g1"
+"chr1",1,20,"+",NA,"mRNA","fixture",NA,"t2","Tx2","g1"
+"chr1",2,5,"+",NA,"CDS","fixture","0","c1","CDS1","t1"
+"chr2",10,20,"-",0,"exon","fixture",NA,"e2","Exon2","t3"
+"chr2",10,20,"-",NA,"gene","fixture",NA,"g2","Gene2",NA
+"chr2",10,20,"-",NA,"mRNA","fixture",NA,"t3","Tx3","g2"

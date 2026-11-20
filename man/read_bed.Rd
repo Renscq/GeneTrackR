@@ -34,6 +34,18 @@ A FeatureTrack object.
 Reads BED3-BED12 style files and converts BED coordinates from 0-based
 half-open to 1-based closed intervals by default.
 }
+\details{
+BED12 records remain flat intervals, with \code{block_count}, integer-list
+\code{block_sizes}/\code{block_starts}, \code{thick_start}/\code{thick_end} and \code{item_rgb} metadata.
+Block starts are zero-based offsets in bp from the record start; sizes are
+widths in bp. Thick intervals are 1-based closed; an empty thick span has
+\code{thick_end == thick_start - 1}. \code{write_feature(..., format = "bed12")}
+preserves this structure. Blocks are not automatically expanded into a new
+gene model. Invalid counts, geometry, RGB or noninteger fields are rejected.
+The optional \code{coordinate = "granges"} input uses closed thick intervals,
+including the explicit empty-span convention above. Standard BED files
+should use the default \code{coordinate = "bed"}.
+}
 \examples{
 bed_file <- system.file("extdata", "gtr_demo_features.bed", package = "GeneTrackR")
 features <- read_bed(bed_file, verbose = FALSE, progress = FALSE)

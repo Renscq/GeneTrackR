@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-11-19
-# Version: dev003
+# Date: 2026-11-20
+# Version: dev004
 # Function: Retrieve Feature/GenePred-compatible annotation sub-objects or tables
 # Input: Feature-compatible annotation object
 # Output: Retrieved Feature/GenePred-compatible sub-object or data.table
@@ -10,6 +10,9 @@
 #' @description
 #' `retrieve_feature()` extracts a true sub-object from a Feature/GenePred-compatible
 #' annotation object. By default it returns a Feature/GenePred-compatible object.
+#' Rebuilding a primary gene model is rejected when complete GFF3 parent links
+#' would be lost; subset feature-level GRanges and convert with `as_feature()`
+#' to retain this metadata without changing the analysis hierarchy.
 #' Use `as = "data.table"` only when a plain table is required.
 #'
 #' @param object A Feature-compatible annotation object.
@@ -146,6 +149,7 @@ retrieve_feature <- function(object,
   }
 
   make_gene_model_subobject <- function(tx) {
+    guard_gff_parent_rebuild(object, tx)
     tx <- data.table::copy(data.table::as.data.table(tx))
     ex <- data.table::copy(object$exons)
 

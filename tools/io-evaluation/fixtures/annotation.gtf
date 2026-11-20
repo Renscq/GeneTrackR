@@ -1,0 +1,8 @@
+chr1	fixture	gene	1	20	.	+	.	gene_id "g1"; gene_name "Gene one";
+chr1	fixture	transcript	1	20	.	+	.	gene_id "g1"; transcript_id "t1";
+chr1	fixture	exon	1	5	2.5	+	.	gene_id "g1"; transcript_id "t1"; exon_id "e1"; exon_number "1";
+chr1	fixture	CDS	2	5	.	+	0	gene_id "g1"; transcript_id "t1";
+chr1	fixture	exon	10	20	0	+	.	gene_id "g1"; transcript_id "t1"; exon_id "e2"; exon_number "2";
+chr2	fixture	gene	10	20	.	-	.	gene_id "g2";
+chr2	fixture	transcript	10	20	.	-	.	gene_id "g2"; transcript_id "t2";
+chr2	fixture	exon	10	20	.	-	.	gene_id "g2"; transcript_id "t2"; exon_id "e3"; exon_number "1";

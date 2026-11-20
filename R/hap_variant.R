@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-08-19
-# Version: dev003
+# Date: 2026-11-20
+# Version: dev004
 # Function: Build haplotype tables from VCF variants
 # Input: VariantTrack objects, VCF files, and genomic locators
 # Output: HapVariant objects
@@ -352,7 +352,7 @@ resolve_haplotype_gene_region <- function(annotation,
 
   if (!is.null(gene_id)) {
     target_id <- as.character(gene_id)[1L]
-    x <- retrieve_feature(annotation, gene_id = target_id, as = "Feature")
+    x <- retrieve_primary_feature(annotation, gene_id = target_id, as = "Feature")
     stop_if_not(nrow(x$genes) > 0L, "Gene ID was not found in annotation.")
     dt <- data.table::as.data.table(x$genes)
     chrom <- as.character(dt[["chrom"]][1L])
@@ -362,7 +362,7 @@ resolve_haplotype_gene_region <- function(annotation,
     locator <- "gene"
   } else {
     target_id <- as.character(transcript_id)[1L]
-    x <- retrieve_feature(annotation, transcript_id = target_id, as = "Feature")
+    x <- retrieve_primary_feature(annotation, transcript_id = target_id, as = "Feature")
     stop_if_not(nrow(x$transcripts) > 0L, "Transcript ID was not found in annotation.")
     dt <- data.table::as.data.table(x$transcripts)
     chrom <- as.character(dt[["chrom"]][1L])

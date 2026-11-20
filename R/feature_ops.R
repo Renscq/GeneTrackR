@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-08-31
-# Version: dev002
+# Date: 2026-11-20
+# Version: dev003
 # Function: Unified summary API for Feature-compatible annotation objects
 # Input: Feature, FeatureTrack, or GenePred-compatible annotation objects
 # Output: Summary tables
@@ -39,7 +39,7 @@ summary_feature <- function(object,
   level <- match.arg(level)
 
   if (level == "feature") {
-    dt <- retrieve_feature(object, chrom = chrom, start = start, end = end, level = "feature", as = "data.table")
+    dt <- retrieve_primary_feature(object, chrom = chrom, start = start, end = end, level = "feature", as = "data.table")
     if (nrow(dt) == 0L) return(data.table::data.table())
     by <- intersect(as.character(by), names(dt))
     if (length(by) == 0L) by <- "chrom"
@@ -54,7 +54,7 @@ summary_feature <- function(object,
   gp <- as_genepred(object)
 
   if (level == "gene") {
-    dt <- retrieve_feature(gp, chrom = chrom, start = start, end = end, level = "gene", as = "data.table")
+    dt <- retrieve_primary_feature(gp, chrom = chrom, start = start, end = end, level = "gene", as = "data.table")
     if (nrow(dt) == 0L) {
       return(data.table::data.table(
         chrom = character(),
@@ -74,7 +74,7 @@ summary_feature <- function(object,
   }
 
   if (level == "transcript") {
-    dt <- retrieve_feature(gp, chrom = chrom, start = start, end = end, level = "transcript", as = "data.table")
+    dt <- retrieve_primary_feature(gp, chrom = chrom, start = start, end = end, level = "transcript", as = "data.table")
     if (nrow(dt) == 0L) {
       return(data.table::data.table(
         chrom = character(),
@@ -95,7 +95,7 @@ summary_feature <- function(object,
     ), by = .(chrom, strand)][order(chrom, strand)])
   }
 
-  dt <- retrieve_feature(gp, chrom = chrom, start = start, end = end, level = "exon", as = "data.table")
+  dt <- retrieve_primary_feature(gp, chrom = chrom, start = start, end = end, level = "exon", as = "data.table")
   if (nrow(dt) == 0L) {
     return(data.table::data.table(
       chrom = character(),

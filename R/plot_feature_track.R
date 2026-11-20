@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-08-31
-# Version: dev004
+# Date: 2026-11-20
+# Version: dev005
 # Function: Plot generic feature and variant tracks
 # Input: FeatureTrack or VariantTrack objects
 # Output: ggplot track panels
@@ -61,7 +61,7 @@ plot_feature_track <- function(track,
   track_name <- NULL
   feature_border_color <- normalize_border_color(feature_border_color)
 
-  ft <- retrieve_feature(
+  ft <- retrieve_primary_feature(
     track,
     chrom = chrom,
     start = start,

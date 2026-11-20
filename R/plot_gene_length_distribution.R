@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-11-19
-# Version: dev006
+# Date: 2026-11-20
+# Version: dev007
 # Function: Extract and plot unified gene feature length distributions
 # Input: GenePred object and feature selection
 # Output: Length table or ggplot object
@@ -69,7 +69,7 @@ get_gene_length_distribution_table <- function(object,
   check_region(chrom, start, end)
 
   obj <- if (!is.null(chrom)) {
-    retrieve_feature(
+    retrieve_primary_feature(
       object = object,
       chrom = chrom,
       start = start %||% 1L,

@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-07-30
-# Version: dev008
+# Date: 2026-11-20
+# Version: dev009
 # Function: Plot haplotype-variant and haplotype-phenotype figures
 # Input: HapVariant and phenotype objects
 # Output: ggplot or patchwork figures
@@ -504,7 +504,7 @@ prepare_hap_gene_track <- function(annotation, hap, vars, mapper) {
   query_end <- as.integer(region$end)[1L]
 
   feature <- tryCatch(
-    retrieve_feature(annotation, chrom = chrom, start = query_start, end = query_end, as = "Feature"),
+    retrieve_primary_feature(annotation, chrom = chrom, start = query_start, end = query_end, as = "Feature"),
     error = function(e) NULL
   )
   if (is.null(feature) || is.null(feature$transcripts) || is.null(feature$exons)) {

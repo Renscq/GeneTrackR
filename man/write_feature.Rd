@@ -22,7 +22,7 @@ write_feature(
 
 \item{format}{Output format. Use \code{auto}, \code{genepred}, \code{genepredext}, \code{gff}, \code{gtf}, \code{bed6}, or \code{bed12}.
 \code{bed6} writes six-column BED intervals. For gene-model objects, BED6 is transcript-level. For generic interval objects, BED6 is feature-level.
-\code{bed12} writes transcript-level BED12 gene models with exon blocks.}
+\code{bed12} writes transcript-level gene models or flat records with complete BED12 metadata.}
 
 \item{coordinate}{Output coordinate system for GenePred/BED-like formats.
 \code{ucsc} means 0-based half-open where applicable; \code{granges} means 1-based closed.}
@@ -42,6 +42,16 @@ Invisibly returns the output file path.
 Writes a unified \code{Feature} annotation object to GenePred, GenePredExt, GFF3,
 GTF, or BED format. This is the main output function for annotation tracks
 produced by \code{read_genepred()}, \code{read_gff()}, \code{read_gtf()}, or \code{read_bed()}.
+}
+\details{
+Flat BED12 objects retain block widths/offsets, thick intervals and RGB.
+Inconsistent metadata edits are rejected before writing. With
+\code{coordinate = "granges"}, an empty thick span is explicitly represented by
+end equal to start minus one on this flat-metadata path; legacy gene-model
+coordinate conventions remain unchanged. For regenerated GFF3 attributes
+(\code{keep_attributes = FALSE}), \code{parent_ids} retains all raw Parent tokens and
+\code{parent_id} must agree with its first entry. Original attribute strings
+remain authoritative when \code{keep_attributes = TRUE}.
 }
 \examples{
 gp <- read_genepred(

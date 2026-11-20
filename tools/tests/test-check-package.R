@@ -13,7 +13,7 @@ testthat::test_that("package checks reject report directories inside the source"
   on.exit(unlink(fixture, recursive = TRUE), add = TRUE)
   source_path <- file.path(fixture, "GeneTrackR")
   dir.create(source_path)
-  writeLines(c("Package: GeneTrackR", "Version: 0.99.6"),
+  writeLines(c("Package: GeneTrackR", "Version: 0.99.8"),
     file.path(source_path, "DESCRIPTION"))
 
   testthat::expect_error(package_check_main(c("--path", source_path,

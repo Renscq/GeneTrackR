@@ -1,0 +1,4 @@
+"key","field","native","standard"
+"chr1 | 1 | A | C,G","id","chr1:1:A:C,G","chr1:1_A/C"
+"chr1 | 5 | AT | A","end","5","6"
+"chr2 | 20 | C | T","PL:S2","30,0","30,0,."

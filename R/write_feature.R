@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-09-01
-# Version: dev004
+# Date: 2026-11-20
+# Version: dev005
 # Function: Write unified Feature annotation objects to GenePred, GFF, GTF, BED6, or BED12 files
 # Input: Feature/GenePred-compatible annotation object
 # Output: Annotation files
@@ -16,7 +16,7 @@
 #' @param file Output file path.
 #' @param format Output format. Use `auto`, `genepred`, `genepredext`, `gff`, `gtf`, `bed6`, or `bed12`.
 #' `bed6` writes six-column BED intervals. For gene-model objects, BED6 is transcript-level. For generic interval objects, BED6 is feature-level.
-#' `bed12` writes transcript-level BED12 gene models with exon blocks.
+#' `bed12` writes transcript-level gene models or flat records with complete BED12 metadata.
 #' @param coordinate Output coordinate system for GenePred/BED-like formats.
 #' `ucsc` means 0-based half-open where applicable; `granges` means 1-based closed.
 #' @param overwrite Whether to overwrite an existing file.
@@ -24,6 +24,15 @@
 #' @param sort_output Whether to sort records before writing. Default TRUE. GenePred output is sorted by chromosome and transcript start. GFF/GTF output is sorted by chromosome, start, and feature hierarchy.
 #' @param chrom_order Optional chromosome order used for sorting. It can be NULL, a character vector of chromosome names, a data frame whose first column contains chromosome names, or a FASTA index `.fai` file path. If NULL, a natural chromosome order is used.
 #' @return Invisibly returns the output file path.
+#' @details
+#' Flat BED12 objects retain block widths/offsets, thick intervals and RGB.
+#' Inconsistent metadata edits are rejected before writing. With
+#' `coordinate = "granges"`, an empty thick span is explicitly represented by
+#' end equal to start minus one on this flat-metadata path; legacy gene-model
+#' coordinate conventions remain unchanged. For regenerated GFF3 attributes
+#' (`keep_attributes = FALSE`), `parent_ids` retains all raw Parent tokens and
+#' `parent_id` must agree with its first entry. Original attribute strings
+#' remain authoritative when `keep_attributes = TRUE`.
 #' @examples
 #' gp <- read_genepred(
 #'   system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR"),
@@ -211,6 +220,9 @@ make_bed12_table <- function(object,
                              sort_output = TRUE,
                              chrom_order = NULL) {
   coordinate <- match.arg(coordinate)
+  if (has_bed12_metadata(object)) {
+    return(bed12_feature_table(object, coordinate, sort_output, chrom_order))
+  }
   gp <- as_genepred(object)
   tx <- data.table::copy(data.table::as.data.table(gp$transcripts))
   ex <- data.table::copy(data.table::as.data.table(gp$exons))
@@ -508,11 +520,13 @@ build_gff_attributes <- function(dt, keep_attributes = TRUE) {
   out <- attr
   idx <- which(!has_attr)
   if (length(idx) > 0L) {
+    parents <- rep(NA_character_, nrow(dt))
+    parents[idx] <- gff_parent_attribute(dt[idx])
     out[idx] <- vapply(idx, function(i) {
       vals <- c(
         ID = dt$feature_id[i],
         Name = dt$name[i],
-        Parent = dt$parent_id[i],
+        Parent = parents[i],
         gene_id = dt$gene_id[i],
         transcript_id = dt$transcript_id[i],
         gene_type = dt$gene_type[i]

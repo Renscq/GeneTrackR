@@ -1,3 +1,56 @@
+# GeneTrackR 0.99.8
+
+## Annotation metadata fidelity
+
+- Preserved every raw GFF3 Parent identifier in an additive parent_ids list
+  column while retaining the legacy primary parent_id, record counts and
+  primary-parent gene/transcript/exon analysis model.
+- Regenerated GFF3 Parent attributes retain all parents. Inconsistent primary
+  and companion edits fail explicitly. Original-attribute preservation remains
+  the default, and legacy objects without the companion column still work.
+- Retained BED12 block counts, widths, relative offsets, thick intervals and
+  RGB metadata in flat Feature objects and feature-level GRanges conversions.
+  Added metadata-aware BED12 export without merging repeated record names.
+- Validated exact integers, block geometry, contained/empty thick intervals,
+  RGB and edited metadata before export; malformed structures fail instead of
+  being flattened or truncated. BED3-11 reading and legacy gene-model export
+  algorithms remain unchanged.
+- Guarded primary gene-model rebuilding when it would discard complete GFF3
+  parent links; use the documented feature-level GRanges filtering route.
+- Applied the existing merge rename map to every parent token, including
+  secondary links, so merged annotations remain writable with consistent IDs.
+- Kept statistical, plotting and haplotype calculations on their established
+  primary-model projection without exporting that projection as full metadata.
+  Added equality/immutability regressions against legacy annotation objects.
+- Added read/write/edit/filter/GRanges regressions and updated the optional
+  standard-reader assessment, examples, review-response draft and progress record.
+- Kept public signatures, compatibility aliases, classes, analysis algorithms,
+  VCF behavior, runtime dependencies and default I/O backends unchanged.
+
+# GeneTrackR 0.99.7
+
+## Review follow-up and behavioral validation
+
+- Added explicit regressions for named signal normalization factors, inclusive
+  regional summaries, slicing metadata, duplicate-sample aggregation, binning,
+  annotation export coordinates/attributes and variant plot data/scales.
+- Added a developer-only comparison of the existing annotation, BED, BigWig and
+  VCF readers against rtracklayer, Bioc.gff and VariantAnnotation on shared,
+  deterministic fixtures. Reports retain record counts, unmatched records,
+  field differences, reader failures, object sizes, timings and provenance.
+- Kept optional comparison dependencies out of package Imports/Suggests and
+  retained all existing runtime readers and defaults. The assessment is not a
+  replacement backend, a performance ranking or a lossless VCF adapter.
+- Documented existing GFF3 first-parent normalization and flat BED12 import,
+  including their structured-link/block limitations in reader help and the
+  annotation workflow. Raw GFF attributes remain available; no parser changes
+  are made in this release.
+- Prepared a point-by-point preliminary-review response and an explicit progress
+  record; neither is posted automatically. BiocStaging synchronization remains
+  a separate authorized action.
+- Preserved public APIs, compatibility aliases, analysis algorithms, object
+  classes and the existing sites-only VCF writer.
+
 # GeneTrackR 0.99.6
 
 ## CI portability and diagnostics

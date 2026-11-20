@@ -57,6 +57,9 @@ A Feature/GenePred-compatible object or a data.table.
 \description{
 \code{retrieve_feature()} extracts a true sub-object from a Feature/GenePred-compatible
 annotation object. By default it returns a Feature/GenePred-compatible object.
+Rebuilding a primary gene model is rejected when complete GFF3 parent links
+would be lost; subset feature-level GRanges and convert with \code{as_feature()}
+to retain this metadata without changing the analysis hierarchy.
 Use \code{as = "data.table"} only when a plain table is required.
 }
 \examples{

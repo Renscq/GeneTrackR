@@ -1,0 +1,9 @@
+"chrom","start","end","strand","score","type","source","phase","gene_id","transcript_id"
+"chr1",1,5,"+",2.5,"exon","fixture",NA,"g1","t1"
+"chr1",1,20,"+",NA,"gene","fixture",NA,"g1",NA
+"chr1",1,20,"+",NA,"transcript","fixture",NA,"g1","t1"
+"chr1",2,5,"+",NA,"CDS","fixture","0","g1","t1"
+"chr1",10,20,"+",0,"exon","fixture",NA,"g1","t1"
+"chr2",10,20,"-",NA,"exon","fixture",NA,"g2","t2"
+"chr2",10,20,"-",NA,"gene","fixture",NA,"g2",NA
+"chr2",10,20,"-",NA,"transcript","fixture",NA,"g2","t2"

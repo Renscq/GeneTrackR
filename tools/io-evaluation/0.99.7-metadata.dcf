@@ -1,0 +1,15 @@
+Package: GeneTrackR
+Version: 0.99.7
+R: R version 4.6.1 (2026-06-24 ucrt)
+Platform: x86_64-w64-mingw32
+SourceRef: working-tree with recorded source checksums
+Iterations: 3
+Timing: warm namespaces; raw reads; gc outside timing
+Memory: returned R object size in bytes, not peak process memory
+PathHandling: standard import uses fixture directory and basename;
+        restores working directory
+Tolerance: absolute 1e-6 for numeric comparison; NA distinct from zero
+CreatedUTC: 2026-11-20T09:41:13Z
+Bioc.gff: 1.3.0
+rtracklayer: 1.73.0
+VariantAnnotation: 1.59.4

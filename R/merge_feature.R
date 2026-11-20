@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-09-01
-# Version: dev005
+# Date: 2026-11-20
+# Version: dev006
 # Function: Merge Feature/GenePred-compatible annotation objects
 # Input: Feature-compatible annotation objects
 # Output: Merged Feature/GenePred-compatible object
@@ -395,6 +395,23 @@ apply_feature_merge_rename_map <- function(dt,
       )
       changed_row[replace_index] <- TRUE
     }
+  }
+
+  if ("parent_ids" %in% names(dt)) {
+    parents <- dt[["parent_ids"]]
+    if (inherits(parents, "List")) parents <- as.list(parents)
+    for (i in seq_len(nrow(dt))) {
+      values <- parents[[i]]
+      key <- paste(dt[[".merge_source_index"]][i], values, sep = "\r")
+      replacement <- unname(lookup[key])
+      replace_index <- !is.na(replacement)
+      if (any(replace_index)) {
+        values[replace_index] <- replacement[replace_index]
+        parents[[i]] <- values
+        changed_row[i] <- TRUE
+      }
+    }
+    dt[["parent_ids"]] <- parents
   }
 
   # Existing raw GFF/GTF attribute strings would contain stale identifiers.

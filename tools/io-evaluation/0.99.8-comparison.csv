@@ -1,0 +1,9 @@
+"format","reader","compared_fields","status","native_rows","standard_rows","matched_rows","native_only_rows","standard_only_rows","different_values"
+"gff3","rtracklayer","chrom;start;end;strand;type;id;score;source;phase;name;parent","equivalent",8,8,8,0,0,0
+"gff3","Bioc.gff","chrom;start;end;strand;type;id;score;source;phase;name;parent","equivalent",8,8,8,0,0,0
+"gtf","rtracklayer","chrom;start;end;strand;type;score;source;phase;gene_id;transcript_id","equivalent",8,8,8,0,0,0
+"gtf","Bioc.gff","chrom;start;end;strand;type;score;source;phase;gene_id;transcript_id","equivalent",8,8,8,0,0,0
+"bed6","rtracklayer","chrom;start;end;strand;name;score","equivalent",3,3,3,0,0,0
+"bed12","rtracklayer","chrom;start;end;strand;name;score;block_sizes;block_starts;thick_start;thick_end","equivalent",2,2,2,0,0,0
+"vcf","VariantAnnotation","chrom;pos;ref;alt;id;end;qual;filter;INFO:DP;INFO:AF;INFO:END;INFO:FLAG;GT:S2;AD:S2;PL:S2;GT:S1;AD:S1;PL:S1","different",4,4,4,0,0,3
+"bigwig","rtracklayer","chrom;start;end;value","equivalent",4,4,4,0,0,0

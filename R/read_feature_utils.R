@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-08-31
-# Version: dev002
+# Date: 2026-11-20
+# Version: dev003
 # Function: Shared parsers for feature annotation files
 # Input: GFF/GTF attribute strings and feature tables
 # Output: Standardized feature tables
@@ -246,6 +246,7 @@ read_gff_gtf <- function(file,
     phase = as.character(phase),
     attribute = as.character(attribute)
   )]
+  if (format == "GFF") out[["parent_ids"]] <- gff_parent_ids(attrs$Parent)
   stage$tick()
 
   progress_msg("[GeneTrackR] Building Feature object and derived gene/transcript/exon tables.")

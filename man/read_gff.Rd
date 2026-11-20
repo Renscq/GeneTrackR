@@ -26,6 +26,15 @@ A FeatureTrack object.
 \description{
 Read a GFF3 file as a FeatureTrack
 }
+\details{
+The character-list column \code{parent_ids} preserves every Parent identifier,
+including its original percent escapes. The legacy \code{parent_id} retains the
+first parent, and the derived hierarchy still uses that primary parent.
+Original text remains in \code{attribute}; records are not duplicated for shared
+features. Regenerated GFF3 attributes retain all parent_ids and require a
+consistent primary parent_id. To filter without rebuilding the primary
+hierarchy, subset feature-level GRanges and convert back with \code{as_feature()}.
+}
 \examples{
 gff_file <- system.file("extdata", "gtr_demo.gff3", package = "GeneTrackR")
 gff <- read_gff(gff_file, verbose = FALSE, progress = FALSE)

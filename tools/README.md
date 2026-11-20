@@ -96,7 +96,7 @@ library. It is declared under `Config/Needs/coverage`, not as a runtime import.
 From the package root:
 
 ```sh
-Rscript tools/check_coverage.R --output-dir temp/coverage --minimum 80 --baseline tools/coverage/0.99.5-files.csv
+Rscript tools/check_coverage.R --output-dir temp/coverage --minimum 80 --baseline tools/coverage/0.99.7-files.csv
 ```
 
 The script runs package tests only. It requests no line/function exclusions and
@@ -113,14 +113,26 @@ scope. Tests-only coverage is not equivalent to coverage that also runs
 vignettes/examples, and assertion counts are not coverage percentages.
 
 The untouched 0.99.5 snapshot is recorded under `tools/coverage/0.99.5-*`.
-Current release measurements are stored under `tools/coverage/0.99.6-*`, with
-a per-file comparison in `0.99.5-to-0.99.6.csv` and source/test checksums.
+Historical 0.99.6 measurements remain under `tools/coverage/0.99.6-*`, with
+their original `0.99.5-to-0.99.6.csv` comparison. The 0.99.7 evidence remains
+under `tools/coverage/0.99.7-*`, with `0.99.6-to-0.99.7.csv`. Current 0.99.8
+evidence is stored separately under `tools/coverage/0.99.8-*`, with
+`0.99.7-to-0.99.8.csv` and exact source/test checksums. Historical evidence
+is not overwritten.
 The Windows R 4.6.1 / covr 4.0.0 tests-only measurement is:
 
 | Source | Covered / eligible lines | Coverage |
 |---|---|---|
 | Untouched 0.99.5 | 8556 / 11455 | 74.69% |
 | 0.99.6 with contract regressions and length-summary correction | 9184 / 11456 | 80.17% |
+| 0.99.7 with signal, export and variant-plot regressions | 9400 / 11456 | 82.05% |
+| 0.99.8 with annotation metadata and primary-model compatibility regressions | 9577 / 11618 | 82.43% |
+
+The three focused 0.99.7 files improve `bwg_ops.R` from 48.58% to 55.49%,
+`plot_variant.R` from 55.47% to 95.31%, and `write_feature.R` from 61.27% to
+93.92%. The signal module still has substantial untested branches; reaching the
+overall floor is not a claim of complete coverage. These tests preserve the
+existing normalization, aggregation and plotting algorithms.
 
 CI uploads full reports;
 it does not send coverage to an external reporting service. Regression tests
@@ -140,7 +152,64 @@ checks direct summaries against explicit aggregation of segment records.
 The existing VCF writer is also explicitly characterized: it exports eight
 site fields with a minimal metadata header, omitting FORMAT/sample genotypes.
 The export workflow retains the original VCF and complete objects separately.
-0.99.6 does not replace this backend or claim a lossless VCF round trip.
+Versions 0.99.6 through 0.99.8 retain this backend and do not claim a lossless
+VCF round trip.
+
+## Annotation metadata contracts in 0.99.8
+
+GFF3 now adds `parent_ids`, a character-list column containing every original
+Parent token. `parent_id` remains the first parent; primary gene-model tables
+and record counts are unchanged. Regenerated GFF attributes preserve the full
+list, require consistent primary/companion edits and accept legacy objects
+without the companion column. Original text still wins by default with
+`keep_attributes = TRUE`. This is structured metadata preservation, not a new
+multi-parent analysis graph. A lossy `retrieve_feature()` primary-model rebuild
+now fails for affected shared-parent records; filter feature-level GRanges and
+then call `as_feature()` to retain the original records and metadata.
+Merge renaming applies the existing source/ID map to every Parent token.
+Internal statistics/plots/haplotype calculations use a temporary primary-model
+projection with unchanged algorithms; the original annotation is not mutated.
+
+BED12 remains flat Feature intervals with additive `block_count`, integer-list
+`block_sizes`/`block_starts`, `thick_start`/`thick_end` and `item_rgb` columns.
+Offsets are zero-based relative bp; sizes are bp widths; thick spans are closed
+1-based coordinates, with end == start - 1 for empty spans. The new writer path
+preserves structure and repeated names; existing GenePred output is unchanged.
+Counts, geometry, exact integers and RGB are validated before export. BED3-11
+behavior is retained. Invalid BED12 records/edits now error rather than silently
+flattening their structure. Examples in the annotation workflow also demonstrate
+the optional nonstandard granges mode and its explicit empty-span convention.
+
+## Compare standard readers
+
+The standalone `compare_standard_io.R` helper evaluates the current readers
+against `rtracklayer`, `Bioc.gff` and `VariantAnnotation`. These are optional
+developer dependencies, not new package Imports/Suggests. Install them in a
+separate development library and install this same GeneTrackR version before
+running the helper; the helper refuses a mismatched installed version.
+
+```sh
+Rscript tools/compare_standard_io.R --path . --output-dir temp/standard-io --iterations 3
+Rscript -e 'testthat::test_file("tools/tests/test-compare-standard-io.R", stop_on_failure = TRUE)'
+Rscript -e 'testthat::test_file("tools/tests/test-standard-io-readers.R", stop_on_failure = TRUE)'
+```
+
+The second standalone test file needs the optional reader packages; it explicitly
+skips when those tools are absent. All optional-reader tests were run with the
+tools present for the 0.99.7 and 0.99.8 assessments. They are not package tests and do not
+contribute to the tests-only runtime coverage percentage.
+
+Use a fresh output directory. Reports retain raw reader objects, input hashes,
+projected tables, unmatched rows, field-level differences, reader warnings/errors,
+source hashes, package versions and per-read timing/object-size observations.
+The helper reports observed differences without converting them into successful
+equivalence checks. The CSV records exactly which fields were compared.
+
+See [the recorded assessment](io-evaluation/README.md),
+[the unposted review response](review-response-0.99.8.md) and
+[the progress record](review-progress-0.99.8.md). The assessment does not activate
+an alternative backend or establish a performance ranking. Large-data peak
+memory, indexed-query comparisons and other operating systems remain future work.
 
 ## Complete package-check CI
 

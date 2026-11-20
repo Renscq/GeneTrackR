@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-08-31
-# Version: dev002
+# Date: 2026-11-20
+# Version: dev003
 # Function: Plot transcript, gene, and genomic region structures
 # Input: GenePred objects and feature identifiers or regions
 # Output: ggplot gene model figures
@@ -194,7 +194,7 @@ plot_region <- function(object, chrom, start, end, mode = c("within", "overlap",
   start_value <- as.integer(start)
   end_value <- as.integer(end)
 
-  gp <- retrieve_feature(
+  gp <- retrieve_primary_feature(
     object = object,
     chrom = chrom_value,
     start = start_value,

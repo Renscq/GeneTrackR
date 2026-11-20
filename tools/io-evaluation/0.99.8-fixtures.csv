@@ -1,0 +1,7 @@
+"format","filename","md5"
+"gff3","annotation.gff3","b77cc87b467cc13430ba94ce70cf28a4"
+"gtf","annotation.gtf","83fc46783cbc4cd9f2f788ecc31c3ff4"
+"bed6","intervals.bed","5943e0be92b24eb7ace42f8e788b5124"
+"bed12","transcripts.bed","f77f57d9440b5035ac79bea36cbdce4a"
+"vcf","variants.vcf","6008e653c327bfd5e03ed73fe1f1122f"
+"bigwig","native_reader_test.bigwig","8a01409e0b35a2a59296903a523b86ef"

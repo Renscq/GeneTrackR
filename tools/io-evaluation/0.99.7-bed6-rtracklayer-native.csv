@@ -1,0 +1,4 @@
+"chrom","start","end","strand","score","name"
+"chr1",1,1,"+",0,"first_base"
+"chr1",5,9,"-",1000,"minus_region"
+"chr2",10,20,"*",25,"unstranded"

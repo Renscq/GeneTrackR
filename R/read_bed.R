@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-08-31
-# Version: dev003
+# Date: 2026-11-20
+# Version: dev004
 # Function: Read BED track files into unified Feature objects
 # Input: BED interval files
 # Output: Feature objects
@@ -10,6 +10,18 @@
 #' @description
 #' Reads BED3-BED12 style files and converts BED coordinates from 0-based
 #' half-open to 1-based closed intervals by default.
+#'
+#' @details
+#' BED12 records remain flat intervals, with `block_count`, integer-list
+#' `block_sizes`/`block_starts`, `thick_start`/`thick_end` and `item_rgb` metadata.
+#' Block starts are zero-based offsets in bp from the record start; sizes are
+#' widths in bp. Thick intervals are 1-based closed; an empty thick span has
+#' `thick_end == thick_start - 1`. `write_feature(..., format = "bed12")`
+#' preserves this structure. Blocks are not automatically expanded into a new
+#' gene model. Invalid counts, geometry, RGB or noninteger fields are rejected.
+#' The optional `coordinate = "granges"` input uses closed thick intervals,
+#' including the explicit empty-span convention above. Standard BED files
+#' should use the default `coordinate = "bed"`.
 #'
 #' @param file BED file path. Gzip-compressed files are supported by `data.table::fread()`.
 #' @param coordinate Input coordinate system. `bed` means 0-based half-open;
@@ -53,6 +65,7 @@ read_bed <- function(file,
 
   old_names <- names(dt)
   data.table::setnames(dt, old_names[seq_len(3L)], c("chrom", "bed_start", "bed_end"))
+  if (original_ncol >= 12L) validate_bed12_coordinates(dt, coordinate)
   dt[, "start" := if (coordinate == "bed") as.integer(dt[["bed_start"]]) + 1L else as.integer(dt[["bed_start"]])]
   dt[, "end" := as.integer(dt[["bed_end"]])]
   dt[, "feature_id" := paste0("BED_", seq_len(.N))]
@@ -72,6 +85,10 @@ read_bed <- function(file,
   stage$tick()
 
   out <- dt[, .(feature_id, name, chrom, start, end, type, level, score, strand, source, gene_id, transcript_id, parent_id)]
+  if (original_ncol >= 12L) {
+    metadata <- read_bed12_metadata(dt, coordinate)
+    for (field in names(metadata)) out[[field]] <- metadata[[field]]
+  }
   progress_msg("[GeneTrackR] Building Feature object and derived gene/transcript/exon tables.")
   obj <- FeatureTrack(
     out,
@@ -82,6 +99,7 @@ read_bed <- function(file,
       coordinate_internal = "1-based closed"
     )
   )
+  if (original_ncol >= 12L) obj$meta$bed12 <- TRUE
   stage$tick()
 
   progress_msg(
