@@ -15,7 +15,8 @@ vignette: >
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 11,
-  fig.height = 7, dpi = 500, fig.retina = 1, crop = FALSE, dev = "png", dev.args = list(type = "cairo"), out.width = "100%", fig.align = "center")
+  fig.height = 7, dpi = 500, fig.retina = 1, crop = FALSE, dev = "ragg_png",
+  out.width = "100%", fig.align = "center")
 library(GeneTrackR)
 library(patchwork)
 plain_text <- ggplot2::element_text(family = "Arial", colour = "black", face = "plain")

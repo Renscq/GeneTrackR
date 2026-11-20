@@ -21,19 +21,75 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: "yes"
+      CRAN: https://cloud.r-project.org
     steps:
       - uses: actions/checkout@v6
+      - name: Initialize diagnostic reports
+        shell: bash
+        env:
+          CI_REPORT_DIR: ${{ runner.temp }}/coverage
+        run: |
+          mkdir -p "$CI_REPORT_DIR"
+          printf 'CI_REPORT_DIR=%s\n' "$CI_REPORT_DIR" >> "$GITHUB_ENV"
+          printf 'Runner: %s\nCommit: %s\n' "$RUNNER_OS" "$GITHUB_SHA" > "$CI_REPORT_DIR/runner.txt"
+          uname -a >> "$CI_REPORT_DIR/runner.txt"
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          install-r: false
+          use-public-rspm: false
+          cran: https://cloud.r-project.org
+      - name: Select and record Bioconductor devel
+        shell: Rscript {0}
+        run: |
+          sink(file.path(Sys.getenv("CI_REPORT_DIR"), "environment-setup.log"), split = TRUE)
+          cat(R.version.string, "\nRequested Bioconductor: devel\n")
+          options(repos = c(CRAN = Sys.getenv("CRAN")))
+          install.packages("BiocManager")
+          Sys.unsetenv("R_BIOC_VERSION")
+          expected_repos <- BiocManager::repositories(version = "devel")
+          cat("Expected devel repository:", expected_repos[["BioCsoft"]], "\n")
+          BiocManager::install(version = "devel", ask = FALSE, update = FALSE)
+          bioc_version <- as.character(BiocManager::version())
+          repos <- BiocManager::repositories(version = bioc_version)
+          stopifnot(identical(repos[["BioCsoft"]], expected_repos[["BioCsoft"]]),
+            requireNamespace("BiocVersion", quietly = TRUE))
+          installed_bioc <- paste(utils::head(strsplit(as.character(
+            packageVersion("BiocVersion")), ".", fixed = TRUE)[[1L]], 2L), collapse = ".")
+          stopifnot(identical(installed_bioc, bioc_version))
+          print(bioc_version)
+          print(repos)
+          print(.libPaths())
+          cat("\noptions(repos = ", paste(deparse(repos), collapse = "\n"), ")\n",
+            file = path.expand("~/.Rprofile"), append = TRUE, sep = "")
+          cat(paste0("R_BIOC_VERSION=", bioc_version, "\n"),
+            file = Sys.getenv("GITHUB_ENV"), append = TRUE)
+          sink()
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           needs: coverage
+      - name: Record resolved coverage environment
+        shell: Rscript {0}
+        run: |
+          details <- capture.output({
+            cat(R.version.string, "\n")
+            print(BiocManager::version())
+            print(getOption("repos"))
+            cat("covr:", as.character(packageVersion("covr")), "\n")
+            stopifnot(packageVersion("covr") >= "4.0.0")
+            print(sessionInfo())
+          })
+          writeLines(details, file.path(Sys.getenv("CI_REPORT_DIR"), "environment-resolved.log"))
+          cat(details, sep = "\n")
       - name: Measure all runtime R code with package tests
-        run: >-
-          Rscript tools/check_coverage.R --output-dir temp/coverage
-          --minimum 80 --baseline tools/coverage/0.99.5-files.csv
+        shell: Rscript {0}
+        run: |
+          source("tools/check_coverage.R")
+          coverage_main(c("--output-dir", Sys.getenv("CI_REPORT_DIR"),
+            "--minimum", "80", "--baseline", "tools/coverage/0.99.5-files.csv"))
       - name: Retain full coverage and provenance
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: tests-only-coverage
-          path: temp/coverage
-          if-no-files-found: error
+          path: ${{ env.CI_REPORT_DIR }}
+          if-no-files-found: warn

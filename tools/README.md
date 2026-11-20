@@ -59,6 +59,10 @@ The tutorials apply explicit Arial, regular black text to returned plots and
 saved figures. Continuous plots use classic styling; haplotype/LD diagrams
 retain their specialized layouts. Install Arial for matching text metrics on
 another machine; successful CI execution does not verify installed font faces.
+All six workflows use knitr's `ragg_png` device, and the PNG export example
+uses `ragg::agg_png`. The suggested dependency `ragg` removes the tutorials'
+requirement for Cairo/XQuartz while retaining sizes, aspect ratios and 500 dpi.
+This changes documentation rendering only, not package plotting APIs or I/O.
 
 The homepage uses `pkgdown/sidebar.html` for its project links. This avoids
 making a local build depend on automatic package-repository availability probes.
@@ -141,23 +145,59 @@ The export workflow retains the original VCF and complete objects separately.
 ## Complete package-check CI
 
 ```sh
-Rscript tools/check_package.R --path . --output-dir temp/package-check
+Rscript tools/check_package.R --path . --output-dir ../GeneTrackR-package-check
 ```
 
-Use a fresh output directory. The helper runs the source-repository checker,
+Use a fresh output directory outside the actual package source. The default
+is a persistent sibling named `<source-directory>-package-check`; source-local
+paths, including `temp/package-check` when checking the repository root, are
+rejected before any checker/build log is opened. `.Rbuildignore` does not
+prevent Windows from trying to copy an active source-local build log.
+The helper runs the source-repository checker,
 full R CMD build/check (including all vignettes and the manual), and new-package
 BiocCheck, retaining logs and structured severity results. It fails on any
 BiocCheck ERROR/WARNING or an R CMD check result other than Status: OK.
+If the only warning is Support Site HTTP 429 and there are no errors, it
+repeats the complete new-package BiocCheck after 30 and then 60 seconds
+(at most three attempts). Each attempt retains its checker object, native
+reports and severity row. Other errors/warnings fail without retry; exhausted
+rate limiting still fails. Optional local BiocVersion metadata is recorded as
+`not installed` when absent rather than adding a developer dependency.
 It requires the development dependency BiocCheck and an available Pandoc/LaTeX
 toolchain. For local release staging, pass the verified staging directory as
 `--path`; automatically generated source-check reports can be adjacent to that
 source directory.
 
-`check-package.yaml` configures Linux in the official Bioconductor devel image
-so the R/Bioconductor pair is supplied by that image. Windows/macOS jobs use R
-release with matching Bioconductor dependencies. `test-coverage.yaml` uses the
-same devel image for tests-only coverage. These jobs upload evidence only and
+Run the standalone report-path regressions from the package root:
+
+```sh
+Rscript -e 'testthat::test_file("tools/tests/test-check-package.R", stop_on_failure = TRUE)'
+```
+
+`check-package.yaml` and `test-coverage.yaml` keep the official Bioconductor
+devel container's R with `setup-r`'s `install-r: false`. Bioconductor devel
+does not always use R-devel. The jobs independently resolve the expected
+devel repository, use `BiocManager::install(version = "devel")` to validate
+the R/Bioconductor pair, and compare the installed version and actual
+repository with that expectation before persisting it. Windows/macOS use R release and
+its matching default Bioconductor release. All check/coverage jobs explicitly
+use current CRAN instead of a dated container snapshot, persist the selected
+Bioconductor repositories for dependency installation, and record actual R,
+Bioconductor, repositories and libraries before dependencies are resolved.
+Coverage additionally records/asserts the installed covr version before
+measuring; `covr >= 4.0.0`, tests-only scope and the 80% floor are unchanged.
+
+Linux package checks refresh apt metadata and record/install the texinfo
+candidate before TinyTeX; PDF checks are retained. Check/coverage outputs live
+under `${{ runner.temp }}` outside the checkout. Runner diagnostics are created
+before toolchain setup using a step-level runner context and `GITHUB_ENV`,
+and reports upload even on failure. An absent artifact
+warns instead of masking the original failed check; check failures still fail
+the job. Artifact uploads use the verified Node 24 action `v7.0.2`.
+
+These jobs upload evidence only and
 have read-only repository permissions; they contain no publishing, pushing or
-BiocStaging steps. The separate existing pkgdown publication workflow is
-unchanged. Configuration and local commands can be checked without executing
+BiocStaging steps. The pkgdown preview upload uses the same supported artifact
+action; website deployment conditions are unchanged.
+Configuration and local commands can be checked without executing
 GitHub jobs; remote CI results require a later authorized push.

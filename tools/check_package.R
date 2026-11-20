@@ -1,8 +1,8 @@
 #!/usr/bin/env Rscript
 
 # Author: Rensc
-# Date: 2026-11-19
-# Version: dev001
+# Date: 2026-11-20
+# Version: dev002
 # Function: Run complete source, archive and new-package validation for CI.
 # Input: A package source directory and a fresh report directory.
 # Output: Source archive, R CMD check, BiocCheck objects and severity summaries.
@@ -21,11 +21,56 @@ checker_counts <- function(result, stage) {
                WARNING = length(result$warning), NOTE = length(result$note))
 }
 
+run_new_package_check <- function(archive, output_dir,
+                                  checker = BiocCheck::BiocCheck,
+                                  retry_delays = c(30, 60)) {
+  attempts <- vector("list", length(retry_delays) + 1L)
+  for (attempt in seq_along(attempts)) {
+    check_dir <- file.path(output_dir, paste0("bioccheck-attempt-", attempt))
+    dir.create(check_dir, recursive = TRUE, showWarnings = FALSE)
+    result <- checker(archive, checkDir = check_dir,
+      install = TRUE, `new-package` = TRUE, `quit-with-status` = FALSE)
+    saveRDS(result, file.path(check_dir, "result.rds"))
+    attempts[[attempt]] <- checker_counts(result,
+      paste0("BiocCheck-new-package-attempt-", attempt))
+    utils::write.csv(do.call(rbind, attempts[seq_len(attempt)]),
+      file.path(output_dir, "bioccheck-attempts.csv"), row.names = FALSE)
+    warnings <- unlist(result$warning, use.names = FALSE)
+    rate_limited <- length(result$error) == 0L && length(warnings) > 0L &&
+      all(grepl(paste0("^Unable to retrieve email info from the Support Site:",
+        "[[:space:]]+HTTP status 429[[:space:]]*$"), warnings))
+    if (!rate_limited || attempt == length(attempts)) return(result)
+    cat(sprintf("Support Site rate-limited; retrying complete BiocCheck in %g seconds.\n",
+      retry_delays[[attempt]]))
+    Sys.sleep(retry_delays[[attempt]])
+  }
+}
+
+package_check_output <- function(source_path, output_dir = NULL) {
+  source_path <- normalizePath(source_path, winslash = "/", mustWork = TRUE)
+  if (is.null(output_dir)) {
+    output_dir <- file.path(dirname(source_path),
+      paste0(basename(source_path), "-package-check"))
+  }
+  dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+  output_dir <- normalizePath(output_dir, winslash = "/", mustWork = TRUE)
+  source_key <- source_path
+  output_key <- output_dir
+  if (.Platform$OS.type == "windows") {
+    source_key <- tolower(source_key)
+    output_key <- tolower(output_key)
+  }
+  if (identical(output_key, source_key) || startsWith(output_key, paste0(source_key, "/"))) {
+    stop("The report directory must be outside the package source tree.", call. = FALSE)
+  }
+  output_dir
+}
+
 package_check_main <- function(args = commandArgs(trailingOnly = TRUE)) {
   help <- paste(
     "Usage: Rscript tools/check_package.R [options]",
     "  --path DIR          Package source (default: current directory)",
-    "  --output-dir DIR    Fresh reports/archive directory (default: temp/package-check)",
+    "  --output-dir DIR    Fresh reports outside source (default: sibling <source>-package-check)",
     "  --help              Show this help",
     "Runs full build/check, BiocCheckGitClone and new-package BiocCheck.",
     "No checks are skipped. ERROR or WARNING results fail the run.", sep = "\n")
@@ -33,7 +78,7 @@ package_check_main <- function(args = commandArgs(trailingOnly = TRUE)) {
     cat(help, "\n")
     return(invisible(NULL))
   }
-  values <- list(path = ".", output_dir = "temp/package-check")
+  values <- list(path = ".", output_dir = NULL)
   mapping <- c("--path" = "path", "--output-dir" = "output_dir")
   index <- 1L
   while (index <= length(args)) {
@@ -44,9 +89,6 @@ package_check_main <- function(args = commandArgs(trailingOnly = TRUE)) {
     values[[mapping[[flag]]]] <- args[[index + 1L]]
     index <- index + 2L
   }
-  if (!requireNamespace("BiocCheck", quietly = TRUE)) {
-    stop("Install the developer dependency BiocCheck to run package checks.", call. = FALSE)
-  }
   source_path <- normalizePath(values$path, winslash = "/", mustWork = TRUE)
   desc <- read.dcf(file.path(source_path, "DESCRIPTION"))
   package <- unname(desc[1L, "Package"])
@@ -54,12 +96,26 @@ package_check_main <- function(args = commandArgs(trailingOnly = TRUE)) {
   if (!grepl("^[A-Za-z][A-Za-z0-9.]*$", package) || !grepl("^[0-9.]+$", version)) {
     stop("Package name or version cannot be used as a source archive name.", call. = FALSE)
   }
-  dir.create(values$output_dir, recursive = TRUE, showWarnings = FALSE)
-  output_dir <- normalizePath(values$output_dir, winslash = "/", mustWork = TRUE)
+  output_dir <- package_check_output(source_path, values$output_dir)
   archive <- file.path(output_dir, paste0(package, "_", version, ".tar.gz"))
   if (file.exists(archive) || dir.exists(file.path(output_dir, paste0(package, ".Rcheck")))) {
     stop("Choose a fresh output directory to retain earlier validation results.", call. = FALSE)
   }
+  if (!requireNamespace("BiocCheck", quietly = TRUE)) {
+    stop("Install the developer dependency BiocCheck to run package checks.", call. = FALSE)
+  }
+  bioc_package <- if (requireNamespace("BiocVersion", quietly = TRUE)) {
+    as.character(utils::packageVersion("BiocVersion"))
+  } else "not installed"
+  writeLines(capture.output(sessionInfo()), file.path(output_dir, "session-info.txt"))
+  writeLines(capture.output({
+    cat(R.version.string, "\n")
+    cat("Bioconductor:", as.character(BiocManager::version()), "\n")
+    cat("BiocVersion:", bioc_package, "\n")
+    cat("BiocCheck:", as.character(utils::packageVersion("BiocCheck")), "\n")
+    print(getOption("repos"))
+    print(.libPaths())
+  }), file.path(output_dir, "environment-resolved.log"))
   old_directory <- getwd()
   on.exit(setwd(old_directory), add = TRUE)
   setwd(output_dir)
@@ -81,8 +137,7 @@ package_check_main <- function(args = commandArgs(trailingOnly = TRUE)) {
     stop("R CMD check did not report Status: OK; inspect the check log.", call. = FALSE)
   }
   cat("Running full new-package BiocCheck.\n")
-  result <- BiocCheck::BiocCheck(archive, checkDir = output_dir,
-    install = TRUE, `new-package` = TRUE, `quit-with-status` = FALSE)
+  result <- run_new_package_check(archive, output_dir)
   saveRDS(result, file.path(output_dir, "bioccheck-new-package.rds"))
   counts <- rbind(clone_counts, checker_counts(result, "BiocCheck-new-package"))
   utils::write.csv(counts, file.path(output_dir, "bioccheck-summary.csv"), row.names = FALSE)

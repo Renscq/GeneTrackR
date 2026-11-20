@@ -15,7 +15,8 @@ vignette: >
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 10,
-  fig.height = 6, dpi = 500, fig.retina = 1, crop = FALSE, dev = "png", dev.args = list(type = "cairo"), out.width = "100%", fig.align = "center")
+  fig.height = 6, dpi = 500, fig.retina = 1, crop = FALSE, dev = "ragg_png",
+  out.width = "100%", fig.align = "center")
 library(GeneTrackR)
 library(patchwork)
 plain_text <- ggplot2::element_text(family = "Arial", colour = "black", face = "plain")
@@ -121,7 +122,7 @@ utils::write.csv(as.data.frame(association$pvalue),
   file.path(output_dir, "pairwise-tests.csv"), row.names = FALSE, na = "NA")
 ggplot2::ggsave(file.path(output_dir, "phenotype-comparison.png"),
   plot = association$figure, width = 8, height = 5, units = "in", dpi = 500,
-  device = grDevices::png, type = "cairo")
+  device = ragg::agg_png)
 bundle <- list(annotation = gp, variants = vcf, signal = signal,
   haplotypes = hap, phenotype = pheno, association = association,
   parameters = list(gene_id = "GeneA", genotype_mode = "string", min_hap_samples = 3,

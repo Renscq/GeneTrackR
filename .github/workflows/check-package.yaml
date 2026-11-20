@@ -22,23 +22,76 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: "yes"
+      CRAN: https://cloud.r-project.org
     steps:
       - uses: actions/checkout@v6
+      - name: Initialize diagnostic reports
+        shell: bash
+        env:
+          CI_REPORT_DIR: ${{ runner.temp }}/package-check
+        run: |
+          mkdir -p "$CI_REPORT_DIR"
+          printf 'CI_REPORT_DIR=%s\n' "$CI_REPORT_DIR" >> "$GITHUB_ENV"
+          printf 'Runner: %s\nCommit: %s\n' "$RUNNER_OS" "$GITHUB_SHA" > "$CI_REPORT_DIR/runner.txt"
+          uname -a >> "$CI_REPORT_DIR/runner.txt"
+      - name: Refresh system packages for TinyTeX
+        shell: bash
+        run: |
+          sudo apt-get update > "$CI_REPORT_DIR/apt.log" 2>&1
+          apt-cache policy texinfo >> "$CI_REPORT_DIR/apt.log" 2>&1
+          sudo apt-get install -y texinfo >> "$CI_REPORT_DIR/apt.log" 2>&1
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          install-r: false
+          use-public-rspm: false
+          cran: https://cloud.r-project.org
+      - name: Select and record Bioconductor devel
+        shell: Rscript {0}
+        run: |
+          sink(file.path(Sys.getenv("CI_REPORT_DIR"), "environment-setup.log"), split = TRUE)
+          cat(R.version.string, "\nRequested Bioconductor: devel\n")
+          options(repos = c(CRAN = Sys.getenv("CRAN")))
+          install.packages("BiocManager")
+          Sys.unsetenv("R_BIOC_VERSION")
+          expected_repos <- BiocManager::repositories(version = "devel")
+          cat("Expected devel repository:", expected_repos[["BioCsoft"]], "\n")
+          BiocManager::install(version = "devel", ask = FALSE, update = FALSE)
+          bioc_version <- as.character(BiocManager::version())
+          repos <- BiocManager::repositories(version = bioc_version)
+          stopifnot(identical(repos[["BioCsoft"]], expected_repos[["BioCsoft"]]),
+            requireNamespace("BiocVersion", quietly = TRUE))
+          installed_bioc <- paste(utils::head(strsplit(as.character(
+            packageVersion("BiocVersion")), ".", fixed = TRUE)[[1L]], 2L), collapse = ".")
+          stopifnot(identical(installed_bioc, bioc_version))
+          print(bioc_version)
+          print(repos)
+          print(.libPaths())
+          cat("\noptions(repos = ", paste(deparse(repos), collapse = "\n"), ")\n",
+            file = path.expand("~/.Rprofile"), append = TRUE, sep = "")
+          cat(paste0("R_BIOC_VERSION=", bioc_version, "\n"),
+            file = Sys.getenv("GITHUB_ENV"), append = TRUE)
+          sink()
       - uses: r-lib/actions/setup-pandoc@v2
       - uses: r-lib/actions/setup-tinytex@v2
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: any::BiocCheck
           needs: check
+      - name: Check report-directory regressions
+        shell: Rscript {0}
+        run: testthat::test_file("tools/tests/test-check-package.R", reporter = "summary", stop_on_failure = TRUE)
       - name: Run complete package checks
-        run: Rscript tools/check_package.R --output-dir temp/package-check
+        shell: Rscript {0}
+        run: |
+          source("tools/check_package.R")
+          package_check_main(c("--output-dir", Sys.getenv("CI_REPORT_DIR")))
       - name: Retain reports and source archive
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: checks-bioc-devel-linux
-          path: temp/package-check
-          if-no-files-found: error
+          path: ${{ runner.temp }}/package-check
+          if-no-files-found: warn
 
   cross-platform:
     name: ${{ matrix.os }} R release
@@ -50,24 +103,64 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: "yes"
+      CRAN: https://cloud.r-project.org
     steps:
       - uses: actions/checkout@v6
+      - name: Initialize diagnostic reports
+        shell: bash
+        env:
+          CI_REPORT_DIR: ${{ runner.temp }}/package-check
+        run: |
+          mkdir -p "$CI_REPORT_DIR"
+          printf 'CI_REPORT_DIR=%s\n' "$CI_REPORT_DIR" >> "$GITHUB_ENV"
+          printf 'Runner: %s\nCommit: %s\n' "$RUNNER_OS" "$GITHUB_SHA" > "$CI_REPORT_DIR/runner.txt"
+          uname -a >> "$CI_REPORT_DIR/runner.txt"
       - uses: r-lib/actions/setup-pandoc@v2
       - uses: r-lib/actions/setup-r@v2
         with:
           r-version: release
-          use-public-rspm: true
+          use-public-rspm: false
+          cran: https://cloud.r-project.org
+      - name: Select and record Bioconductor release
+        shell: Rscript {0}
+        run: |
+          sink(file.path(Sys.getenv("CI_REPORT_DIR"), "environment-setup.log"), split = TRUE)
+          cat(R.version.string, "\nRequested Bioconductor: release\n")
+          options(repos = c(CRAN = Sys.getenv("CRAN")))
+          install.packages("BiocManager")
+          Sys.unsetenv("R_BIOC_VERSION")
+          BiocManager::install(ask = FALSE, update = FALSE)
+          bioc_version <- as.character(BiocManager::version())
+          repos <- BiocManager::repositories(version = bioc_version)
+          stopifnot(requireNamespace("BiocVersion", quietly = TRUE))
+          installed_bioc <- paste(utils::head(strsplit(as.character(
+            packageVersion("BiocVersion")), ".", fixed = TRUE)[[1L]], 2L), collapse = ".")
+          stopifnot(identical(installed_bioc, bioc_version))
+          print(bioc_version)
+          print(repos)
+          print(.libPaths())
+          cat("\noptions(repos = ", paste(deparse(repos), collapse = "\n"), ")\n",
+            file = path.expand("~/.Rprofile"), append = TRUE, sep = "")
+          cat(paste0("R_BIOC_VERSION=", bioc_version, "\n"),
+            file = Sys.getenv("GITHUB_ENV"), append = TRUE)
+          sink()
       - uses: r-lib/actions/setup-tinytex@v2
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: any::BiocCheck
           needs: check
+      - name: Check report-directory regressions
+        shell: Rscript {0}
+        run: testthat::test_file("tools/tests/test-check-package.R", reporter = "summary", stop_on_failure = TRUE)
       - name: Run complete package checks
-        run: Rscript tools/check_package.R --output-dir temp/package-check
+        shell: Rscript {0}
+        run: |
+          source("tools/check_package.R")
+          package_check_main(c("--output-dir", Sys.getenv("CI_REPORT_DIR")))
       - name: Retain reports and source archive
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: checks-${{ matrix.os }}-release
-          path: temp/package-check
-          if-no-files-found: error
+          path: ${{ runner.temp }}/package-check
+          if-no-files-found: warn
