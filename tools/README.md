@@ -157,10 +157,13 @@ The helper runs the source-repository checker,
 full R CMD build/check (including all vignettes and the manual), and new-package
 BiocCheck, retaining logs and structured severity results. It fails on any
 BiocCheck ERROR/WARNING or an R CMD check result other than Status: OK.
-If the only warning is Support Site HTTP 429 and there are no errors, it
+If all error/warning diagnostics are the recognized Support Site HTTP 429
+messages, it
 repeats the complete new-package BiocCheck after 30 and then 60 seconds
 (at most three attempts). Each attempt retains its checker object, native
-reports and severity row. Other errors/warnings fail without retry; exhausted
+reports and severity row. This includes the ERROR used by BiocCheck 1.48 and
+the WARNING used by 1.49; original severities are never downgraded.
+Other errors/warnings fail without retry; exhausted
 rate limiting still fails. Optional local BiocVersion metadata is recorded as
 `not installed` when absent rather than adding a developer dependency.
 It requires the development dependency BiocCheck and an available Pandoc/LaTeX
@@ -188,7 +191,9 @@ Coverage additionally records/asserts the installed covr version before
 measuring; `covr >= 4.0.0`, tests-only scope and the 80% floor are unchanged.
 
 Linux package checks refresh apt metadata and record/install the texinfo
-candidate before TinyTeX; PDF checks are retained. Check/coverage outputs live
+candidate before TinyTeX; PDF checks are retained. All package-check runners
+install Courier's manual font metrics and verify `pcrr8t.tfm` before building,
+with toolchain output retained in `tex-fonts.log`. Check/coverage outputs live
 under `${{ runner.temp }}` outside the checkout. Runner diagnostics are created
 before toolchain setup using a step-level runner context and `GITHUB_ENV`,
 and reports upload even on failure. An absent artifact

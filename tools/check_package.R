@@ -2,7 +2,7 @@
 
 # Author: Rensc
 # Date: 2026-11-20
-# Version: dev002
+# Version: dev003
 # Function: Run complete source, archive and new-package validation for CI.
 # Input: A package source directory and a fresh report directory.
 # Output: Source archive, R CMD check, BiocCheck objects and severity summaries.
@@ -35,10 +35,13 @@ run_new_package_check <- function(archive, output_dir,
       paste0("BiocCheck-new-package-attempt-", attempt))
     utils::write.csv(do.call(rbind, attempts[seq_len(attempt)]),
       file.path(output_dir, "bioccheck-attempts.csv"), row.names = FALSE)
-    warnings <- unlist(result$warning, use.names = FALSE)
-    rate_limited <- length(result$error) == 0L && length(warnings) > 0L &&
-      all(grepl(paste0("^Unable to retrieve email info from the Support Site:",
-        "[[:space:]]+HTTP status 429[[:space:]]*$"), warnings))
+    diagnostics <- c(unlist(result$error, use.names = FALSE),
+      unlist(result$warning, use.names = FALSE))
+    rate_limit_patterns <- c(
+      "Unable to retrieve email info from the Support Site:[[:space:]]+HTTP status 429",
+      "Unable to find your email in the Support Site:[[:space:]]+HTTP 429 Too Many[[:space:]]+Requests[.]")
+    rate_limited <- length(diagnostics) > 0L && all(grepl(
+      paste0("^(", paste(rate_limit_patterns, collapse = "|"), ")[[:space:]]*$"), diagnostics))
     if (!rate_limited || attempt == length(attempts)) return(result)
     cat(sprintf("Support Site rate-limited; retrying complete BiocCheck in %g seconds.\n",
       retry_delays[[attempt]]))

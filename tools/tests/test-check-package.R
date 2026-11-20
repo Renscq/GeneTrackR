@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-11-20
-# Version: dev001
+# Version: dev002
 # Function: Regress safe package-check report paths outside the source tree.
 # Input: tools/check_package.R sourced by the standalone test runner.
 # Output: testthat assertions; temporary fixture directories only.
@@ -107,4 +107,45 @@ testthat::test_that("persistent rate limiting exhausts a bounded number of full 
   testthat::expect_identical(calls, 3L)
   testthat::expect_identical(observed, fixture)
   testthat::expect_equal(nrow(utils::read.csv(file.path(output, "bioccheck-attempts.csv"))), 3L)
+})
+
+testthat::test_that("legacy Support Site HTTP 429 errors retry without hiding severity", {
+  output <- tempfile("gtr-bioc-legacy-retry-")
+  dir.create(output)
+  on.exit(unlink(output, recursive = TRUE), add = TRUE)
+  fixture <- list(error = list(checkSupportReg = list(list(checkSupportReg =
+    "Unable to find your email in the Support Site:\n  HTTP 429 Too Many Requests."))),
+    warning = list(), note = list())
+  clean <- list(error = list(), warning = list(), note = list())
+  calls <- 0L
+  checker <- function(...) { calls <<- calls + 1L; if (calls == 1L) fixture else clean }
+  result <- run_new_package_check("fixture.tar.gz", output,
+    checker = checker, retry_delays = c(0, 0))
+  testthat::expect_identical(calls, 2L)
+  testthat::expect_identical(result, clean)
+  attempts <- utils::read.csv(file.path(output, "bioccheck-attempts.csv"))
+  testthat::expect_identical(attempts$ERROR, c(1L, 0L))
+  testthat::expect_identical(readRDS(file.path(output,
+    "bioccheck-attempt-1", "result.rds")), fixture)
+})
+
+testthat::test_that("legacy rate limits stay errors after retry exhaustion or real failures", {
+  rate_limit <- "Unable to find your email in the Support Site: HTTP 429 Too Many Requests."
+  cases <- list(
+    list(result = list(error = list(rate_limit), warning = list(), note = list()), attempts = 3L),
+    list(result = list(error = list(rate_limit, "Invalid source"), warning = list(), note = list()), attempts = 1L),
+    list(result = list(error = list("Unable to find your email in the Support Site: HTTP 404 Not Found."),
+      warning = list(), note = list()), attempts = 1L),
+    list(result = list(error = list(rate_limit), warning = list("Invalid namespace"), note = list()), attempts = 1L))
+  for (fixture in cases) {
+    output <- tempfile("gtr-bioc-legacy-failure-")
+    dir.create(output)
+    calls <- 0L
+    checker <- function(...) { calls <<- calls + 1L; fixture$result }
+    result <- run_new_package_check("fixture.tar.gz", output,
+      checker = checker, retry_delays = c(0, 0))
+    testthat::expect_identical(calls, fixture$attempts)
+    testthat::expect_identical(result, fixture$result)
+    unlink(output, recursive = TRUE)
+  }
 })
