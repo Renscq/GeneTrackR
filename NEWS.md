@@ -14,8 +14,9 @@
   retained the covr >= 4.0.0 tests-only method and 80 percent coverage floor.
 - Refreshed Linux apt metadata before texinfo/TinyTeX, retained early failure
   diagnostics, and updated artifact uploads to a supported Node 24 action.
-- Installed and verified Courier metrics for PDF manuals on fresh TinyTeX
-  runners. Kept the full manual check and retained font installation logs.
+- Selected the official prebuilt TinyTeX bundle containing Courier metrics,
+  avoiding live font-manager updates on fresh runners. Kept explicit metric
+  verification, the full PDF manual check and font diagnostics.
 - Retained all complete BiocCheck attempts when retrying recognized Support
   Site HTTP 429 diagnostics with bounded backoff, including the ERROR used by
   older checkers. Original severity is retained; other errors/warnings and

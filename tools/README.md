@@ -192,8 +192,9 @@ measuring; `covr >= 4.0.0`, tests-only scope and the 80% floor are unchanged.
 
 Linux package checks refresh apt metadata and record/install the texinfo
 candidate before TinyTeX; PDF checks are retained. All package-check runners
-install Courier's manual font metrics and verify `pcrr8t.tfm` before building,
-with toolchain output retained in `tex-fonts.log`. Check/coverage outputs live
+use the official `TinyTeX` prebuilt bundle containing Courier, then verify
+`pcrr8t.tfm` before building. This avoids a live CTAN/self-update phase;
+font verification output is retained in `tex-fonts.log`. Check/coverage outputs live
 under `${{ runner.temp }}` outside the checkout. Runner diagnostics are created
 before toolchain setup using a step-level runner context and `GITHUB_ENV`,
 and reports upload even on failure. An absent artifact

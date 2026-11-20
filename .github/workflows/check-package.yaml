@@ -73,23 +73,21 @@ jobs:
           sink()
       - uses: r-lib/actions/setup-pandoc@v2
       - uses: r-lib/actions/setup-tinytex@v2
-      - name: Install and verify manual font metrics
+        env:
+          TINYTEX_INSTALLER: TinyTeX
+      - name: Verify bundled manual font metrics
         shell: Rscript {0}
         timeout-minutes: 10
         run: |
           logfile <- file.path(Sys.getenv("CI_REPORT_DIR"), "tex-fonts.log")
-          run_tex <- function(command, arguments) {
-            if (!nzchar(command)) stop("A required TeX command is missing.")
-            output <- system2(command, arguments, stdout = TRUE, stderr = TRUE)
-            cat(output, sep = "\n", file = logfile, append = TRUE)
-            cat(output, sep = "\n")
-            status <- attr(output, "status")
-            if (!is.null(status) && status != 0L) stop("TeX font preparation failed; see tex-fonts.log.")
-          }
-          manager <- Sys.which(if (.Platform$OS.type == "windows") "tlmgr.bat" else "tlmgr")
-          run_tex(manager, c("update", "--self"))
-          run_tex(manager, c("install", "courier"))
-          run_tex(Sys.which("kpsewhich"), "pcrr8t.tfm")
+          command <- Sys.which("kpsewhich")
+          if (!nzchar(command)) stop("The TeX font lookup command is missing.")
+          output <- system2(command, "pcrr8t.tfm", stdout = TRUE, stderr = TRUE)
+          writeLines(output, logfile)
+          cat(output, sep = "\n")
+          status <- attr(output, "status")
+          if (!length(output) || (!is.null(status) && status != 0L))
+            stop("Courier font metrics are missing; see tex-fonts.log.")
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: any::BiocCheck
@@ -162,23 +160,21 @@ jobs:
             file = Sys.getenv("GITHUB_ENV"), append = TRUE)
           sink()
       - uses: r-lib/actions/setup-tinytex@v2
-      - name: Install and verify manual font metrics
+        env:
+          TINYTEX_INSTALLER: TinyTeX
+      - name: Verify bundled manual font metrics
         shell: Rscript {0}
         timeout-minutes: 10
         run: |
           logfile <- file.path(Sys.getenv("CI_REPORT_DIR"), "tex-fonts.log")
-          run_tex <- function(command, arguments) {
-            if (!nzchar(command)) stop("A required TeX command is missing.")
-            output <- system2(command, arguments, stdout = TRUE, stderr = TRUE)
-            cat(output, sep = "\n", file = logfile, append = TRUE)
-            cat(output, sep = "\n")
-            status <- attr(output, "status")
-            if (!is.null(status) && status != 0L) stop("TeX font preparation failed; see tex-fonts.log.")
-          }
-          manager <- Sys.which(if (.Platform$OS.type == "windows") "tlmgr.bat" else "tlmgr")
-          run_tex(manager, c("update", "--self"))
-          run_tex(manager, c("install", "courier"))
-          run_tex(Sys.which("kpsewhich"), "pcrr8t.tfm")
+          command <- Sys.which("kpsewhich")
+          if (!nzchar(command)) stop("The TeX font lookup command is missing.")
+          output <- system2(command, "pcrr8t.tfm", stdout = TRUE, stderr = TRUE)
+          writeLines(output, logfile)
+          cat(output, sep = "\n")
+          status <- attr(output, "status")
+          if (!length(output) || (!is.null(status) && status != 0L))
+            stop("Courier font metrics are missing; see tex-fonts.log.")
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: any::BiocCheck
