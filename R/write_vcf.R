@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-11-19
-# Version: dev004
+# Date: 2026-11-21
+# Version: dev005
 # Function: Write VariantTrack objects to VCF files
 # Input: VariantTrack object
 # Output: VCF file
@@ -10,10 +10,12 @@
 #' @description
 #' Write the eight site-level VCF fields with an optional minimal metadata
 #' header. FORMAT definitions, sample columns and genotypes are not exported.
-#' Keep the original VCF for genotype-preserving exchange, or save the complete
+#' For a track created by [as_variant_track()], pass [as_vcf()] to
+#' `VariantAnnotation::writeVcf()` to export sample genotypes. Keep the
+#' original VCF when exact source text is needed, or save the complete
 #' object with [base::saveRDS()] for reuse in R.
 #'
-#' @param object A `VariantTrack` object created by `read_vcf()`.
+#' @param object An in-memory `VariantTrack` object.
 #' @param file Output VCF file path.
 #' @param overwrite Whether to overwrite an existing file.
 #' @param include_header Whether to include minimal VCF header lines.

@@ -7,7 +7,7 @@
 write_vcf(object, file, overwrite = FALSE, include_header = TRUE)
 }
 \arguments{
-\item{object}{A \code{VariantTrack} object created by \code{read_vcf()}.}
+\item{object}{An in-memory \code{VariantTrack} object.}
 
 \item{file}{Output VCF file path.}
 
@@ -21,7 +21,9 @@ Invisibly returns the output file path.
 \description{
 Write the eight site-level VCF fields with an optional minimal metadata
 header. FORMAT definitions, sample columns and genotypes are not exported.
-Keep the original VCF for genotype-preserving exchange, or save the complete
+For a track created by \code{\link[=as_variant_track]{as_variant_track()}}, pass \code{\link[=as_vcf]{as_vcf()}} to
+\code{VariantAnnotation::writeVcf()} to export sample genotypes. Keep the
+original VCF when exact source text is needed, or save the complete
 object with \code{\link[base:saveRDS]{base::saveRDS()}} for reuse in R.
 }
 \examples{

@@ -135,6 +135,7 @@ variant_as_granges <- function(object) {
     strand = rep("*", nrow(dt))
   )
   metadata_columns <- setdiff(names(dt), c("chrom", "start", "end"))
+  if (!is.null(object$meta$vcf_context)) metadata_columns <- setdiff(metadata_columns, vcf_row_key)
   set_granges_metadata(gr, dt[, metadata_columns, with = FALSE])
 }
 

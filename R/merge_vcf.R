@@ -21,6 +21,9 @@ merge_vcf <- function(...,
 
   out <- lapply(seq_along(tracks), function(i) {
     dt <- data.table::copy(tracks[[i]]$data)
+    if (!is.null(tracks[[i]]$meta$vcf_context) && vcf_row_key %in% names(dt)) {
+      data.table::set(dt, j = vcf_row_key, value = NULL)
+    }
     if (conflict == "rename" && "variant_id" %in% names(dt)) {
       idx <- !is.na(dt[["variant_id"]]) & nzchar(dt[["variant_id"]])
       dt[idx, "variant_id" := paste0(rename_prefix[i], dt[["variant_id"]])]

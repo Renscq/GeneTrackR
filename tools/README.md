@@ -3,6 +3,9 @@
 These developer tools do not install dependencies or publish anything locally.
 Run all commands from the GeneTrackR package root with R 4.6.0 or later.
 
+The [0.99.9 backend assessment](io-evaluation/0.99.9-assessment.md) documents
+the separate TxDb and indexed VCF loader experiment and its dependencies.
+
 ## Regenerate the README
 
 Install the package dependencies and the developer packages `pkgload`, `ragg`,

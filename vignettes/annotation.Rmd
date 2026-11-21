@@ -1,7 +1,7 @@
 ---
 title: "Annotation, signals and Bioconductor ranges"
 author: "Shuchao Ren"
-date: "2026-11-19"
+date: "2026-11-21"
 output:
   BiocStyle::html_document:
     toc: true
@@ -210,8 +210,8 @@ parser or class is necessary.
 
 | Structure | Current role and interoperability | Limitation / next evaluation |
 |---|---|---|
-| Feature / GenePred | Flat intervals plus derived gene/transcript/exon tables; Feature has GRanges input and feature-level output | GenomicFeatures-based hierarchy reuse needs a separate mapping assessment. Rebuilding a hierarchy can discard row metadata and is guarded explicitly. |
-| VariantTrack | Point variants, raw FORMAT/sample fields and lazy-file metadata; existing GRanges export | It is not a full typed VCF object. Header declarations, Number=A/R/G arrays and lossless VariantAnnotation::VCF interchange are not implemented. The current VCF writer is sites-only and omits genotypes. |
+| Feature / GenePred | Flat intervals plus derived gene/transcript/exon tables; Feature has GRanges input and feature-level output | The TxDb mapping assessment checks exon and CDS membership. Hierarchy rebuilds that would discard parent metadata are rejected. |
+| VariantTrack | Point variants, raw FORMAT/sample fields, lazy-file metadata and GRanges export | Optional `CollapsedVCF` adapters retain a typed source for conversion and genotype export via VariantAnnotation. Native `write_vcf()` output remains sites-only. |
 | BwgTrack | Multi-sample file/mode, strand and normalization state; in-memory and retrieved regions can export GRanges | Existing native parsers remain; standard-reader equivalence and platform/resource comparisons are still needed. |
 | HapVariant / HapRefined / LDTrack | Related tables, parameters, group assignments and matrices used by downstream plots | These are workflow results. Replacing them with standard containers would require explicit schema and migration tests. |
 
@@ -221,12 +221,11 @@ relevant to VCF. Rsamtools is already reused for indexed queries. The current
 native layer preserves a pure-R core and its existing defaults; this is a
 compatibility decision, not a claim of superiority over standard readers.
 
-Evidence provided now includes deterministic read/write regressions, real
-indexed VCF query tests and metadata-preserving GRanges conversions. The next
-I/O evaluation must compare coordinate, attribute, missing-value and genotype
-fidelity on identical fixtures, then measure dependency, platform, memory and
-time costs. No alternative backend or VCF-class conversion is activated in
-0.99.8. New classes require a clear interoperability justification under the
+Evidence includes read/write regressions, indexed VCF queries and
+metadata-preserving GRanges conversions. The 0.99.9 adapters use
+VariantAnnotation at the typed VCF boundary. The developer assessment compares
+TxDb hierarchy mappings and indexed VCF reads with a shared POS query. Native
+backends remain the default. New classes require an interoperability justification under the
 [Bioconductor reuse guidance](https://contributions.bioconductor.org/reusebioc.html).
 
 The 0.99.7 developer assessment compares shared GFF3, GTF, BED6, BED12, BigWig
@@ -252,12 +251,11 @@ keeping the existing classes and primary-parent analysis model:
   arrays can differ from `VariantAnnotation` representations. Agreement on the
   tested INFO/FORMAT fields is not a full typed-header or lossless-VCF contract.
 
-The reproducible script, fixtures, field differences, record accounting,
-package versions and bounded timing/object-size observations are maintained in
-the source checkout under `tools/io-evaluation/`. They are developer evidence,
-not installed package data. Small-fixture timings do not establish a performance
-ranking; large-file peak memory, indexed-query behavior and Linux/macOS reader
-comparisons still need separate evaluation. No reader backend changes in 0.99.8.
+The source checkout's `tools/io-evaluation/` holds the scripts, fixtures,
+per-field differences, record counts and versions. The indexed experiment
+records query times and process peak memory on Windows. Measurements are
+specific to the synthetic workload. Linux/macOS comparisons and qualification
+on large real files remain open.
 
 ## Preserve shared parents and BED12 structure
 

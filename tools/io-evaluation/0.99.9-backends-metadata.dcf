@@ -1,0 +1,9 @@
+Platform: Windows
+R: 4.6.1
+GeneTrackR: 0.99.9
+Rsamtools: 2.28.0
+txdbmaker: 1.9.0
+GenomicFeatures: 1.65.0
+VariantAnnotation: 1.59.4
+GFF3_MD5: b77cc87b467cc13430ba94ce70cf28a4
+VCF_MD5: 8eab761271dc123eb4b4029b67bd21cc

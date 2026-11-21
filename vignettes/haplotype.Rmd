@@ -1,7 +1,7 @@
 ---
 title: "Variants, haplotypes and linkage disequilibrium"
 author: "Shuchao Ren"
-date: "2026-11-19"
+date: "2026-11-21"
 output:
   BiocStyle::html_document:
     toc: true
@@ -87,6 +87,31 @@ The bundled plain VCF is intentionally suitable for small in-memory examples.
 For real indexed files, validate sample names and the returned region just as
 for memory mode. Filters that need the whole file can require full reading.
 Do not infer an empty file from a regional query returning zero records.
+
+## Start with a standard VCF object
+
+If a workflow starts with a `VariantAnnotation` `CollapsedVCF`, use
+`as_variant_track()` to run GeneTrackR's POS-based queries. The original ranges,
+typed fields and header remain available for selection through `as_vcf()`.
+For large inputs, use `VariantAnnotation::ScanVcfParam()` with an indexed VCF
+to load the region before adapting it.
+
+```{r standard-vcf-input, eval=requireNamespace("VariantAnnotation", quietly=TRUE)}
+standard_vcf <- VariantAnnotation::readVcf(demo_file("gtr_demo_variants.vcf"),
+  genome = NA_character_)
+standard_track <- as_variant_track(standard_vcf)
+standard_gene <- retrieve_vcf(standard_track, annotation = gp, gene_id = "GeneA",
+  as = "VariantTrack", verbose = FALSE)
+standard_subset <- as_vcf(standard_gene, samples = c("S02", "S01"))
+stopifnot(nrow(standard_subset) == nrow(standard_gene$data),
+  identical(colnames(standard_subset), c("S02", "S01")))
+head(VariantAnnotation::geno(standard_subset)$GT)
+```
+
+The adapter associates records by source row, so repeated positions or IDs
+can be selected and exported. Use unique variant IDs for haplotype construction,
+which reshapes the genotype table by variant ID. See
+[Export results](export-results.html#typed-vcf-export) for genotype-aware export.
 
 # Construct and inspect haplotypes
 

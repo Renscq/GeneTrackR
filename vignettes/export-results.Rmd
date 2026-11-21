@@ -1,7 +1,7 @@
 ---
 title: "Export, browser use and reproducibility"
 author: "Shuchao Ren"
-date: "2026-11-19"
+date: "2026-11-21"
 output:
   BiocStyle::html_document:
     toc: true
@@ -104,14 +104,37 @@ Signal export supports the existing bedGraph/WIG/BigWig layer. Consult
 for BigWig. Raw and normalized values are distinct outputs and should be
 labelled with units and normalization parameters.
 
-**Current VCF writer limitation:** `write_vcf()` and its compatibility wrapper
-write the eight core site fields only. They omit FORMAT and sample genotype
-columns and write a minimal metadata header. The read-back assertion above
-therefore checks a sites-only export, not a genotype-preserving round trip.
-Keep the original VCF/header and complete RDS when genotypes or typed metadata
-are required; the example copies the unchanged original file separately.
-Genotype-preserving VCF export and standard-VCF interchange remain future work.
-The [class/I/O rationale](annotation.html#design-decisions) describes that boundary.
+`write_vcf()` and `write_variant_track()` write eight site columns and a
+minimal metadata header. The example also copies the original VCF for reuse
+of the exact input text.
+
+## Export a typed VCF with genotypes {#typed-vcf-export}
+
+For a track created from a `CollapsedVCF`, use `as_vcf()` and the standard
+writer. Use named samples to set their order. This path uses the header and
+typed INFO and FORMAT data stored with the source object.
+
+```{r typed-variant-output, eval=requireNamespace("VariantAnnotation", quietly=TRUE)}
+source_vcf <- VariantAnnotation::readVcf(input_files[["variants"]], genome = NA_character_)
+adapted <- as_variant_track(source_vcf)
+selected <- retrieve_vcf(adapted, chrom = "chr1", start = 12340000L, end = 12346000L,
+  as = "VariantTrack", verbose = FALSE)
+typed_subset <- as_vcf(selected, samples = c("S02", "S01"))
+typed_file <- file.path(output_dir, "selected-genotypes.vcf")
+VariantAnnotation::writeVcf(typed_subset, typed_file)
+restored_typed <- VariantAnnotation::readVcf(typed_file, genome = NA_character_)
+stopifnot(identical(colnames(restored_typed), c("S02", "S01")),
+  identical(VariantAnnotation::geno(restored_typed)$GT,
+    VariantAnnotation::geno(typed_subset)$GT))
+```
+
+Keep the track's source metadata and row keys when filtering or saving it as
+an RDS. Conversion rejects old native tracks, merged sources and edited site
+or sample fields. The adapter also rejects absent `fileformat` declarations
+and ambiguous empty ALT elements. Use `as_vcf(track, samples = character())` for a standard
+sites-only object. The standard writer can update `fileDate`, round
+floating-point FORMAT values and pad missing array entries. Save the typed
+VCF object with `saveRDS()` when exact in-memory values are needed.
 
 # Save statistical tables, figures and complete objects
 

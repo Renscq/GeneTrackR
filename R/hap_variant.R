@@ -402,7 +402,7 @@ get_vcf_sample_columns <- function(vt) {
   meta_samples <- vt$meta$sample_names %||% character()
   meta_samples <- as.character(meta_samples)
   meta_samples <- meta_samples[meta_samples %in% names(vt$data)]
-  if (length(meta_samples) > 0L) return(meta_samples)
+  if (length(meta_samples) > 0L || !is.null(vt$meta$vcf_context)) return(meta_samples)
 
   standard_cols <- c("chrom", "pos", "start", "end", "variant_id", "ref", "alt", "qual", "filter", "info", "variant_type", "FORMAT")
   setdiff(names(vt$data), standard_cols)

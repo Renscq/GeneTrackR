@@ -111,7 +111,7 @@ test_that("dependency placement matches runtime usage", {
   expect_true(all(c(
     "GenomicRanges", "IRanges", "S4Vectors", "grDevices", "tools"
   ) %in% imports))
-  expect_true("Rsamtools" %in% suggests)
-  expect_false("Rsamtools" %in% imports)
+  expect_true(all(c("Rsamtools", "VariantAnnotation") %in% suggests))
+  expect_false(any(c("Rsamtools", "VariantAnnotation") %in% imports))
   expect_identical(intersect(imports, suggests), character())
 })

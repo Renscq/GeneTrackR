@@ -1,3 +1,21 @@
+# GeneTrackR 0.99.9
+
+- Added optional `as_variant_track()` and `as_vcf()` adapters for
+  `VariantAnnotation` `CollapsedVCF` objects. Use the standard writer to export
+  typed site information and selected sample genotypes after POS-based queries.
+  Standard file writing can round floating-point FORMAT values.
+- Preserved source row identity across filtering and reordering, including
+  repeated VCF IDs and positions. Added named sample selection and sites-only
+  conversion, with explicit errors for ambiguous columns, missing provenance
+  and edits to projected VCF fields.
+- Kept native VCF reading, haplotype analysis and eight-column `write_vcf()`
+  output. Added executable examples and a required adapter regression suite in
+  package-check and coverage CI.
+- Added developer-only TxDb mapping and indexed VCF comparison with input and
+  result counts, query times and peak process memory on Windows.
+- Resolved package-check report paths before creating directories, so rejected
+  output paths leave the package source untouched.
+
 # GeneTrackR 0.99.8
 
 ## Annotation metadata fidelity

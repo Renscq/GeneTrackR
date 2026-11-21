@@ -1,0 +1,4 @@
+"kind","source_rows","declared_links","primary_links","txdb_links","matches_before_name_mapping","matched_links","gff3_only","txdb_only","declared_missing_in_primary"
+"transcript",3,3,3,3,0,3,0,0,0
+"exon",2,3,2,3,0,3,0,0,1
+"cds",1,1,1,1,0,1,0,0,0

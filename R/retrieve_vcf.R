@@ -303,7 +303,7 @@ retrieve_vcf_file <- function(file,
   read_vcf(file, keep_genotype = keep_genotype, mode = "memory", verbose = verbose, progress = progress)
 }
 
-vcf_table_to_variant_track <- function(dt, source_file = NULL, keep_genotype = TRUE) {
+vcf_table_to_variant_track <- function(dt, source_file = NULL, keep_genotype = TRUE, row_keys = NULL) {
   if (nrow(dt) == 0L && ncol(dt) == 0L) {
     standard_empty <- c("CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO")
     dt <- data.table::data.table(matrix(ncol = length(standard_empty), nrow = 0L))
@@ -331,6 +331,7 @@ vcf_table_to_variant_track <- function(dt, source_file = NULL, keep_genotype = T
     sample_cols <- character()
     has_format <- FALSE
   }
+  if (!is.null(row_keys)) data.table::set(dt, j = vcf_row_key, value = row_keys)
 
   VariantTrack(
     dt,

@@ -129,6 +129,7 @@ reference:
       and visualize the resulting tracks.
     contents:
       - read_vcf
+      - as_variant_track
       - write_vcf
       - write_variant_track
       - retrieve_vcf

@@ -1,0 +1,3 @@
+"reader","version","input_sites","input_samples","raw_returned","outside_pos","expected_pos","matched_pos","expected_only","reader_only","sites_match","samples_match","genotypes_match","namespaces_loaded","startup_seconds","median_read_seconds","peak_rss_mib"
+"native","0.99.9",50000,8,51,1,50,50,0,0,TRUE,TRUE,TRUE,20,1.53,0.02,374.5546875
+"standard","1.59.4",50000,8,51,1,50,50,0,0,TRUE,TRUE,TRUE,58,6.4,0.0800000000000001,865.91796875

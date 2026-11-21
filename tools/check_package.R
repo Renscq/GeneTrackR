@@ -1,8 +1,8 @@
 #!/usr/bin/env Rscript
 
 # Author: Rensc
-# Date: 2026-11-20
-# Version: dev003
+# Date: 2026-11-21
+# Version: dev004
 # Function: Run complete source, archive and new-package validation for CI.
 # Input: A package source directory and a fresh report directory.
 # Output: Source archive, R CMD check, BiocCheck objects and severity summaries.
@@ -49,14 +49,24 @@ run_new_package_check <- function(archive, output_dir,
   }
 }
 
+resolve_report_directory <- function(path) {
+  if (dir.exists(path)) return(normalizePath(path, winslash = "/", mustWork = TRUE))
+  if (file.exists(path)) stop("The report path must be a directory.", call. = FALSE)
+  parent <- dirname(path)
+  if (identical(parent, path)) stop("The report directory has no existing parent.", call. = FALSE)
+  parent <- resolve_report_directory(parent)
+  resolved <- switch(basename(path), "." = parent, ".." = dirname(parent),
+    file.path(parent, basename(path)))
+  if (dir.exists(resolved)) normalizePath(resolved, winslash = "/", mustWork = TRUE) else resolved
+}
+
 package_check_output <- function(source_path, output_dir = NULL) {
   source_path <- normalizePath(source_path, winslash = "/", mustWork = TRUE)
   if (is.null(output_dir)) {
     output_dir <- file.path(dirname(source_path),
       paste0(basename(source_path), "-package-check"))
   }
-  dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
-  output_dir <- normalizePath(output_dir, winslash = "/", mustWork = TRUE)
+  output_dir <- resolve_report_directory(path.expand(output_dir))
   source_key <- source_path
   output_key <- output_dir
   if (.Platform$OS.type == "windows") {
@@ -66,7 +76,8 @@ package_check_output <- function(source_path, output_dir = NULL) {
   if (identical(output_key, source_key) || startsWith(output_key, paste0(source_key, "/"))) {
     stop("The report directory must be outside the package source tree.", call. = FALSE)
   }
-  output_dir
+  if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+  normalizePath(output_dir, winslash = "/", mustWork = TRUE)
 }
 
 package_check_main <- function(args = commandArgs(trailingOnly = TRUE)) {

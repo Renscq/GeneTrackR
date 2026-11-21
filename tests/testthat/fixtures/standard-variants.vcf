@@ -1,0 +1,17 @@
+##fileformat=VCFv4.2
+##contig=<ID=chr1,length=100>
+##contig=<ID=chr2,length=100>
+##FILTER=<ID=q10,Description="Low quality">
+##INFO=<ID=DP,Number=1,Type=Integer,Description="Depth">
+##INFO=<ID=AF,Number=A,Type=Float,Description="Allele frequencies">
+##INFO=<ID=END,Number=1,Type=Integer,Description="End position">
+##INFO=<ID=FLAG,Number=0,Type=Flag,Description="Fixture flag">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=AD,Number=R,Type=Integer,Description="Allele depths">
+##FORMAT=<ID=PL,Number=G,Type=Integer,Description="Genotype likelihoods">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	S2	S1
+chr1	1	.	A	C,G	10	PASS	DP=12;AF=0.25,0.5;FLAG	GT:AD:PL	0|2:3,4,5:0,10,20,30,40,50	./.:.:.
+chr1	5	dup	AT	A	.	q10	DP=.;AF=.	GT:AD:PL	1/1:0,8:90,30,0	0/.:1,.:0,5,10
+chr1	5	dup	A	AG	33	PASS	DP=6;AF=0.5	GT:AD:PL	./1:.:.	1|0:2,4:0,10,20
+chr2	20	dup	C	T	40	PASS	DP=3;AF=0.5	GT:AD:PL	1:0,3:30,0	0/1:2,1:0,10,20
+chr2	40	v4	A	<DEL>	20	PASS	END=50;DP=4;AF=0.5	GT:AD:PL	0/1:2,2:0,10,20	0/0:4,0:0,30,60

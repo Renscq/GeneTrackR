@@ -22,6 +22,7 @@ jobs:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: "yes"
       CRAN: https://cloud.r-project.org
+      GENETRACKR_REQUIRE_VARIANTANNOTATION: "true"
     steps:
       - uses: actions/checkout@v6
       - name: Initialize diagnostic reports
@@ -85,7 +86,7 @@ jobs:
         run: |
           source("tools/check_coverage.R")
           coverage_main(c("--output-dir", Sys.getenv("CI_REPORT_DIR"),
-            "--minimum", "80", "--baseline", "tools/coverage/0.99.7-files.csv"))
+            "--minimum", "80", "--baseline", "tools/coverage/0.99.8-files.csv"))
       - name: Retain full coverage and provenance
         if: always()
         uses: actions/upload-artifact@v7.0.2

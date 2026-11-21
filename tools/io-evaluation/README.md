@@ -1,5 +1,8 @@
 # Standard-reader assessment for GeneTrackR 0.99.8
 
+The follow-up [0.99.9 assessment](0.99.9-assessment.md) covers TxDb membership
+mapping and an indexed VCF workload with process peak memory.
+
 This is developer evidence for preliminary Bioconductor review, not a runtime
 backend switch or a claim that existing wrappers replace Bioconductor classes.
 All fixtures are synthetic. The binary BigWig input is the independent existing

@@ -21,6 +21,7 @@ testthat::test_that("package checks reject report directories inside the source"
   testthat::expect_error(package_check_main(c("--path", source_path,
     "--output-dir", file.path(source_path, "temp", "checks"))),
     "outside the package source")
+  testthat::expect_false(dir.exists(file.path(source_path, "temp")))
   testthat::expect_false(file.exists(file.path(source_path, "build.log")))
 })
 
@@ -41,9 +42,25 @@ testthat::test_that("default and explicit report paths are persistent siblings",
   testthat::expect_error(package_check_output(source_path,
     file.path(output, "..", "GeneTrackR", "nested")),
     "outside the package source")
+  testthat::expect_false(dir.exists(file.path(source_path, "nested")))
+  testthat::expect_error(package_check_output(source_path,
+    file.path(fixture, "missing", "..", "GeneTrackR", "nested")),
+    "outside the package source")
+  testthat::expect_false(dir.exists(file.path(fixture, "missing")))
+  testthat::expect_false(dir.exists(file.path(source_path, "nested")))
+  relative_sibling <- file.path(source_path, "..", "reports", "nested")
+  testthat::expect_identical(package_check_output(source_path, relative_sibling),
+    normalizePath(relative_sibling, winslash = "/", mustWork = TRUE))
   if (.Platform$OS.type == "windows") {
     testthat::expect_error(package_check_output(source_path, toupper(source_path)),
       "outside the package source")
+  } else {
+    link <- file.path(fixture, "source-link")
+    testthat::expect_true(file.symlink(source_path, link))
+    testthat::expect_error(package_check_output(source_path,
+      file.path(fixture, "missing", "..", "source-link", "checks")),
+      "outside the package source")
+    testthat::expect_false(dir.exists(file.path(source_path, "checks")))
   }
 })
 
