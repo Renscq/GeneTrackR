@@ -476,3 +476,233 @@ test_that("plot_tracks forwards variant palette and explicit colors", {
   observed <- observed[!is.na(observed)]
   expect_true(all(observed %in% unname(variant_colors)))
 })
+
+signal_plot_strand_fixture <- function() {
+  BwgTrack(
+    samples = data.frame(
+      sample_id = c("plus", "minus"), strand = c("+", "-"), has_strand = TRUE
+    ),
+    data = data.frame(
+      sample_id = c("plus", "minus", "minus", "minus"), chrom = "chr1",
+      start = c(25L, 21L, 24L, 30L), end = c(29L, 22L, 29L, 32L),
+      value = c(99, 5, 2, 7), strand = c("+", "-", "-", "-")
+    )
+  )
+}
+
+test_that("negative strand signal uses genomic gene and spliced transcript coordinates", {
+  track <- signal_plot_strand_fixture()
+  annotation <- coverage_gene_model()
+  gene <- plot_signal_gene(track, annotation, "minus_gene", show_gene_model = FALSE)
+  transcript <- plot_signal_transcript(
+    track, annotation, "minus_tx", show_gene_model = FALSE
+  )
+
+  expect_identical(levels(gene$data$sample_id), "minus")
+  expect_equal(gene$data$start, c(21L, 24L, 30L))
+  expect_equal(gene$data$end, c(22L, 29L, 32L))
+  expect_equal(gene$data$value, c(5, 2, 7))
+  gene_plot <- ggplot2::ggplot_build(gene)
+  expect_equal(gene_plot$layout$panel_params[[1L]]$x.range, c(20.45, 32.55))
+  gene_bars <- gene_plot$data[[2L]]
+  expect_equal(gene_bars$xmin, c(20.5, 23.5, 29.5))
+  expect_equal(gene_bars$xmax, c(22.5, 29.5, 32.5))
+
+  expect_identical(levels(transcript$data$sample_id), "minus")
+  # The interval from 24 to 29 spans the intron and contributes to both exons.
+  expect_equal(transcript$data$start, c(1L, 4L, 6L, 7L))
+  expect_equal(transcript$data$end, c(2L, 5L, 6L, 9L))
+  expect_equal(transcript$data$value, c(5, 2, 2, 7))
+  tx_plot <- ggplot2::ggplot_build(transcript)
+  expect_equal(tx_plot$layout$panel_params[[1L]]$x.range, c(0.6, 9.4))
+  tx_bars <- tx_plot$data[[2L]]
+  expect_equal(tx_bars$xmin, c(0.5, 3.5, 5.5, 6.5))
+  expect_equal(tx_bars$xmax, c(2.5, 5.5, 6.5, 9.5))
+})
+
+test_that("frame plots count negative strand CDS bases in biological order", {
+  track <- signal_plot_strand_fixture()
+  annotation <- coverage_gene_model()
+  frame_colors <- c(frame0 = "#0072B2", frame1 = "#D55E00", frame2 = "#009E73")
+  expect_message(
+    transcript <- plot_signal_transcript(
+      track, annotation, "minus_tx", plot_type = "frame", bin_size = 3L,
+      frame_colors = frame_colors[c(3L, 1L, 2L)],
+      signal_y_ticks = "pretty", show_gene_model = FALSE
+    ),
+    "requires base-resolution signal"
+  )
+  layers <- ggplot2::ggplot_build(transcript)$data
+  utr <- layers[[1L]]
+  cds <- layers[[2L]]
+  cds <- cds[order(cds$x), ]
+  # CDS bases are 30, 29, 25, 24, 23 in biological order.
+  expected_colors <- unname(frame_colors[c(1L, 3L, 2L, 1L)])
+  expect_equal(utr$x, c(1, 2, 8, 9))
+  expect_equal(utr$y, c(5, 5, 7, 7))
+  expect_equal(utr$xmin, c(0.5, 1.5, 7.5, 8.5))
+  expect_equal(utr$xmax, c(1.5, 2.5, 8.5, 9.5))
+  expect_false(any(utr$fill %in% frame_colors))
+  expect_equal(cds$x, c(4, 5, 6, 7))
+  expect_equal(cds$y, c(2, 2, 2, 7))
+  expect_identical(cds$fill, expected_colors)
+
+  genomic <- plot_signal_transcript(
+    track, annotation, "minus_tx", coordinate = "genomic", plot_type = "frame",
+    frame_colors = frame_colors, signal_y_ticks = "pretty", show_gene_model = FALSE
+  )
+  genomic_cds <- ggplot2::layer_data(genomic, 2L)
+  genomic_cds <- genomic_cds[order(genomic_cds$x), ]
+  expect_equal(genomic_cds$x, c(24, 25, 29, 30))
+  expect_identical(genomic_cds$fill, expected_colors)
+
+  intron <- slice_bwg(track, "chr1", 26L, 28L, samples = "minus")
+  expect_error(
+    plot_signal_transcript(intron, annotation, "minus_tx", plot_type = "frame"),
+    "No signal records overlapped the exon positions"
+  )
+})
+
+test_that("named sample groups and signal colors follow names in any order", {
+  track <- signal_plot_strand_fixture()
+  groups <- c(plus = "treated", minus = "control")
+  colors <- c(treated = "#D55E00", control = "#0072B2")
+  expected_groups <- c("treated", rep("control", 3L))
+
+  for (index in list(1:2, 2:1)) {
+    plot <- plot_signal_region(
+      track, "chr1", 21L, 32L, strand = "both", sample_groups = groups[index],
+      signal_color_by = "group", signal_colors = colors[rev(index)],
+      signal_palette_direction = -1, signal_y_scale = "fixed"
+    )
+    rows <- plot$data[order(plot$data$sample_id, plot$data$start)]
+    expect_identical(as.character(rows$sample_group), expected_groups)
+    bars <- ggplot2::layer_data(plot)
+    bars <- bars[order(bars$PANEL, bars$xmin), ]
+    expect_identical(bars$fill, unname(colors[expected_groups]))
+  }
+})
+
+test_that("signal plots aggregate normalized replicates within bins before transformation", {
+  track <- BwgTrack(
+    samples = data.frame(sample_id = c("reference", "rep_b", "rep_a", "rep_c")),
+    data = data.frame(
+      sample_id = rep(c("rep_a", "rep_b", "rep_c", "reference"), each = 3L),
+      chrom = "chr1", strand = "*", start = rep(c(2L, 4L, 8L), 4L),
+      end = rep(c(3L, 5L, 9L), 4L),
+      value = c(-6, -3, 3, 1, 3, 2, 3, 5, 4, 1, 3, 0)
+    )
+  )
+  raw <- as.data.frame(track$data)
+  normalized <- norm_bwg(track, method = "scale", scale_factor = c(rep_a = 2, reference = 0.5))
+  groups <- data.frame(sample_id = c("rep_c", "rep_a", "rep_b"), group = "replicates")
+  group_values <- list(mean = c(-1, 4), median = c(2, 4), sum = c(-3, 12))
+  colors <- c("#0072B2", "#D55E00")
+
+  for (summary in names(group_values)) {
+    plot <- plot_signal_region(
+      normalized, "chr1", 1L, 10L, bin_size = 4L, sample_groups = groups,
+      signal_summary = summary, signal_color_by = "group", signal_colors = colors,
+      signal_transform = "log2", signal_y_scale = "fixed"
+    )
+    rows <- plot$data[order(plot$data$sample_id, plot$data$start)]
+    expected <- c(1, 0, group_values[[summary]])
+    transformed <- sign(expected) * log2(abs(expected) + 1)
+    expect_identical(as.character(rows$sample_id), rep(c("reference", "replicates"), each = 2L))
+    expect_equal(rows$start, rep(c(2L, 8L), 2L))
+    expect_equal(rows$end, rep(c(5L, 9L), 2L))
+    expect_equal(rows$value, expected)
+    expect_equal(rows$plot_value, transformed)
+
+    bars <- ggplot2::layer_data(plot)
+    bars <- bars[order(bars$PANEL, bars$xmin), ]
+    expect_equal(bars$ymin, pmin(transformed, 0))
+    expect_equal(bars$ymax, pmax(transformed, 0))
+    expect_identical(bars$fill, rep(colors, each = 2L))
+  }
+  expect_identical(as.data.frame(track$data), raw)
+
+  expect_error(
+    plot_signal_region(track, "chr1", 1L, 10L, sample_groups = data.frame(sample_id = "rep_a")),
+    "must contain `sample_id` and `group` columns"
+  )
+  expect_error(
+    plot_signal_region(track, "chr1", 1L, 10L, sample_groups = "replicates"),
+    "must have the same length as selected samples"
+  )
+})
+
+test_that("line signal returns to zero across gaps and preserves empty selected samples", {
+  track <- BwgTrack(
+    samples = data.frame(sample_id = c("empty", "covered", "excluded")),
+    data = data.frame(
+      sample_id = c("covered", "covered", "empty", "excluded"),
+      chrom = c("chr1", "chr1", "chr2", "chr1"), strand = "*",
+      start = c(2L, 7L, 5L, 5L), end = c(3L, 8L, 5L, 5L),
+      value = c(-9, 99, 7, 10)
+    )
+  )
+  selected <- c("empty", "covered")
+  plot <- plot_signal_region(
+    track, "chr1", 1L, 10L, samples = selected, plot_type = "line",
+    signal_transform = "log10", signal_y_ticks = "pretty",
+    sample_groups = c("shared", "shared"), signal_color_by = "group"
+  )
+  built <- ggplot2::ggplot_build(plot)
+  panels <- built$layout$layout
+  expect_identical(as.character(panels$sample_id), selected)
+  line <- built$data[[1L]]
+  ids <- panels$sample_id[match(line$PANEL, panels$PANEL)]
+  covered <- line[ids == "covered", ]
+  expect_equal(covered$x, c(2.5, 3.5, 6.5, 7.5))
+  expect_equal(covered$y, c(-1, 0, 0, 2))
+  expect_length(unique(covered$group), 1L)
+  expect_equal(line$y[ids == "empty"], 0)
+
+  absent <- plot_signal_region(track, "chr3", 1L, 10L, samples = selected)$data
+  expect_identical(as.character(absent$sample_id), selected)
+  expect_equal(absent$start, c(1L, 1L))
+  expect_equal(absent$end, c(10L, 10L))
+  expect_equal(absent$value, c(0, 0))
+  expect_error(
+    plot_signal_region(track, "chr1", 1L, 10L, samples = "unknown"),
+    "No signal records were found"
+  )
+})
+
+test_that("heatmap signal preserves sample order and explicit or adaptive bin widths", {
+  positions <- rep(c(1L, 2L, 5L, 6L, 9L), 2L)
+  track <- BwgTrack(
+    samples = data.frame(sample_id = c("B", "A")),
+    data = data.frame(
+      sample_id = rep(c("A", "B"), each = 5L), chrom = "chr1", strand = "*",
+      start = positions, end = positions, value = c(3, 15, 1, 3, 7, -3, -15, 1, 0, 15)
+    )
+  )
+  colors <- c("#2166AC", "#B2182B")
+  plot <- plot_signal_region(
+    track, "chr1", 1L, 9L, plot_type = "heatmap", heatmap_bin_size = 4L,
+    heatmap_summary = "sum", signal_colors = colors
+  )
+  rows <- plot$data[order(plot$data$sample_id, plot$data$start)]
+  expect_identical(as.character(rows$sample_id), rep(c("B", "A"), each = 3L))
+  expect_equal(rows$start, rep(c(1L, 5L, 9L), 2L))
+  expect_equal(rows$end, rep(c(4L, 8L, 9L), 2L))
+  expect_equal(rows$value, c(-18, 1, 15, 18, 4, 7))
+
+  tiles <- ggplot2::layer_data(plot)
+  tiles <- tiles[order(tiles$y, tiles$x), ]
+  expect_equal(as.numeric(tiles$y), rep(1:2, each = 3L))
+  expect_equal(tiles$xmax - tiles$xmin, rep(c(4, 4, 1), 2L))
+  expect_identical(tiles$fill[c(1L, 4L)], colors)
+
+  adaptive <- plot_signal_region(
+    track, "chr1", 1L, 9L, plot_type = "heatmap", heatmap_max_bins = 3L,
+    heatmap_summary = "max", signal_transform = "log2"
+  )$data
+  adaptive <- adaptive[order(adaptive$sample_id, adaptive$start)]
+  expect_equal(adaptive$start, rep(c(1L, 4L, 7L), 2L))
+  expect_equal(adaptive$end, rep(c(3L, 6L, 9L), 2L))
+  expect_equal(adaptive$value, c(-3, 1, 15, 15, 3, 7))
+  expect_equal(adaptive$plot_value, c(-2, 1, 4, 4, 2, 3))
+})

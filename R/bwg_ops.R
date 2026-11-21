@@ -692,6 +692,8 @@ slice_bwg <- function(object, chrom, start, end, samples = NULL, strand = "ignor
 #' @param sample_conflict Conflict strategy for duplicated sample IDs. `error` stops, `rename` makes sample IDs unique, `sum`/`mean` combines records with identical genomic intervals, and `keep_first` keeps the first occurrence.
 #' @param require_same_norm Require identical normalization labels before merging.
 #' @return A merged BwgTrack object.
+#' @details Use a common storage mode for all inputs when renaming duplicate
+#' samples. Supply either all in-memory tracks or all file-backed tracks.
 #' @examples
 #' plus <- read_bwg(
 #'   system.file("extdata", "gtr_demo_rnaseq_plus.bedgraph", package = "GeneTrackR"),
@@ -726,8 +728,22 @@ merge_bwg <- function(..., sample_conflict = c("error", "rename", "sum", "mean",
   if (length(dup) > 0L && sample_conflict == "error") {
     stop("Duplicated sample IDs found. Use `sample_conflict` to resolve them.", call. = FALSE)
   }
-  if (length(dup) > 0L && sample_conflict == "rename") {
-    samples[sample_id %in% dup, sample_id := paste0("set", source_index, "_", sample_id)]
+  rename_samples <- length(dup) > 0L && sample_conflict == "rename"
+  if (rename_samples) {
+    in_memory <- vapply(objs, function(obj) !is.null(obj$data), logical(1L))
+    stop_if_not(
+      all(in_memory) || !any(in_memory),
+      "All tracks must use the same storage mode when renaming duplicate samples."
+    )
+    rename_rows <- which(samples$sample_id %in% dup)
+    rename_map <- samples[rename_rows, .(source_index, original_sample_id = sample_id)]
+    candidates <- paste0("set", rename_map$source_index, "_", rename_map$original_sample_id)
+    # Reserve IDs of samples that do not need to be renamed.
+    renamed_ids <- utils::tail(
+      make.unique(c(samples$sample_id[-rename_rows], candidates)), length(candidates)
+    )
+    data.table::set(rename_map, j = "sample_id", value = renamed_ids)
+    data.table::set(samples, i = rename_rows, j = "sample_id", value = rename_map$sample_id)
   }
 
   data_list <- lapply(seq_along(objs), function(i) {
@@ -736,7 +752,11 @@ merge_bwg <- function(..., sample_conflict = c("error", "rename", "sum", "mean",
     dt[, source_index := i]
     dt
   })
-  data <- data.table::rbindlist(data_list, fill = TRUE)
+  data <- if (rename_samples && !any(in_memory)) {
+    NULL
+  } else {
+    data.table::rbindlist(data_list, fill = TRUE)
+  }
 
   seqinfo_list <- lapply(seq_along(objs), function(i) {
     si <- objs[[i]]$seqinfo
@@ -766,11 +786,9 @@ merge_bwg <- function(..., sample_conflict = c("error", "rename", "sum", "mean",
   }
 
   if (!is.null(data) && length(dup) > 0L) {
-    if (sample_conflict == "rename") {
-      map <- samples[, .(source_index, old_sample_id = sub("^set[0-9]+_", "", sample_id), sample_id)]
-      data <- merge(data, map, by.x = c("source_index", "sample_id"), by.y = c("source_index", "old_sample_id"), all.x = TRUE)
-      data[!is.na(i.sample_id), sample_id := i.sample_id]
-      data[, i.sample_id := NULL]
+    if (rename_samples) {
+      data[rename_map, on = c("source_index", sample_id = "original_sample_id"),
+        sample_id := i.sample_id]
     }
     if (sample_conflict %in% c("sum", "mean")) {
       fun <- if (sample_conflict == "sum") sum else mean
@@ -780,17 +798,9 @@ merge_bwg <- function(..., sample_conflict = c("error", "rename", "sum", "mean",
   }
 
   if (!is.null(seqinfo) && length(dup) > 0L) {
-    if (sample_conflict == "rename") {
-      map <- samples[, .(source_index, old_sample_id = sub("^set[0-9]+_", "", sample_id), sample_id)]
-      seqinfo <- merge(
-        seqinfo,
-        map,
-        by.x = c("source_index", "sample_id"),
-        by.y = c("source_index", "old_sample_id"),
-        all.x = TRUE
-      )
-      seqinfo[!is.na(i.sample_id), sample_id := i.sample_id]
-      seqinfo[, i.sample_id := NULL]
+    if (rename_samples) {
+      seqinfo[rename_map, on = c("source_index", sample_id = "original_sample_id"),
+        sample_id := i.sample_id]
     }
     if (sample_conflict %in% c("sum", "mean", "keep_first")) {
       seqinfo <- unique(seqinfo[, .(sample_id, chrom, length)])

@@ -328,11 +328,14 @@ keeping the existing classes and primary-parent analysis model:
   arrays can differ from `VariantAnnotation` representations. Agreement on the
   tested INFO/FORMAT fields is not a full typed-header or lossless-VCF contract.
 
-The source checkout's `tools/io-evaluation/` holds the scripts, fixtures,
-per-field differences, record counts and versions. The indexed experiment
-records query times and process peak memory on Windows. Measurements are
-specific to the synthetic workload. Linux/macOS comparisons and qualification
-on large real files remain open.
+The real-data assessment in 0.99.11 compares an indexed 1000 Genomes chr22
+subset with VariantAnnotation and the GENCODE v19 chr22 GFF3 with rtracklayer.
+On Windows and Linux, all 8,770 VCF records with POS inside the query matched
+across five samples. One additional deletion overlapped the left boundary.
+All 58,721 GFF3 records matched, including 57,458 Parent relationships.
+The reports record the fields compared, input hashes, package versions,
+read times and peak memory in `tools/io-evaluation/0.99.11-assessment.md`
+in the source checkout. macOS and larger VCF cohorts remain to be evaluated.
 
 ## Preserve shared parents and BED12 structure
 

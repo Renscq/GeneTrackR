@@ -1,3 +1,15 @@
+# GeneTrackR 0.99.12
+
+- Fixed signal-track merging with duplicate sample names so renamed samples
+  retain their data and chromosome metadata. Renaming requires inputs that
+  share a storage mode.
+- Fixed matching of named signal groups and colors, and kept signal bars
+  and frame glyphs visible where they overlap the plot boundary.
+- Added behavior tests for linkage disequilibrium, signal processing and
+  plotting, and feature-track bounds and labels.
+- Updated the annotation vignette with the Windows and Linux real-data I/O
+  results and recorded macOS as a remaining validation platform.
+
 # GeneTrackR 0.99.11
 
 - Fixed indexed bedGraph queries through Rsamtools and covered indexed hits,

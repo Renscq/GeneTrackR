@@ -263,14 +263,9 @@ plot_signal_transcript <- function(
     )
   }
 
-  # The gene model track already uses the correct transcript-level coordinate
-  # range and its own ggplot expansion. Do not modify it here. Instead, only
-  # force the signal panel to use the full transcript range, because signal data
-  # often cover only a subset of the transcript and ggplot would otherwise shrink
-  # the x-axis to the covered intervals. Keeping the default x-scale expansion
-  # makes the signal panel align with the unmodified gene model panel.
+  # Match the transcript panel range without discarding boundary geometries.
   shared_x_limits <- c(as.numeric(query_start), as.numeric(query_end))
-  p_signal <- p_signal + ggplot2::scale_x_continuous(limits = shared_x_limits)
+  p_signal <- p_signal + ggplot2::coord_cartesian(xlim = shared_x_limits)
 
   if (!show_gene_model) {
     return(p_signal)
@@ -490,12 +485,10 @@ plot_signal_gene <- function(
     heatmap_max_bins = heatmap_max_bins,
     heatmap_summary = heatmap_summary
   )
-  # Keep the gene model track unchanged and use it as the coordinate reference.
-  # Only expand/constrain the signal panel to the complete gene range; otherwise
-  # ggplot may shrink the x-axis to the covered signal intervals.
+  # Match the full gene range without discarding boundary geometries.
   p_signal <- p_signal +
-    ggplot2::scale_x_continuous(
-      limits = c(
+    ggplot2::coord_cartesian(
+      xlim = c(
         as.numeric(gene[["gene_start"]][1L]),
         as.numeric(gene[["gene_end"]][1L])
       )
@@ -1090,7 +1083,7 @@ build_transcript_frame_annotation <- function(
 make_frame_colors <- function(frame_palette = "Paired", frame_colors = NULL) {
   frame_levels <- c("frame0", "frame1", "frame2")
   if (!is.null(frame_colors)) {
-    frame_colors <- as.character(frame_colors)
+    frame_colors <- stats::setNames(as.character(frame_colors), names(frame_colors))
     if (
       is.null(names(frame_colors)) ||
         !all(frame_levels %in% names(frame_colors))
@@ -2090,7 +2083,7 @@ normalize_signal_colors <- function(
     signal_palette_direction
   )
   if (!is.null(signal_colors)) {
-    cols <- as.character(signal_colors)
+    cols <- stats::setNames(as.character(signal_colors), names(signal_colors))
     if (!is.null(names(cols)) && all(sample_ids %in% names(cols))) {
       return(cols[sample_ids])
     }
@@ -2161,7 +2154,7 @@ normalize_sample_groups <- function(sample_ids, sample_groups = NULL) {
     }
     return(map[sample_ids])
   }
-  groups <- as.character(sample_groups)
+  groups <- stats::setNames(as.character(sample_groups), names(sample_groups))
   if (!is.null(names(groups)) && all(sample_ids %in% names(groups))) {
     return(groups[sample_ids])
   }

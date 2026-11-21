@@ -118,3 +118,126 @@ test_that("plot_ld_block defaults to the Reds palette", {
   expect_identical(formals(GeneTrackR:::draw_ld_triangle_heatmap)$color_palette, "Reds")
   expect_identical(formals(GeneTrackR:::make_ld_continuous_palette)$color_palette, "Reds")
 })
+
+ld_test_variants <- function() {
+  VariantTrack(data.frame(
+    chrom = "chr1",
+    pos = c(40L, 20L, 10L, 30L),
+    variant_id = c("sparse", "second", "first", "constant"),
+    ref = c("A", "A", "AT", "A"),
+    alt = c("G", "AT", "A", "G"),
+    S1 = c("./.", "0/1", "0/0", "0/0"),
+    S2 = c("0/1", "0/1", "0/0", "0/0"),
+    S3 = c("1/1", "0/0", "0/1", "0/0"),
+    S4 = c(".", "0|1", "0|1", "0|0"),
+    S5 = c("0/.", "./.", "1/1", "0/0"),
+    S6 = c("0/0", "1/1", "1/1", "0/0")
+  ))
+}
+
+test_that("LDTrack sorts variant metadata and supports the legacy figure alias", {
+  figure <- ggplot2::ggplot()
+  ld <- LDTrack(
+    data = data.frame(index_i = 1L, index_j = 2L, ld = 0.75),
+    variants = data.frame(chrom = "chr1", pos = c(20L, 10L), variant_id = c("b", "a")),
+    region = list(chrom = "chr1", start = 10L, end = 20L),
+    meta = list(method = "r2", sample_n = 4L),
+    plot = figure
+  )
+
+  expect_s3_class(ld$data, "data.table")
+  expect_identical(ld$variants$variant_id, c("a", "b"))
+  expect_identical(ld$variants$variant_index, 1:2)
+  expect_identical(ld$figure, figure)
+  expect_output(print(ld), "region    : chr1:10-20", fixed = TRUE)
+  expect_error(
+    LDTrack(variants = data.frame(chrom = "chr1", pos = 10L)),
+    "`variants` must contain `chrom`, `pos`, and `variant_id` columns.",
+    fixed = TRUE
+  )
+})
+
+test_that("LD calculation aligns named samples and distinguishes uninformative pairs", {
+  samples <- c("S4", "S2", "S5", "S1", "S3")
+  ld <- compute_ld_block(
+    ld_test_variants(), method = "Dprime", samples = samples, min_pair_samples = 4L,
+    keep_genotype_matrix = TRUE, verbose = FALSE
+  )
+
+  ids <- c("first", "second", "constant", "sparse")
+  expected_dosage <- rbind(
+    c(1, 0, 2, 0, 1),
+    c(1, 1, NA, 1, 0),
+    c(0, 0, 0, 0, 0),
+    c(NA, 1, NA, NA, 2)
+  )
+  dimnames(expected_dosage) <- list(ids, samples)
+  expect_identical(ld$region, list(chrom = "chr1", start = 10L, end = 40L))
+  expect_identical(ld$variants$variant_id, ids)
+  expect_identical(ld$meta$sample_n, 5L)
+  expect_identical(ld$genotype, expected_dosage)
+  expect_identical(ld$data$variant_i, ids[ld$data$index_i])
+  expect_identical(ld$data$variant_j, ids[ld$data$index_j])
+  expect_identical(ld$data$n_samples, c(4L, 5L, 2L, 4L, 2L, 2L))
+
+  # The first pair has dosage covariance -1/8 and Dmax of 3/32.
+  missing <- rep(NA_real_, 5L)
+  expect_equal(ld$data$r2, c(1 / 3, missing), tolerance = 1e-12)
+  expect_equal(ld$data$D, c(-1 / 16, missing), tolerance = 1e-12)
+  expect_equal(ld$data$Dprime_signed, c(-2 / 3, missing), tolerance = 1e-12)
+  expect_equal(ld$data$ld, c(2 / 3, missing), tolerance = 1e-12)
+  expect_identical(ld$data$ld, ld$data$Dprime)
+
+  expected_matrix <- matrix(NA_real_, nrow = 4L, ncol = 4L, dimnames = list(ids, ids))
+  diag(expected_matrix) <- 1
+  expected_matrix[1L, 2L] <- expected_matrix[2L, 1L] <- 2 / 3
+  expect_equal(ld$matrix, expected_matrix, tolerance = 1e-12)
+})
+
+test_that("LD calculation explains invalid samples, regions, and genotype-free input", {
+  vcf <- ld_test_variants()
+  no_genotypes <- VariantTrack(data.frame(chrom = "chr1", pos = c(10L, 20L)))
+
+  expect_error(
+    compute_ld_block(vcf, samples = "unknown", verbose = FALSE),
+    "Samples not found in VCF: unknown", fixed = TRUE
+  )
+  expect_error(
+    compute_ld_block(vcf, chrom = "chrMissing", verbose = FALSE),
+    "No variants were found on the requested chromosome", fixed = TRUE
+  )
+  expect_error(
+    compute_ld_block(vcf, chrom = "chr1", start = 10L, end = 10L, verbose = FALSE),
+    "At least two variants are required for LD calculation", fixed = TRUE
+  )
+  expect_error(
+    compute_ld_block(no_genotypes, verbose = FALSE),
+    "No VCF sample genotype columns were found", fixed = TRUE
+  )
+})
+
+test_that("LD plotting uses position and Reds fallbacks with optional layers disabled", {
+  expect_warning(
+    figure <- plot_ld_block(
+      ld_test_variants(), variant_type = "ind", method = "Dprime",
+      samples = c("S4", "S2", "S5", "S1", "S3"), min_pair_samples = 4L,
+      label_by = "unknown", color_palette = "invalid-palette",
+      show_region = TRUE, connect_region = FALSE, variant_marker_size = 0,
+      return_object = FALSE, verbose = FALSE
+    ),
+    "Unknown `color_palette`: invalid-palette. Falling back to 'Reds'.", fixed = TRUE
+  )
+
+  expect_s3_class(figure, "patchwork")
+  expect_length(figure[[1L]]$layers, 0L)
+  variants <- attr(figure, "variant_data")
+  expect_identical(variants$variant_id, c("first", "second"))
+  expect_identical(variants$variant_label, c("10", "20"))
+  expect_equal(attr(figure, "ld_data")$ld, 2 / 3, tolerance = 1e-12)
+
+  heatmap <- figure[[2L]]
+  expect_identical(heatmap$labels$title, "chr1:10-40 LD (Dprime)")
+  fill_scale <- heatmap$scales$get_scales("fill")
+  expect_identical(fill_scale$name, "D'")
+  expect_identical(fill_scale$palette(c(0, 1)), RColorBrewer::brewer.pal(9L, "Reds")[c(1L, 9L)])
+})

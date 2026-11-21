@@ -101,13 +101,21 @@ library. It is declared under `Config/Needs/coverage`, not as a runtime import.
 From the package root:
 
 ```sh
-Rscript tools/check_coverage.R --output-dir temp/coverage --minimum 80 --baseline tools/coverage/0.99.7-files.csv
+Rscript tools/check_coverage.R \
+  --output-dir temp/coverage \
+  --minimum 80 \
+  --baseline tools/coverage/0.99.11-files.csv
 ```
 
-The script runs package tests only. It requests no line/function exclusions and
-fails when tests fail or measured coverage is below the selected floor. The
-80 percent floor is a project milestone, not a threshold specified by the
-preliminary review. Use `--minimum 0` for an exploratory baseline run.
+Line coverage is the percentage of eligible package code lines reached by the
+tests. Each eligible line contributes once, regardless of how often it runs.
+Test assertions check the results and expected errors. The coverage report
+shows where the tests reached the source code.
+
+The script runs package tests only. It requests no line or function exclusions
+and fails when tests fail or coverage falls below the selected floor.
+The project uses an 80 percent CI floor. Use `--minimum 0` for an exploratory
+baseline run.
 
 Reports include raw RDS coverage, eligible/covered line counts, per-file CSV,
 optional before/after comparison, R/covr versions, scope, platform, source/test
@@ -117,14 +125,10 @@ Covr 4 changed line counting; compare results under the recorded engine and
 scope. Tests-only coverage is not equivalent to coverage that also runs
 vignettes/examples, and assertion counts are not coverage percentages.
 
-The untouched 0.99.5 snapshot is recorded under `tools/coverage/0.99.5-*`.
-Historical 0.99.6 measurements remain under `tools/coverage/0.99.6-*`, with
-their original `0.99.5-to-0.99.6.csv` comparison. The 0.99.7 evidence remains
-under `tools/coverage/0.99.7-*`, with `0.99.6-to-0.99.7.csv`. Current 0.99.8
-evidence is stored separately under `tools/coverage/0.99.8-*`, with
-`0.99.7-to-0.99.8.csv` and exact source/test checksums. Historical evidence
-is not overwritten.
-The Windows R 4.6.1 / covr 4.0.0 tests-only measurement is:
+Each release has its own summary, per-file coverage, metadata, and source
+checksums under `tools/coverage/`. The comparison CSVs retain the previous
+and current covered and eligible line counts. All measurements below used
+Windows, R 4.6.1 and covr 4.0.0 with tests-only scope.
 
 | Source | Covered / eligible lines | Coverage |
 |---|---|---|
@@ -132,6 +136,16 @@ The Windows R 4.6.1 / covr 4.0.0 tests-only measurement is:
 | 0.99.6 with contract regressions and length-summary correction | 9184 / 11456 | 80.17% |
 | 0.99.7 with signal, export and variant-plot regressions | 9400 / 11456 | 82.05% |
 | 0.99.8 with annotation metadata and primary-model compatibility regressions | 9577 / 11618 | 82.43% |
+| 0.99.9 with typed VCF interoperability | 9680 / 11721 | 82.59% |
+| 0.99.10 with transcript-grouped annotation | 9769 / 11803 | 82.77% |
+| 0.99.11 with indexed bedGraph and GenePred regressions | 9895 / 11812 | 83.77% |
+| 0.99.12 with LD, signal, and feature-plot regressions | 10400 / 11816 | 88.02% |
+
+The covered-line count rose by 505 on the same measurement scope.
+Coverage rose from 54.84% to 93.55% for LDTrack construction and reporting,
+68.69% to 92.38% for signal operations, 67.59% to 87.47% for signal plots,
+and 65.91% to 96.97% for feature plots.
+[Per-file comparison](coverage/0.99.11-to-0.99.12-files.csv)
 
 The three focused 0.99.7 files improve `bwg_ops.R` from 48.58% to 55.49%,
 `plot_variant.R` from 55.47% to 95.31%, and `write_feature.R` from 61.27% to

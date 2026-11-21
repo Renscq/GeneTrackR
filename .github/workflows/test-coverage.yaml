@@ -86,7 +86,7 @@ jobs:
         run: |
           source("tools/check_coverage.R")
           coverage_main(c("--output-dir", Sys.getenv("CI_REPORT_DIR"),
-            "--minimum", "80", "--baseline", "tools/coverage/0.99.8-files.csv"))
+            "--minimum", "80", "--baseline", "tools/coverage/0.99.11-files.csv"))
       - name: Retain full coverage and provenance
         if: always()
         uses: actions/upload-artifact@v7.0.2

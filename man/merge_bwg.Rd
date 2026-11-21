@@ -23,6 +23,10 @@ A merged BwgTrack object.
 \description{
 Merge signal track objects
 }
+\details{
+Use a common storage mode for all inputs when renaming duplicate
+samples. Supply either all in-memory tracks or all file-backed tracks.
+}
 \examples{
 plus <- read_bwg(
   system.file("extdata", "gtr_demo_rnaseq_plus.bedgraph", package = "GeneTrackR"),
