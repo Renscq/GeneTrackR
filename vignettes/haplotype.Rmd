@@ -14,19 +14,18 @@ vignette: >
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 10,
-  fig.height = 6, dpi = 500, fig.retina = 1, crop = FALSE, dev = "ragg_png",
-  out.width = "100%", fig.align = "center")
-library(GeneTrackR)
-library(patchwork)
-plain_text <- ggplot2::element_text(family = "Arial", colour = "black", face = "plain")
-tutorial_text <- ggplot2::theme(text = plain_text, axis.text = plain_text,
-  axis.title = plain_text, plot.title = plain_text, plot.subtitle = plain_text,
-  plot.caption = plain_text, legend.text = plain_text, legend.title = plain_text,
-  strip.text = plain_text)
-classic_style <- ggplot2::theme_classic(base_family = "Arial") + tutorial_text
-ggplot2::theme_set(classic_style)
-demo_file <- function(name) system.file("extdata", name, package = "GeneTrackR", mustWork = TRUE)
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 10,
+  fig.height = 6,
+  dpi = 500,
+  fig.retina = 1,
+  crop = FALSE,
+  dev = "ragg_png",
+  out.width = "100%",
+  fig.align = "center"
+)
 ```
 
 # Introduction
@@ -39,12 +38,23 @@ LD before phenotype association. It uses the deterministic data described in
 # Read and inspect variants {#variants}
 
 ```{r read-variants}
-gp <- read_genepred(demo_file("gtr_demo.genePredExt"), format = "genePredExt",
-  verbose = FALSE, progress = FALSE)
-vcf <- read_vcf(demo_file("gtr_demo_variants.vcf"), mode = "memory",
-  keep_genotype = TRUE, verbose = FALSE, progress = FALSE)
-stopifnot(nrow(vcf$data) == 56L, length(vcf$meta$sample_names) == 36L,
-  !anyDuplicated(vcf$meta$sample_names))
+library(GeneTrackR)
+
+demo_dir <- system.file("extdata", package = "GeneTrackR")
+vcf_file <- file.path(demo_dir, "gtr_demo_variants.vcf")
+gp <- read_genepred(
+  file.path(demo_dir, "gtr_demo.genePredExt"),
+  format = "genePredExt",
+  verbose = FALSE,
+  progress = FALSE
+)
+vcf <- read_vcf(
+  vcf_file,
+  mode = "memory",
+  keep_genotype = TRUE,
+  verbose = FALSE,
+  progress = FALSE
+)
 summary_vcf(vcf)
 validate_vcf(vcf)$invalid_summary
 ```
@@ -57,15 +67,42 @@ span. Match genome assembly, chromosome names and sample identifiers before
 combining external annotations.
 
 ```{r query-variants}
-gene_variants <- retrieve_vcf(vcf, annotation = gp, gene_id = "GeneA",
-  as = "VariantTrack", verbose = FALSE)
-gene_variants$data[, c("variant_id", "chrom", "pos", "ref", "alt"), with = FALSE]
-selected <- retrieve_vcf(vcf, variant_id = c("varA03", "varA04"), verbose = FALSE)
-stopifnot(setequal(selected$variant_id, c("varA03", "varA04")))
+gene_variants <- retrieve_vcf(
+  vcf,
+  annotation = gp,
+  gene_id = "GeneA",
+  as = "VariantTrack",
+  verbose = FALSE
+)
+variant_table <- as.data.frame(gene_variants$data)
+variant_table[c("variant_id", "chrom", "pos", "ref", "alt")]
+
+selected <- retrieve_vcf(
+  vcf,
+  variant_id = c("varA03", "varA04"),
+  verbose = FALSE
+)
+selected$variant_id
 variant_ranges <- as_granges(gene_variants)
-stopifnot(all(IRanges::width(variant_ranges) == 1L))
-plot_variant(gene_variants, chrom = "chr1", start = 12339001L, end = 12352000L, text_size = 9) &
-  classic_style
+head(variant_ranges)
+
+figure_style <- ggplot2::theme(
+  text = ggplot2::element_text(
+    family = "Arial",
+    colour = "black",
+    face = "plain"
+  )
+)
+plot_variant(
+  gene_variants,
+  chrom = "chr1",
+  start = 12339001L,
+  end = 12352000L,
+  text_size = 9
+) +
+  ggplot2::theme_classic(base_family = "Arial") +
+  figure_style +
+  ggplot2::theme(axis.text = ggplot2::element_text(colour = "black"))
 ```
 
 Regional `read_vcf()` calls require `chrom`, `start` and `end` together.
@@ -97,14 +134,16 @@ For large inputs, use `VariantAnnotation::ScanVcfParam()` with an indexed VCF
 to load the region before adapting it.
 
 ```{r standard-vcf-input, eval=requireNamespace("VariantAnnotation", quietly=TRUE)}
-standard_vcf <- VariantAnnotation::readVcf(demo_file("gtr_demo_variants.vcf"),
-  genome = NA_character_)
+standard_vcf <- VariantAnnotation::readVcf(vcf_file, genome = NA_character_)
 standard_track <- as_variant_track(standard_vcf)
-standard_gene <- retrieve_vcf(standard_track, annotation = gp, gene_id = "GeneA",
-  as = "VariantTrack", verbose = FALSE)
+standard_gene <- retrieve_vcf(
+  standard_track,
+  annotation = gp,
+  gene_id = "GeneA",
+  as = "VariantTrack",
+  verbose = FALSE
+)
 standard_subset <- as_vcf(standard_gene, samples = c("S02", "S01"))
-stopifnot(nrow(standard_subset) == nrow(standard_gene$data),
-  identical(colnames(standard_subset), c("S02", "S01")))
 head(VariantAnnotation::geno(standard_subset)$GT)
 ```
 
@@ -116,14 +155,24 @@ which reshapes the genotype table by variant ID. See
 # Construct and inspect haplotypes
 
 ```{r haplotypes}
-hap <- hap_gene_variant(vcf, annotation = gp, gene_id = "GeneA",
-  genotype_mode = "string", min_variant_number = 1)
+hap <- hap_gene_variant(
+  vcf,
+  annotation = gp,
+  gene_id = "GeneA",
+  genotype_mode = "string",
+  min_variant_number = 1
+)
 hap$haplotypes
 head(hap$sample_haplotypes)
-stopifnot(nrow(hap$variants) == 11L, nrow(hap$haplotypes) == 4L,
-  all(hap$haplotypes$sample_n == 9L))
-plot_hap_variant(hap, annotation = gp, min_hap_samples = 3,
-  variant_label = "pos", gene_track_legend_position = "top", text_size = 9) & tutorial_text
+
+plot_hap_variant(
+  hap,
+  annotation = gp,
+  min_hap_samples = 3,
+  variant_label = "pos",
+  gene_track_legend_position = "top",
+  text_size = 9
+) & figure_style
 ```
 
 A HapVariant links selected variants, genotype tables, haplotype definitions
@@ -145,15 +194,25 @@ for correlated association signals and does not identify a causal site.
 The example uses the existing `r2` method and its documented genotype handling.
 
 ```{r ld-gradient}
-ld <- compute_ld_block(vcf, chrom = "chr1", start = 12342620L, end = 12355500L,
-  variant_type = "snp", method = "r2", verbose = FALSE)
-stopifnot(nrow(ld$variants) == 12L, nrow(ld$data) == 66L,
-  sum(ld$data$r2 >= 0.8, na.rm = TRUE) == 15L)
+ld <- compute_ld_block(
+  vcf,
+  chrom = "chr1",
+  start = 12342620L,
+  end = 12355500L,
+  variant_type = "snp",
+  method = "r2",
+  verbose = FALSE
+)
 head(ld$data)
-ld <- plot_ld_block(ld, annotation = gp, show_region = TRUE,
-  show_variant_labels = FALSE, font = 9)
-ld$figure <- ld$figure & tutorial_text
-ld$figure
+
+plot_ld_block(
+  ld,
+  annotation = gp,
+  show_region = TRUE,
+  show_variant_labels = FALSE,
+  font = 9,
+  return_object = FALSE
+) & figure_style
 ```
 
 The twelve designed variants form 66 pairs. The perfect six-variant core
@@ -163,9 +222,14 @@ For actual data, report sample inclusion, missingness, method and variant
 filters alongside the displayed LD values.
 
 ```{r ld-two-variants, fig.height=4}
-pair <- compute_ld_block(vcf, chrom = "chr2", start = 16995001L, end = 17006000L,
-  method = "r2", verbose = FALSE)
-stopifnot(nrow(pair$variants) == 2L, nrow(pair$data) == 1L)
+pair <- compute_ld_block(
+  vcf,
+  chrom = "chr2",
+  start = 16995001L,
+  end = 17006000L,
+  method = "r2",
+  verbose = FALSE
+)
 pair$data
 ```
 

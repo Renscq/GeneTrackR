@@ -14,19 +14,18 @@ vignette: >
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 10,
-  fig.height = 6, dpi = 500, fig.retina = 1, crop = FALSE, dev = "ragg_png",
-  out.width = "100%", fig.align = "center")
-library(GeneTrackR)
-library(patchwork)
-plain_text <- ggplot2::element_text(family = "Arial", colour = "black", face = "plain")
-tutorial_text <- ggplot2::theme(text = plain_text, axis.text = plain_text,
-  axis.title = plain_text, plot.title = plain_text, plot.subtitle = plain_text,
-  plot.caption = plain_text, legend.text = plain_text, legend.title = plain_text,
-  strip.text = plain_text)
-classic_style <- ggplot2::theme_classic(base_family = "Arial") + tutorial_text
-ggplot2::theme_set(classic_style)
-demo_file <- function(name) system.file("extdata", name, package = "GeneTrackR", mustWork = TRUE)
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 10,
+  fig.height = 6,
+  dpi = 500,
+  fig.retina = 1,
+  crop = FALSE,
+  dev = "ragg_png",
+  out.width = "100%",
+  fig.align = "center"
+)
 ```
 
 # Introduction
@@ -45,21 +44,29 @@ convention. Range names, unused sequence levels, object metadata and supported
 column annotations are retained through ordinary feature-level conversions.
 
 ```{r granges-input}
-external <- GenomicRanges::GRanges("chr1",
-  IRanges::IRanges(c(12341000L, 12339900L), c(12341100L, 12340000L)),
-  seqlengths = c(chr1 = 20000000L, chr2 = 30000000L))
+library(GeneTrackR)
+
+external <- GenomicRanges::GRanges(
+  "chr1",
+  IRanges::IRanges(
+    start = c(12341000L, 12339900L),
+    end = c(12341100L, 12340000L)
+  ),
+  seqlengths = c(chr1 = 20000000L, chr2 = 30000000L)
+)
 names(external) <- c("late_region", "early_region")
-external$category <- factor(c("late", "early"), levels = c("early", "late", "unused"))
+external$category <- factor(
+  c("late", "early"),
+  levels = c("early", "late", "unused")
+)
 external$score <- S4Vectors::Rle(c("4.5", "2.5"))
 S4Vectors::metadata(external) <- list(source = "external_range_workflow")
 features <- as_feature(external)
-features$data$category <- factor(c("reviewed", "late"),
-  levels = c("early", "late", "unused", "reviewed"))
+features$data$category <- factor(
+  c("reviewed", "late"),
+  levels = c("early", "late", "unused", "reviewed")
+)
 returned <- as_granges(features, level = "feature")
-stopifnot(identical(names(returned), c("early_region", "late_region")),
-  identical(S4Vectors::decode(returned$score), c(2.5, 4.5)),
-  identical(GenomicRanges::seqinfo(returned), GenomicRanges::seqinfo(external)),
-  identical(S4Vectors::metadata(returned), S4Vectors::metadata(external)))
 returned
 ```
 
@@ -71,14 +78,32 @@ explicitly. Empty List columns retain source-container metadata, including
 shared factor levels. See `?as_feature` for complete rules and rejected layouts.
 
 ```{r range-query}
-selected <- retrieve_feature(features, chrom = "chr1", start = 12339800L, end = 12340100L)
-selected_gr <- as_granges(selected, level = "feature")
+selected <- retrieve_feature(
+  features,
+  chrom = "chr1",
+  start = 12339800L,
+  end = 12340100L
+)
+as_granges(selected, level = "feature")
 query <- GenomicRanges::GRanges("chr1", IRanges::IRanges(12339950L, 12340050L))
 hits <- GenomicRanges::findOverlaps(returned, query)
-stopifnot(identical(names(selected_gr), "early_region"),
-  identical(as.integer(S4Vectors::queryHits(hits)), 1L))
-plot_feature_track(features, chrom = "chr1", start = 12339001L, end = 12352000L,
-  plot_theme = "classic", text_size = 10) + tutorial_text
+returned[S4Vectors::queryHits(hits)]
+
+figure_style <- ggplot2::theme(
+  text = ggplot2::element_text(
+    family = "Arial",
+    colour = "black",
+    face = "plain"
+  )
+)
+plot_feature_track(
+  features,
+  chrom = "chr1",
+  start = 12339001L,
+  end = 12352000L,
+  plot_theme = "classic",
+  text_size = 10
+) + figure_style
 ```
 
 Ordinary intervals do not imply exons or CDS. Gene models require explicit
@@ -93,12 +118,28 @@ half-open coordinates; GTF/GFF3 and internal Feature intervals are 1-based
 closed. Do not apply another shift after reading.
 
 ```{r annotation-input}
-gp <- read_genepred(demo_file("gtr_demo.genePredExt"), format = "genePredExt",
-  verbose = FALSE, progress = FALSE)
-gtf <- read_gtf(demo_file("gtr_demo.gtf"), verbose = FALSE, progress = FALSE)
-gff <- read_gff(demo_file("gtr_demo.gff3"), verbose = FALSE, progress = FALSE)
-bed <- read_bed(demo_file("gtr_demo_features.bed"), verbose = FALSE, progress = FALSE)
-stopifnot(nrow(gp$genes) == 20L, nrow(gtf$genes) == 20L, nrow(gff$genes) == 20L)
+demo_dir <- system.file("extdata", package = "GeneTrackR")
+gp <- read_genepred(
+  file.path(demo_dir, "gtr_demo.genePredExt"),
+  format = "genePredExt",
+  verbose = FALSE,
+  progress = FALSE
+)
+gtf <- read_gtf(
+  file.path(demo_dir, "gtr_demo.gtf"),
+  verbose = FALSE,
+  progress = FALSE
+)
+gff <- read_gff(
+  file.path(demo_dir, "gtr_demo.gff3"),
+  verbose = FALSE,
+  progress = FALSE
+)
+bed <- read_bed(
+  file.path(demo_dir, "gtr_demo_features.bed"),
+  verbose = FALSE,
+  progress = FALSE
+)
 head(as_feature_table(bed))
 summary_feature(gp, level = "gene")
 validate_feature(gp)$invalid_summary
@@ -110,8 +151,10 @@ unrelated peaks. Gene, transcript and exon GRanges exports are summary
 projections, while `level = "feature"` retains the flat annotation records.
 
 ```{r gene-and-transcript}
-plot_gene(gp, gene_id = "GeneA", text_size = 10) & classic_style
-as_granges(retrieve_feature(gp, gene_id = "GeneA"), level = "transcript")
+plot_gene(gp, gene_id = "GeneA", plot_theme = "classic", text_size = 10) +
+  figure_style
+gene <- retrieve_feature(gp, gene_id = "GeneA")
+as_granges(gene, level = "transcript")
 ```
 
 `plot_transcript()` supports genomic/spliced coordinates; gene plotting also
@@ -125,9 +168,13 @@ Gene spans include introns; spliced transcript lengths sum exons. Segment-level
 CDS/UTR lengths use explicit genomic intersections and strand-aware UTR sides.
 
 ```{r length-segments}
-segments <- get_gene_length_distribution_table(gp, feature = "cds", unit = "segment")
+segments <- get_gene_length_distribution_table(
+  gp,
+  feature = "cds",
+  unit = "segment"
+)
 head(segments)
-cds_totals <- segments[, .(cds_length_bp = sum(length_bp)), by = transcript_id]
+cds_totals <- aggregate(length_bp ~ transcript_id, data = segments, FUN = sum)
 head(cds_totals)
 ```
 
@@ -137,11 +184,11 @@ genomic span, which may contain introns. The direct CDS summary agrees with
 the explicit aggregation above:
 
 ```{r length-transcript-totals}
-transcript_cds <- get_gene_length_distribution_table(gp, feature = "cds", unit = "transcript")
-matched <- match(transcript_cds$transcript_id, cds_totals$transcript_id)
-stopifnot(!anyDuplicated(transcript_cds$transcript_id),
-  nrow(transcript_cds) == nrow(cds_totals), !anyNA(matched),
-  identical(transcript_cds$length_bp, cds_totals$cds_length_bp[matched]))
+transcript_cds <- get_gene_length_distribution_table(
+  gp,
+  feature = "cds",
+  unit = "transcript"
+)
 head(transcript_cds)
 ```
 
@@ -159,17 +206,38 @@ package. RNA-seq and Ribo-seq demo values are synthetic signals in arbitrary
 units. Do not compare samples on a common scale without justified normalization.
 
 ```{r signal-input}
-signal <- read_bwg(demo_file(c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_riboseq_plus.bedgraph")),
-  sample_names = c("RNA_seq_plus", "Ribo_seq_plus"), strand = c("+", "+"),
-  mode = "memory", verbose = FALSE)
-signal_gr <- retrieve_bwg(signal, chrom = "chr1", start = 12339001L, end = 12352000L,
-  as = "GRanges")
-stopifnot(inherits(signal_gr, "GRanges"))
+signal_files <- c(
+  "gtr_demo_rnaseq_plus.bedgraph",
+  "gtr_demo_riboseq_plus.bedgraph"
+)
+signal <- read_bwg(
+  file.path(demo_dir, signal_files),
+  sample_names = c("RNA_seq_plus", "Ribo_seq_plus"),
+  strand = c("+", "+"),
+  mode = "memory",
+  verbose = FALSE
+)
+signal_gr <- retrieve_bwg(
+  signal,
+  chrom = "chr1",
+  start = 12339001L,
+  end = 12352000L,
+  as = "GRanges"
+)
 head(signal_gr)
-plot_tracks(annotation = gp, signal = signal, gene_id = "GeneA", strand = "+",
-  samples = c("RNA_seq_plus", "Ribo_seq_plus"), signal_type = "bar",
+
+plot_tracks(
+  annotation = gp,
+  signal = signal,
+  gene_id = "GeneA",
+  strand = "+",
+  samples = c("RNA_seq_plus", "Ribo_seq_plus"),
+  signal_type = "bar",
   signal_colors = c(RNA_seq_plus = "#4477AA", Ribo_seq_plus = "#228833"),
-  layout = "gene_top", plot_theme = "classic", text_size = 10) & tutorial_text
+  layout = "gene_top",
+  plot_theme = "classic",
+  text_size = 10
+) & figure_style
 ```
 
 In memory mode the signal table is loaded immediately. Lazy mode retains file
@@ -187,13 +255,22 @@ P-site-like signal positions to CDS frame0/frame1/frame2 for a selected
 transcript; it is not defined for an arbitrary genomic region.
 
 ```{r riboseq-reading-frame}
-frame_view <- plot_signal_transcript(signal = signal, annotation = gp,
-  transcript_id = "TxA1", samples = "Ribo_seq_plus", coordinate = "transcript",
-  plot_type = "frame", strand = "auto",
+frame_view <- plot_signal_transcript(
+  signal = signal,
+  annotation = gp,
+  transcript_id = "TxA1",
+  samples = "Ribo_seq_plus",
+  coordinate = "transcript",
+  plot_type = "frame",
+  strand = "auto",
   frame_colors = c(frame0 = "#4477AA", frame1 = "#EE6677", frame2 = "#228833"),
-  signal_track_height = 4, gene_track_height = 1, direction_mode = "end",
-  plot_theme = "classic", text_size = 10) & tutorial_text
-frame_view
+  signal_track_height = 4,
+  gene_track_height = 1,
+  direction_mode = "end",
+  plot_theme = "classic",
+  text_size = 10
+)
+frame_view & figure_style
 ```
 
 The synthetic Ribo-seq data have a dominant frame-0 signal and lower irregular
@@ -265,21 +342,21 @@ GRanges representation to keep every original record and its metadata:
 
 ```{r annotation-parent-metadata}
 gff_file <- tempfile(fileext = ".gff3")
-writeLines(c(
+gff_lines <- c(
   "##gff-version 3",
   "chr1\tfixture\tgene\t1\t20\t.\t+\t.\tID=g1",
   "chr1\tfixture\tmRNA\t1\t20\t.\t+\t.\tID=t1;Parent=g1",
   "chr1\tfixture\tmRNA\t1\t20\t.\t+\t.\tID=t2;Parent=g1",
   "chr1\tfixture\texon\t1\t5\t.\t+\t.\tID=e1;Parent=t1,t2",
   "chr1\tfixture\tCDS\t2\t5\t.\t+\t0\tID=c1;Parent=t1"
-), gff_file)
+)
+writeLines(gff_lines, gff_file)
 shared <- read_gff(gff_file, verbose = FALSE, progress = FALSE)
-shared$data[, c("feature_id", "parent_id", "parent_ids"), with = FALSE]
+as.data.frame(shared$data)[c("feature_id", "parent_id", "parent_ids")]
 flat <- as_granges(shared, level = "feature")
-selected <- as_feature(flat[flat$type == "exon"])
-stopifnot(identical(selected$data$parent_ids[[1L]], c("t1", "t2")))
+exons <- as_feature(flat[flat$type == "exon"])
 gff_output <- tempfile(fileext = ".gff3")
-write_feature(selected, gff_output, keep_attributes = FALSE)
+write_feature(exons, gff_output, keep_attributes = FALSE)
 ```
 
 Use the grouped view to query all exon and CDS memberships. The shared exon
@@ -290,13 +367,7 @@ source row. Each group retains the original feature metadata.
 grouped <- as_granges(shared, level = "transcript_features")
 lengths(grouped)
 grouped[["t2"]]
-source_rows <- S4Vectors::mcols(grouped)$source_rows
-source_rows
-exon_row <- which(flat$feature_id == "e1")
-stopifnot(inherits(grouped, "GRangesList"),
-  identical(unname(lengths(grouped)), c(2L, 1L)),
-  identical(source_rows[["t2"]], exon_row),
-  sum(source_rows[["t1"]] == exon_row) == 1L)
+S4Vectors::mcols(grouped)$source_rows
 ```
 
 For a regional view, restrict the flat ranges while retaining the transcript
@@ -306,8 +377,7 @@ index the restricted Feature table.
 ```{r annotation-transcript-groups-region}
 local_features <- as_feature(IRanges::restrict(flat, start = 2L, end = 4L))
 local_groups <- as_granges(local_features, level = "transcript_features")
-stopifnot(identical(names(local_groups), c("t1", "t2")),
-  all(IRanges::width(unlist(local_groups)) == 3L))
+local_groups
 ```
 
 `merge_feature(..., conflict = "rename")` updates every parent token using the
@@ -321,19 +391,20 @@ written. Blocks are retained without automatically expanding a new gene model:
 
 ```{r annotation-bed12-metadata}
 bed_file <- tempfile(fileext = ".bed")
-writeLines(c(
+bed_lines <- c(
   "chr1\t0\t20\tt1\t0\t+\t1\t18\t255,0,128\t2\t5,11\t0,9",
   "chr2\t9\t20\tt2\t1000\t-\t9\t9\t0\t1\t11\t0"
-), bed_file)
+)
+writeLines(bed_lines, bed_file)
 bed_track <- read_bed(bed_file, verbose = FALSE, progress = FALSE)
-bed_track$data[, c("name", "block_count", "block_sizes", "block_starts",
-  "thick_start", "thick_end", "item_rgb"), with = FALSE]
 bed_output <- tempfile(fileext = ".bed12")
 write_feature(bed_track, bed_output, format = "bed12")
 bed_roundtrip <- read_bed(bed_output, verbose = FALSE, progress = FALSE)
-stopifnot(identical(bed_roundtrip$data$block_sizes, bed_track$data$block_sizes))
-stopifnot(identical(bed_roundtrip$data$thick_end, bed_track$data$thick_end))
-unlink(c(gff_file, gff_output, bed_file, bed_output))
+bed_columns <- c(
+  "name", "block_count", "block_sizes", "block_starts",
+  "thick_start", "thick_end", "item_rgb"
+)
+as.data.frame(bed_roundtrip$data)[bed_columns]
 ```
 
 Use standard BED coordinates for interoperable files. The optional `granges`

@@ -91,7 +91,8 @@ jobs:
             stop("Courier font metrics are missing; see tex-fonts.log.")
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::BiocCheck
+          # Official BiocCheck 1.49.45 includes the Support Site check removal.
+          extra-packages: github::Bioconductor/BiocCheck@3d2703d38c2812ee144d7d364ce472f2d43a0def
           needs: check
       - name: Check report-directory regressions
         shell: Rscript {0}
@@ -99,6 +100,11 @@ jobs:
       - name: Run complete package checks
         shell: Rscript {0}
         run: |
+          bioccheck_version <- utils::packageVersion("BiocCheck")
+          if (bioccheck_version != "1.49.45") {
+            stop(sprintf("Expected BiocCheck 1.49.45, found %s.", bioccheck_version))
+          }
+          cat("BiocCheck version:", as.character(bioccheck_version), "\n")
           source("tools/check_package.R")
           package_check_main(c("--output-dir", Sys.getenv("CI_REPORT_DIR")))
       - name: Retain reports and source archive

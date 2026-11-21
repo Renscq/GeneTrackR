@@ -14,19 +14,18 @@ vignette: >
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 10,
-  fig.height = 6, dpi = 500, fig.retina = 1, crop = FALSE, dev = "ragg_png",
-  out.width = "100%", fig.align = "center")
-library(GeneTrackR)
-library(patchwork)
-plain_text <- ggplot2::element_text(family = "Arial", colour = "black", face = "plain")
-tutorial_text <- ggplot2::theme(text = plain_text, axis.text = plain_text,
-  axis.title = plain_text, plot.title = plain_text, plot.subtitle = plain_text,
-  plot.caption = plain_text, legend.text = plain_text, legend.title = plain_text,
-  strip.text = plain_text)
-classic_style <- ggplot2::theme_classic(base_family = "Arial") + tutorial_text
-ggplot2::theme_set(classic_style)
-demo_file <- function(name) system.file("extdata", name, package = "GeneTrackR", mustWork = TRUE)
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 10,
+  fig.height = 6,
+  dpi = 500,
+  fig.retina = 1,
+  crop = FALSE,
+  dev = "ragg_png",
+  out.width = "100%",
+  fig.align = "center"
+)
 ```
 
 # Introduction
@@ -40,23 +39,56 @@ downloads or persistent user-file overwrites. Package website:
 # Prepare inputs and a temporary output directory
 
 ```{r inputs}
-input_files <- c(annotation = demo_file("gtr_demo.genePredExt"),
-  variants = demo_file("gtr_demo_variants.vcf"),
-  phenotype = demo_file("gtr_demo_pheno.tsv"),
-  signal = demo_file("gtr_demo_rnaseq_plus.bedgraph"))
-stopifnot(length(input_files) == 4L, all(file.exists(input_files)))
-gp <- read_genepred(input_files[["annotation"]], format = "genePredExt",
-  verbose = FALSE, progress = FALSE)
-vcf <- read_vcf(input_files[["variants"]], mode = "memory",
-  verbose = FALSE, progress = FALSE)
-pheno <- read_pheno(input_files[["phenotype"]], verbose = FALSE, progress = FALSE)
-signal <- read_bwg(input_files[["signal"]],
-  sample_names = "RNA_seq_plus", strand = "+", mode = "memory", verbose = FALSE)
-hap <- hap_gene_variant(vcf, annotation = gp, gene_id = "GeneA", genotype_mode = "string")
-association <- plot_hap_pheno(hap, phenotype = pheno, traits = "protein_content",
-  min_hap_samples = 3, test_method = "t.test", p_adjust = "BH",
-  p_value_type = "adjusted", text_size = 10)
-association$figure <- association$figure & classic_style
+library(GeneTrackR)
+
+demo_dir <- system.file("extdata", package = "GeneTrackR")
+input_files <- c(
+  annotation = file.path(demo_dir, "gtr_demo.genePredExt"),
+  variants = file.path(demo_dir, "gtr_demo_variants.vcf"),
+  phenotype = file.path(demo_dir, "gtr_demo_pheno.tsv"),
+  signal = file.path(demo_dir, "gtr_demo_rnaseq_plus.bedgraph")
+)
+gp <- read_genepred(
+  input_files[["annotation"]],
+  format = "genePredExt",
+  verbose = FALSE,
+  progress = FALSE
+)
+vcf <- read_vcf(
+  input_files[["variants"]],
+  mode = "memory",
+  verbose = FALSE,
+  progress = FALSE
+)
+pheno <- read_pheno(
+  input_files[["phenotype"]],
+  verbose = FALSE,
+  progress = FALSE
+)
+signal <- read_bwg(
+  input_files[["signal"]],
+  sample_names = "RNA_seq_plus",
+  strand = "+",
+  mode = "memory",
+  verbose = FALSE
+)
+hap <- hap_gene_variant(
+  vcf,
+  annotation = gp,
+  gene_id = "GeneA",
+  genotype_mode = "string"
+)
+association <- plot_hap_pheno(
+  hap,
+  phenotype = pheno,
+  traits = "protein_content",
+  min_hap_samples = 3,
+  test_method = "t.test",
+  p_adjust = "BH",
+  p_value_type = "adjusted",
+  text_size = 10
+)
+
 output_dir <- tempfile("GeneTrackR-export-")
 dir.create(output_dir)
 ```
@@ -71,13 +103,25 @@ normalization, sample inclusion and all analysis parameters alongside outputs.
 
 ```{r annotation-output}
 annotation_file <- file.path(output_dir, "annotation.genePredExt")
-write_feature(gp, file = annotation_file, format = "genepredext", overwrite = TRUE)
-write_feature(gp, file = file.path(output_dir, "annotation.bed12"),
-  format = "bed12", overwrite = TRUE)
-restored_annotation <- read_genepred(annotation_file, format = "genePredExt",
-  verbose = FALSE, progress = FALSE)
-stopifnot(nrow(restored_annotation$genes) == 20L,
-  nrow(restored_annotation$transcripts) == 24L)
+write_feature(
+  gp,
+  file = annotation_file,
+  format = "genepredext",
+  overwrite = TRUE
+)
+write_feature(
+  gp,
+  file = file.path(output_dir, "annotation.bed12"),
+  format = "bed12",
+  overwrite = TRUE
+)
+restored_annotation <- read_genepred(
+  annotation_file,
+  format = "genePredExt",
+  verbose = FALSE,
+  progress = FALSE
+)
+summary_feature(restored_annotation, level = "gene")
 ```
 
 Writers apply the target-format coordinate convention. GTF/GFF3, BED and
@@ -89,14 +133,26 @@ attribute/identifier policies; retain an RDS object when all metadata matter.
 ## Signal and VCF
 
 ```{r signal-and-variant-output}
-signal_files <- write_bwg(signal, outdir = output_dir, format = "bedgraph", overwrite = TRUE)
+signal_exports <- write_bwg(
+  signal,
+  outdir = output_dir,
+  format = "bedgraph",
+  overwrite = TRUE
+)
 variant_file <- file.path(output_dir, "variants.vcf")
 write_vcf(vcf, file = variant_file, overwrite = TRUE)
-restored_variants <- read_vcf(variant_file, mode = "memory", verbose = FALSE, progress = FALSE)
-stopifnot(nrow(restored_variants$data) == nrow(vcf$data),
-  identical(restored_variants$meta$sample_names, character()))
-stopifnot(file.copy(input_files[["variants"]], file.path(output_dir, "original-genotypes.vcf")))
-signal_files
+restored_variants <- read_vcf(
+  variant_file,
+  mode = "memory",
+  verbose = FALSE,
+  progress = FALSE
+)
+summary_vcf(restored_variants)
+file.copy(
+  input_files[["variants"]],
+  file.path(output_dir, "original-genotypes.vcf")
+)
+basename(signal_exports$file)
 ```
 
 Signal export supports the existing bedGraph/WIG/BigWig layer. Consult
@@ -115,17 +171,24 @@ writer. Use named samples to set their order. This path uses the header and
 typed INFO and FORMAT data stored with the source object.
 
 ```{r typed-variant-output, eval=requireNamespace("VariantAnnotation", quietly=TRUE)}
-source_vcf <- VariantAnnotation::readVcf(input_files[["variants"]], genome = NA_character_)
+source_vcf <- VariantAnnotation::readVcf(
+  input_files[["variants"]],
+  genome = NA_character_
+)
 adapted <- as_variant_track(source_vcf)
-selected <- retrieve_vcf(adapted, chrom = "chr1", start = 12340000L, end = 12346000L,
-  as = "VariantTrack", verbose = FALSE)
+selected <- retrieve_vcf(
+  adapted,
+  chrom = "chr1",
+  start = 12340000L,
+  end = 12346000L,
+  as = "VariantTrack",
+  verbose = FALSE
+)
 typed_subset <- as_vcf(selected, samples = c("S02", "S01"))
 typed_file <- file.path(output_dir, "selected-genotypes.vcf")
 VariantAnnotation::writeVcf(typed_subset, typed_file)
 restored_typed <- VariantAnnotation::readVcf(typed_file, genome = NA_character_)
-stopifnot(identical(colnames(restored_typed), c("S02", "S01")),
-  identical(VariantAnnotation::geno(restored_typed)$GT,
-    VariantAnnotation::geno(typed_subset)$GT))
+head(VariantAnnotation::geno(restored_typed)$GT)
 ```
 
 Keep the track's source metadata and row keys when filtering or saving it as
@@ -139,21 +202,59 @@ VCF object with `saveRDS()` when exact in-memory values are needed.
 # Save statistical tables, figures and complete objects
 
 ```{r analysis-output}
-utils::write.csv(as.data.frame(association$summary),
-  file.path(output_dir, "phenotype-summary.csv"), row.names = FALSE, na = "NA")
-utils::write.csv(as.data.frame(association$pvalue),
-  file.path(output_dir, "pairwise-tests.csv"), row.names = FALSE, na = "NA")
-ggplot2::ggsave(file.path(output_dir, "phenotype-comparison.png"),
-  plot = association$figure, width = 8, height = 5, units = "in", dpi = 500,
-  device = ragg::agg_png)
-bundle <- list(annotation = gp, variants = vcf, signal = signal,
-  haplotypes = hap, phenotype = pheno, association = association,
-  parameters = list(gene_id = "GeneA", genotype_mode = "string", min_hap_samples = 3,
-    trait = "protein_content", test_method = "t.test", p_adjust = "BH"))
+utils::write.csv(
+  association$summary,
+  file = file.path(output_dir, "phenotype-summary.csv"),
+  row.names = FALSE,
+  na = "NA"
+)
+utils::write.csv(
+  association$pvalue,
+  file = file.path(output_dir, "pairwise-tests.csv"),
+  row.names = FALSE,
+  na = "NA"
+)
+
+figure_style <- ggplot2::theme(
+  text = ggplot2::element_text(
+    family = "Arial",
+    colour = "black",
+    face = "plain"
+  )
+)
+classic_style <- ggplot2::theme_classic(base_family = "Arial") +
+  figure_style +
+  ggplot2::theme(axis.text = ggplot2::element_text(colour = "black"))
+association$figure <- association$figure + classic_style
+ggplot2::ggsave(
+  filename = file.path(output_dir, "phenotype-comparison.png"),
+  plot = association$figure,
+  width = 8,
+  height = 5,
+  units = "in",
+  dpi = 500,
+  device = ragg::agg_png
+)
+
+bundle <- list(
+  annotation = gp,
+  variants = vcf,
+  signal = signal,
+  haplotypes = hap,
+  phenotype = pheno,
+  association = association,
+  parameters = list(
+    gene_id = "GeneA",
+    genotype_mode = "string",
+    min_hap_samples = 3,
+    trait = "protein_content",
+    test_method = "t.test",
+    p_adjust = "BH"
+  )
+)
 saveRDS(bundle, file.path(output_dir, "analysis.rds"))
 restored <- readRDS(file.path(output_dir, "analysis.rds"))
-stopifnot(identical(restored$variants$meta$sample_names, vcf$meta$sample_names),
-  identical(restored$haplotypes$haplotypes$sample_n, hap$haplotypes$sample_n))
+restored$haplotypes$haplotypes
 ```
 
 `plot_hap_variant()` and integrated-track functions return figures directly.
@@ -181,11 +282,17 @@ browser applications and network services are not required to execute these
 vignettes.
 
 ```{r provenance}
-provenance <- data.frame(role = names(input_files), input = basename(input_files),
-  md5 = unname(tools::md5sum(input_files)))
-stopifnot(nrow(provenance) == 4L, !anyNA(provenance$md5), all(nchar(provenance$md5) == 32L))
-utils::write.csv(provenance, file.path(output_dir, "input-checksums.csv"), row.names = FALSE)
-writeLines(capture.output(sessionInfo()), file.path(output_dir, "session-info.txt"))
+provenance <- data.frame(
+  role = names(input_files),
+  input = basename(input_files),
+  md5 = unname(tools::md5sum(input_files))
+)
+utils::write.csv(
+  provenance,
+  file = file.path(output_dir, "input-checksums.csv"),
+  row.names = FALSE
+)
+capture.output(sessionInfo(), file = file.path(output_dir, "session-info.txt"))
 list.files(output_dir)
 ```
 

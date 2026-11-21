@@ -304,17 +304,7 @@ plot_hap_variant <- function(hap,
     }
   }
 
-  p_connector <- ggplot2::ggplot(vars) +
-    ggplot2::geom_segment(
-      ggplot2::aes(x = .data$gene_x, xend = .data$table_x, y = 1, yend = 0),
-      linewidth = 0.35,
-      color = "grey35",
-      lineend = "butt"
-    ) +
-    ggplot2::scale_x_continuous(limits = x_limits, expand = c(0, 0)) +
-    ggplot2::scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
-    ggplot2::theme_void() +
-    ggplot2::theme(plot.margin = ggplot2::margin(0, 12, 0, 8))
+  p_connector <- draw_variant_connector_track(vars, "table_x", x_limits)
 
   n_rows <- length(row_levels)
   table_genotype <- table_long
@@ -830,6 +820,7 @@ draw_hap_gene_track <- function(gene_data,
       limits = c(y_lower, y_upper),
       expand = c(0, 0)
     ) +
+    ggplot2::coord_cartesian(clip = "off") +
     ggplot2::labs(x = x_axis_title, y = NULL) +
     ggplot2::theme_bw() +
     ggplot2::theme(
@@ -845,7 +836,7 @@ draw_hap_gene_track <- function(gene_data,
       legend.box = ifelse(gene_track_legend_position == "top", "horizontal", "vertical"),
       legend.title = ggplot2::element_text(size = gene_text_size, color = "black"),
       legend.text = ggplot2::element_text(size = gene_text_size, color = "black"),
-      plot.margin = ggplot2::margin(8, 12, 0, 8)
+      plot.margin = ggplot2::margin(8, max(12, 3 * gene_text_size), 0, 8)
     )
 
   p

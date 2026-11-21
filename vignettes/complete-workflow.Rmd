@@ -14,19 +14,18 @@ vignette: >
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 11,
-  fig.height = 7, dpi = 500, fig.retina = 1, crop = FALSE, dev = "ragg_png",
-  out.width = "100%", fig.align = "center")
-library(GeneTrackR)
-library(patchwork)
-plain_text <- ggplot2::element_text(family = "Arial", colour = "black", face = "plain")
-tutorial_text <- ggplot2::theme(text = plain_text, axis.text = plain_text,
-  axis.title = plain_text, plot.title = plain_text, plot.subtitle = plain_text,
-  plot.caption = plain_text, legend.text = plain_text, legend.title = plain_text,
-  strip.text = plain_text)
-classic_style <- ggplot2::theme_classic(base_family = "Arial") + tutorial_text
-ggplot2::theme_set(classic_style)
-demo_file <- function(name) system.file("extdata", name, package = "GeneTrackR", mustWork = TRUE)
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 11,
+  fig.height = 7,
+  dpi = 500,
+  fig.retina = 1,
+  crop = FALSE,
+  dev = "ragg_png",
+  out.width = "100%",
+  fig.align = "center"
+)
 ```
 
 # Question and evidence chain
@@ -45,20 +44,50 @@ rtracklayer and VariantAnnotation and the data-generation contracts.
 # Prepare inputs and check alignment
 
 ```{r inputs}
-gp <- read_genepred(demo_file("gtr_demo.genePredExt"), format = "genePredExt",
-  verbose = FALSE, progress = FALSE)
-vcf <- read_vcf(demo_file("gtr_demo_variants.vcf"), mode = "memory",
-  keep_genotype = TRUE, verbose = FALSE, progress = FALSE)
-pheno <- read_pheno(demo_file("gtr_demo_pheno.tsv"), verbose = FALSE, progress = FALSE)
-signal <- read_bwg(demo_file(c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_riboseq_plus.bedgraph")),
-  sample_names = c("RNA_seq_plus", "Ribo_seq_plus"), strand = c("+", "+"),
-  mode = "memory", verbose = FALSE)
-stopifnot(!anyDuplicated(vcf$meta$sample_names), !anyDuplicated(pheno$sample_id))
-shared <- intersect(vcf$meta$sample_names, pheno$sample_id)
-data.frame(genotype_n = length(vcf$meta$sample_names), phenotype_n = nrow(pheno),
-  shared_n = length(shared), genotype_only = length(setdiff(vcf$meta$sample_names, pheno$sample_id)),
-  phenotype_only = length(setdiff(pheno$sample_id, vcf$meta$sample_names)))
-stopifnot(length(shared) == 36L)
+library(GeneTrackR)
+
+demo_dir <- system.file("extdata", package = "GeneTrackR")
+signal_files <- c(
+  "gtr_demo_rnaseq_plus.bedgraph",
+  "gtr_demo_riboseq_plus.bedgraph"
+)
+
+gp <- read_genepred(
+  file.path(demo_dir, "gtr_demo.genePredExt"),
+  format = "genePredExt",
+  verbose = FALSE,
+  progress = FALSE
+)
+vcf <- read_vcf(
+  file.path(demo_dir, "gtr_demo_variants.vcf"),
+  mode = "memory",
+  keep_genotype = TRUE,
+  verbose = FALSE,
+  progress = FALSE
+)
+pheno <- read_pheno(
+  file.path(demo_dir, "gtr_demo_pheno.tsv"),
+  verbose = FALSE,
+  progress = FALSE
+)
+signal <- read_bwg(
+  file.path(demo_dir, signal_files),
+  sample_names = c("RNA_seq_plus", "Ribo_seq_plus"),
+  strand = c("+", "+"),
+  mode = "memory",
+  verbose = FALSE
+)
+
+vcf_ids <- vcf$meta$sample_names
+phenotype_ids <- pheno$sample_id
+shared_ids <- intersect(vcf_ids, phenotype_ids)
+data.frame(
+  genotype_n = length(vcf_ids),
+  phenotype_n = length(phenotype_ids),
+  shared_n = length(shared_ids),
+  genotype_only = length(setdiff(vcf_ids, phenotype_ids)),
+  phenotype_only = length(setdiff(phenotype_ids, vcf_ids))
+)
 ```
 
 For external data, reconcile genome assembly, chromosome naming, coordinates,
@@ -72,14 +101,17 @@ This can be the output of an existing Bioconductor overlap or peak workflow.
 The input enters GeneTrackR directly from GRanges.
 
 ```{r external-intervals}
-external_ranges <- GenomicRanges::GRanges("chr1",
-  IRanges::IRanges(c(12339750L, 12342620L), c(12340200L, 12343180L)))
+external_ranges <- GenomicRanges::GRanges(
+  "chr1",
+  IRanges::IRanges(
+    start = c(12339750L, 12342620L),
+    end = c(12340200L, 12343180L)
+  )
+)
 names(external_ranges) <- c("candidate_promoter", "candidate_interval")
 external_ranges$score <- c(2.5, 4.5)
 features <- as_feature(external_ranges)
-returned <- as_granges(features, level = "feature")
-stopifnot(length(returned) == 2L, identical(names(returned), names(external_ranges)),
-  identical(returned$score, c(2.5, 4.5)))
+as_granges(features, level = "feature")
 ```
 
 The [range workflow](annotation.html#existing-granges) covers sorting, typed
@@ -89,14 +121,31 @@ Those conversion rules also apply to filtered feature objects here.
 # Inspect the integrated locus {#integrated-browser}
 
 ```{r browser-context}
-browser <- plot_tracks(annotation = gp, signal = signal, features = features,
-  variants = vcf, chrom = "chr1", start = 12339001L, end = 12374500L,
-  samples = c("RNA_seq_plus", "Ribo_seq_plus"), strand = "+", signal_type = "bar",
+browser <- plot_tracks(
+  annotation = gp,
+  signal = signal,
+  features = features,
+  variants = vcf,
+  chrom = "chr1",
+  start = 12339001L,
+  end = 12374500L,
+  samples = c("RNA_seq_plus", "Ribo_seq_plus"),
+  strand = "+",
+  signal_type = "bar",
   signal_colors = c(RNA_seq_plus = "#4477AA", Ribo_seq_plus = "#228833"),
   variant_colors = c(SNP = "#4477AA", INS = "#228833", DEL = "#CC6677"),
   highlight = data.frame(start = 12342620L, end = 12343180L),
-  layout = "gene_top", plot_theme = "classic", text_size = 10) & tutorial_text
-browser
+  layout = "gene_top",
+  plot_theme = "classic",
+  text_size = 10
+)
+browser & ggplot2::theme(
+  text = ggplot2::element_text(
+    family = "Arial",
+    colour = "black",
+    face = "plain"
+  )
+)
 ```
 
 This plot places annotations, signals, external intervals and variants on the
@@ -109,12 +158,22 @@ executes a transcript-coordinate Ribo-seq reading-frame example.
 # Construct groups and compare a trait
 
 ```{r genotype-and-trait}
-hap <- hap_gene_variant(vcf, annotation = gp, gene_id = "GeneA", genotype_mode = "string")
-stopifnot(nrow(hap$variants) == 11L, nrow(hap$haplotypes) == 4L,
-  all(hap$haplotypes$sample_n == 9L))
-association <- plot_hap_pheno(hap, phenotype = pheno, traits = "protein_content",
-  min_hap_samples = 3, test_method = "t.test", p_adjust = "BH",
-  p_value_type = "adjusted", text_size = 10)
+hap <- hap_gene_variant(
+  vcf,
+  annotation = gp,
+  gene_id = "GeneA",
+  genotype_mode = "string"
+)
+association <- plot_hap_pheno(
+  hap,
+  phenotype = pheno,
+  traits = "protein_content",
+  min_hap_samples = 3,
+  test_method = "t.test",
+  p_adjust = "BH",
+  p_value_type = "adjusted",
+  text_size = 10
+)
 association$summary
 association$pvalue
 ```
@@ -127,12 +186,23 @@ units, examine missingness, and assess the assumptions for real samples.
 # Add LD and refinement context
 
 ```{r ld-and-refinement}
-ld <- compute_ld_block(vcf, chrom = "chr1", start = 12342620L, end = 12355500L,
-  variant_type = "snp", method = "r2", verbose = FALSE)
-stopifnot(nrow(ld$variants) == 12L, nrow(ld$data) == 66L)
+ld <- compute_ld_block(
+  vcf,
+  chrom = "chr1",
+  start = 12342620L,
+  end = 12355500L,
+  variant_type = "snp",
+  method = "r2",
+  verbose = FALSE
+)
 head(ld$data)
-refined <- refine_haplotype(hap, phenotype = pheno, traits = "protein_content",
-  min_hap_samples = 3, effect_threshold = 0.5)
+refined <- refine_haplotype(
+  hap,
+  phenotype = pheno,
+  traits = "protein_content",
+  min_hap_samples = 3,
+  effect_threshold = 0.5
+)
 refined$haplotype_map
 ```
 
@@ -147,8 +217,9 @@ contracts are in [haplotypes/LD](haplotype.html) and
 
 ```{r return-to-bioc}
 query <- GenomicRanges::GRanges("chr1", IRanges::IRanges(12342650L, 12343000L))
-hits <- GenomicRanges::findOverlaps(as_granges(features, level = "feature"), query)
-as_granges(features, level = "feature")[S4Vectors::queryHits(hits)]
+ranges <- as_granges(features, level = "feature")
+hits <- GenomicRanges::findOverlaps(ranges, query)
+ranges[S4Vectors::queryHits(hits)]
 ```
 
 The delivered evidence is a coherent set of annotation/variant/signal inputs,

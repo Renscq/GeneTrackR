@@ -158,8 +158,7 @@ generate_readme_figures <- function(root) {
     hap, annotation = gp, min_hap_samples = 3, variant_label = "pos",
     gene_track_legend_position = "top", text_size = 11,
     genotype_text_size = 3.2, table_x_angle = 90
-  ) & (readme_text_theme() +
-         ggplot2::theme(plot.margin = ggplot2::margin(6, 30, 6, 6)))
+  ) & readme_text_theme()
   association <- GeneTrackR::plot_hap_pheno(
     hap, phenotype = pheno, traits = "protein_content", min_hap_samples = 3,
     test_method = "t.test", p_adjust = "BH", p_value_type = "adjusted",

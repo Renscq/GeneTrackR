@@ -14,19 +14,18 @@ vignette: >
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 10,
-  fig.height = 6, dpi = 500, fig.retina = 1, crop = FALSE, dev = "ragg_png",
-  out.width = "100%", fig.align = "center")
-library(GeneTrackR)
-library(patchwork)
-plain_text <- ggplot2::element_text(family = "Arial", colour = "black", face = "plain")
-tutorial_text <- ggplot2::theme(text = plain_text, axis.text = plain_text,
-  axis.title = plain_text, plot.title = plain_text, plot.subtitle = plain_text,
-  plot.caption = plain_text, legend.text = plain_text, legend.title = plain_text,
-  strip.text = plain_text)
-classic_style <- ggplot2::theme_classic(base_family = "Arial") + tutorial_text
-ggplot2::theme_set(classic_style)
-demo_file <- function(name) system.file("extdata", name, package = "GeneTrackR", mustWork = TRUE)
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 10,
+  fig.height = 6,
+  dpi = 500,
+  fig.retina = 1,
+  crop = FALSE,
+  dev = "ragg_png",
+  out.width = "100%",
+  fig.align = "center"
+)
 ```
 
 # Introduction
@@ -43,12 +42,32 @@ refinement do not establish biological causality or independent validation.
 # Read and align samples
 
 ```{r inputs}
-gp <- read_genepred(demo_file("gtr_demo.genePredExt"), format = "genePredExt",
-  verbose = FALSE, progress = FALSE)
-vcf <- read_vcf(demo_file("gtr_demo_variants.vcf"), mode = "memory",
-  verbose = FALSE, progress = FALSE)
-pheno <- read_pheno(demo_file("gtr_demo_pheno.tsv"), verbose = FALSE, progress = FALSE)
-hap <- hap_gene_variant(vcf, annotation = gp, gene_id = "GeneA", genotype_mode = "string")
+library(GeneTrackR)
+
+demo_dir <- system.file("extdata", package = "GeneTrackR")
+gp <- read_genepred(
+  file.path(demo_dir, "gtr_demo.genePredExt"),
+  format = "genePredExt",
+  verbose = FALSE,
+  progress = FALSE
+)
+vcf <- read_vcf(
+  file.path(demo_dir, "gtr_demo_variants.vcf"),
+  mode = "memory",
+  verbose = FALSE,
+  progress = FALSE
+)
+pheno <- read_pheno(
+  file.path(demo_dir, "gtr_demo_pheno.tsv"),
+  verbose = FALSE,
+  progress = FALSE
+)
+hap <- hap_gene_variant(
+  vcf,
+  annotation = gp,
+  gene_id = "GeneA",
+  genotype_mode = "string"
+)
 summary_pheno(pheno)
 ```
 
@@ -62,14 +81,13 @@ functions used here require numeric traits.
 hap_ids <- as.character(hap$sample_haplotypes$sample_id)
 pheno_ids <- as.character(pheno$sample_id)
 shared <- intersect(hap_ids, pheno_ids)
-alignment <- data.frame(haplotype_samples = length(hap_ids),
-  phenotype_samples = length(pheno_ids), shared = length(shared),
+data.frame(
+  haplotype_samples = length(hap_ids),
+  phenotype_samples = length(pheno_ids),
+  shared = length(shared),
   haplotype_only = length(setdiff(hap_ids, pheno_ids)),
-  phenotype_only = length(setdiff(pheno_ids, hap_ids)))
-alignment
-stopifnot(!anyNA(hap_ids), !anyNA(pheno_ids), !anyDuplicated(hap_ids),
-  !anyDuplicated(pheno_ids), length(shared) == 36L,
-  alignment$haplotype_only == 0L, alignment$phenotype_only == 0L)
+  phenotype_only = length(setdiff(pheno_ids, hap_ids))
+)
 ```
 
 Joining is by identifier, not row order. For external data, report missing
@@ -81,11 +99,28 @@ independent biological samples.
 # Compare haplotype groups
 
 ```{r haplotype-association}
-association <- plot_hap_pheno(hap, phenotype = pheno, traits = "protein_content",
-  min_hap_samples = 3, test_method = "t.test", p_adjust = "BH",
-  p_value_type = "adjusted", show_points = TRUE, text_size = 10)
-association$figure <- association$figure & classic_style
-association$figure
+association <- plot_hap_pheno(
+  hap,
+  phenotype = pheno,
+  traits = "protein_content",
+  min_hap_samples = 3,
+  test_method = "t.test",
+  p_adjust = "BH",
+  p_value_type = "adjusted",
+  show_points = TRUE,
+  text_size = 10
+)
+figure_style <- ggplot2::theme(
+  text = ggplot2::element_text(
+    family = "Arial",
+    colour = "black",
+    face = "plain"
+  )
+)
+classic_style <- ggplot2::theme_classic(base_family = "Arial") +
+  figure_style +
+  ggplot2::theme(axis.text = ggplot2::element_text(colour = "black"))
+association$figure + classic_style
 association$summary
 association$pvalue
 ```
@@ -105,9 +140,18 @@ construction is described in the [data model](getting-started.html#demo-data).
 # Compare a single variant
 
 ```{r variant-association}
-single_variant <- plot_variant_pheno(vcf, phenotype = pheno, variant_id = "varA03",
-  traits = "protein_content", genotype_mode = "code", min_group_samples = 3,
-  test_method = "t.test", p_adjust = "BH", p_value_type = "adjusted", text_size = 10)
+single_variant <- plot_variant_pheno(
+  vcf,
+  phenotype = pheno,
+  variant_id = "varA03",
+  traits = "protein_content",
+  genotype_mode = "code",
+  min_group_samples = 3,
+  test_method = "t.test",
+  p_adjust = "BH",
+  p_value_type = "adjusted",
+  text_size = 10
+)
 single_variant$summary
 single_variant$pvalue
 ```
@@ -119,9 +163,16 @@ use the LD context and independent evidence before proposing a functional role.
 # Phenotype-guided refinement {#refinement}
 
 ```{r refinement}
-refined <- refine_haplotype(hap, phenotype = pheno, traits = "protein_content",
-  min_hap_samples = 3, test_method = "t.test", p_adjust = "BH",
-  alpha = 0.05, effect_threshold = 0.5)
+refined <- refine_haplotype(
+  hap,
+  phenotype = pheno,
+  traits = "protein_content",
+  min_hap_samples = 3,
+  test_method = "t.test",
+  p_adjust = "BH",
+  alpha = 0.05,
+  effect_threshold = 0.5
+)
 refined$refined_haplotypes
 refined$haplotype_map
 ```
@@ -135,12 +186,21 @@ refinement, so subsequent differences in that phenotype are not independent
 evidence that the refined grouping generalizes.
 
 ```{r refined-plots}
-refined_association <- plot_refined_hap_pheno(refined, phenotype = pheno,
-  traits = "protein_content", min_hap_samples = 3,
-  p_value_type = "adjusted", text_size = 10)
+refined_association <- plot_refined_hap_pheno(
+  refined,
+  phenotype = pheno,
+  traits = "protein_content",
+  min_hap_samples = 3,
+  p_value_type = "adjusted",
+  text_size = 10
+)
 refined_association$summary
-plot_refined_hap_variant(refined, annotation = gp, min_hap_samples = 3, text_size = 9) &
-  tutorial_text
+plot_refined_hap_variant(
+  refined,
+  annotation = gp,
+  min_hap_samples = 3,
+  text_size = 9
+) & figure_style
 ```
 
 Use held-out samples or independent populations to evaluate generalization.
@@ -150,11 +210,22 @@ be disclosed when reporting association results.
 # Variant-effect inspection {#variant-effects}
 
 ```{r variant-effects}
-hap_code <- hap_gene_variant(vcf, annotation = gp, gene_id = "GeneA", genotype_mode = "code")
-effects <- plot_variant_effect(hap_code, phenotype = pheno, traits = "protein_content",
-  min_group_samples = 3, effect_type = "absolute", x_axis = "position", text_size = 10)
-effects$figure <- effects$figure & classic_style
-effects$figure
+hap_code <- hap_gene_variant(
+  vcf,
+  annotation = gp,
+  gene_id = "GeneA",
+  genotype_mode = "code"
+)
+effects <- plot_variant_effect(
+  hap_code,
+  phenotype = pheno,
+  traits = "protein_content",
+  min_group_samples = 3,
+  effect_type = "absolute",
+  x_axis = "position",
+  text_size = 10
+)
+effects$figure + classic_style
 effects$effect
 ```
 

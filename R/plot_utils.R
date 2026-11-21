@@ -9,6 +9,26 @@ normalize_plot_theme <- function(plot_theme = c("bw", "classic", "light", "minim
   match.arg(plot_theme)
 }
 
+draw_variant_connector_track <- function(variants, target_column, x_limits) {
+  ggplot2::ggplot(variants) +
+    ggplot2::geom_segment(
+      ggplot2::aes(
+        x = .data$gene_x,
+        xend = .data[[target_column]],
+        y = 1,
+        yend = 0
+      ),
+      linewidth = 0.35,
+      color = "grey35",
+      lineend = "butt"
+    ) +
+    ggplot2::scale_x_continuous(limits = x_limits, expand = c(0, 0), guide = "none") +
+    ggplot2::scale_y_continuous(limits = c(0, 1), expand = c(0, 0), guide = "none") +
+    ggplot2::labs(x = NULL, y = NULL) +
+    ggplot2::theme_void() +
+    ggplot2::theme(plot.margin = ggplot2::margin(0, 12, 0, 8))
+}
+
 normalize_show_panel_border <- function(show_panel_border = NULL) {
   if (is.null(show_panel_border)) {
     return(NULL)

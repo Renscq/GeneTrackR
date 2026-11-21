@@ -178,6 +178,14 @@ plot_ld_block <- function(object,
 
     if (isTRUE(connect_region)) {
       p_connector <- draw_ld_connector_track(variants = variants, x_limits = x_limits)
+      p_region <- p_region +
+        ggplot2::labs(title = title) +
+        ggplot2::theme(
+          plot.title = ggplot2::element_text(size = font, color = "black", hjust = 0.5)
+        )
+      p_heat <- p_heat +
+        ggplot2::labs(title = NULL) +
+        ggplot2::theme(plot.margin = ggplot2::margin(0, 12, 8, 8))
       p <- patchwork::wrap_plots(
         p_region,
         p_connector,
@@ -434,17 +442,7 @@ draw_ld_connector_track <- function(variants, x_limits = NULL) {
   if (!"ld_x" %in% names(vars)) vars[, "ld_x" := as.numeric(variant_index)]
   if (is.null(x_limits)) x_limits <- c(0.5, nrow(vars) + 0.5)
 
-  ggplot2::ggplot(vars) +
-    ggplot2::geom_segment(
-      ggplot2::aes(x = .data$gene_x, xend = .data$ld_x, y = 1, yend = 0),
-      linewidth = 0.35,
-      color = "grey35",
-      lineend = "butt"
-    ) +
-    ggplot2::scale_x_continuous(limits = x_limits, expand = c(0, 0)) +
-    ggplot2::scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
-    ggplot2::theme_void() +
-    ggplot2::theme(plot.margin = ggplot2::margin(0, 12, 0, 8))
+  draw_variant_connector_track(vars, "ld_x", x_limits)
 }
 
 make_ld_region_mapper <- function(variants, region) {

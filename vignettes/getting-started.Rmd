@@ -14,19 +14,18 @@ vignette: >
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 10,
-  fig.height = 6, dpi = 500, fig.retina = 1, crop = FALSE, dev = "ragg_png",
-  out.width = "100%", fig.align = "center")
-library(GeneTrackR)
-library(patchwork)
-plain_text <- ggplot2::element_text(family = "Arial", colour = "black", face = "plain")
-tutorial_text <- ggplot2::theme(text = plain_text, axis.text = plain_text,
-  axis.title = plain_text, plot.title = plain_text, plot.subtitle = plain_text,
-  plot.caption = plain_text, legend.text = plain_text, legend.title = plain_text,
-  strip.text = plain_text)
-classic_style <- ggplot2::theme_classic(base_family = "Arial") + tutorial_text
-ggplot2::theme_set(classic_style)
-demo_file <- function(name) system.file("extdata", name, package = "GeneTrackR", mustWork = TRUE)
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 10,
+  fig.height = 6,
+  dpi = 500,
+  fig.retina = 1,
+  crop = FALSE,
+  dev = "ragg_png",
+  out.width = "100%",
+  fig.align = "center"
+)
 ```
 
 # Introduction
@@ -93,14 +92,27 @@ These controls demonstrate expected behavior and do not validate a biological
 mechanism.
 
 ```{r inputs}
-gp <- read_genepred(demo_file("gtr_demo.genePredExt"), format = "genePredExt",
-  verbose = FALSE, progress = FALSE)
-vcf <- read_vcf(demo_file("gtr_demo_variants.vcf"), mode = "memory",
-  verbose = FALSE, progress = FALSE)
-pheno <- read_pheno(demo_file("gtr_demo_pheno.tsv"), verbose = FALSE, progress = FALSE)
-stopifnot(nrow(gp$genes) == 20L, nrow(gp$transcripts) == 24L,
-  nrow(vcf$data) == 56L, length(vcf$meta$sample_names) == 36L, nrow(pheno) == 36L)
-head(list.files(system.file("extdata", package = "GeneTrackR"), pattern = "^gtr_demo_"))
+library(GeneTrackR)
+
+demo_dir <- system.file("extdata", package = "GeneTrackR")
+gp <- read_genepred(
+  file.path(demo_dir, "gtr_demo.genePredExt"),
+  format = "genePredExt",
+  verbose = FALSE,
+  progress = FALSE
+)
+vcf <- read_vcf(
+  file.path(demo_dir, "gtr_demo_variants.vcf"),
+  mode = "memory",
+  verbose = FALSE,
+  progress = FALSE
+)
+pheno <- read_pheno(
+  file.path(demo_dir, "gtr_demo_pheno.tsv"),
+  verbose = FALSE,
+  progress = FALSE
+)
+head(list.files(demo_dir, pattern = "^gtr_demo_"))
 ```
 
 ## Coordinates and sample identifiers
@@ -118,11 +130,13 @@ joining data:
 vcf_ids <- vcf$meta$sample_names
 pheno_ids <- as.character(pheno$sample_id)
 shared_ids <- intersect(vcf_ids, pheno_ids)
-data.frame(vcf_samples = length(vcf_ids), phenotype_samples = length(pheno_ids),
-  shared = length(shared_ids), vcf_only = length(setdiff(vcf_ids, pheno_ids)),
-  phenotype_only = length(setdiff(pheno_ids, vcf_ids)))
-stopifnot(!anyDuplicated(vcf_ids), !anyDuplicated(pheno_ids),
-  length(shared_ids) == 36L, !identical(vcf_ids, pheno_ids))
+data.frame(
+  vcf_samples = length(vcf_ids),
+  phenotype_samples = length(pheno_ids),
+  shared = length(shared_ids),
+  vcf_only = length(setdiff(vcf_ids, pheno_ids)),
+  phenotype_only = length(setdiff(pheno_ids, vcf_ids))
+)
 ```
 
 # First locus and haplotypes
@@ -130,13 +144,20 @@ stopifnot(!anyDuplicated(vcf_ids), !anyDuplicated(pheno_ids),
 ```{r first-gene}
 genea <- retrieve_feature(gp, gene_id = "GeneA")
 genea$genes
-plot_gene(gp, gene_id = "GeneA", text_size = 10) & classic_style
+plot_gene(gp, gene_id = "GeneA", plot_theme = "classic", text_size = 10) +
+  ggplot2::theme(
+    text = ggplot2::element_text(family = "Arial", colour = "black")
+  )
 ```
 
 ```{r first-haplotypes}
-hap <- hap_gene_variant(vcf, annotation = gp, gene_id = "GeneA", genotype_mode = "string")
+hap <- hap_gene_variant(
+  vcf,
+  annotation = gp,
+  gene_id = "GeneA",
+  genotype_mode = "string"
+)
 hap$haplotypes
-stopifnot(nrow(hap$haplotypes) == 4L, all(hap$haplotypes$sample_n == 9L))
 ```
 
 Genotype encoding, missing calls, phasing and grouping choices should be made

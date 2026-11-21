@@ -85,19 +85,21 @@ draw them over the same gene interval:
 ```r
 library(GeneTrackR)
 
+demo_dir <- system.file("extdata", package = "GeneTrackR")
+signal_files <- c(
+  "gtr_demo_rnaseq_plus.bedgraph",
+  "gtr_demo_riboseq_plus.bedgraph"
+)
+
 gp <- read_genepred(
-  system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR"),
+  file.path(demo_dir, "gtr_demo.genePredExt"),
   format = "genePredExt",
   verbose = FALSE,
   progress = FALSE
 )
 
 signal <- read_bwg(
-  system.file(
-    "extdata",
-    c("gtr_demo_rnaseq_plus.bedgraph", "gtr_demo_riboseq_plus.bedgraph"),
-    package = "GeneTrackR"
-  ),
+  file.path(demo_dir, signal_files),
   sample_names = c("RNA_seq_plus", "Ribo_seq_plus"),
   strand = c("+", "+"),
   mode = "memory",
@@ -126,23 +128,30 @@ Use the bundled VCF and phenotype table with the same annotation object:
 
 ```r
 vcf <- read_vcf(
-  system.file("extdata", "gtr_demo_variants.vcf", package = "GeneTrackR"),
+  file.path(demo_dir, "gtr_demo_variants.vcf"),
   mode = "memory",
   keep_genotype = TRUE,
   verbose = FALSE,
   progress = FALSE
 )
 pheno <- read_pheno(
-  system.file("extdata", "gtr_demo_pheno.tsv", package = "GeneTrackR"),
+  file.path(demo_dir, "gtr_demo_pheno.tsv"),
   verbose = FALSE,
   progress = FALSE
 )
 hap <- hap_gene_variant(
-  vcf, annotation = gp, gene_id = "GeneA", genotype_mode = "string"
+  vcf,
+  annotation = gp,
+  gene_id = "GeneA",
+  genotype_mode = "string"
 )
 plot_hap_variant(
-  hap, annotation = gp, min_hap_samples = 3,
-  variant_label = "pos", gene_track_legend_position = "top"
+  hap,
+  annotation = gp,
+  min_hap_samples = 3,
+  variant_label = "pos",
+  gene_track_legend_position = "top",
+  text_size = 11
 )
 ```
 
@@ -161,7 +170,15 @@ association <- plot_hap_pheno(
   test_method = "t.test",
   p_adjust = "BH",
   p_value_type = "adjusted",
-  show_points = TRUE
+  show_points = TRUE,
+  x_text_angle = 0,
+  text_size = 11,
+  fill_colors = c(
+    Hap1 = "#4477AA",
+    Hap2 = "#66CCEE",
+    Hap3 = "#228833",
+    Hap4 = "#CCBB44"
+  )
 )
 association$figure
 association$summary

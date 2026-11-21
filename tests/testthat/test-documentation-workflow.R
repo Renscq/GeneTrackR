@@ -134,6 +134,17 @@ test_that("documentation workflow uses current public object contracts", {
   expect_s3_class(ld, "LDTrack")
   expect_false(is.null(ld$figure))
 
+  axis_style <- ggplot2::theme(
+    axis.text = ggplot2::element_text(),
+    axis.title = ggplot2::element_text()
+  )
+  for (figure in list(hap_figure, ld$figure)) {
+    styled <- figure & axis_style
+    connector <- ggplot2::ggplotGrob(styled[[2L]])
+    axes <- grepl("^(axis|xlab|ylab)-", connector$layout$name)
+    expect_true(all(vapply(connector$grobs[axes], inherits, logical(1), "zeroGrob")))
+  }
+
   refined <- refine_haplotype(
     hap,
     phenotype = pheno,
