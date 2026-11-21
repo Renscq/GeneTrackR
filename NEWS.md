@@ -1,3 +1,14 @@
+# GeneTrackR 0.99.10
+
+- Added `as_granges(x, level = "transcript_features")` to group source exon
+  and CDS records by transcript in a `GRangesList`. Each source row is
+  included once per transcript, including when a Parent token is repeated.
+- Preserved coordinates and annotations in each group and recorded the
+  corresponding flat source-row indices in list metadata columns.
+  Older annotations can use their existing single-parent identifiers.
+- Added multi-parent, legacy RDS, region trimming and merge regressions,
+  an executable tutorial example, and a comparison to mapped TxDb memberships.
+
 # GeneTrackR 0.99.9
 
 - Added optional `as_variant_track()` and `as_vcf()` adapters for

@@ -1,6 +1,6 @@
 # Author: Rensc
-# Date: 2026-11-19
-# Version: dev002
+# Date: 2026-11-21
+# Version: dev003
 # Function: Convert GeneTrackR genomic track objects to GenomicRanges
 # Input: Annotation, signal, or variant track objects
 # Output: GenomicRanges::GRanges objects
@@ -161,14 +161,38 @@ variant_as_granges <- function(object) {
 #' Feature's genomic sorting. Gene, transcript, and exon levels remain summary
 #' projections with their existing fields and behavior.
 #'
+#' Use `level = "transcript_features"` to group exon and CDS records from
+#' an annotation into a `GenomicRanges::GRangesList`. Nonempty `parent_ids`
+#' entries resolve against the transcript `feature_id` column. Rows without
+#' these entries use `transcript_id`, with `parent_id` as a fallback. Older
+#' GFF annotations use the raw `parent_id` first. The view recognizes common
+#' RNA transcript types and SO accessions for transcript, mRNA, exon and CDS.
+#' Group names use transcript IDs, with feature IDs as the fallback for
+#' declarations without a transcript ID. Declared transcripts with no exon
+#' or CDS records have empty groups.
+#'
+#' Each source row appears once per linked transcript. Distinct rows retain
+#' their coordinates, strand and metadata even when they share coordinates or
+#' a feature ID. Members follow their order in the flat annotation. The
+#' `source_rows` column of `S4Vectors::mcols()` on the list holds the
+#' one-based flat feature positions for each group. Positions refer to the
+#' supplied annotation, including after a region subset. Missing assignments,
+#' unresolved GFF3 parents, conflicting identifier mappings and incompatible
+#' chromosomes or strands are reported as errors. Segments declared with
+#' the same transcript identity contribute one group.
+#'
 #' @param object A GenePred, Feature, FeatureTrack, BwgTrack, or VariantTrack object.
 #' @param level Annotation feature level. One of `gene`, `transcript`, `exon`,
-#' or `feature`. Ignored for BwgTrack and VariantTrack objects.
-#' @return A `GenomicRanges::GRanges` object.
+#' `feature`, or `transcript_features`. Use the full `transcript_features`
+#' value with annotation objects. Ignored for BwgTrack and VariantTrack objects.
+#' @return A `GenomicRanges::GRanges` object, or a named
+#'   `GenomicRanges::GRangesList` for `level = "transcript_features"`.
 #' @examples
 #' gp_file <- system.file("extdata", "gtr_demo.genePredExt", package = "GeneTrackR")
 #' gp <- read_genepred(gp_file, format = "genePredExt", verbose = FALSE)
 #' as_granges(gp, level = "gene")
+#' transcript_features <- as_granges(gp, level = "transcript_features")
+#' head(lengths(transcript_features))
 #'
 #' signal <- BwgTrack(
 #'   samples = data.frame(sample_id = "sampleA"),
@@ -196,6 +220,9 @@ as_granges <- function(object, level = c("gene", "transcript", "exon", "feature"
     inherits(object, "GenePred") || inherits(object, "Feature") || inherits(object, "FeatureTrack"),
     "`object` must be a GenePred, Feature, FeatureTrack, BwgTrack, or VariantTrack object."
   )
+  if (identical(unname(level), "transcript_features")) {
+    return(feature_as_transcript_granges(object))
+  }
   level <- match.arg(level)
   annotation_as_granges(object, level = level)
 }

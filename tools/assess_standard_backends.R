@@ -2,13 +2,13 @@
 
 # Author: Rensc
 # Date: 2026-11-21
-# Version: dev001
+# Version: dev002
 # Function: Compare TxDb relationships and indexed VCF readers on fixed fixtures.
 # Input: Installed GeneTrackR, optional readers, a local report directory.
 # Output: Key-level mapping, count, timing and peak-memory CSV reports.
 
 membership_rows <- function(kind, transcript, chrom, start, end, strand) {
-  data.frame(kind = rep(kind, length(transcript)), transcript = as.character(transcript),
+  data.frame(kind = rep_len(kind, length(transcript)), transcript = as.character(transcript),
     chrom = as.character(chrom), start = as.integer(start), end = as.integer(end),
     strand = as.character(strand))
 }
@@ -19,7 +19,8 @@ range_membership <- function(kind, transcript, ranges) {
 }
 
 assess_txdb <- function(file, output) {
-  feature <- GeneTrackR::read_gff(file, verbose = FALSE, progress = FALSE)$data
+  annotation <- GeneTrackR::read_gff(file, verbose = FALSE, progress = FALSE)
+  feature <- annotation$data
   txdb <- txdbmaker::makeTxDbFromGFF(file, format = "gff3")
   kinds <- c(transcript = "mRNA", exon = "exon", cds = "CDS")
   gff_membership <- function(use_all_parents) {
@@ -46,6 +47,12 @@ assess_txdb <- function(file, output) {
   )
   declared <- gff_membership(TRUE)
   primary <- gff_membership(FALSE)
+  view <- GeneTrackR::as_granges(annotation, level = "transcript_features")
+  view_ranges <- unlist(view, use.names = FALSE)
+  view_links <- range_membership(tolower(S4Vectors::mcols(view_ranges)$type),
+    rep(names(view), lengths(view)), view_ranges)
+  source_rows <- unlist(S4Vectors::mcols(view)$source_rows, use.names = FALSE)
+  stopifnot(identical(feature$feature_id[source_rows], S4Vectors::mcols(view_ranges)$feature_id))
   key <- function(x) do.call(paste, c(x, sep = "\t"))
   raw_standard <- standard
   # Compare TxDb display names to GFF3 IDs through the fixture's Name values.
@@ -55,13 +62,15 @@ assess_txdb <- function(file, output) {
   mapped <- match(standard$transcript, name_map$txdb_name)
   stopifnot(!anyNA(mapped))
   standard$transcript <- name_map$gff3_id[mapped]
-  for (rows in list(declared, primary, standard)) {
+  for (rows in list(declared, primary, standard, view_links)) {
     stopifnot(!anyNA(rows), !anyDuplicated(key(rows)))
   }
-  all_rows <- unique(rbind(declared, primary, standard))
+  all_rows <- unique(rbind(declared, primary, standard, view_links))
   all_rows$in_gff3 <- key(all_rows) %in% key(declared)
   all_rows$in_primary <- key(all_rows[names(declared)]) %in% key(primary)
   all_rows$in_txdb <- key(all_rows[names(declared)]) %in% key(standard)
+  all_rows$in_grouped_view <- key(all_rows[names(declared)]) %in% key(view_links)
+  all_rows$in_grouped_view[all_rows$kind == "transcript"] <- NA
   counts <- do.call(rbind, lapply(names(kinds), function(kind) {
     compared <- all_rows[all_rows$kind == kind, ]
     data.frame(kind = kind, source_rows = sum(feature$type == kinds[[kind]]),
@@ -71,7 +80,10 @@ assess_txdb <- function(file, output) {
       matched_links = sum(compared$in_gff3 & compared$in_txdb),
       gff3_only = sum(compared$in_gff3 & !compared$in_txdb),
       txdb_only = sum(compared$in_txdb & !compared$in_gff3),
-      declared_missing_in_primary = sum(compared$in_gff3 & !compared$in_primary))
+      declared_missing_in_primary = sum(compared$in_gff3 & !compared$in_primary),
+      grouped_view_links = sum(compared$in_grouped_view),
+      declared_missing_in_view = sum(compared$in_gff3 & !compared$in_grouped_view),
+      grouped_view_only = sum(compared$in_grouped_view & !compared$in_gff3))
   }))
   utils::write.csv(all_rows, file.path(output, "txdb-rows.csv"), row.names = FALSE)
   utils::write.csv(name_map, file.path(output, "txdb-name-map.csv"), row.names = FALSE)
@@ -79,6 +91,9 @@ assess_txdb <- function(file, output) {
   utils::write.csv(as.data.frame(table(feature$type)), file.path(output, "gff3-records.csv"),
     row.names = FALSE)
   print(counts, row.names = FALSE)
+  members <- counts[counts$kind != "transcript", ]
+  stopifnot(setequal(names(view), declared$transcript[declared$kind == "transcript"]),
+    all(members$declared_missing_in_view == 0L & members$grouped_view_only == 0L))
 }
 
 peak_working_set_mib <- function() {

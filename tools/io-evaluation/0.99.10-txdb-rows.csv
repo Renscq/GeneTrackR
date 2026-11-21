@@ -1,0 +1,8 @@
+"kind","transcript","chrom","start","end","strand","in_gff3","in_primary","in_txdb","in_grouped_view"
+"transcript","t1","chr1",1,20,"+",TRUE,TRUE,TRUE,NA
+"transcript","t2","chr1",1,20,"+",TRUE,TRUE,TRUE,NA
+"transcript","t3","chr2",10,20,"-",TRUE,TRUE,TRUE,NA
+"exon","t1","chr1",1,5,"+",TRUE,TRUE,TRUE,TRUE
+"exon","t2","chr1",1,5,"+",TRUE,FALSE,TRUE,TRUE
+"exon","t3","chr2",10,20,"-",TRUE,TRUE,TRUE,TRUE
+"cds","t1","chr1",2,5,"+",TRUE,TRUE,TRUE,TRUE
