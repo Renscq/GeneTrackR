@@ -64,6 +64,7 @@ read_genepred <- function(file,
     file,
     header = FALSE,
     sep = "\t",
+    dec = ".",
     data.table = TRUE,
     showProgress = FALSE
   )

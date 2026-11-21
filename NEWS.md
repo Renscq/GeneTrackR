@@ -1,3 +1,14 @@
+# GeneTrackR 0.99.11
+
+- Fixed indexed bedGraph queries through Rsamtools and covered indexed hits,
+  empty regions, and fallback to reading the source file.
+- Covered GenePred and GenePredExt format detection, coordinate conversion,
+  exon order, frame metadata, and recovery from invalid records. Fixed
+  parsing of exon lists without a trailing comma.
+- Added a reproducible developer comparison using an indexed 1000 Genomes
+  VCF and GENCODE GFF3. The comparison records row and sample agreement,
+  reader timings, and peak process memory.
+
 # GeneTrackR 0.99.10
 
 - Added `as_granges(x, level = "transcript_features")` to group source exon

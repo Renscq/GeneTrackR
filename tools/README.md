@@ -3,8 +3,10 @@
 These developer tools do not install dependencies or publish anything locally.
 Run all commands from the GeneTrackR package root with R 4.6.0 or later.
 
+The [0.99.11 real-data assessment](io-evaluation/0.99.11-assessment.md)
+contains the public input sources, run command, row agreement and timings.
 The [0.99.9 backend assessment](io-evaluation/0.99.9-assessment.md) documents
-the separate TxDb and indexed VCF loader experiment and its dependencies.
+the TxDb and indexed VCF loader experiment with synthetic fixtures.
 
 ## Regenerate the README
 
@@ -210,9 +212,9 @@ equivalence checks. The CSV records exactly which fields were compared.
 
 See [the recorded assessment](io-evaluation/README.md),
 [the unposted review response](review-response-0.99.8.md) and
-[the progress record](review-progress-0.99.8.md). The assessment does not activate
-an alternative backend or establish a performance ranking. Large-data peak
-memory, indexed-query comparisons and other operating systems remain future work.
+[the progress record](review-progress-0.99.8.md) for the fixture comparison.
+Follow the [0.99.11 real-data assessment](io-evaluation/0.99.11-assessment.md)
+to reproduce the indexed VCF and GFF3 comparison with peak process memory.
 
 ## Complete package-check CI
 

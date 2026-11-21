@@ -1,6 +1,6 @@
 # Author: Rensc
 # Date: 2026-08-31
-# Version: dev009
+# Version: dev010
 # Function: Query, normalize, summarize, slice, merge, and write signal tracks
 # Input: BwgTrack objects and genomic regions
 # Output: Signal tables, subset objects, and exported signal files
@@ -292,7 +292,8 @@ empty_signal_dt <- function() {
   )
 }
 
-read_tabix_lines <- function(file, region, backend = NA_character_) {
+read_tabix_lines <- function(file, chrom, start, end, backend = NA_character_) {
+  region <- sprintf("%s:%s-%s", chrom, start, end)
   backend <- as.character(backend)[1L]
   if (is.na(backend) || !nzchar(backend)) {
     backend <- get_tabix_backend()
@@ -309,8 +310,15 @@ read_tabix_lines <- function(file, region, backend = NA_character_) {
   }
 
   if (identical(backend, "Rsamtools")) {
+    # The filename method delegates to TabixFile, which accepts a GRanges query.
     ans <- tryCatch(
-      Rsamtools::scanTabix(file = file, param = region),
+      Rsamtools::scanTabix(
+        file = file,
+        param = GenomicRanges::GRanges(
+          seqnames = chrom,
+          ranges = IRanges::IRanges(start = start, end = end)
+        )
+      ),
       error = function(e) e
     )
     if (inherits(ans, "error")) {
@@ -326,7 +334,6 @@ query_bedgraph_tabix <- function(file, sample_id, chrom, start, end, strand = "*
   chrom_value <- as.character(chrom)
   query_start <- as.integer(start)
   query_end <- as.integer(end)
-  region <- sprintf("%s:%s-%s", chrom_value, query_start, query_end)
   empty <- empty_signal_dt()
 
   parse_bedgraph_lines <- function(lines) {
@@ -354,7 +361,7 @@ query_bedgraph_tabix <- function(file, sample_id, chrom, start, end, strand = "*
   # empty indexed result must NOT trigger a full-file fread by default. The
   # expensive full-file check is only used when the backend fails or when
   # `empty_fallback = TRUE` is explicitly requested for debugging.
-  res <- read_tabix_lines(file = file, region = region, backend = backend)
+  res <- read_tabix_lines(file, chrom_value, query_start, query_end, backend)
   if (isTRUE(res$ok)) {
     out <- parse_bedgraph_lines(res$lines)
     if (nrow(out) > 0L || !isTRUE(empty_fallback)) {
@@ -363,8 +370,7 @@ query_bedgraph_tabix <- function(file, sample_id, chrom, start, end, strand = "*
   }
 
   if (query_start > 1L && (!isTRUE(res$ok) || isTRUE(empty_fallback))) {
-    region0 <- sprintf("%s:%s-%s", chrom_value, query_start - 1L, query_end)
-    res0 <- read_tabix_lines(file = file, region = region0, backend = backend)
+    res0 <- read_tabix_lines(file, chrom_value, query_start - 1L, query_end, backend)
     if (isTRUE(res0$ok)) {
       out0 <- parse_bedgraph_lines(res0$lines)
       if (nrow(out0) > 0L || !isTRUE(empty_fallback)) {

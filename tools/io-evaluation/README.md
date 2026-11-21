@@ -2,6 +2,8 @@
 
 The follow-up [0.99.9 assessment](0.99.9-assessment.md) covers TxDb membership
 mapping and an indexed VCF workload with process peak memory.
+The [0.99.11 assessment](0.99.11-assessment.md) uses a public indexed VCF and
+GENCODE GFF3 and includes cross-platform reproduction commands.
 
 This is developer evidence for preliminary Bioconductor review, not a runtime
 backend switch or a claim that existing wrappers replace Bioconductor classes.

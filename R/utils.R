@@ -20,7 +20,7 @@ parse_comma_integer <- function(x) {
   if (length(x) != 1L || is.na(x) || x == "") {
     return(integer())
   }
-  vals <- strsplit(x, ",", fixed = TRUE)[[1]]
+  vals <- strsplit(as.character(x), ",", fixed = TRUE)[[1]]
   vals <- vals[vals != ""]
   as.integer(vals)
 }

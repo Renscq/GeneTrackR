@@ -1,0 +1,17 @@
+"platform","comparison","status","source_rows","reader_rows","matched_rows","source_only_rows","reader_only_rows","different_values","source_order"
+"Windows","vcf_tabix_overlap","equivalent",8771,8771,8771,0,0,0,TRUE
+"Windows","vcf_tabix_pos","equivalent",8770,8770,8770,0,0,0,TRUE
+"Windows","vcf_native_overlap","equivalent",8771,8771,8771,0,0,0,FALSE
+"Windows","vcf_native_pos","equivalent",8770,8770,8770,0,0,0,FALSE
+"Windows","vcf_standard_overlap","equivalent",8771,8771,8771,0,0,0,TRUE
+"Windows","vcf_standard_pos","equivalent",8770,8770,8770,0,0,0,TRUE
+"Windows","gff3_native","equivalent",58721,58721,58721,0,0,0,FALSE
+"Windows","gff3_standard","equivalent",58721,58721,58721,0,0,0,TRUE
+"Linux","vcf_tabix_overlap","equivalent",8771,8771,8771,0,0,0,TRUE
+"Linux","vcf_tabix_pos","equivalent",8770,8770,8770,0,0,0,TRUE
+"Linux","vcf_native_overlap","equivalent",8771,8771,8771,0,0,0,FALSE
+"Linux","vcf_native_pos","equivalent",8770,8770,8770,0,0,0,FALSE
+"Linux","vcf_standard_overlap","equivalent",8771,8771,8771,0,0,0,TRUE
+"Linux","vcf_standard_pos","equivalent",8770,8770,8770,0,0,0,TRUE
+"Linux","gff3_native","equivalent",58721,58721,58721,0,0,0,FALSE
+"Linux","gff3_standard","equivalent",58721,58721,58721,0,0,0,TRUE
